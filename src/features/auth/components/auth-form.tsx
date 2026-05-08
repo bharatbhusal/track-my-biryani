@@ -38,6 +38,8 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   } = useForm<SignupValues | LoginValues>({
     resolver: zodResolver(schema),
   });
+  const fieldErrors = errors as Record<string, { message?: string }>;
+  const getFieldError = (field: string) => fieldErrors[field]?.message;
 
   const onSubmit = async (values: SignupValues | LoginValues) => {
     const response = await fetch(`/api/auth/${mode}`, {
@@ -68,27 +70,21 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         {mode === 'signup' && (
           <label className="block space-y-1 text-sm">
             <span>Name</span>
-            <Input {...register('name' as const)} aria-invalid={Boolean((errors as Record<string, { message?: string }>).name)} />
-            {(errors as Record<string, { message?: string }>).name?.message && (
-              <span className="text-xs text-red-600">{(errors as Record<string, { message?: string }>).name?.message}</span>
-            )}
+            <Input {...register('name' as const)} aria-invalid={Boolean(getFieldError('name'))} />
+            {getFieldError('name') && <span className="text-xs text-red-600">{getFieldError('name')}</span>}
           </label>
         )}
 
         <label className="block space-y-1 text-sm">
           <span>Email</span>
-          <Input type="email" {...register('email' as const)} aria-invalid={Boolean((errors as Record<string, { message?: string }>).email)} />
-          {(errors as Record<string, { message?: string }>).email?.message && (
-            <span className="text-xs text-red-600">{(errors as Record<string, { message?: string }>).email?.message}</span>
-          )}
+          <Input type="email" {...register('email' as const)} aria-invalid={Boolean(getFieldError('email'))} />
+          {getFieldError('email') && <span className="text-xs text-red-600">{getFieldError('email')}</span>}
         </label>
 
         <label className="block space-y-1 text-sm">
           <span>Password</span>
-          <Input type="password" {...register('password' as const)} aria-invalid={Boolean((errors as Record<string, { message?: string }>).password)} />
-          {(errors as Record<string, { message?: string }>).password?.message && (
-            <span className="text-xs text-red-600">{(errors as Record<string, { message?: string }>).password?.message}</span>
-          )}
+          <Input type="password" {...register('password' as const)} aria-invalid={Boolean(getFieldError('password'))} />
+          {getFieldError('password') && <span className="text-xs text-red-600">{getFieldError('password')}</span>}
         </label>
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>

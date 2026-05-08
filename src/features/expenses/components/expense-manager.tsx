@@ -26,6 +26,9 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 type Category = { _id: string; name: string };
+function getDefaultDateTimeLocal(): string {
+  return new Date().toISOString().slice(0, 16);
+}
 
 type Expense = {
   _id: string;
@@ -45,7 +48,7 @@ export function ExpenseManager() {
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      dateTime: new Date().toISOString().slice(0, 16),
+      dateTime: getDefaultDateTimeLocal(),
       images: '',
       address: '',
     },

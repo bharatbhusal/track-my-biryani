@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { CURRENCY_CODE_REGEX, HEX_COLOR_REGEX } from '@/lib/validation-constants';
+
 export const signupSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
@@ -13,7 +15,7 @@ export const loginSchema = z.object({
 
 export const categorySchema = z.object({
   name: z.string().min(1).max(50),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  color: z.string().regex(HEX_COLOR_REGEX).optional(),
 });
 
 export const expenseSchema = z.object({
@@ -26,7 +28,7 @@ export const expenseSchema = z.object({
     longitude: z.number(),
     address: z.string().optional(),
   }),
-  currency: z.string().min(3).max(3),
+  currency: z.string().regex(CURRENCY_CODE_REGEX),
   dateTime: z.string().datetime(),
 });
 
@@ -41,7 +43,7 @@ export const expenseFiltersSchema = z.object({
 
 export const settingsSchema = z.object({
   locale: z.string().min(2),
-  currency: z.string().min(3).max(3),
+  currency: z.string().regex(CURRENCY_CODE_REGEX),
   theme: z.enum(['light', 'dark', 'system']),
   hapticFeedback: z.boolean(),
   password: z
@@ -56,7 +58,7 @@ export const importDataSchema = z.object({
   categories: z.array(
     z.object({
       name: z.string().min(1),
-      color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+      color: z.string().regex(HEX_COLOR_REGEX),
     }),
   ),
   expenses: z.array(
@@ -70,7 +72,7 @@ export const importDataSchema = z.object({
         longitude: z.number(),
         address: z.string().optional(),
       }),
-      currency: z.string().min(3).max(3),
+      currency: z.string().regex(CURRENCY_CODE_REGEX),
       dateTime: z.string().datetime(),
     }),
   ),

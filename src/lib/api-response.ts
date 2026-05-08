@@ -47,11 +47,3 @@ export function errorResponse(error: unknown): NextResponse {
     { status: 500 },
   );
 }
-
-export async function withErrorHandler<T>(fn: () => Promise<T>): Promise<T> {
-  try {
-    return await fn();
-  } catch (error) {
-    throw error;
-  }
-}

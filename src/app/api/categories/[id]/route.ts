@@ -4,6 +4,7 @@ import { getAuthPayload } from '@/lib/auth';
 import { errorResponse, successResponse } from '@/lib/api-response';
 import { connectToDatabase } from '@/lib/db';
 import { AppError } from '@/lib/errors';
+import { randomHexColor } from '@/lib/utils';
 import { categorySchema } from '@/lib/validators';
 import { deleteCategory, updateCategory } from '@/repositories/category.repository';
 import { logAuditEvent } from '@/services/audit.service';
@@ -17,7 +18,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
 
     const category = await updateCategory(auth.userId, id, {
       name: payload.name,
-      color: payload.color ?? '#64748b',
+      color: payload.color ?? randomHexColor(),
     });
 
     if (!category) {
@@ -37,7 +38,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
   }
 }
 
-export async function DELETE(_: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function DELETE(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     await connectToDatabase();
     const auth = await getAuthPayload();

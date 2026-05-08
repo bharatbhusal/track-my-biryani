@@ -9,11 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { CURRENCY_CODE_REGEX } from '@/lib/validation-constants';
 import { useUIStore } from '@/store/ui-store';
 
 const schema = z.object({
   locale: z.string().min(2),
-  currency: z.string().length(3),
+  currency: z.string().regex(CURRENCY_CODE_REGEX),
   theme: z.enum(['light', 'dark', 'system']),
   hapticFeedback: z.boolean(),
   currentPassword: z.string().optional(),

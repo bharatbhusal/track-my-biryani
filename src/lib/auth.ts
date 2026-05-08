@@ -7,7 +7,7 @@ import { env, getJwtSecret } from '@/lib/env';
 import { AppError } from '@/lib/errors';
 import type { JwtPayload } from '@/types/auth';
 
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+const COOKIE_MAX_AGE_SEVEN_DAYS = 60 * 60 * 24 * 7;
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
@@ -35,7 +35,7 @@ export async function setAuthCookie(token: string): Promise<void> {
     httpOnly: true,
     secure: env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: COOKIE_MAX_AGE,
+    maxAge: COOKIE_MAX_AGE_SEVEN_DAYS,
     path: '/',
   });
 }

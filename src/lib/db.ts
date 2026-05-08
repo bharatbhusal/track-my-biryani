@@ -9,8 +9,10 @@ if (!globalMongoose.mongoose) {
 }
 
 export async function connectToDatabase(): Promise<typeof mongoose> {
-  if (globalMongoose.mongoose?.conn) {
-    return globalMongoose.mongoose.conn;
+  const cache = globalMongoose.mongoose ?? (globalMongoose.mongoose = { conn: null, promise: null });
+
+  if (cache.conn) {
+    return cache.conn;
   }
 
   const uri = process.env.MONGODB_URI;
@@ -19,12 +21,12 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
     throw new Error('MONGODB_URI is not configured');
   }
 
-  if (!globalMongoose.mongoose?.promise) {
-    globalMongoose.mongoose!.promise = mongoose.connect(uri, {
+  if (!cache.promise) {
+    cache.promise = mongoose.connect(uri, {
       bufferCommands: false,
     });
   }
 
-  globalMongoose.mongoose!.conn = await globalMongoose.mongoose!.promise;
-  return globalMongoose.mongoose!.conn;
+  cache.conn = await cache.promise;
+  return cache.conn;
 }

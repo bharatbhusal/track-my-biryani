@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+const GEOLOCATION_TIMEOUT_MS = 7000;
+
 type GeoPoint = {
   latitude: number;
   longitude: number;
@@ -30,7 +32,7 @@ export function useGeolocation() {
         },
         {
           enableHighAccuracy: true,
-          timeout: 7000,
+          timeout: GEOLOCATION_TIMEOUT_MS,
         },
       );
     });

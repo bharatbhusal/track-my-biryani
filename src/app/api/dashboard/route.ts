@@ -4,6 +4,8 @@ import { connectToDatabase } from '@/lib/db';
 import { listCategories } from '@/repositories/category.repository';
 import { listExpensesForRange, listRecentExpenses } from '@/repositories/expense.repository';
 
+const DAYS_IN_WEEK = 7;
+
 function getDateRanges() {
   const now = new Date();
   const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -29,7 +31,7 @@ export async function GET() {
 
     const totalMonthlySpend = monthlyExpenses.reduce((sum, item) => sum + item.amount, 0);
     const weeklySpend = weeklyExpenses.reduce((sum, item) => sum + item.amount, 0);
-    const dailyAverage = weeklyExpenses.length > 0 ? weeklySpend / 7 : 0;
+    const dailyAverage = weeklyExpenses.length > 0 ? weeklySpend / DAYS_IN_WEEK : 0;
 
     const categoryMap = new Map<string, number>();
     monthlyExpenses.forEach((expense) => {
