@@ -1,38 +1,18 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-
 import { ExportableChart } from '@/components/charts/exportable-chart';
 import { CategoryPieChart } from '@/components/charts/category-pie-chart';
 import { MonthlyLineChart } from '@/components/charts/monthly-line-chart';
 import { WeeklyBarChart } from '@/components/charts/weekly-bar-chart';
 import { Card, CardTitle } from '@/components/ui/card';
+import { useDashboardQuery } from '@/hooks/api/use-analytics-api';
 import { formatCurrency } from '@/lib/format';
 import { useUIStore } from '@/store/ui-store';
-
-type DashboardPayload = {
-  totalMonthlySpend: number;
-  weeklySpend: number;
-  dailyAverage: number;
-  topCategory: string;
-  categoryBreakdown: Array<{ name: string; value: number }>;
-  monthlyTrend: Array<{ name: string; total: number }>;
-  weeklyTrend: Array<{ name: string; total: number }>;
-  recentActivity: Array<{ title: string; amount: number; dateTime: string }>;
-};
 
 export function DashboardOverview() {
   const locale = useUIStore((state) => state.locale);
   const currency = useUIStore((state) => state.currency);
-
-  const dashboardQuery = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: async () => {
-      const response = await fetch('/api/dashboard');
-      const payload = (await response.json()) as { data: DashboardPayload };
-      return payload.data;
-    },
-  });
+  const dashboardQuery = useDashboardQuery();
 
   const data = dashboardQuery.data;
 

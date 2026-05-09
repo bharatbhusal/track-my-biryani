@@ -2,16 +2,37 @@
 
 :root {
   color-scheme: light;
+  --color-bg: #f6fbf8;
+  --color-surface: #ffffff;
+  --color-surface-muted: #eff7f2;
+  --color-text: #0f172a;
+  --color-muted: #475569;
+  --color-border: #d8e6dd;
+  --color-primary: #059669;
+  --color-primary-foreground: #ecfdf5;
+  --color-danger: #dc2626;
 }
 
 .dark {
   color-scheme: dark;
+  --color-bg: #07150f;
+  --color-surface: #0b2017;
+  --color-surface-muted: #123224;
+  --color-text: #e2f8eb;
+  --color-muted: #97b7a4;
+  --color-border: #24553f;
+  --color-primary: #10b981;
+  --color-primary-foreground: #052e1f;
+  --color-danger: #f87171;
 }
 
 * {
-  border-color: theme(colors.zinc.200);
+  border-color: var(--color-border);
 }
 
 body {
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  transition: background-color 200ms ease, color 200ms ease;
 }

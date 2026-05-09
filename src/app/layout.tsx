@@ -28,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+      <body className="min-h-screen transition-colors duration-200">
         <AppProvider>
           <Header />
           <main className="mx-auto w-full max-w-5xl p-4 pb-24 md:pb-8">{children}</main>

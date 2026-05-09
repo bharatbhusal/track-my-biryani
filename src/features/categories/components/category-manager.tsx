@@ -1,68 +1,19 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/dialog';
+import { useCategoriesQuery, useExpenseMutations } from '@/hooks/api/use-expenses-api';
 import { Input } from '@/components/ui/input';
 
-type Category = {
-  _id: string;
-  name: string;
-  color: string;
-};
-
 export function CategoryManager() {
-  const queryClient = useQueryClient();
   const [name, setName] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
-
-  const categoriesQuery = useQuery({
-    queryKey: ['categories'],
-    queryFn: async () => {
-      const response = await fetch('/api/categories');
-      const payload = (await response.json()) as { data: Category[] };
-      return payload.data;
-    },
-  });
-
-  const createMutation = useMutation({
-    mutationFn: async (value: string) => {
-      const response = await fetch('/api/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: value }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create category');
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      setName('');
-      toast.success('Category created');
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const response = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
-      if (!response.ok) {
-        throw new Error('Failed to delete category');
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      toast.success('Category deleted');
-      setDeleteId(null);
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-    },
-  });
+  const categoriesQuery = useCategoriesQuery();
+  const { createCategory, deleteCategory } = useExpenseMutations();
 
   return (
     <Card>
@@ -72,11 +23,19 @@ export function CategoryManager() {
         onSubmit={(event) => {
           event.preventDefault();
           if (!name.trim()) return;
-          createMutation.mutate(name);
+          createCategory.mutate(name, {
+            onSuccess: () => {
+              setName('');
+              toast.success('Category created');
+            },
+            onError: (error) => {
+              toast.error(error instanceof Error ? error.message : 'Failed to create category');
+            },
+          });
         }}
       >
         <Input value={name} onChange={(event) => setName(event.target.value)} placeholder="Food, Transport..." />
-        <Button type="submit" disabled={createMutation.isPending}>
+        <Button type="submit" disabled={createCategory.isPending}>
           Add
         </Button>
       </form>
@@ -102,7 +61,15 @@ export function CategoryManager() {
         onCancel={() => setDeleteId(null)}
         onConfirm={() => {
           if (deleteId) {
-            deleteMutation.mutate(deleteId);
+            deleteCategory.mutate(deleteId, {
+              onSuccess: () => {
+                toast.success('Category deleted');
+                setDeleteId(null);
+              },
+              onError: (error) => {
+                toast.error(error instanceof Error ? error.message : 'Failed to delete category');
+              },
+            });
           }
         }}
       />
