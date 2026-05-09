@@ -8,6 +8,8 @@ const DEFAULT_CURRENCY = 'INR';
 const DEFAULT_TIMEZONE = 'Asia/Kolkata';
 const GEOLOCATION_TIMEOUT_MS = 6000;
 const GEOLOCATION_MAX_AGE_MS = 10 * 60 * 1000;
+const INDIA_BOUNDS = { minLat: 6, maxLat: 38, minLng: 68, maxLng: 98 };
+const NEPAL_BOUNDS = { minLat: 26, maxLat: 31, minLng: 80, maxLng: 89 };
 
 const CURRENCY_BY_REGION: Record<string, string> = {
   IN: 'INR',
@@ -37,8 +39,16 @@ function detectCurrency(locale: string): string {
 }
 
 function mapCurrencyFromCoordinates(latitude: number, longitude: number): string | null {
-  const isIndia = latitude >= 6 && latitude <= 38 && longitude >= 68 && longitude <= 98;
-  const isNepal = latitude >= 26 && latitude <= 31 && longitude >= 80 && longitude <= 89;
+  const isIndia =
+    latitude >= INDIA_BOUNDS.minLat &&
+    latitude <= INDIA_BOUNDS.maxLat &&
+    longitude >= INDIA_BOUNDS.minLng &&
+    longitude <= INDIA_BOUNDS.maxLng;
+  const isNepal =
+    latitude >= NEPAL_BOUNDS.minLat &&
+    latitude <= NEPAL_BOUNDS.maxLat &&
+    longitude >= NEPAL_BOUNDS.minLng &&
+    longitude <= NEPAL_BOUNDS.maxLng;
 
   if (isIndia) return 'INR';
   if (isNepal) return 'NPR';

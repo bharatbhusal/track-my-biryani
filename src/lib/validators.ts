@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 import { CURRENCY_CODE_REGEX, HEX_COLOR_REGEX } from '@/lib/validation-constants';
 
+const CLOUDINARY_PUBLIC_ID_REGEX = /^[a-zA-Z0-9/_-]+$/;
+
 export const signupSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
@@ -22,7 +24,7 @@ export const expenseSchema = z.object({
   title: z.string().min(1).max(120),
   amount: z.number().positive(),
   categoryId: z.string().min(1),
-  images: z.array(z.string().min(1)).max(5).default([]),
+  images: z.array(z.string().regex(CLOUDINARY_PUBLIC_ID_REGEX)).max(5).default([]),
   location: z.object({
     latitude: z.number(),
     longitude: z.number(),
@@ -67,7 +69,7 @@ export const importDataSchema = z.object({
       title: z.string().min(1),
       amount: z.number().positive(),
       categoryName: z.string().min(1),
-      images: z.array(z.string().min(1)).default([]),
+      images: z.array(z.string().regex(CLOUDINARY_PUBLIC_ID_REGEX)).default([]),
       location: z.object({
         latitude: z.number(),
         longitude: z.number(),

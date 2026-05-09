@@ -24,6 +24,18 @@ function isRawBody(body: unknown): body is FormData | Blob | ArrayBuffer {
   return body instanceof FormData || body instanceof Blob || body instanceof ArrayBuffer;
 }
 
+function toRequestBody(body: unknown, hasBody: boolean): BodyInit | undefined {
+  if (!hasBody) {
+    return undefined;
+  }
+
+  if (isRawBody(body)) {
+    return body;
+  }
+
+  return JSON.stringify(body);
+}
+
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   const hasBody = options.body !== undefined;
   const body = hasBody ? options.body : undefined;
@@ -36,7 +48,7 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
       ...(rawBody ? {} : { 'Content-Type': 'application/json' }),
       ...(options.headers ?? {}),
     },
-    body: !hasBody ? undefined : rawBody ? body : JSON.stringify(body),
+    body: toRequestBody(body, hasBody),
   });
 
   const payload = (await response.json()) as ApiResponse<T>;

@@ -10,7 +10,7 @@ import { listExpenses, listExpensesForRange } from '@/repositories/expense.repos
 type ExportFormat = 'json' | 'csv';
 
 function asCsvValue(value: unknown): string {
-  const raw = String(value ?? '').replaceAll('\n', ' ').replaceAll('\r', ' ').replaceAll('\t', ' ');
+  const raw = String(value ?? '').replace(/[\n\r\t]/g, ' ');
   return `"${raw.replaceAll('"', '""')}"`;
 }
 
