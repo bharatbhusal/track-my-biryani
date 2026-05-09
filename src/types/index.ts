@@ -1,14 +1,6 @@
-export type CategoryColor = `#${string}`;
-
-export type UserPreferences = {
-  locale: string;
-  currency: string;
-  theme: 'light' | 'dark' | 'system';
-  hapticFeedback: boolean;
-};
-
-export type ExpenseLocation = {
-  latitude: number;
-  longitude: number;
-  address?: string;
-};
+export * from '@/types/api.types';
+export * from '@/types/auth.types';
+export * from '@/types/common.types';
+export * from '@/types/expense.types';
+export * from '@/types/upload.types';
+export * from '@/types/analytics.types';

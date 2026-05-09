@@ -1,13 +1,15 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 
+import { ReceiptUpload } from '@/components/uploads/receipt-upload';
 import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
+import { useCategoriesQuery, useExpenseMutations, useExpensesQuery } from '@/hooks/api/use-expenses-api';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { useGeolocation } from '@/hooks/use-geolocation';
@@ -19,105 +21,65 @@ const formSchema = z.object({
   amount: z.number().positive(),
   categoryId: z.string().min(1),
   dateTime: z.string().min(1),
-  images: z.string().optional(),
   address: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-type Category = { _id: string; name: string };
 function getDefaultDateTimeLocal(): string {
   return new Date().toISOString().slice(0, 16);
 }
 
-type Expense = {
-  _id: string;
-  title: string;
-  amount: number;
-  currency: string;
-  dateTime: string;
-  categoryId: string;
-};
-
 export function ExpenseManager() {
-  const queryClient = useQueryClient();
   const { detect, isLoading: isDetectingLocation } = useGeolocation();
   const currency = useUIStore((state) => state.currency);
   const locale = useUIStore((state) => state.locale);
+  const timezone = useUIStore((state) => state.timezone);
+  const [images, setImages] = useState<string[]>([]);
+  const { createExpense } = useExpenseMutations();
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       dateTime: getDefaultDateTimeLocal(),
-      images: '',
       address: '',
     },
   });
 
-  const categoriesQuery = useQuery({
-    queryKey: ['categories'],
-    queryFn: async () => {
-      const response = await fetch('/api/categories');
-      const payload = (await response.json()) as { data: Category[] };
-      return payload.data;
-    },
-  });
+  const categoriesQuery = useCategoriesQuery();
+  const expensesQuery = useExpensesQuery(1, 20);
 
-  const expensesQuery = useQuery({
-    queryKey: ['expenses'],
-    queryFn: async () => {
-      const response = await fetch('/api/expenses?limit=20&page=1');
-      const payload = (await response.json()) as { data: { items: Expense[] } };
-      return payload.data.items;
-    },
-  });
-
-  const createMutation = useMutation({
-    mutationFn: async (values: FormValues) => {
+  const onSubmit = async (values: FormValues) => {
+    try {
       const location = await detect();
-      const imageUrls = values.images
-        ? values.images
-            .split(',')
-            .map((item) => item.trim())
-            .filter(Boolean)
-        : [];
 
-      const response = await fetch('/api/expenses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: values.title,
-          amount: values.amount,
-          categoryId: values.categoryId,
-          images: imageUrls,
-          dateTime: new Date(values.dateTime).toISOString(),
-          currency,
-          location: {
-            latitude: location?.latitude ?? 0,
-            longitude: location?.longitude ?? 0,
-            address: values.address,
-          },
-        }),
+      await createExpense.mutateAsync({
+        title: values.title,
+        amount: values.amount,
+        categoryId: values.categoryId,
+        images,
+        dateTime: new Date(values.dateTime).toISOString(),
+        currency,
+        location: {
+          latitude: location?.latitude ?? 0,
+          longitude: location?.longitude ?? 0,
+          address: values.address,
+        },
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to save expense');
-      }
-      return response.json();
-    },
-    onSuccess: () => {
       toast.success('Expense added');
       reset();
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-    },
-  });
+      setImages([]);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to save expense');
+    }
+  };
 
   return (
     <div className="space-y-4">
       <Card>
         <CardTitle className="mb-3">Quick Add Expense</CardTitle>
-        <form className="space-y-3" onSubmit={handleSubmit((values) => createMutation.mutate(values))}>
+        <form className="space-y-3" onSubmit={handleSubmit(onSubmit)}>
           <label className="block space-y-1 text-sm">
             <span>Title</span>
             <Input {...register('title')} />
@@ -149,18 +111,18 @@ export function ExpenseManager() {
             {errors.categoryId?.message && <span className="text-xs text-red-600">{errors.categoryId.message}</span>}
           </label>
 
-          <label className="block space-y-1 text-sm">
-            <span>Image URLs (comma separated)</span>
-            <Input {...register('images')} placeholder="https://..." />
-          </label>
+          <div className="space-y-1 text-sm">
+            <span>Receipts</span>
+            <ReceiptUpload value={images} onChange={setImages} />
+          </div>
 
           <label className="block space-y-1 text-sm">
             <span>Address (optional)</span>
             <Input {...register('address')} placeholder="Address" />
           </label>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting || createMutation.isPending || isDetectingLocation}>
-            {createMutation.isPending ? 'Saving...' : 'Add expense'}
+          <Button type="submit" className="w-full" disabled={isSubmitting || createExpense.isPending || isDetectingLocation}>
+            {createExpense.isPending ? 'Saving...' : 'Add expense'}
           </Button>
         </form>
       </Card>
@@ -172,7 +134,7 @@ export function ExpenseManager() {
             <li key={expense._id} className="flex items-center justify-between rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
               <div>
                 <p className="font-medium">{expense.title}</p>
-                <p className="text-xs text-zinc-500">{formatDate(expense.dateTime, locale)}</p>
+                <p className="text-xs text-zinc-500">{formatDate(expense.dateTime, locale, timezone)}</p>
               </div>
               <p className="font-semibold">{formatCurrency(expense.amount, expense.currency, locale)}</p>
             </li>

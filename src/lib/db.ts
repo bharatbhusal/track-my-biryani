@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { env } from '@/config/env';
 
 const globalMongoose = globalThis as typeof globalThis & {
   mongoose?: { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null };
@@ -15,14 +16,8 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
     return cache.conn;
   }
 
-  const uri = process.env.MONGODB_URI;
-
-  if (!uri) {
-    throw new Error('MONGODB_URI is not configured');
-  }
-
   if (!cache.promise) {
-    cache.promise = mongoose.connect(uri, {
+    cache.promise = mongoose.connect(env.DATABASE_URL, {
       bufferCommands: false,
     });
   }

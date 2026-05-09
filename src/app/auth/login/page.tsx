@@ -4,10 +4,16 @@ export const metadata = {
   title: 'Login',
 };
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const { next } = await searchParams;
+
   return (
     <section className="py-6">
-      <AuthForm mode="login" />
+      <AuthForm mode="login" nextPath={next} />
     </section>
   );
 }

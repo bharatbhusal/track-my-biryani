@@ -1,5 +1,4 @@
-import { getAuthPayload } from '@/lib/auth';
-import { comparePassword, hashPassword } from '@/lib/auth';
+import { comparePassword, getAuthPayload, hashPassword } from '@/lib/auth';
 import { errorResponse, successResponse } from '@/lib/api-response';
 import { connectToDatabase } from '@/lib/db';
 import { AppError } from '@/lib/errors';
@@ -16,6 +15,7 @@ export async function PATCH(request: Request) {
     const updated = await updateUserSettings(auth.userId, {
       locale: payload.locale,
       currency: payload.currency,
+      timezone: payload.timezone,
       theme: payload.theme,
       hapticFeedback: payload.hapticFeedback,
     });

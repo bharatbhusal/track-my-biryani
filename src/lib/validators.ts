@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { CURRENCY_CODE_REGEX, HEX_COLOR_REGEX } from '@/lib/validation-constants';
+import { CLOUDINARY_PUBLIC_ID_REGEX, CURRENCY_CODE_REGEX, HEX_COLOR_REGEX } from '@/lib/validation-constants';
 
 export const signupSchema = z.object({
   name: z.string().min(2),
@@ -22,7 +22,7 @@ export const expenseSchema = z.object({
   title: z.string().min(1).max(120),
   amount: z.number().positive(),
   categoryId: z.string().min(1),
-  images: z.array(z.string().url()).max(5).default([]),
+  images: z.array(z.string().regex(CLOUDINARY_PUBLIC_ID_REGEX)).max(5).default([]),
   location: z.object({
     latitude: z.number(),
     longitude: z.number(),
@@ -44,6 +44,7 @@ export const expenseFiltersSchema = z.object({
 export const settingsSchema = z.object({
   locale: z.string().min(2),
   currency: z.string().regex(CURRENCY_CODE_REGEX),
+  timezone: z.string().min(3),
   theme: z.enum(['light', 'dark', 'system']),
   hapticFeedback: z.boolean(),
   password: z
@@ -66,7 +67,7 @@ export const importDataSchema = z.object({
       title: z.string().min(1),
       amount: z.number().positive(),
       categoryName: z.string().min(1),
-      images: z.array(z.string().url()).default([]),
+      images: z.array(z.string().regex(CLOUDINARY_PUBLIC_ID_REGEX)).default([]),
       location: z.object({
         latitude: z.number(),
         longitude: z.number(),

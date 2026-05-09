@@ -8,7 +8,7 @@ export default function Home() {
     <div className="mx-auto grid min-h-[70vh] max-w-3xl place-items-center">
       <Card className="w-full text-center">
         <h1 className="text-2xl font-semibold tracking-tight">Daily Expenses Tracker</h1>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+        <p className="mt-2 text-sm text-[var(--color-muted)]">
           Fast, mobile-first expense management with charts, audit logs, and secure auth.
         </p>
         <div className="mt-5 flex justify-center gap-3">

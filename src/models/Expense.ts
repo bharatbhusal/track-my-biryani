@@ -12,7 +12,7 @@ const expenseSchema = new Schema(
       longitude: { type: Number, required: true },
       address: { type: String },
     },
-    currency: { type: String, default: 'USD' },
+    currency: { type: String, default: 'INR' },
     dateTime: { type: Date, required: true, index: true },
   },
   { timestamps: true },

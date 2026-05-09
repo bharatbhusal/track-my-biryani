@@ -1,12 +1,15 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTheme } from 'next-themes';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
+import { analyticsApi } from '@/lib/api/analytics';
+import { useSettingsMutations } from '@/hooks/api/use-analytics-api';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { CURRENCY_CODE_REGEX } from '@/lib/validation-constants';
@@ -15,6 +18,7 @@ import { useUIStore } from '@/store/ui-store';
 const schema = z.object({
   locale: z.string().min(2),
   currency: z.string().regex(CURRENCY_CODE_REGEX),
+  timezone: z.string().min(3),
   theme: z.enum(['light', 'dark', 'system']),
   hapticFeedback: z.boolean(),
   currentPassword: z.string().optional(),
@@ -26,14 +30,18 @@ type FormValues = z.infer<typeof schema>;
 export function SettingsForm() {
   const locale = useUIStore((state) => state.locale);
   const currency = useUIStore((state) => state.currency);
+  const timezone = useUIStore((state) => state.timezone);
   const hapticFeedback = useUIStore((state) => state.hapticFeedback);
   const setPreferences = useUIStore((state) => state.setPreferences);
+  const { setTheme } = useTheme();
+  const { updateSettings, importData: importDataMutation } = useSettingsMutations();
 
   const { register, handleSubmit, formState: { isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       locale,
       currency,
+      timezone,
       theme: 'system',
       hapticFeedback,
       currentPassword: '',
@@ -42,45 +50,46 @@ export function SettingsForm() {
   });
 
   const onSubmit = async (values: FormValues) => {
-    const response = await fetch('/api/settings', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    try {
+      await updateSettings.mutateAsync({
         locale: values.locale,
         currency: values.currency.toUpperCase(),
+        timezone: values.timezone,
         theme: values.theme,
         hapticFeedback: values.hapticFeedback,
         password:
           values.currentPassword && values.newPassword
-            ? { currentPassword: values.currentPassword, newPassword: values.newPassword }
-            : undefined,
-      }),
-    });
-
-    if (!response.ok) {
-      toast.error('Unable to update settings');
+              ? { currentPassword: values.currentPassword, newPassword: values.newPassword }
+              : undefined,
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to update settings');
       return;
     }
 
-    setPreferences({ locale: values.locale, currency: values.currency.toUpperCase(), hapticFeedback: values.hapticFeedback });
+    setTheme(values.theme);
+    setPreferences({
+      locale: values.locale,
+      currency: values.currency.toUpperCase(),
+      timezone: values.timezone,
+      hapticFeedback: values.hapticFeedback,
+    });
     toast.success('Settings updated');
   };
 
-  const exportData = async () => {
-    const response = await fetch('/api/export');
-    if (!response.ok) {
-      toast.error('Export failed');
-      return;
+  const handleExportDownload = async (format: 'json' | 'csv') => {
+    try {
+      const payload = await analyticsApi.exportData(format);
+      const blob = new Blob([payload.data], { type: payload.mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = payload.filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Export failed');
     }
-
-    const payload = (await response.json()) as { data: unknown };
-    const blob = new Blob([JSON.stringify(payload.data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'expense-data.json';
-    link.click();
-    URL.revokeObjectURL(url);
   };
 
   const importData = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,18 +97,12 @@ export function SettingsForm() {
     if (!file) return;
 
     const text = await file.text();
-    const response = await fetch('/api/import', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: text,
-    });
-
-    if (!response.ok) {
-      toast.error('Import failed');
-      return;
+    try {
+      await importDataMutation.mutateAsync(JSON.parse(text));
+      toast.success('Import completed');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Import failed');
     }
-
-    toast.success('Import completed');
   };
 
   return (
@@ -113,6 +116,10 @@ export function SettingsForm() {
         <label className="block text-sm">
           <span>Currency</span>
           <Input {...register('currency')} />
+        </label>
+        <label className="block text-sm">
+          <span>Timezone</span>
+          <Input {...register('timezone')} />
         </label>
         <label className="block text-sm">
           <span>Theme</span>
@@ -137,14 +144,19 @@ export function SettingsForm() {
       </form>
 
       <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2">
-        <Button variant="outline" onClick={exportData}>
-          Export JSON
-        </Button>
-        <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium">
-          Import JSON
-          <input type="file" accept="application/json" className="hidden" onChange={importData} />
-        </label>
-      </div>
+          <Button variant="outline" aria-label="Export data as JSON" onClick={() => void handleExportDownload('json')}>
+            Export JSON
+          </Button>
+          <Button variant="outline" aria-label="Export data as CSV" onClick={() => void handleExportDownload('csv')}>
+            Export CSV
+          </Button>
+        </div>
+        <div className="mt-2">
+          <label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium">
+            Import JSON
+            <input type="file" accept="application/json" className="hidden" onChange={importData} />
+          </label>
+        </div>
     </Card>
   );
 }

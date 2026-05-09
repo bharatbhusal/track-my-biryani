@@ -9,6 +9,7 @@ import { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
+import { useAuthActions } from '@/hooks/api/use-auth-api';
 import { Input } from '@/components/ui/input';
 
 type AuthMode = 'login' | 'signup';
@@ -27,8 +28,9 @@ const loginFormSchema = z.object({
 type SignupValues = z.infer<typeof signupFormSchema>;
 type LoginValues = z.infer<typeof loginFormSchema>;
 
-export function AuthForm({ mode }: { mode: AuthMode }) {
+export function AuthForm({ mode, nextPath }: { mode: AuthMode; nextPath?: string }) {
   const router = useRouter();
+  const { login, signup } = useAuthActions();
   const schema = mode === 'signup' ? signupFormSchema : loginFormSchema;
 
   const {
@@ -42,25 +44,20 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
   const getFieldError = (field: string) => fieldErrors[field]?.message;
 
   const onSubmit = async (values: SignupValues | LoginValues) => {
-    const response = await fetch(`/api/auth/${mode}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(values),
-    });
+    try {
+      if (mode === 'signup') {
+        await signup.mutateAsync(values as SignupValues);
+      } else {
+        await login.mutateAsync(values as LoginValues);
+      }
 
-    const payload = (await response.json()) as {
-      success: boolean;
-      error?: { message?: string };
-    };
-
-    if (!response.ok || !payload.success) {
-      toast.error(payload.error?.message ?? 'Authentication failed');
-      return;
+      toast.success(mode === 'signup' ? 'Account created' : 'Welcome back');
+      const destination = nextPath?.startsWith('/') ? nextPath : '/dashboard';
+      router.replace(destination);
+      router.refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Authentication failed');
     }
-
-    toast.success(mode === 'signup' ? 'Account created' : 'Welcome back');
-    router.push('/dashboard');
-    router.refresh();
   };
 
   return (
