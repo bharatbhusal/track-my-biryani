@@ -37,7 +37,7 @@ export function ExpenseDetailView({
 	const expenseQuery = useExpenseDetailQuery(id);
 	const allExpensesQuery = useExpensesQuery({
 		page: 1,
-		limit: 500,
+		limit: 50,
 		sortBy: "dateTime",
 		order: "desc",
 	});

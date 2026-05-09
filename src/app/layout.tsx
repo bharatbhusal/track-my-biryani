@@ -7,6 +7,7 @@ import { AppProvider } from "@/components/providers/app-provider";
 import { QuickAddExpenseModal } from "@/features/expenses/components/quick-add-expense-modal";
 
 import "./globals.css";
+import { Header } from "@/components/layout/header";
 
 const manrope = Manrope({
 	subsets: ["latin"],
@@ -42,6 +43,7 @@ export default function RootLayout({
 				className={`${manrope.variable} min-h-screen transition-colors duration-200`}
 			>
 				<AppProvider>
+					<Header />
 					<main className="mx-auto w-full max-w-6xl p-4 pb-24 pt-6 md:pb-8">
 						{children}
 					</main>

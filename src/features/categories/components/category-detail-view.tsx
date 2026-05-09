@@ -28,7 +28,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 	const categoryQuery = useCategoryDetailQuery(id);
 	const expensesQuery = useExpensesQuery({
 		page: 1,
-		limit: 500,
+		limit: 50,
 		categoryId: id,
 		sortBy: "dateTime",
 		order: "desc",

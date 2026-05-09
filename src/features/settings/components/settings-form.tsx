@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { CURRENCY_CODE_REGEX } from "@/lib/validation-constants";
 import { useUIStore } from "@/store/ui-store";
+import { ActivityList } from "@/features/logs/components/activity-list";
 
 type SettingsSection =
 	| "preferences"
@@ -382,11 +383,7 @@ export function SettingsForm() {
 						</div>
 					)}
 
-					{activeSection === "logs" && (
-						<p className="text-sm text-[var(--color-muted)]">
-							Audit logs are available in the Logs page.
-						</p>
-					)}
+					{activeSection === "logs" && <ActivityList />}
 
 					{activeSection !== "data" &&
 						activeSection !== "logs" && (
