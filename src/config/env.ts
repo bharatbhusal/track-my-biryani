@@ -5,7 +5,7 @@ import { z } from 'zod';
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
-  // Legacy alias retained for compatibility; used if DATABASE_URL is not set. Prefer DATABASE_URL for new setups.
+  // Legacy alias retained for compatibility; its value is used as DATABASE_URL fallback. Prefer DATABASE_URL for new setups.
   MONGODB_URI: z.string().min(1).optional(),
   JWT_SECRET: z.string().min(16, 'JWT_SECRET must be at least 16 characters'),
   CLOUDINARY_CLOUD_NAME: z.string().min(1, 'CLOUDINARY_CLOUD_NAME is required'),

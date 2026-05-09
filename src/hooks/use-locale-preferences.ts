@@ -83,8 +83,13 @@ export function useLocalePreferences(): void {
       return;
     }
 
+    if (!navigator.permissions) {
+      commitPreferences();
+      return;
+    }
+
     navigator.permissions
-      ?.query({ name: 'geolocation' })
+      .query({ name: 'geolocation' })
       .then((permission) => {
         if (permission.state === 'granted' || permission.state === 'prompt') {
           navigator.geolocation.getCurrentPosition(

@@ -144,10 +144,10 @@ export function SettingsForm() {
       </form>
 
       <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2">
-          <Button variant="outline" onClick={() => void handleExportDownload('json')}>
+          <Button variant="outline" aria-label="Export data as JSON" onClick={() => void handleExportDownload('json')}>
             Export JSON
           </Button>
-          <Button variant="outline" onClick={() => void handleExportDownload('csv')}>
+          <Button variant="outline" aria-label="Export data as CSV" onClick={() => void handleExportDownload('csv')}>
             Export CSV
           </Button>
         </div>

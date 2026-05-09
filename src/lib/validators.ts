@@ -1,8 +1,6 @@
 import { z } from 'zod';
 
-import { CURRENCY_CODE_REGEX, HEX_COLOR_REGEX } from '@/lib/validation-constants';
-
-const CLOUDINARY_PUBLIC_ID_REGEX = /^[a-zA-Z0-9/_-]+$/;
+import { CLOUDINARY_PUBLIC_ID_REGEX, CURRENCY_CODE_REGEX, HEX_COLOR_REGEX } from '@/lib/validation-constants';
 
 export const signupSchema = z.object({
   name: z.string().min(2),
