@@ -13,9 +13,6 @@ export default async function ExpenseDetailPage({
 
 	return (
 		<section className="space-y-4 py-4">
-			<h1 className="text-xl font-semibold">
-				Expense Details
-			</h1>
 			<ExpenseDetailView id={id} />
 		</section>
 	);

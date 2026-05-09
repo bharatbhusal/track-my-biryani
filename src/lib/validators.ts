@@ -53,9 +53,6 @@ export const expenseFiltersSchema = z.object({
 });
 
 export const settingsSchema = z.object({
-	locale: z.string().min(2),
-	currency: z.string(),
-	timezone: z.string().min(3),
 	theme: z.enum(["light", "dark", "system"]),
 	hapticFeedback: z.boolean(),
 	password: z

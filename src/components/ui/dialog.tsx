@@ -31,9 +31,11 @@ export function Modal({
 	const [visible, setVisible] = useState(open);
 
 	useEffect(() => {
-		if (open) {
-			setVisible(true);
-		}
+		if (!open) return;
+
+		const t = setTimeout(() => setVisible(true), 0);
+
+		return () => clearTimeout(t);
 	}, [open]);
 
 	useEffect(() => {
@@ -86,7 +88,7 @@ export function Modal({
 
 	return (
 		<div
-			className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
+			className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-6"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="app-modal-title"
@@ -97,8 +99,12 @@ export function Modal({
 		>
 			<div
 				ref={contentRef}
-				className={`w-full max-w-2xl rounded-t-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-xl sm:rounded-xl ${className ?? ""}`}
+				className={`w-full max-w-2xl rounded-t-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-xl max-h-[90vh] overflow-auto ${className ?? ""}`}
 				onClick={(event) => event.stopPropagation()}
+				style={{
+					// ensure it sits above the bottom safe area
+					transformOrigin: "center bottom",
+				}}
 			>
 				<div className="mb-3 flex items-start justify-between gap-3">
 					<div>
@@ -152,7 +158,11 @@ export function ConfirmDialog({
 	const [visible, setVisible] = useState(open);
 
 	useEffect(() => {
-		if (open) setVisible(true);
+		if (!open) return;
+
+		const t = setTimeout(() => setVisible(true), 0);
+
+		return () => clearTimeout(t);
 	}, [open]);
 
 	useEffect(() => {
@@ -161,7 +171,7 @@ export function ConfirmDialog({
 			gsap.killTweensOf(ref.current);
 			gsap.fromTo(
 				ref.current,
-				{ opacity: 0, y: -8 },
+				{ opacity: 0, y: 20 },
 				{
 					opacity: 1,
 					y: 0,
@@ -173,7 +183,7 @@ export function ConfirmDialog({
 			gsap.killTweensOf(ref.current);
 			gsap.to(ref.current, {
 				opacity: 0,
-				y: -6,
+				y: 12,
 				duration: 0.14,
 				ease: "power2.in",
 				onComplete: () => setVisible(false),
@@ -185,14 +195,15 @@ export function ConfirmDialog({
 
 	return (
 		<div
-			className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+			className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-6"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="confirm-title"
 		>
 			<div
 				ref={ref}
-				className="w-full max-w-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
+				className="w-full max-w-sm rounded-t-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 max-h-[60vh] overflow-auto"
+				style={{ transformOrigin: "center bottom" }}
 			>
 				<h2
 					id="confirm-title"

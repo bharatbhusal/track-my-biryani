@@ -1,18 +1,16 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
-import { FiEdit2, FiExternalLink } from "react-icons/fi";
 import { toast } from "react-toastify";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { ConfirmDialog } from "@/components/ui/dialog";
 import {
 	useCategoriesQuery,
 	useExpenseMutations,
 } from "@/hooks/api/use-expenses-api";
 import { Input } from "@/components/ui/input";
+import { CategoryCard } from "@/features/categories/components/category-card";
 
 export function CategoryManager() {
 	const [name, setName] = useState("");
@@ -20,12 +18,8 @@ export function CategoryManager() {
 	const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
 		"asc",
 	);
-	const [deleteId, setDeleteId] = useState<string | null>(
-		null,
-	);
 	const categoriesQuery = useCategoriesQuery();
-	const { createCategory, deleteCategory } =
-		useExpenseMutations();
+	const { createCategory } = useExpenseMutations();
 
 	const items = (categoriesQuery.data ?? [])
 		.filter((item) =>
@@ -93,71 +87,11 @@ export function CategoryManager() {
 
 			<ul className="space-y-2">
 				{items.map((category) => (
-					<li
-						key={category._id}
-						className="flex items-center justify-between rounded-md border border-zinc-200 p-3 text-sm dark:border-zinc-800"
-					>
-						<div className="flex items-center gap-2">
-							<span
-								className="inline-block h-3 w-3 rounded-full"
-								style={{ backgroundColor: category.color }}
-							/>
-							<span>{category.name}</span>
-						</div>
-						<div className="flex items-center gap-1">
-							<Link href={`/categories/${category._id}`}>
-								<Button
-									variant="ghost"
-									className="h-8 w-8 p-0"
-									aria-label="View category details"
-								>
-									<FiExternalLink />
-								</Button>
-							</Link>
-							<Link href={`/categories/${category._id}/edit`}>
-								<Button
-									variant="ghost"
-									className="h-8 w-8 p-0"
-									aria-label="Edit category"
-								>
-									<FiEdit2 />
-								</Button>
-							</Link>
-							<Button
-								variant="ghost"
-								className="text-red-600"
-								onClick={() => setDeleteId(category._id)}
-							>
-								Delete
-							</Button>
-						</div>
+					<li key={category._id} data-animate="true">
+						<CategoryCard category={category} />
 					</li>
 				))}
 			</ul>
-
-			<ConfirmDialog
-				open={Boolean(deleteId)}
-				title="Delete category"
-				description="This action cannot be undone."
-				onCancel={() => setDeleteId(null)}
-				onConfirm={() => {
-					if (deleteId) {
-						deleteCategory.mutate(deleteId, {
-							onSuccess: () => {
-								toast.success("Category deleted");
-								setDeleteId(null);
-							},
-							onError: (error) => {
-								toast.error(
-									error instanceof Error
-										? error.message
-										: "Failed to delete category",
-								);
-							},
-						});
-					}
-				}}
-			/>
 		</Card>
 	);
 }

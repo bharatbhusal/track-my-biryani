@@ -7,7 +7,6 @@ export const metadata = {
 export default function SettingsPage() {
 	return (
 		<section className="space-y-4 py-4">
-			<h1 className="text-xl font-semibold">Settings</h1>
 			<SettingsForm />
 		</section>
 	);

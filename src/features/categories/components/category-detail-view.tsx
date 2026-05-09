@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 import {
 	Area,
 	AreaChart,
@@ -14,26 +16,56 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/dialog";
 import { ExpenseCard } from "@/features/expenses/components/expense-card";
 import {
 	useCategoryDetailQuery,
+	useExpenseMutations,
 	useExpensesQuery,
 } from "@/hooks/api/use-expenses-api";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { toIsoBounds } from "@/lib/date-range";
+import { formatCurrency } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
+import { ExpenseListQuery } from "@/types";
 
 export function CategoryDetailView({ id }: { id: string }) {
+	const router = useRouter();
+	const [deleteOpen, setDeleteOpen] = useState(false);
 	const locale = useUIStore((state) => state.locale);
 	const currency = useUIStore((state) => state.currency);
-	const timezone = useUIStore((state) => state.timezone);
+	const globalDateRange = useUIStore(
+		(state) => state.globalDateRange,
+	);
+	const {
+		preset,
+		from: rangeFrom,
+		to: rangeTo,
+	} = globalDateRange;
+	const rangeBounds = useMemo(
+		() => toIsoBounds(globalDateRange),
+		[preset, rangeFrom, rangeTo],
+	);
+
 	const categoryQuery = useCategoryDetailQuery(id);
-	const expensesQuery = useExpensesQuery({
-		page: 1,
-		limit: 50,
-		categoryId: id,
-		sortBy: "dateTime",
-		order: "desc",
-	});
+	const { deleteCategory } = useExpenseMutations();
+
+	const expensesQueryParams = useMemo(
+		() =>
+			({
+				page: 1,
+				limit: 50,
+				categoryId: id,
+				from: rangeBounds.from,
+				to: rangeBounds.to,
+				sortBy: "dateTime",
+				order: "desc",
+			}) as ExpenseListQuery,
+		[id, rangeBounds.from, rangeBounds.to],
+	);
+
+	const expensesQuery = useExpensesQuery(
+		expensesQueryParams,
+	);
 
 	const category = categoryQuery.data;
 	const expenses = useMemo(
@@ -84,9 +116,17 @@ export function CategoryDetailView({ id }: { id: string }) {
 			<Card>
 				<div className="mb-2 flex items-center justify-between">
 					<CardTitle>{category.name}</CardTitle>
-					<Link href={`/categories/${id}/edit`}>
-						<Button variant="outline">Edit</Button>
-					</Link>
+					<div className="flex items-center gap-2">
+						<Link href={`/categories/${id}/edit`}>
+							<Button variant="outline">Edit</Button>
+						</Link>
+						<Button
+							variant="destructive"
+							onClick={() => setDeleteOpen(true)}
+						>
+							Delete
+						</Button>
+					</div>
 				</div>
 				<div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
 					<p>
@@ -136,6 +176,28 @@ export function CategoryDetailView({ id }: { id: string }) {
 					))}
 				</ul>
 			</Card>
+
+			<ConfirmDialog
+				open={deleteOpen}
+				title="Delete category"
+				description="This action cannot be undone."
+				onCancel={() => setDeleteOpen(false)}
+				onConfirm={() => {
+					deleteCategory.mutate(id, {
+						onSuccess: () => {
+							toast.success("Category deleted");
+							router.replace("/categories");
+						},
+						onError: (error) => {
+							toast.error(
+								error instanceof Error
+									? error.message
+									: "Failed to delete category",
+							);
+						},
+					});
+				}}
+			/>
 		</div>
 	);
 }

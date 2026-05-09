@@ -13,7 +13,6 @@ export default async function CategoryEditPage({
 
 	return (
 		<section className="space-y-4 py-4">
-			<h1 className="text-xl font-semibold">Edit Category</h1>
 			<CategoryEditForm id={id} />
 		</section>
 	);

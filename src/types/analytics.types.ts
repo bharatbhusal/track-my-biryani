@@ -1,11 +1,12 @@
 export type DashboardAnalytics = {
-	totalMonthlySpend: number;
-	weeklySpend: number;
-	dailyAverage: number;
+	totalSpend: number;
+	averageSpend: number;
+	averageLabel: string;
+	chartLabel: string;
+	chartGranularity: "hour" | "day" | "month";
+	mainSeries: TrendPoint[];
+	rankedCategories: CategoryBreakdownPoint[];
 	topCategory: string;
-	categoryBreakdown: CategoryBreakdownPoint[];
-	monthlyTrend: TrendPoint[];
-	weeklyTrend: TrendPoint[];
 	recentActivity: RecentActivityPoint[];
 };
 

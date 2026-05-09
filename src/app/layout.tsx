@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 
+import { PageTransitionShell } from "@/animations/page-transition-shell";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { QuickAddButton } from "@/components/layout/quick-add-button";
 import { AppProvider } from "@/components/providers/app-provider";
@@ -45,7 +46,7 @@ export default function RootLayout({
 				<AppProvider>
 					<Header />
 					<main className="mx-auto w-full max-w-6xl p-4 pb-24 pt-6 md:pb-8">
-						{children}
+						<PageTransitionShell>{children}</PageTransitionShell>
 					</main>
 					<BottomNav />
 					<QuickAddButton />

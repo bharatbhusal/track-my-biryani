@@ -13,7 +13,6 @@ export default async function ExpenseEditPage({
 
 	return (
 		<section className="space-y-4 py-4">
-			<h1 className="text-xl font-semibold">Edit Expense</h1>
 			<ExpenseEditForm id={id} />
 		</section>
 	);

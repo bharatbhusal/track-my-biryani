@@ -39,7 +39,7 @@ export function BottomNav() {
 								)}
 								aria-label={item.label}
 							>
-								<Icon className="text-lg" aria-hidden="true" />
+								<Icon className="text-2xl" aria-hidden="true" />
 							</Link>
 						</li>
 					);

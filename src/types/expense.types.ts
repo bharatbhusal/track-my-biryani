@@ -50,6 +50,10 @@ export type ExpenseListQuery = {
 	limit?: number;
 	q?: string;
 	categoryId?: string;
+	from?: string;
+	to?: string;
+	amountMin?: number;
+	amountMax?: number;
 	sortBy?: "dateTime" | "amount" | "title";
 	order?: "asc" | "desc";
 };

@@ -26,7 +26,6 @@ type SettingsSection =
 	| "security"
 	| "data"
 	| "appearance"
-	| "notifications"
 	| "logs"
 	| null;
 
@@ -57,8 +56,6 @@ export function SettingsForm() {
 			return "Security & Privacy";
 		if (activeSection === "data") return "Export / Import";
 		if (activeSection === "appearance") return "Appearance";
-		if (activeSection === "notifications")
-			return "Notifications / Haptics";
 		if (activeSection === "logs") return "Logs";
 		return "";
 	}, [activeSection]);
@@ -157,12 +154,6 @@ export function SettingsForm() {
 					</Button>
 					<Button
 						variant="outline"
-						onClick={() => setActiveSection("notifications")}
-					>
-						Notifications / Haptics
-					</Button>
-					<Button
-						variant="outline"
 						onClick={() => setActiveSection("logs")}
 					>
 						Logs
@@ -190,16 +181,6 @@ export function SettingsForm() {
 							<p className="mt-1 text-xs text-[var(--color-muted)]">
 								Current: {currentTheme}
 							</p>
-						</label>
-					)}
-
-					{activeSection === "notifications" && (
-						<label className="flex items-center gap-2 text-sm">
-							<input
-								type="checkbox"
-								{...register("hapticFeedback")}
-							/>
-							<span>Enable haptic feedback</span>
 						</label>
 					)}
 
@@ -246,7 +227,7 @@ export function SettingsForm() {
 									variant="outline"
 									onClick={() => void handleExportDownload("all")}
 								>
-									Export All (JSON)
+									Export All
 								</Button>
 								<Button
 									type="button"
@@ -275,7 +256,7 @@ export function SettingsForm() {
 										}
 									}}
 								>
-									Export Expenses (JSON)
+									Export Expenses
 								</Button>
 								<Button
 									type="button"
@@ -303,7 +284,7 @@ export function SettingsForm() {
 										}
 									}}
 								>
-									Export Categories (JSON)
+									Export Categories
 								</Button>
 								<Button
 									type="button"
@@ -331,7 +312,7 @@ export function SettingsForm() {
 										}
 									}}
 								>
-									Export Logs (JSON)
+									Export Logs
 								</Button>
 							</div>
 						</div>

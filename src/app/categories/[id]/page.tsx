@@ -13,9 +13,6 @@ export default async function CategoryDetailPage({
 
 	return (
 		<section className="space-y-4 py-4">
-			<h1 className="text-xl font-semibold">
-				Category Details
-			</h1>
 			<CategoryDetailView id={id} />
 		</section>
 	);

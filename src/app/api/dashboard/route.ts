@@ -5,114 +5,179 @@ import {
 } from "@/lib/api-response";
 import { connectToDatabase } from "@/lib/db";
 import { listCategories } from "@/repositories/category.repository";
-import { listRecentExpenses } from "@/repositories/expense.repository";
-import { aggregateRangeStats } from "@/repositories/expense.repository";
-import type { DashboardAnalytics } from "@/types/analytics.types";
+import {
+	listExpensesForRange,
+	listRecentExpenses,
+} from "@/repositories/expense.repository";
 
-const DAYS_IN_WEEK = 7;
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
+type Granularity = "hour" | "day" | "month";
 
-function getDateRanges() {
+function parseRange(url: URL): { from: Date; to: Date } {
 	const now = new Date();
-	const startMonth = new Date(
-		now.getFullYear(),
-		now.getMonth(),
-		1,
-	);
-	const startWeek = new Date(now);
-	startWeek.setDate(now.getDate() - 6);
-	startWeek.setHours(0, 0, 0, 0);
+	const preset = url.searchParams.get("preset");
+	const fromParam = url.searchParams.get("from");
+	const toParam = url.searchParams.get("to");
 
-	return { now, startMonth, startWeek };
+	if (fromParam && toParam) {
+		const from = new Date(fromParam);
+		from.setHours(0, 0, 0, 0);
+		const to = new Date(toParam);
+		to.setHours(23, 59, 59, 999);
+		return { from, to };
+	}
+
+	if (preset === "this_week") {
+		const from = new Date(now);
+		from.setDate(now.getDate() - 6);
+		from.setHours(0, 0, 0, 0);
+		return { from, to: now };
+	}
+
+	if (preset === "this_year") {
+		return { from: new Date(now.getFullYear(), 0, 1), to: now };
+	}
+
+	return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: now };
+}
+
+function resolveGranularity(
+	from: Date,
+	to: Date,
+	preset?: string | null,
+): {
+	granularity: Granularity;
+	averageLabel: string;
+	chartLabel: string;
+} {
+	if (preset === "this_year") {
+		return {
+			granularity: "month",
+			averageLabel: "Average spend per month",
+			chartLabel: "Monthly expenses",
+		};
+	}
+
+	const dayDiff = Math.max(
+		1,
+		Math.ceil((to.getTime() - from.getTime()) / (24 * 60 * 60 * 1000)) +
+			1,
+	);
+
+	if (dayDiff <= 1) {
+		return {
+			granularity: "hour",
+			averageLabel: "Average spend per hour",
+			chartLabel: "Hourly expenses",
+		};
+	}
+
+	if (dayDiff > 60) {
+		return {
+			granularity: "month",
+			averageLabel: "Average spend per month",
+			chartLabel: "Monthly expenses",
+		};
+	}
+
+	return {
+		granularity: "day",
+		averageLabel: "Average spend per day",
+		chartLabel: "Daily expenses",
+	};
+}
+
+function groupExpenses(
+	expenses: Array<{ amount: number; dateTime: Date | string }>,
+	granularity: Granularity,
+	locale = "en-US",
+): Array<{ name: string; total: number }> {
+	const map = new Map<string, number>();
+
+	expenses.forEach((expense) => {
+		const date = new Date(expense.dateTime);
+		let key = "";
+
+		if (granularity === "hour") {
+			key = date.getHours().toString().padStart(2, "0") + ":00";
+		} else if (granularity === "month") {
+			key = new Intl.DateTimeFormat(locale, {
+				month: "short",
+				year: "2-digit",
+			}).format(date);
+		} else {
+			key = new Intl.DateTimeFormat(locale, {
+				month: "short",
+				day: "2-digit",
+			}).format(date);
+		}
+
+		map.set(key, (map.get(key) ?? 0) + expense.amount);
+	});
+
+	return Array.from(map.entries()).map(([name, total]) => ({
+		name,
+		total,
+	}));
 }
 
 export async function GET(request: Request) {
 	try {
 		await connectToDatabase();
 		const auth = await getAuthPayload();
-		const { now } = getDateRanges();
-
 		const url = new URL(request.url);
 		const preset = url.searchParams.get("preset");
-		const fromParam = url.searchParams.get("from");
-		const toParam = url.searchParams.get("to");
+		const { from, to } = parseRange(url);
 
-		let fromDate: Date;
-		let toDate: Date = now;
+		const [expenses, categories, recentActivity] = await Promise.all([
+			listExpensesForRange(auth.userId, from, to),
+			listCategories(auth.userId),
+			listRecentExpenses(auth.userId, 8),
+		]);
 
-		if (fromParam && toParam) {
-			fromDate = new Date(fromParam);
-			toDate = new Date(toParam);
-		} else if (preset === "this_week") {
-			const tmp = new Date(now);
-			tmp.setDate(now.getDate() - 6);
-			tmp.setHours(0, 0, 0, 0);
-			fromDate = tmp;
-		} else if (preset === "this_month") {
-			fromDate = new Date(
-				now.getFullYear(),
-				now.getMonth(),
-				1,
-			);
-		} else if (preset === "this_year") {
-			fromDate = new Date(now.getFullYear(), 0, 1);
-		} else {
-			// default to this month
-			fromDate = new Date(
-				now.getFullYear(),
-				now.getMonth(),
-				1,
-			);
-		}
-		const [analyticsResult, categories, recentActivity] =
-			await Promise.all([
-				aggregateRangeStats(auth.userId, fromDate, toDate),
-				listCategories(auth.userId),
-				listRecentExpenses(auth.userId, 8),
-			]);
-		const analytics = analyticsResult as Awaited<
-			ReturnType<typeof aggregateRangeStats>
-		>;
-
-		const totalRangeSpend = analytics.total ?? 0;
-		const rangeDays = Math.max(
-			1,
-			Math.ceil(
-				(toDate.getTime() - fromDate.getTime()) / MS_PER_DAY,
-			) + 1,
-		);
-		const weeklyTrend =
-			analytics.dailyTrend.slice(-DAYS_IN_WEEK);
-		const weeklySpend = weeklyTrend.reduce(
-			(sum, trendPoint) => sum + trendPoint.total,
+		const totalSpend = expenses.reduce(
+			(sum, expense) => sum + expense.amount,
 			0,
 		);
-		const dailyAverage = totalRangeSpend / rangeDays;
+		const granularityMeta = resolveGranularity(from, to, preset);
+		const mainSeries = groupExpenses(
+			expenses,
+			granularityMeta.granularity,
+		);
+		const averageSpend =
+			mainSeries.length > 0 ? totalSpend / mainSeries.length : 0;
 
-		const categoryBreakdown: DashboardAnalytics["categoryBreakdown"] =
-			analytics.categoryBreakdown.map((cb) => {
+		const categoryTotals = new Map<string, number>();
+		expenses.forEach((expense) => {
+			categoryTotals.set(
+				expense.categoryId.toString(),
+				(categoryTotals.get(expense.categoryId.toString()) ?? 0) +
+					expense.amount,
+			);
+		});
+
+		const rankedCategories = Array.from(categoryTotals.entries())
+			.map(([categoryId, value]) => {
 				const category = categories.find(
-					(item) => item._id.toString() === cb.categoryId,
+					(item) => item._id.toString() === categoryId,
 				);
 				return {
 					name: category?.name ?? "Uncategorized",
-					value: cb.value,
+					value,
 				};
-			});
+			})
+			.sort((left, right) => right.value - left.value);
 
-		const topCategory =
-			categoryBreakdown.sort(
-				(left, right) => right.value - left.value,
-			)[0]?.name ?? "";
+		const topCategory = rankedCategories[0]?.name ?? "N/A";
 
 		return successResponse({
-			totalMonthlySpend: totalRangeSpend,
-			weeklySpend,
-			dailyAverage,
+			totalSpend,
+			averageSpend,
+			averageLabel: granularityMeta.averageLabel,
+			chartLabel: granularityMeta.chartLabel,
+			chartGranularity: granularityMeta.granularity,
+			mainSeries,
+			rankedCategories,
 			topCategory,
-			categoryBreakdown,
-			monthlyTrend: analytics.dailyTrend,
-			weeklyTrend,
 			recentActivity: recentActivity.map((item) => ({
 				title: item.title,
 				amount: item.amount,
