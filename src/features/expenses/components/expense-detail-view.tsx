@@ -2,13 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useMemo } from "react";
-import {
-	FiCopy,
-	FiEdit2,
-	FiShare2,
-	FiTrash2,
-} from "react-icons/fi";
+import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import { toast } from "react-toastify";
 
 import { Button } from "@/components/ui/button";
@@ -17,11 +11,12 @@ import {
 	useCategoriesQuery,
 	useExpenseDetailQuery,
 	useExpenseMutations,
-	useExpensesQuery,
+	useExpenseContributionQuery,
 } from "@/hooks/api/use-expenses-api";
-import { getPresetDateRange } from "@/lib/datetime";
+import { WeeklyBarChart } from "@/components/charts/weekly-bar-chart";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
+import type { ExpenseContribution } from "@/types/analytics.types";
 
 type ExpenseDetailViewProps = {
 	id: string;
@@ -35,70 +30,12 @@ export function ExpenseDetailView({
 	const currency = useUIStore((state) => state.currency);
 	const categoriesQuery = useCategoriesQuery();
 	const expenseQuery = useExpenseDetailQuery(id);
-	const allExpensesQuery = useExpensesQuery({
-		page: 1,
-		limit: 50,
-		sortBy: "dateTime",
-		order: "desc",
-	});
-	const { deleteExpense, createExpense } =
-		useExpenseMutations();
+	const contributionQuery = useExpenseContributionQuery(id);
+	const { deleteExpense } = useExpenseMutations();
 
 	const expense = expenseQuery.data;
-
-	const metrics = useMemo(() => {
-		if (!expense) {
-			return null;
-		}
-
-		const items = allExpensesQuery.data?.items ?? [];
-		const amount = expense.amount;
-
-		const weekRange = getPresetDateRange("this_week");
-		const monthRange = getPresetDateRange("this_month");
-		const yearRange = getPresetDateRange("this_year");
-
-		const inRangeTotal = (from: Date, to: Date) =>
-			items
-				.filter((item) => {
-					const date = new Date(item.dateTime);
-					return date >= from && date <= to;
-				})
-				.reduce((sum, item) => sum + item.amount, 0);
-
-		const categoryItems = items.filter(
-			(item) => item.categoryId === expense.categoryId,
-		);
-		const categoryTotal = categoryItems.reduce(
-			(sum, item) => sum + item.amount,
-			0,
-		);
-		const percentile =
-			categoryTotal > 0 ? (amount / categoryTotal) * 100 : 0;
-
-		return {
-			weekContribution: inRangeTotal(
-				weekRange.from,
-				weekRange.to,
-			),
-			monthContribution: inRangeTotal(
-				monthRange.from,
-				monthRange.to,
-			),
-			yearContribution: inRangeTotal(
-				yearRange.from,
-				yearRange.to,
-			),
-			categoryPercentile: percentile,
-			similarAverage:
-				categoryItems.length > 0
-					? categoryItems.reduce(
-							(sum, item) => sum + item.amount,
-							0,
-						) / categoryItems.length
-					: amount,
-		};
-	}, [allExpensesQuery.data?.items, expense]);
+	const contribution: ExpenseContribution | null =
+		contributionQuery.data ?? null;
 
 	if (!expense) {
 		return <Card>Loading expense...</Card>;
@@ -123,52 +60,6 @@ export function ExpenseDetailView({
 								<FiEdit2 />
 							</Button>
 						</Link>
-						<Button
-							variant="outline"
-							className="h-9 w-9 p-0"
-							aria-label="Duplicate expense"
-							onClick={async () => {
-								try {
-									await createExpense.mutateAsync({
-										title: `${expense.title} copy`,
-										amount: expense.amount,
-										categoryId: expense.categoryId,
-										currency: expense.currency,
-										dateTime: new Date().toISOString(),
-										images: expense.images,
-										notes: expense.notes,
-										paymentMethod: expense.paymentMethod,
-										tags: expense.tags,
-										location: expense.location,
-									});
-									toast.success("Expense duplicated");
-								} catch (error) {
-									toast.error(
-										error instanceof Error
-											? error.message
-											: "Duplicate failed",
-									);
-								}
-							}}
-						>
-							<FiCopy />
-						</Button>
-						<Button
-							variant="outline"
-							className="h-9 w-9 p-0"
-							aria-label="Share expense"
-							onClick={async () => {
-								const text = `${expense.title} ${formatCurrency(expense.amount, expense.currency || currency, locale)} at ${formatDate(expense.dateTime, locale, timezone)}`;
-								try {
-									await navigator.clipboard.writeText(text);
-									toast.success("Copied to clipboard");
-								} catch {
-									toast.info(text);
-								}
-							}}
-						>
-							<FiShare2 />
-						</Button>
 						<Button
 							variant="destructive"
 							className="h-9 w-9 p-0"
@@ -243,17 +134,17 @@ export function ExpenseDetailView({
 
 			{expense.images.length > 0 && (
 				<Card>
-					<CardTitle className="mb-3">Receipts</CardTitle>
+					<CardTitle className="mb-3">Glimpses</CardTitle>
 					<div className="flex snap-x gap-3 overflow-x-auto pb-2">
-						{expense.images.map((publicId) => (
+						{expense.images.map((secureUrl) => (
 							<div
-								key={publicId}
+								key={secureUrl}
 								className="min-w-[220px] snap-center overflow-hidden rounded-lg border border-[var(--color-border)]"
 							>
 								<div className="relative h-40 w-full">
 									<Image
-										src={`https://res.cloudinary.com/dummy/image/upload/${publicId}`}
-										alt="Receipt"
+										src={secureUrl}
+										alt="Glimpse"
 										fill
 										sizes="(max-width: 640px) 100vw, 400px"
 										className="object-cover"
@@ -269,76 +160,107 @@ export function ExpenseDetailView({
 				expense.location?.longitude !== 0 && (
 					<Card>
 						<CardTitle className="mb-2">Map Preview</CardTitle>
-						<a
-							className="text-sm text-emerald-600 underline"
-							href={`https://maps.google.com/?q=${expense.location.latitude},${expense.location.longitude}`}
-							target="_blank"
-							rel="noreferrer"
-						>
-							Open in Google Maps
-						</a>
+						<div className="overflow-hidden rounded border border-[var(--color-border)]">
+							<iframe
+								title="map-preview"
+								width="100%"
+								height={240}
+								src={`https://www.google.com/maps?q=${expense.location.latitude},${expense.location.longitude}&z=15&output=embed`}
+								loading="lazy"
+								referrerPolicy="no-referrer-when-downgrade"
+								className="w-full"
+							/>
+						</div>
 					</Card>
 				)}
 
-			{metrics && (
+			{contribution && (
 				<Card>
 					<CardTitle className="mb-3">Insights</CardTitle>
-					<ul className="grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
-						<li>
-							Contribution this week:{" "}
-							{formatCurrency(
-								expense.amount,
-								expense.currency || currency,
-								locale,
-							)}{" "}
-							/{" "}
-							{formatCurrency(
-								metrics.weekContribution,
-								expense.currency || currency,
-								locale,
-							)}
-						</li>
-						<li>
-							Contribution this month:{" "}
-							{formatCurrency(
-								expense.amount,
-								expense.currency || currency,
-								locale,
-							)}{" "}
-							/{" "}
-							{formatCurrency(
-								metrics.monthContribution,
-								expense.currency || currency,
-								locale,
-							)}
-						</li>
-						<li>
-							Contribution this year:{" "}
-							{formatCurrency(
-								expense.amount,
-								expense.currency || currency,
-								locale,
-							)}{" "}
-							/{" "}
-							{formatCurrency(
-								metrics.yearContribution,
-								expense.currency || currency,
-								locale,
-							)}
-						</li>
-						<li>
-							Category percentile:{" "}
-							{metrics.categoryPercentile.toFixed(1)}%
-						</li>
-						<li>
-							Similar expense average:{" "}
-							{formatCurrency(
-								metrics.similarAverage,
-								expense.currency || currency,
-								locale,
-							)}
-						</li>
-					</ul>
+					<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+						<div className="text-sm">
+							<p>
+								Contribution (week):{" "}
+								{formatCurrency(
+									expense.amount,
+									expense.currency || currency,
+									locale,
+								)}{" "}
+								/{" "}
+								{formatCurrency(
+									contribution.weekTotal,
+									expense.currency || currency,
+									locale,
+								)}
+							</p>
+							<p>
+								Contribution (month):{" "}
+								{formatCurrency(
+									expense.amount,
+									expense.currency || currency,
+									locale,
+								)}{" "}
+								/{" "}
+								{formatCurrency(
+									contribution.monthTotal,
+									expense.currency || currency,
+									locale,
+								)}
+							</p>
+							<p>
+								Contribution (year):{" "}
+								{formatCurrency(
+									expense.amount,
+									expense.currency || currency,
+									locale,
+								)}{" "}
+								/{" "}
+								{formatCurrency(
+									contribution.yearTotal,
+									expense.currency || currency,
+									locale,
+								)}
+							</p>
+							<p>
+								Category percentile:{" "}
+								{contribution.categoryContributionPercent.toFixed(
+									2,
+								)}
+								%
+							</p>
+						</div>
+						<div>
+							<WeeklyBarChart
+								data={[
+									{
+										name: "Week %",
+										total: parseFloat(
+											contribution.weekContributionPercent?.toFixed(
+												2,
+											) || "0",
+										),
+									},
+									{
+										name: "Month %",
+										total: parseFloat(
+											contribution.monthContributionPercent?.toFixed(
+												2,
+											) || "0",
+										),
+									},
+									{
+										name: "Year %",
+										total: parseFloat(
+											contribution.yearContributionPercent?.toFixed(
+												2,
+											) || "0",
+										),
+									},
+								]}
+								heightClass="h-40"
+							/>
+						</div>
+					</div>
 				</Card>
 			)}
 		</div>

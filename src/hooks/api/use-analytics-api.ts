@@ -32,9 +32,5 @@ export function useSettingsMutations() {
 		mutationFn: analyticsApi.updateSettings,
 	});
 
-	const importData = useMutation({
-		mutationFn: analyticsApi.importData,
-	});
-
-	return { updateSettings, importData };
+	return { updateSettings };
 }

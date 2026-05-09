@@ -14,6 +14,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
+import { ExpenseCard } from "@/features/expenses/components/expense-card";
 import {
 	useCategoryDetailQuery,
 	useExpensesQuery,
@@ -129,19 +130,8 @@ export function CategoryDetailView({ id }: { id: string }) {
 				</CardTitle>
 				<ul className="space-y-2 text-sm">
 					{expenses.slice(0, 10).map((item) => (
-						<li
-							key={item._id}
-							className="flex items-center justify-between rounded-md border border-[var(--color-border)] p-3"
-						>
-							<div>
-								<p className="font-medium">{item.title}</p>
-								<p className="text-xs text-[var(--color-muted)]">
-									{formatDate(item.dateTime, locale, timezone)}
-								</p>
-							</div>
-							<p className="font-semibold">
-								{formatCurrency(item.amount, item.currency, locale)}
-							</p>
+						<li key={item._id}>
+							<ExpenseCard expense={item} />
 						</li>
 					))}
 				</ul>

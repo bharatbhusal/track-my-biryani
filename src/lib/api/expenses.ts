@@ -6,6 +6,7 @@ import type {
 	ExpenseListQuery,
 	ExpensesListPayload,
 } from "@/types/expense.types";
+import type { ExpenseContribution } from "@/types/analytics.types";
 
 function buildListQuery(filters: ExpenseListQuery): string {
 	const params = new URLSearchParams();
@@ -59,6 +60,10 @@ export const expensesApi = {
 	},
 	getExpenseById: (id: string) =>
 		apiRequest<ExpenseItem>(`/expenses/${id}`),
+	getExpenseContribution: (id: string) =>
+		apiRequest<ExpenseContribution>(
+			`/expenses/${encodeURIComponent(id)}/contribution`,
+		),
 	createExpense: (payload: CreateExpensePayload) =>
 		apiRequest<ExpenseItem>("/expenses", {
 			method: "POST",

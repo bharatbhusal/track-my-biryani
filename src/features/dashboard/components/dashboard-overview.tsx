@@ -4,7 +4,7 @@ import { ExportableChart } from "@/components/charts/exportable-chart";
 import { CategoryPieChart } from "@/components/charts/category-pie-chart";
 import { MonthlyLineChart } from "@/components/charts/monthly-line-chart";
 import { WeeklyBarChart } from "@/components/charts/weekly-bar-chart";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TimeRangeSelector } from "@/components/charts/time-range-selector";
 import { Card, CardTitle } from "@/components/ui/card";
 import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
@@ -19,6 +19,10 @@ export function DashboardOverview() {
 		| undefined
 	>(undefined);
 	const dashboardQuery = useDashboardQuery(rangeParams);
+
+	useEffect(() => {
+		console.log("Dashboard opened", { rangeParams });
+	}, [rangeParams]);
 
 	const data = dashboardQuery.data;
 
@@ -71,13 +75,22 @@ export function DashboardOverview() {
 			</div>
 
 			<ExportableChart title="Category Breakdown">
-				<CategoryPieChart data={data.categoryBreakdown} />
+				<CategoryPieChart
+					data={data.categoryBreakdown}
+					heightClass="h-44"
+				/>
 			</ExportableChart>
 			<ExportableChart title="Monthly Trend">
-				<MonthlyLineChart data={data.monthlyTrend} />
+				<MonthlyLineChart
+					data={data.monthlyTrend}
+					heightClass="h-44"
+				/>
 			</ExportableChart>
 			<ExportableChart title="Weekly Spend">
-				<WeeklyBarChart data={data.weeklyTrend} />
+				<WeeklyBarChart
+					data={data.weeklyTrend}
+					heightClass="h-40"
+				/>
 			</ExportableChart>
 		</div>
 	);

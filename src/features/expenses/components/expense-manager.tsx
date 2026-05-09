@@ -1,33 +1,23 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
-import {
-	FiEdit2,
-	FiExternalLink,
-	FiTrash2,
-} from "react-icons/fi";
-import { toast } from "react-toastify";
+import { useDebouncedValue } from "@/hooks/use-debounce";
 
 import { Button } from "@/components/ui/button";
+import { ExpenseCard } from "@/features/expenses/components/expense-card";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import {
 	useCategoriesQuery,
-	useExpenseMutations,
 	useExpensesQuery,
 } from "@/hooks/api/use-expenses-api";
-import { formatCurrency, formatDate } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
 
 export function ExpenseManager() {
-	const locale = useUIStore((state) => state.locale);
-	const timezone = useUIStore((state) => state.timezone);
 	const setQuickAddOpen = useUIStore(
 		(state) => state.setQuickAddOpen,
 	);
-	const { deleteExpense } = useExpenseMutations();
 	const [query, setQuery] = useState("");
 	const [categoryId, setCategoryId] = useState("");
 	const [sortBy, setSortBy] = useState<
@@ -37,16 +27,18 @@ export function ExpenseManager() {
 	const [page, setPage] = useState(1);
 
 	const categoriesQuery = useCategoriesQuery();
+	const debouncedQuery = useDebouncedValue(query, 300);
+
 	const filters = useMemo(
 		() => ({
 			page,
 			limit: 20,
-			q: query || undefined,
+			q: debouncedQuery || undefined,
 			categoryId: categoryId || undefined,
 			sortBy,
 			order,
 		}),
-		[categoryId, order, page, query, sortBy],
+		[categoryId, order, page, debouncedQuery, sortBy],
 	);
 	const expensesQuery = useExpensesQuery(filters);
 	const items = expensesQuery.data?.items ?? [];
@@ -119,64 +111,8 @@ export function ExpenseManager() {
 				<CardTitle className="mb-3">Expenses</CardTitle>
 				<ul className="space-y-2 text-sm">
 					{items.map((expense) => (
-						<li
-							key={expense._id}
-							className="flex items-center justify-between rounded-md border border-zinc-200 p-3 dark:border-zinc-800"
-						>
-							<div>
-								<p className="font-medium">{expense.title}</p>
-								<p className="text-xs text-zinc-500">
-									{formatDate(expense.dateTime, locale, timezone)}
-								</p>
-							</div>
-							<div className="text-right">
-								<p className="font-semibold">
-									{formatCurrency(
-										expense.amount,
-										expense.currency,
-										locale,
-									)}
-								</p>
-								<div className="mt-1 flex items-center justify-end gap-1">
-									<Link href={`/expenses/${expense._id}`}>
-										<Button
-											variant="ghost"
-											className="h-8 w-8 p-0"
-											aria-label="View expense details"
-										>
-											<FiExternalLink />
-										</Button>
-									</Link>
-									<Link href={`/expenses/${expense._id}/edit`}>
-										<Button
-											variant="ghost"
-											className="h-8 w-8 p-0"
-											aria-label="Edit expense"
-										>
-											<FiEdit2 />
-										</Button>
-									</Link>
-									<Button
-										variant="ghost"
-										className="h-8 w-8 p-0 text-red-600"
-										aria-label="Delete expense"
-										onClick={async () => {
-											try {
-												await deleteExpense.mutateAsync(expense._id);
-												toast.success("Expense deleted");
-											} catch (error) {
-												toast.error(
-													error instanceof Error
-														? error.message
-														: "Delete failed",
-												);
-											}
-										}}
-									>
-										<FiTrash2 />
-									</Button>
-								</div>
-							</div>
+						<li key={expense._id}>
+							<ExpenseCard expense={expense} />
 						</li>
 					))}
 				</ul>

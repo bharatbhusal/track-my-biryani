@@ -16,6 +16,41 @@ import {
 
 type ExportFormat = "json" | "csv";
 
+type ExportPayload = {
+	exportedAt: string;
+	analytics: {
+		totalMonthlySpend: number;
+		expenseCount: number;
+		categoryCount: number;
+		exportGeneratedAt: string;
+	};
+	categories: Array<{
+		id: string;
+		name: string;
+		color: string;
+		createdAt?: string;
+	}>;
+	expenses: Array<{
+		id: string;
+		title: string;
+		amount: number;
+		categoryId: string;
+		categoryName: string;
+		images: string[];
+		location: unknown;
+		currency: string;
+		dateTime: string;
+		createdAt?: string;
+	}>;
+	activityLogs: Array<{
+		id: string;
+		action: string;
+		entityType: string;
+		entityId?: string;
+		timestamp: string;
+	}>;
+};
+
 function asCsvValue(value: unknown): string {
 	const raw = String(value ?? "").replace(/[\n\r\t]/g, " ");
 	return `"${raw.replaceAll('"', '""')}"`;
@@ -45,9 +80,8 @@ export async function GET(request: NextRequest) {
 	try {
 		await connectToDatabase();
 		const auth = await getAuthPayload();
-		const format = (request.nextUrl.searchParams.get(
-			"format",
-		) ?? "json") as ExportFormat;
+		const format = "json" as ExportFormat;
+		const type = request.nextUrl.searchParams.get("type");
 		const now = new Date();
 		const monthStart = new Date(
 			now.getFullYear(),
@@ -114,73 +148,30 @@ export async function GET(request: NextRequest) {
 			})),
 		};
 
-		if (format === "csv") {
-			const csvRows: string[][] = [];
-			addSection(
-				csvRows,
-				"Analytics",
-				["metric", "value"],
-				Object.entries(analytics),
-			);
-			addSection(
-				csvRows,
-				"Expenses",
-				[
-					"id",
-					"title",
-					"amount",
-					"currency",
-					"categoryId",
-					"images",
-					"address",
-					"latitude",
-					"longitude",
-					"dateTime",
-					"createdAt",
-				],
-				normalizedPayload.expenses.map((item) => [
-					item.id,
-					item.title,
-					item.amount,
-					item.currency,
-					item.categoryId,
-					item.images.join("|"),
-					item.location?.address ?? "",
-					item.location?.latitude ?? "",
-					item.location?.longitude ?? "",
-					item.dateTime,
-					item.createdAt,
-				]),
-			);
-			addSection(
-				csvRows,
-				"Activity Logs",
-				["id", "action", "entityType", "entityId", "timestamp"],
-				normalizedPayload.activityLogs.map((item) => [
-					item.id,
-					item.action,
-					item.entityType,
-					item.entityId ?? "",
-					item.timestamp,
-				]),
-			);
+		// Only JSON export is supported. Allow exporting specific sections via `type` query param.
+		let payload:
+			| ExportPayload
+			| Pick<ExportPayload, "expenses">
+			| Pick<ExportPayload, "categories">
+			| Pick<ExportPayload, "activityLogs"> =
+			normalizedPayload;
 
-			const csv = buildCsv(csvRows);
-			return successResponse({
-				data: csv,
-				filename: buildTimestampedFilename({
-					baseName: "expense_report",
-					extension: "csv",
-				}),
-				mimeType: "text/csv;charset=utf-8",
-				exportedAt,
-			});
+		if (!type || type === "all") {
+			payload = normalizedPayload;
+		} else if (type === "expenses") {
+			payload = { expenses: normalizedPayload.expenses };
+		} else if (type === "categories") {
+			payload = { categories: normalizedPayload.categories };
+		} else if (type === "logs") {
+			payload = {
+				activityLogs: normalizedPayload.activityLogs,
+			};
 		}
 
 		return successResponse({
-			data: JSON.stringify(normalizedPayload, null, 2),
+			data: JSON.stringify(payload, null, 2),
 			filename: buildTimestampedFilename({
-				baseName: "expense_report",
+				baseName: `expense_report${type ? `_${type}` : ""}`,
 				extension: "json",
 			}),
 			mimeType: "application/json;charset=utf-8",

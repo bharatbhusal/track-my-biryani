@@ -3,9 +3,9 @@
 ## User Journeys
 
 1. **Authentication**: Signup/login redirects to dashboard.
-2. **Quick Add**: Click quick-add button (fixed bottom-right on mobile, desktop) → modal opens → form auto-saves draft → submit records expense with receipts.
+2. **Quick Add**: Click quick-add button (fixed bottom-right on mobile, desktop) → modal opens → form auto-saves draft → submit records expense with glimpses.
 3. **Dashboard**: View KPIs, category breakdown, and trends for selected time range (this week/month/year or custom).
-4. **Expense Details**: Click expense → view full metadata (notes, payment method, tags), receipt carousel, location map, and analytics (category percentile, contribution to week/month/year).
+4. **Expense Details**: Click expense → view full metadata (notes, payment method, tags), glimpse carousel, location map, and analytics (category percentile, contribution to week/month/year).
 5. **Expense Management**: Search, filter, sort expenses → inline quick actions (view, edit, delete).
 6. **Category Management**: Browse categories → view analytics (total spending, trends) → edit/delete.
 7. **Settings**: Configure locale, timezone, currency, theme → export/import data → view audit logs.
@@ -15,7 +15,7 @@
 - **Draft Autosave**: Form values + selected images auto-save to localStorage (debounced 400ms) while modal is open.
 - **Restore on Reopen**: If user closes quick-add and reopens, draft is restored.
 - **Camera Support**: On mobile, camera input defaults to `capture="environment"` (rear camera); fallback to file picker on desktop or if device lacks camera API.
-- **Receipt Upload**: Client-side compression (> 5MB), deterministic naming, and Cloudinary signed upload with progress indicator.
+- **Glimpse Upload**: Client-side compression (> 5MB), deterministic naming, and Cloudinary signed upload with progress indicator.
 - **Location**: Auto-detects geolocation on submit; user can override address field.
 
 ## Dashboard Analytics
@@ -50,7 +50,7 @@
 ## Loading & Error States
 
 - **Skeleton Loading**: Dashboard and list pages show loading cards before data resolves.
-- **Upload Progress**: Receipt upload shows per-file progress bar; failed uploads show retry button.
+- **Upload Progress**: Glimpse upload shows per-file progress bar; failed uploads show retry button.
 - **Error Toasts**: Failed API calls toast with error message; user can retry.
 - **Empty States**: Lists show "No expenses" or "No categories" with call-to-action button.
 - **Not Found**: 404 page with link back to dashboard.
@@ -74,7 +74,7 @@ flowchart TD
 flowchart TD
   A[Click Quick-Add Button] --> B[Modal Opens]
   B --> C[Form Auto-Saves Draft 400ms]
-  C --> D[User Selects Receipt]
+  C --> D[User Selects Glimpse]
   D --> E[Compress if >5MB]
   E --> F[Detect Location]
   F --> G[POST /api/expenses]
@@ -106,13 +106,13 @@ flowchart TD
   A[Click Expense] --> B[GET /api/expenses/:id]
   B --> C[Render Detail View]
   C --> D[Show Metadata]
-  D --> E[Show Receipt Carousel]
+  D --> E[Show Glimpse Carousel]
   E --> F[Show Analytics]
   F --> G[Show Map]
   G --> H[Action Buttons: Edit/Duplicate/Share/Delete]
 ```
 
-### Receipt Upload Flow
+### Glimpse Upload Flow
 
 ```mermaid
 flowchart TD

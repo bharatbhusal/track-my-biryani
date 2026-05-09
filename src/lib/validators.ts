@@ -1,10 +1,6 @@
 import { z } from "zod";
 
-import {
-	CLOUDINARY_PUBLIC_ID_REGEX,
-	CURRENCY_CODE_REGEX,
-	HEX_COLOR_REGEX,
-} from "@/lib/validation-constants";
+import { HEX_COLOR_REGEX } from "@/lib/validation-constants";
 
 export const signupSchema = z.object({
 	name: z.string().min(2),
@@ -29,17 +25,14 @@ export const expenseSchema = z.object({
 	notes: z.string().max(400).optional(),
 	paymentMethod: z.string().max(60).optional(),
 	tags: z.array(z.string().max(40)).max(10).optional(),
-	images: z
-		.array(z.string().regex(CLOUDINARY_PUBLIC_ID_REGEX))
-		.max(5)
-		.default([]),
+	images: z.array(z.string()).max(5).default([]),
 	location: z.object({
 		latitude: z.number(),
 		longitude: z.number(),
 		address: z.string().optional(),
 	}),
-	currency: z.string().regex(CURRENCY_CODE_REGEX),
-	dateTime: z.string().datetime(),
+	currency: z.string(),
+	dateTime: z.iso.datetime(),
 });
 
 export const expenseFiltersSchema = z.object({
@@ -47,8 +40,8 @@ export const expenseFiltersSchema = z.object({
 	categoryId: z.string().optional(),
 	paymentMethod: z.string().optional(),
 	tags: z.string().optional(),
-	from: z.string().datetime().optional(),
-	to: z.string().datetime().optional(),
+	from: z.iso.datetime().optional(),
+	to: z.iso.datetime().optional(),
 	amountMin: z.coerce.number().min(0).optional(),
 	amountMax: z.coerce.number().min(0).optional(),
 	sortBy: z
@@ -61,7 +54,7 @@ export const expenseFiltersSchema = z.object({
 
 export const settingsSchema = z.object({
 	locale: z.string().min(2),
-	currency: z.string().regex(CURRENCY_CODE_REGEX),
+	currency: z.string(),
 	timezone: z.string().min(3),
 	theme: z.enum(["light", "dark", "system"]),
 	hapticFeedback: z.boolean(),
@@ -85,16 +78,14 @@ export const importDataSchema = z.object({
 			title: z.string().min(1),
 			amount: z.number().positive(),
 			categoryName: z.string().min(1),
-			images: z
-				.array(z.string().regex(CLOUDINARY_PUBLIC_ID_REGEX))
-				.default([]),
+			images: z.array(z.string()).default([]),
 			location: z.object({
 				latitude: z.number(),
 				longitude: z.number(),
 				address: z.string().optional(),
 			}),
-			currency: z.string().regex(CURRENCY_CODE_REGEX),
-			dateTime: z.string().datetime(),
+			currency: z.string(),
+			dateTime: z.iso.datetime(),
 		}),
 	),
 });

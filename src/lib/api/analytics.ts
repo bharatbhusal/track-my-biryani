@@ -31,18 +31,17 @@ export const analyticsApi = {
 		apiRequest<ActivityLogList>(
 			`/logs?page=${page}&limit=${limit}`,
 		),
-	exportData: (format: "json" | "csv") =>
+	exportData: (
+		type?: "all" | "expenses" | "categories" | "logs",
+	) =>
 		apiRequest<{
 			data: string;
 			filename: string;
 			mimeType: string;
 			exportedAt: string;
-		}>(`/export?format=${format}`),
-	importData: (payload: unknown) =>
-		apiRequest<{ message: string }>("/import", {
-			method: "POST",
-			body: payload,
-		}),
+		}>(
+			`/export?format=json${type ? `&type=${encodeURIComponent(type)}` : ""}`,
+		),
 	updateSettings: (payload: unknown) =>
 		apiRequest<{ message: string }>("/settings", {
 			method: "PATCH",

@@ -27,7 +27,7 @@
 
 ## Upload Flow
 
-1. Client (in QuickAddExpenseModal or ReceiptUpload) computes deterministic `publicId` via `buildUploadPublicId(expenseName)`.
+1. Client (in QuickAddExpenseModal or GlimpsesUpload) computes deterministic `publicId` via `buildUploadPublicId(expenseName)`.
 2. Client requests signed payload: `GET /api/uploads/signature?publicId=<deterministic-id>`.
 3. Server signs the upload request with Cloudinary API, including the `public_id`.
 4. Client compresses image if > 5MB (canvas-based, client-side).
@@ -61,7 +61,7 @@
 - `src/lib/naming.ts` ensures deterministic, production-safe filenames:
   - `buildTimestampedFilename({ baseName, extension, timestamp })`: e.g., `expense_report_1778021200.csv`.
   - `buildUploadPublicId(expenseName, timestamp)`: e.g., `coffee_expense_1778021200`.
-- Applied to exports (`/api/export`), chart PNG downloads (`ExportableChart`), and receipt uploads.
+- Applied to exports (`/api/export`), chart PNG downloads (`ExportableChart`), and glimpse uploads.
 
 ## State Management & Caching
 

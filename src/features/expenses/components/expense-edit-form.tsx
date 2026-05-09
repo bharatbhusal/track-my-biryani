@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { z } from "zod";
 
-import { ReceiptUpload } from "@/components/uploads/receipt-upload";
+import { GlimpsesUpload } from "@/components/uploads/glimpses-upload";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -166,7 +166,7 @@ export function ExpenseEditForm({
 				/>
 				<Input {...register("address")} placeholder="Address" />
 				<Input {...register("notes")} placeholder="Notes" />
-				<ReceiptUpload
+				<GlimpsesUpload
 					value={images}
 					onChange={setImages}
 					expenseTitle={expenseQuery.data.title}

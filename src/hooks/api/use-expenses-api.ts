@@ -13,6 +13,7 @@ import type {
 	ExpenseListQuery,
 	ExpensesListPayload,
 } from "@/types/expense.types";
+import type { ExpenseContribution } from "@/types/analytics.types";
 
 export function useCategoriesQuery() {
 	return useQuery({
@@ -36,6 +37,17 @@ export function useExpenseDetailQuery(id: string) {
 	return useQuery({
 		queryKey: queryKeys.expenses.detail(id),
 		queryFn: () => expensesApi.getExpenseById(id),
+		enabled: Boolean(id),
+	});
+}
+
+export function useExpenseContributionQuery(id: string) {
+	return useQuery({
+		queryKey: [
+			...queryKeys.expenses.detail(id),
+			"contribution",
+		],
+		queryFn: () => expensesApi.getExpenseContribution(id),
 		enabled: Boolean(id),
 	});
 }

@@ -18,7 +18,6 @@ import {
 } from "@/hooks/api/use-auth-api";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { CURRENCY_CODE_REGEX } from "@/lib/validation-constants";
 import { useUIStore } from "@/store/ui-store";
 import { ActivityList } from "@/features/logs/components/activity-list";
 
@@ -31,36 +30,7 @@ type SettingsSection =
 	| "logs"
 	| null;
 
-const TIMEZONES = [
-	"UTC",
-	"Asia/Kolkata",
-	"America/New_York",
-	"Europe/London",
-	"Asia/Tokyo",
-	"Australia/Sydney",
-];
-
-const LOCALES = [
-	"en-US",
-	"en-IN",
-	"en-GB",
-	"fr-FR",
-	"de-DE",
-	"ja-JP",
-];
-const CURRENCIES = [
-	"USD",
-	"INR",
-	"EUR",
-	"GBP",
-	"JPY",
-	"AUD",
-];
-
 const schema = z.object({
-	locale: z.string().min(2),
-	currency: z.string().regex(CURRENCY_CODE_REGEX),
-	timezone: z.string().min(3),
 	theme: z.enum(["light", "dark", "system"]),
 	hapticFeedback: z.boolean(),
 	currentPassword: z.string().optional(),
@@ -70,20 +40,13 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export function SettingsForm() {
-	const locale = useUIStore((state) => state.locale);
-	const currency = useUIStore((state) => state.currency);
-	const timezone = useUIStore((state) => state.timezone);
 	const hapticFeedback = useUIStore(
 		(state) => state.hapticFeedback,
-	);
-	const setPreferences = useUIStore(
-		(state) => state.setPreferences,
 	);
 	const { setTheme } = useTheme();
 	const authQuery = useAuthMe();
 	const { logout } = useAuthActions();
-	const { updateSettings, importData: importDataMutation } =
-		useSettingsMutations();
+	const { updateSettings } = useSettingsMutations();
 	const [activeSection, setActiveSection] =
 		useState<SettingsSection>(null);
 
@@ -108,9 +71,6 @@ export function SettingsForm() {
 	} = useForm<FormValues>({
 		resolver: zodResolver(schema),
 		defaultValues: {
-			locale,
-			currency,
-			timezone,
 			theme: "system",
 			hapticFeedback,
 			currentPassword: "",
@@ -126,9 +86,6 @@ export function SettingsForm() {
 	const onSubmit = async (values: FormValues) => {
 		try {
 			await updateSettings.mutateAsync({
-				locale: values.locale,
-				currency: values.currency.toUpperCase(),
-				timezone: values.timezone,
 				theme: values.theme,
 				hapticFeedback: values.hapticFeedback,
 				password:
@@ -149,20 +106,14 @@ export function SettingsForm() {
 		}
 
 		setTheme(values.theme);
-		setPreferences({
-			locale: values.locale,
-			currency: values.currency.toUpperCase(),
-			timezone: values.timezone,
-			hapticFeedback: values.hapticFeedback,
-		});
 		toast.success("Settings updated");
 	};
 
 	const handleExportDownload = async (
-		format: "json" | "csv",
+		type?: "all" | "expenses" | "categories" | "logs",
 	) => {
 		try {
-			const payload = await analyticsApi.exportData(format);
+			const payload = await analyticsApi.exportData(type);
 			const blob = new Blob([payload.data], {
 				type: payload.mimeType,
 			});
@@ -181,36 +132,11 @@ export function SettingsForm() {
 		}
 	};
 
-	const importData = async (
-		event: React.ChangeEvent<HTMLInputElement>,
-	) => {
-		const file = event.target.files?.[0];
-		if (!file) return;
-
-		const text = await file.text();
-		try {
-			await importDataMutation.mutateAsync(JSON.parse(text));
-			toast.success("Import completed");
-		} catch (error) {
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Import failed",
-			);
-		}
-	};
-
 	return (
 		<>
 			<Card>
 				<CardTitle className="mb-4">Settings</CardTitle>
 				<div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-					<Button
-						variant="outline"
-						onClick={() => setActiveSection("preferences")}
-					>
-						User Preferences
-					</Button>
 					<Button
 						variant="outline"
 						onClick={() => setActiveSection("security")}
@@ -253,47 +179,6 @@ export function SettingsForm() {
 					className="space-y-3"
 					onSubmit={handleSubmit(onSubmit)}
 				>
-					{activeSection === "preferences" && (
-						<>
-							<label className="block text-sm">
-								<span>Locale</span>
-								<Input
-									list="locale-options"
-									{...register("locale")}
-								/>
-								<datalist id="locale-options">
-									{LOCALES.map((item) => (
-										<option key={item} value={item} />
-									))}
-								</datalist>
-							</label>
-							<label className="block text-sm">
-								<span>Currency</span>
-								<Input
-									list="currency-options"
-									{...register("currency")}
-								/>
-								<datalist id="currency-options">
-									{CURRENCIES.map((item) => (
-										<option key={item} value={item} />
-									))}
-								</datalist>
-							</label>
-							<label className="block text-sm">
-								<span>Timezone</span>
-								<Input
-									list="timezone-options"
-									{...register("timezone")}
-								/>
-								<datalist id="timezone-options">
-									{TIMEZONES.map((item) => (
-										<option key={item} value={item} />
-									))}
-								</datalist>
-							</label>
-						</>
-					)}
-
 					{activeSection === "appearance" && (
 						<label className="block text-sm">
 							<span>Theme</span>
@@ -355,31 +240,100 @@ export function SettingsForm() {
 
 					{activeSection === "data" && (
 						<div className="space-y-2">
-							<div className="grid grid-cols-2 gap-2">
+							<div className="grid grid-cols-1 gap-2">
 								<Button
 									type="button"
 									variant="outline"
-									onClick={() => void handleExportDownload("json")}
+									onClick={() => void handleExportDownload("all")}
 								>
-									Export JSON
+									Export All (JSON)
 								</Button>
 								<Button
 									type="button"
 									variant="outline"
-									onClick={() => void handleExportDownload("csv")}
+									onClick={async () => {
+										// export expenses only
+										try {
+											const payload = await fetch(
+												`/api/export?format=json&type=expenses`,
+											).then((r) => r.json());
+											const blob = new Blob([payload.data], {
+												type: payload.mimeType,
+											});
+											const url = URL.createObjectURL(blob);
+											const link = document.createElement("a");
+											link.href = url;
+											link.download = payload.filename;
+											link.click();
+											URL.revokeObjectURL(url);
+										} catch (error) {
+											toast.error(
+												error instanceof Error
+													? error.message
+													: "Export failed",
+											);
+										}
+									}}
 								>
-									Export CSV
+									Export Expenses (JSON)
+								</Button>
+								<Button
+									type="button"
+									variant="outline"
+									onClick={async () => {
+										try {
+											const payload = await fetch(
+												`/api/export?format=json&type=categories`,
+											).then((r) => r.json());
+											const blob = new Blob([payload.data], {
+												type: payload.mimeType,
+											});
+											const url = URL.createObjectURL(blob);
+											const link = document.createElement("a");
+											link.href = url;
+											link.download = payload.filename;
+											link.click();
+											URL.revokeObjectURL(url);
+										} catch (error) {
+											toast.error(
+												error instanceof Error
+													? error.message
+													: "Export failed",
+											);
+										}
+									}}
+								>
+									Export Categories (JSON)
+								</Button>
+								<Button
+									type="button"
+									variant="outline"
+									onClick={async () => {
+										try {
+											const payload = await fetch(
+												`/api/export?format=json&type=logs`,
+											).then((r) => r.json());
+											const blob = new Blob([payload.data], {
+												type: payload.mimeType,
+											});
+											const url = URL.createObjectURL(blob);
+											const link = document.createElement("a");
+											link.href = url;
+											link.download = payload.filename;
+											link.click();
+											URL.revokeObjectURL(url);
+										} catch (error) {
+											toast.error(
+												error instanceof Error
+													? error.message
+													: "Export failed",
+											);
+										}
+									}}
+								>
+									Export Logs (JSON)
 								</Button>
 							</div>
-							<label className="inline-flex cursor-pointer items-center justify-center rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium">
-								Import JSON
-								<input
-									type="file"
-									accept="application/json"
-									className="hidden"
-									onChange={importData}
-								/>
-							</label>
 						</div>
 					)}
 

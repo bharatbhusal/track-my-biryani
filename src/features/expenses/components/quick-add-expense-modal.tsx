@@ -6,7 +6,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { toast } from "react-toastify";
 import { z } from "zod";
 
-import { ReceiptUpload } from "@/components/uploads/receipt-upload";
+import { GlimpsesUpload } from "@/components/uploads/glimpses-upload";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -245,8 +245,8 @@ export function QuickAddExpenseModal() {
 				</label>
 
 				<div className="space-y-1 text-sm">
-					<span>Receipts</span>
-					<ReceiptUpload
+					<span>Glimpses</span>
+					<GlimpsesUpload
 						value={images}
 						onChange={setImages}
 						expenseTitle={watchedValues?.title || "expense"}

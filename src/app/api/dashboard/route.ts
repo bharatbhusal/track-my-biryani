@@ -5,12 +5,12 @@ import {
 } from "@/lib/api-response";
 import { connectToDatabase } from "@/lib/db";
 import { listCategories } from "@/repositories/category.repository";
-import {
-	listExpensesForRange,
-	listRecentExpenses,
-} from "@/repositories/expense.repository";
+import { listRecentExpenses } from "@/repositories/expense.repository";
+import { aggregateRangeStats } from "@/repositories/expense.repository";
+import type { DashboardAnalytics } from "@/types/analytics.types";
 
 const DAYS_IN_WEEK = 7;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 function getDateRanges() {
 	const now = new Date();
@@ -64,81 +64,46 @@ export async function GET(request: Request) {
 				1,
 			);
 		}
-		const [rangeExpenses, categories, recentActivity] =
+		const [analyticsResult, categories, recentActivity] =
 			await Promise.all([
-				listExpensesForRange(auth.userId, fromDate, toDate),
+				aggregateRangeStats(auth.userId, fromDate, toDate),
 				listCategories(auth.userId),
 				listRecentExpenses(auth.userId, 8),
 			]);
+		const analytics = analyticsResult as Awaited<
+			ReturnType<typeof aggregateRangeStats>
+		>;
 
-		const totalRangeSpend = rangeExpenses.reduce(
-			(sum, item) => sum + item.amount,
+		const totalRangeSpend = analytics.total ?? 0;
+		const rangeDays = Math.max(
+			1,
+			Math.ceil(
+				(toDate.getTime() - fromDate.getTime()) / MS_PER_DAY,
+			) + 1,
+		);
+		const weeklyTrend =
+			analytics.dailyTrend.slice(-DAYS_IN_WEEK);
+		const weeklySpend = weeklyTrend.reduce(
+			(sum, trendPoint) => sum + trendPoint.total,
 			0,
 		);
-		// For weekly metrics, fall back to last 7 days calculated from 'toDate'
-		const weekStart = new Date(toDate);
-		weekStart.setDate(toDate.getDate() - 6);
-		weekStart.setHours(0, 0, 0, 0);
-		const weeklyExpenses = rangeExpenses.filter(
-			(e) =>
-				new Date(e.dateTime) >= weekStart &&
-				new Date(e.dateTime) <= toDate,
-		);
-		const weeklySpend = weeklyExpenses.reduce(
-			(sum, item) => sum + item.amount,
-			0,
-		);
-		const dailyAverage =
-			weeklyExpenses.length > 0
-				? weeklySpend / DAYS_IN_WEEK
-				: 0;
+		const dailyAverage = totalRangeSpend / rangeDays;
 
-		const categoryMap = new Map<string, number>();
-		rangeExpenses.forEach((expense) => {
-			const key = expense.categoryId.toString();
-			categoryMap.set(
-				key,
-				(categoryMap.get(key) ?? 0) + expense.amount,
-			);
-		});
-
-		const categoryBreakdown = Array.from(
-			categoryMap.entries(),
-		).map(([categoryId, value]) => {
-			const category = categories.find(
-				(item) => item._id.toString() === categoryId,
-			);
-			return {
-				name: category?.name ?? "Uncategorized",
-				value,
-			};
-		});
+		const categoryBreakdown: DashboardAnalytics["categoryBreakdown"] =
+			analytics.categoryBreakdown.map((cb) => {
+				const category = categories.find(
+					(item) => item._id.toString() === cb.categoryId,
+				);
+				return {
+					name: category?.name ?? "Uncategorized",
+					value: cb.value,
+				};
+			});
 
 		const topCategory =
-			categoryBreakdown.sort((a, b) => b.value - a.value)[0]
-				?.name ?? "";
-
-		const dailyTrendMap = new Map<string, number>();
-		rangeExpenses.forEach((expense) => {
-			const day = new Date(expense.dateTime)
-				.toISOString()
-				.slice(0, 10); // YYYY-MM-DD
-			dailyTrendMap.set(
-				day,
-				(dailyTrendMap.get(day) ?? 0) + expense.amount,
-			);
-		});
-
-		const weeklyTrendMap = new Map<string, number>();
-		weeklyExpenses.forEach((expense) => {
-			const day = new Intl.DateTimeFormat("en-US", {
-				weekday: "short",
-			}).format(new Date(expense.dateTime));
-			weeklyTrendMap.set(
-				day,
-				(weeklyTrendMap.get(day) ?? 0) + expense.amount,
-			);
-		});
+			categoryBreakdown.sort(
+				(left, right) => right.value - left.value,
+			)[0]?.name ?? "";
 
 		return successResponse({
 			totalMonthlySpend: totalRangeSpend,
@@ -146,12 +111,8 @@ export async function GET(request: Request) {
 			dailyAverage,
 			topCategory,
 			categoryBreakdown,
-			monthlyTrend: Array.from(dailyTrendMap.entries()).map(
-				([name, total]) => ({ name, total }),
-			),
-			weeklyTrend: Array.from(weeklyTrendMap.entries()).map(
-				([name, total]) => ({ name, total }),
-			),
+			monthlyTrend: analytics.dailyTrend,
+			weeklyTrend,
 			recentActivity: recentActivity.map((item) => ({
 				title: item.title,
 				amount: item.amount,

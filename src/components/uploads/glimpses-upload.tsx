@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
 	FiCamera,
 	FiRefreshCw,
@@ -11,7 +11,6 @@ import { toast } from "react-toastify";
 
 import { Button } from "@/components/ui/button";
 import { uploadsApi } from "@/lib/api/uploads";
-import { buildCloudinaryUrl } from "@/lib/cloudinary/url";
 import { buildUploadPublicId } from "@/lib/naming";
 import {
 	compressImageIfNeeded,
@@ -26,7 +25,7 @@ type UploadingItem = {
 	status: "uploading" | "failed";
 };
 
-type ReceiptUploadProps = {
+type GlimpsesUploadProps = {
 	value: string[];
 	onChange: (value: string[]) => void;
 	expenseTitle?: string;
@@ -50,11 +49,11 @@ function isMobileDevice(): boolean {
 	);
 }
 
-export function ReceiptUpload({
+export function GlimpsesUpload({
 	value,
 	onChange,
 	expenseTitle = "expense",
-}: ReceiptUploadProps) {
+}: GlimpsesUploadProps) {
 	const [isDragging, setIsDragging] = useState(false);
 	const [uploading, setUploading] = useState<
 		UploadingItem[]
@@ -65,23 +64,6 @@ export function ReceiptUpload({
 		(item) => item.status === "uploading",
 	);
 
-	const previewItems = useMemo(
-		() =>
-			value
-				.map((publicId) => ({
-					publicId,
-					url: buildCloudinaryUrl(publicId, cloudName, {
-						width: 300,
-						height: 200,
-						crop: "fill",
-						quality: "auto",
-						format: "auto",
-					}),
-				}))
-				.filter((item) => item.url),
-		[cloudName, value],
-	);
-
 	const handleUpload = async (files: FileList | File[]) => {
 		const fileList = Array.from(files);
 		if (fileList.length === 0) {
@@ -90,7 +72,7 @@ export function ReceiptUpload({
 
 		if (value.length + fileList.length > 5) {
 			toast.error(
-				"You can upload up to 5 receipts per expense.",
+				"You can upload up to 5 glimpses per expense.",
 			);
 			return;
 		}
@@ -117,7 +99,6 @@ export function ReceiptUpload({
 				);
 				const signature =
 					await uploadsApi.getSignature(publicId);
-				setCloudName(signature.cloudName);
 
 				const uploaded = await uploadImageToCloudinary(
 					preparedFile,
@@ -131,7 +112,7 @@ export function ReceiptUpload({
 					},
 				);
 
-				onChange([...value, uploaded.publicId]);
+				onChange([...value, uploaded.secureUrl]);
 				setUploading((current) =>
 					current.filter((item) => item.id !== id),
 				);
@@ -184,7 +165,7 @@ export function ReceiptUpload({
 			>
 				<FiUploadCloud className="mx-auto mb-2 text-xl text-emerald-500" />
 				<p className="text-sm text-[var(--color-muted)]">
-					Drag & drop receipts here, or choose files
+					Drag & drop glimpses here, or choose files
 				</p>
 				<div className="mt-3 flex flex-wrap items-center justify-center gap-2">
 					<label className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500">
@@ -253,17 +234,17 @@ export function ReceiptUpload({
 				</ul>
 			)}
 
-			{previewItems.length > 0 && (
+			{value.length > 0 && (
 				<ul className="grid grid-cols-2 gap-2 md:grid-cols-3">
-					{previewItems.map((item) => (
+					{value.map((item) => (
 						<li
-							key={item.publicId}
+							key={item}
 							className="relative overflow-hidden rounded-lg border border-[var(--color-border)]"
 						>
 							{/* eslint-disable-next-line @next/next/no-img-element */}
 							<img
-								src={item.url}
-								alt="Receipt preview"
+								src={item}
+								alt="Glimpse preview"
 								className="h-28 w-full object-cover"
 								loading="lazy"
 							/>
@@ -271,9 +252,7 @@ export function ReceiptUpload({
 								type="button"
 								className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white"
 								onClick={() =>
-									onChange(
-										value.filter((id) => id !== item.publicId),
-									)
+									onChange(value.filter((each) => each !== item))
 								}
 							>
 								<FiX />

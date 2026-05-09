@@ -1,6 +1,12 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import {
+	ReactNode,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
+import gsap from "gsap";
 
 import { Button } from "@/components/ui/button";
 
@@ -21,8 +27,17 @@ export function Modal({
 	children,
 	className,
 }: ModalProps) {
+	const contentRef = useRef<HTMLDivElement | null>(null);
+	const [visible, setVisible] = useState(open);
+
 	useEffect(() => {
-		if (!open) return;
+		if (open) {
+			setVisible(true);
+		}
+	}, [open]);
+
+	useEffect(() => {
+		if (!visible) return;
 
 		const handleEscape = (event: KeyboardEvent) => {
 			if (event.key === "Escape") {
@@ -34,11 +49,40 @@ export function Modal({
 		return () => {
 			document.removeEventListener("keydown", handleEscape);
 		};
-	}, [onClose, open]);
+	}, [onClose, visible]);
 
-	if (!open) {
-		return null;
-	}
+	// Enter / exit animations
+	useEffect(() => {
+		if (!contentRef.current) return;
+
+		if (open) {
+			gsap.killTweensOf(contentRef.current);
+			gsap.fromTo(
+				contentRef.current,
+				{ opacity: 0, y: 20, scale: 0.995 },
+				{
+					opacity: 1,
+					y: 0,
+					scale: 1,
+					duration: 0.28,
+					ease: "power2.out",
+				},
+			);
+		} else {
+			// exit animation then hide
+			gsap.killTweensOf(contentRef.current);
+			gsap.to(contentRef.current, {
+				opacity: 0,
+				y: 12,
+				scale: 0.995,
+				duration: 0.2,
+				ease: "power2.in",
+				onComplete: () => setVisible(false),
+			});
+		}
+	}, [open, visible]);
+
+	if (!visible) return null;
 
 	return (
 		<div
@@ -52,6 +96,7 @@ export function Modal({
 			onClick={onClose}
 		>
 			<div
+				ref={contentRef}
 				className={`w-full max-w-2xl rounded-t-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-xl sm:rounded-xl ${className ?? ""}`}
 				onClick={(event) => event.stopPropagation()}
 			>
@@ -103,9 +148,40 @@ export function ConfirmDialog({
 	onConfirm,
 	onCancel,
 }: ConfirmDialogProps) {
-	if (!open) {
-		return null;
-	}
+	const ref = useRef<HTMLDivElement | null>(null);
+	const [visible, setVisible] = useState(open);
+
+	useEffect(() => {
+		if (open) setVisible(true);
+	}, [open]);
+
+	useEffect(() => {
+		if (!ref.current) return;
+		if (open) {
+			gsap.killTweensOf(ref.current);
+			gsap.fromTo(
+				ref.current,
+				{ opacity: 0, y: -8 },
+				{
+					opacity: 1,
+					y: 0,
+					duration: 0.22,
+					ease: "power2.out",
+				},
+			);
+		} else {
+			gsap.killTweensOf(ref.current);
+			gsap.to(ref.current, {
+				opacity: 0,
+				y: -6,
+				duration: 0.14,
+				ease: "power2.in",
+				onComplete: () => setVisible(false),
+			});
+		}
+	}, [open]);
+
+	if (!visible) return null;
 
 	return (
 		<div
@@ -114,7 +190,10 @@ export function ConfirmDialog({
 			aria-modal="true"
 			aria-labelledby="confirm-title"
 		>
-			<div className="w-full max-w-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+			<div
+				ref={ref}
+				className="w-full max-w-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
+			>
 				<h2
 					id="confirm-title"
 					className="text-base font-semibold"
