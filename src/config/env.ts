@@ -14,24 +14,44 @@ const envSchema = z.object({
   NEXT_PUBLIC_API_URL: z.string().min(1).default('/api'),
 });
 
-const parsed = envSchema.safeParse({
-  NODE_ENV: process.env.NODE_ENV,
-  DATABASE_URL: process.env.DATABASE_URL ?? process.env.MONGODB_URI,
-  MONGODB_URI: process.env.MONGODB_URI,
-  JWT_SECRET: process.env.JWT_SECRET,
-  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
-  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
-  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
-  CLOUDINARY_FOLDER_NAME: process.env.CLOUDINARY_FOLDER_NAME,
-  NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-});
+type EnvShape = z.infer<typeof envSchema>;
 
-if (!parsed.success) {
-  const message = parsed.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join('; ');
-  throw new Error(`Invalid environment configuration: ${message}`);
+let cachedEnv: EnvShape | null = null;
+
+function validateEnv(): EnvShape {
+  const parsed = envSchema.safeParse({
+    NODE_ENV: process.env.NODE_ENV,
+    DATABASE_URL: process.env.DATABASE_URL ?? process.env.MONGODB_URI,
+    MONGODB_URI: process.env.MONGODB_URI,
+    JWT_SECRET: process.env.JWT_SECRET,
+    CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+    CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+    CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
+    CLOUDINARY_FOLDER_NAME: process.env.CLOUDINARY_FOLDER_NAME,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  });
+
+  if (!parsed.success) {
+    const message = parsed.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join('; ');
+    throw new Error(`Invalid environment configuration: ${message}`);
+  }
+
+  return parsed.data;
 }
 
-export const env = parsed.data;
+export function getEnv(): EnvShape {
+  if (!cachedEnv) {
+    cachedEnv = validateEnv();
+  }
+
+  return cachedEnv;
+}
+
+export const env = new Proxy({} as EnvShape, {
+  get(_target, prop) {
+    return getEnv()[prop as keyof EnvShape];
+  },
+});
 
 export function getJwtSecret(): string {
   return env.JWT_SECRET;

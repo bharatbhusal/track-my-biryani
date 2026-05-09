@@ -3,7 +3,6 @@
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { FiMoon, FiSun } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 
@@ -14,13 +13,7 @@ export function Header() {
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const { logout } = useAuthActions();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const currentTheme = mounted ? resolvedTheme : 'light';
+  const currentTheme = resolvedTheme ?? 'light';
 
   return (
     <header className="sticky top-0 z-20 border-b border-[var(--color-border)] bg-[color-mix(in_oklab,var(--color-bg)_88%,transparent)] px-4 py-3 backdrop-blur">
@@ -35,7 +28,8 @@ export function Header() {
             onClick={() => setTheme(currentTheme === 'dark' ? 'light' : 'dark')}
             className="p-2"
           >
-            {currentTheme === 'dark' ? <FiSun /> : <FiMoon />}
+            <FiMoon className="dark:hidden" />
+            <FiSun className="hidden dark:block" />
           </Button>
           <Button
             variant="outline"

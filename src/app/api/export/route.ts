@@ -21,7 +21,7 @@ function buildCsv(rows: string[][]): string {
 function addSection(rows: string[][], title: string, headers: string[], data: Array<Array<unknown>>): void {
   rows.push([title]);
   rows.push(headers);
-  data.forEach((item) => rows.push(item));
+  data.forEach((item) => rows.push(item.map((value) => String(value ?? ''))));
   rows.push([]);
 }
 
