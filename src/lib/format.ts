@@ -1,3 +1,5 @@
+import { formatDateTime } from '@/lib/datetime';
+
 export function formatCurrency(value: number, currency = 'USD', locale = 'en-US'): string {
   return new Intl.NumberFormat(locale, {
     style: 'currency',
@@ -7,10 +9,5 @@ export function formatCurrency(value: number, currency = 'USD', locale = 'en-US'
 }
 
 export function formatDate(date: Date | string, locale = 'en-US', timeZone?: string): string {
-  const value = typeof date === 'string' ? new Date(date) : date;
-  return new Intl.DateTimeFormat(locale, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone,
-  }).format(value);
+  return formatDateTime(date, locale, timeZone);
 }
