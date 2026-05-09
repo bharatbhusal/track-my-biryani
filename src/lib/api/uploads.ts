@@ -1,6 +1,9 @@
-import { apiRequest } from '@/lib/api/client';
-import type { UploadSignaturePayload } from '@/types/upload.types';
+import { apiRequest } from "@/lib/api/client";
+import type { UploadSignaturePayload } from "@/types/upload.types";
 
 export const uploadsApi = {
-  getSignature: () => apiRequest<UploadSignaturePayload>('/uploads/signature'),
+	getSignature: (publicId?: string) =>
+		apiRequest<UploadSignaturePayload>(
+			`/uploads/signature${publicId ? `?publicId=${encodeURIComponent(publicId)}` : ""}`,
+		),
 };

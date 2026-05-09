@@ -1,18 +1,21 @@
 # Database Schema
 
 ## Entities
-- **User**: identity + preferences.
+
+- **User**: identity + preferences (locale, timezone, currency).
 - **Category**: user-scoped expense classification.
-- **Expense**: transaction record with amount/category/time/location/image public IDs.
+- **Expense**: transaction record with amount/category/time/location/images; includes metadata (notes, paymentMethod, tags) and soft-delete flag.
 - **AuditLog**: immutable action history.
 
 ## Relations
+
 - User 1:N Categories
 - User 1:N Expenses
 - User 1:N AuditLogs
 - Category 1:N Expenses
 
 ## Indexes & Constraints
+
 - `Category(userId, name)` unique.
 - `Expense(userId)` indexed.
 - `Expense(categoryId)` indexed.
@@ -22,11 +25,13 @@
 - `AuditLog(timestamp)` indexed.
 
 ## Normalization Strategy
+
 - Keep category and user as references for flexible querying.
 - Keep location as embedded object within expense for write simplicity.
 - Keep image `public_id` strings only to avoid external URL coupling.
 
 ## ER Diagram
+
 ```mermaid
 erDiagram
   USER ||--o{ CATEGORY : owns
@@ -57,6 +62,11 @@ erDiagram
     string currency
     date dateTime
     string[] images
+    string notes
+    string paymentMethod
+    string[] tags
+    date deletedAt
+    object location
   }
 
   AUDIT_LOG {
