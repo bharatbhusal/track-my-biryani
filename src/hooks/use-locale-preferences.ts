@@ -6,6 +6,8 @@ import { useUIStore } from '@/store/ui-store';
 
 const DEFAULT_CURRENCY = 'INR';
 const DEFAULT_TIMEZONE = 'Asia/Kolkata';
+const GEOLOCATION_TIMEOUT_MS = 6000;
+const GEOLOCATION_MAX_AGE_MS = 10 * 60 * 1000;
 
 const CURRENCY_BY_REGION: Record<string, string> = {
   IN: 'INR',
@@ -34,6 +36,15 @@ function detectCurrency(locale: string): string {
   return CURRENCY_BY_REGION[region] ?? DEFAULT_CURRENCY;
 }
 
+function mapCurrencyFromCoordinates(latitude: number, longitude: number): string | null {
+  const isIndia = latitude >= 6 && latitude <= 38 && longitude >= 68 && longitude <= 98;
+  const isNepal = latitude >= 26 && latitude <= 31 && longitude >= 80 && longitude <= 89;
+
+  if (isIndia) return 'INR';
+  if (isNepal) return 'NPR';
+  return null;
+}
+
 export function useLocalePreferences(): void {
   const setPreferences = useUIStore((state) => state.setPreferences);
   const detectionCompleted = useUIStore((state) => state.detectionCompleted);
@@ -44,14 +55,14 @@ export function useLocalePreferences(): void {
     }
 
     const locale = navigator.language || 'en-IN';
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || DEFAULT_TIMEZONE;
+    const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || DEFAULT_TIMEZONE;
     const currency = detectCurrency(locale);
 
-    const commitPreferences = () => {
+    const commitPreferences = (overrides?: { currency?: string; timezone?: string }) => {
       setPreferences({
         locale,
-        currency,
-        timezone,
+        currency: overrides?.currency ?? currency,
+        timezone: overrides?.timezone ?? browserTimezone,
         hapticFeedback: true,
         detectionCompleted: true,
       });
@@ -67,9 +78,15 @@ export function useLocalePreferences(): void {
       .then((permission) => {
         if (permission.state === 'granted' || permission.state === 'prompt') {
           navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const geoCurrency = mapCurrencyFromCoordinates(position.coords.latitude, position.coords.longitude);
+              commitPreferences({
+                currency: geoCurrency ?? currency,
+                timezone: browserTimezone,
+              });
+            },
             () => commitPreferences(),
-            () => commitPreferences(),
-            { timeout: 6000, enableHighAccuracy: false, maximumAge: 10 * 60 * 1000 },
+            { timeout: GEOLOCATION_TIMEOUT_MS, enableHighAccuracy: false, maximumAge: GEOLOCATION_MAX_AGE_MS },
           );
           return;
         }

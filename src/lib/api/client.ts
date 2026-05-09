@@ -20,15 +20,23 @@ function getPath(path: string): string {
   return path.startsWith('/api') ? path : `/api${path.startsWith('/') ? path : `/${path}`}`;
 }
 
+function isRawBody(body: unknown): body is FormData | Blob | ArrayBuffer {
+  return body instanceof FormData || body instanceof Blob || body instanceof ArrayBuffer;
+}
+
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+  const hasBody = options.body !== undefined;
+  const body = hasBody ? options.body : undefined;
+  const rawBody = isRawBody(body);
+
   const response = await fetch(getPath(path), {
     ...options,
     credentials: 'include',
     headers: {
-      'Content-Type': 'application/json',
+      ...(rawBody ? {} : { 'Content-Type': 'application/json' }),
       ...(options.headers ?? {}),
     },
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    body: !hasBody ? undefined : rawBody ? body : JSON.stringify(body),
   });
 
   const payload = (await response.json()) as ApiResponse<T>;

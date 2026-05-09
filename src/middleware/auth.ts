@@ -9,9 +9,11 @@ function isTokenProbablyValid(token: string): boolean {
   if (parts.length !== 3) return false;
 
   try {
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))) as { exp?: number };
-    if (!payload.exp) return false;
-    return payload.exp * 1000 > Date.now();
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    if (!payload || typeof payload !== 'object') return false;
+    const exp = (payload as Record<string, unknown>).exp;
+    if (!exp) return false;
+    return Number(exp) * 1000 > Date.now();
   } catch {
     return false;
   }
@@ -34,7 +36,7 @@ export function authMiddleware(request: NextRequest): NextResponse | null {
 
   if (!hasValidToken) {
     const loginUrl = new URL('/auth/login', request.url);
-    loginUrl.searchParams.set('next', `${pathname}${request.nextUrl.search}`);
+    loginUrl.searchParams.set('next', pathname);
     return NextResponse.redirect(loginUrl);
   }
 

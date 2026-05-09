@@ -1,8 +1,10 @@
 import type { CloudinaryTransform } from '@/types/upload.types';
 
-const DEFAULT_CLOUDINARY_CLOUD = 'demo';
-
 export function buildCloudinaryUrl(publicId: string, cloudName: string, transform: CloudinaryTransform = {}): string {
+  if (!cloudName) {
+    return '';
+  }
+
   const clauses = [
     transform.width ? `w_${transform.width}` : undefined,
     transform.height ? `h_${transform.height}` : undefined,
@@ -12,7 +14,5 @@ export function buildCloudinaryUrl(publicId: string, cloudName: string, transfor
   ].filter(Boolean);
 
   const transforms = clauses.length > 0 ? `${clauses.join(',')}/` : '';
-  const resolvedCloud = cloudName || DEFAULT_CLOUDINARY_CLOUD;
-
-  return `https://res.cloudinary.com/${resolvedCloud}/image/upload/${transforms}${publicId}`;
+  return `https://res.cloudinary.com/${cloudName}/image/upload/${transforms}${publicId}`;
 }

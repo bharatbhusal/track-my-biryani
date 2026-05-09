@@ -34,10 +34,11 @@ export async function uploadImageToCloudinary(
       onProgress(Math.round((event.loaded / event.total) * 100));
     };
 
-    xhr.onerror = () => reject(new Error('Upload failed'));
+    xhr.onerror = () => reject(new Error('Upload failed due to network error'));
     xhr.onload = () => {
       if (xhr.status < 200 || xhr.status >= 300) {
-        reject(new Error('Upload failed'));
+        const details = xhr.responseText ? `: ${xhr.responseText}` : '';
+        reject(new Error(`Upload failed with status ${xhr.status}${details}`));
         return;
       }
 

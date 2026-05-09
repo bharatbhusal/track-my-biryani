@@ -21,10 +21,6 @@ type ReceiptUploadProps = {
   onChange: (value: string[]) => void;
 };
 
-function createId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
 export function ReceiptUpload({ value, onChange }: ReceiptUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState<UploadingItem[]>([]);
@@ -37,7 +33,7 @@ export function ReceiptUpload({ value, onChange }: ReceiptUploadProps) {
       value.map((publicId) => ({
         publicId,
         url: buildCloudinaryUrl(publicId, cloudName, { width: 300, height: 200, crop: 'fill', quality: 'auto', format: 'auto' }),
-      })),
+      })).filter((item) => item.url),
     [cloudName, value],
   );
 
@@ -68,7 +64,7 @@ export function ReceiptUpload({ value, onChange }: ReceiptUploadProps) {
     }
 
     for (const file of fileList) {
-      const id = createId();
+      const id = crypto.randomUUID();
       setUploading((current) => [...current, { id, file, progress: 0, status: 'uploading' }]);
 
       try {

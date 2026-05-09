@@ -77,7 +77,7 @@ export function SettingsForm() {
     toast.success('Settings updated');
   };
 
-  const exportData = async (format: 'json' | 'csv') => {
+  const handleExportDownload = async (format: 'json' | 'csv') => {
     try {
       const payload = await analyticsApi.exportData(format);
       const blob = new Blob([payload.data], { type: payload.mimeType });
@@ -144,10 +144,10 @@ export function SettingsForm() {
       </form>
 
       <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2">
-          <Button variant="outline" onClick={() => void exportData('json')}>
+          <Button variant="outline" onClick={() => void handleExportDownload('json')}>
             Export JSON
           </Button>
-          <Button variant="outline" onClick={() => void exportData('csv')}>
+          <Button variant="outline" onClick={() => void handleExportDownload('csv')}>
             Export CSV
           </Button>
         </div>
