@@ -42,22 +42,12 @@ export function ExpenseManager() {
 			limit: 20,
 			q: debouncedQuery || undefined,
 			categoryId: categoryId || undefined,
-			amountMin:
-				amountMin.trim().length > 0
-					? Number(amountMin)
-					: undefined,
-			amountMax:
-				amountMax.trim().length > 0
-					? Number(amountMax)
-					: undefined,
 			from: bounds.from,
 			to: bounds.to,
 			sortBy,
 			order,
 		};
 	}, [
-		amountMax,
-		amountMin,
 		categoryId,
 		globalDateRange,
 		order,
@@ -133,30 +123,6 @@ export function ExpenseManager() {
 						<option value="desc">Descending</option>
 						<option value="asc">Ascending</option>
 					</Select>
-					<Input
-						type="number"
-						min={0}
-						step="0.01"
-						className="w-36"
-						placeholder="Min amount"
-						value={amountMin}
-						onChange={(event) => {
-							setAmountMin(event.target.value);
-							setPage(1);
-						}}
-					/>
-					<Input
-						type="number"
-						min={0}
-						step="0.01"
-						className="w-36"
-						placeholder="Max amount"
-						value={amountMax}
-						onChange={(event) => {
-							setAmountMax(event.target.value);
-							setPage(1);
-						}}
-					/>
 				</div>
 			</Card>
 
