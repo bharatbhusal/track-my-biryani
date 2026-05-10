@@ -9,28 +9,9 @@ import {
 	listExpensesForRange,
 	listRecentExpenses,
 } from "@/repositories/expense.repository";
+import { parseCustomBound } from "@/lib/custom-range";
 
 type Granularity = "hour" | "day" | "month";
-
-function parseCustomBound(
-	value: string,
-	bound: "from" | "to",
-): Date {
-	const parsed = new Date(value);
-	if (Number.isNaN(parsed.getTime())) {
-		return new Date();
-	}
-
-	if (!value.includes("T")) {
-		if (bound === "from") {
-			parsed.setHours(0, 0, 0, 0);
-		} else {
-			parsed.setHours(23, 59, 59, 999);
-		}
-	}
-
-	return parsed;
-}
 
 function parseRange(url: URL): { from: Date; to: Date } {
 	const now = new Date();

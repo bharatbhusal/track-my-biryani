@@ -5,26 +5,9 @@ import {
 	errorResponse,
 	successResponse,
 } from "@/lib/api-response";
+import { parseCustomBound } from "@/lib/custom-range";
 import { connectToDatabase } from "@/lib/db";
 import { listAuditLogs } from "@/repositories/audit.repository";
-
-function parseCustomBound(
-	value: string,
-	bound: "from" | "to",
-): Date {
-	const parsed = new Date(value);
-	if (Number.isNaN(parsed.getTime())) {
-		return new Date();
-	}
-	if (!value.includes("T")) {
-		if (bound === "from") {
-			parsed.setHours(0, 0, 0, 0);
-		} else {
-			parsed.setHours(23, 59, 59, 999);
-		}
-	}
-	return parsed;
-}
 
 function getDateRangeFromQuery(params: URLSearchParams): {
 	from?: Date;

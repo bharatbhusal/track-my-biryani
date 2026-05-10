@@ -121,6 +121,7 @@ export function DashboardOverview() {
 			</div>
 
 			<CustomDateTimeRangeModal
+				key={`${customRangeModalOpen}-${localDateRange?.from ?? globalDateRange.from ?? ""}-${localDateRange?.to ?? globalDateRange.to ?? ""}`}
 				open={customRangeModalOpen}
 				initialFrom={localDateRange?.from ?? globalDateRange.from ?? ""}
 				initialTo={localDateRange?.to ?? globalDateRange.to ?? ""}

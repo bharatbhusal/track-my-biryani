@@ -1,3 +1,5 @@
+import { parseCustomBound } from "@/lib/custom-range";
+
 export type DateRangePreset =
 	| "this_week"
 	| "this_month"
@@ -13,26 +15,6 @@ export type GlobalDateRange = {
 export const DEFAULT_GLOBAL_RANGE: GlobalDateRange = {
 	preset: "this_month",
 };
-
-function parseCustomBound(
-	value: string,
-	bound: "from" | "to",
-): Date {
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) {
-		return new Date();
-	}
-
-	if (!value.includes("T")) {
-		if (bound === "from") {
-			date.setHours(0, 0, 0, 0);
-		} else {
-			date.setHours(23, 59, 59, 999);
-		}
-	}
-
-	return date;
-}
 
 export function toRangeParams(range: GlobalDateRange): {
 	preset?: string;

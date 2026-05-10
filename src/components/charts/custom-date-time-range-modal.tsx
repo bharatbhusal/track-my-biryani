@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/dialog";
@@ -29,14 +29,6 @@ export function CustomDateTimeRangeModal({
 }: CustomDateTimeRangeModalProps) {
 	const [from, setFrom] = useState(initialFrom);
 	const [to, setTo] = useState(initialTo);
-
-	useEffect(() => {
-		if (!open) return;
-		Promise.resolve().then(() => {
-			setFrom(initialFrom);
-			setTo(initialTo);
-		});
-	}, [open, initialFrom, initialTo]);
 
 	return (
 		<Modal
