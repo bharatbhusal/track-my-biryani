@@ -1,7 +1,6 @@
 "use client";
 
 import {
-	CartesianGrid,
 	Line,
 	LineChart,
 	ResponsiveContainer,
@@ -9,6 +8,7 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
+import { themedTooltipProps } from "@/components/charts/chart-tooltip";
 
 export function MonthlyLineChart({
 	data,
@@ -21,10 +21,9 @@ export function MonthlyLineChart({
 		<div className={`${heightClass} w-full`}>
 			<ResponsiveContainer width="100%" height="100%">
 				<LineChart data={data}>
-					<CartesianGrid strokeDasharray="3 3" />
 					<XAxis dataKey="name" />
 					<YAxis />
-					<Tooltip />
+					<Tooltip {...themedTooltipProps} />
 					<Line
 						dataKey="total"
 						stroke="#4f46e5"

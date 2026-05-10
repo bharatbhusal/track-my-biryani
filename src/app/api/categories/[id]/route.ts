@@ -55,6 +55,7 @@ export async function PUT(
 		const category = await updateCategory(auth.userId, id, {
 			name: payload.name,
 			color: payload.color ?? randomHexColor(),
+			emoji: payload.emoji,
 		});
 
 		if (!category) {

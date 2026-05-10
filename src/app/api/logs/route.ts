@@ -5,6 +5,7 @@ import {
 	errorResponse,
 	successResponse,
 } from "@/lib/api-response";
+import { parseCustomBound } from "@/lib/custom-range";
 import { connectToDatabase } from "@/lib/db";
 import { listAuditLogs } from "@/repositories/audit.repository";
 
@@ -18,9 +19,8 @@ function getDateRangeFromQuery(params: URLSearchParams): {
 	const preset = params.get("preset");
 
 	if (fromParam && toParam) {
-		const from = new Date(fromParam);
-		const to = new Date(toParam);
-		to.setHours(23, 59, 59, 999);
+		const from = parseCustomBound(fromParam, "from");
+		const to = parseCustomBound(toParam, "to");
 		return { from, to };
 	}
 

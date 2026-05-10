@@ -35,8 +35,7 @@ export function ExportableChart({
 
 	return (
 		<div className="space-y-2">
-			<div className="flex items-center justify-between">
-				<h3 className="text-sm font-semibold">{title}</h3>
+			<div className="flex items-center justify-end">
 				<Button
 					variant="outline"
 					onClick={exportPng}
@@ -51,6 +50,7 @@ export function ExportableChart({
 				ref={ref}
 				className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800"
 			>
+				<h3 className="mb-2 text-sm font-semibold">{title}</h3>
 				{children}
 			</div>
 		</div>

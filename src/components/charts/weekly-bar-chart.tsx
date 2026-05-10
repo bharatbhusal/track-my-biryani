@@ -3,12 +3,12 @@
 import {
 	Bar,
 	BarChart,
-	CartesianGrid,
 	ResponsiveContainer,
 	Tooltip,
 	XAxis,
 	YAxis,
 } from "recharts";
+import { themedTooltipProps } from "@/components/charts/chart-tooltip";
 
 export function WeeklyBarChart({
 	data,
@@ -21,10 +21,9 @@ export function WeeklyBarChart({
 		<div className={`${heightClass} w-full`}>
 			<ResponsiveContainer width="100%" height="100%">
 				<BarChart data={data}>
-					<CartesianGrid strokeDasharray="3 3" />
 					<XAxis dataKey="name" />
 					<YAxis />
-					<Tooltip />
+					<Tooltip {...themedTooltipProps} />
 					<Bar
 						dataKey="total"
 						fill="#0ea5e9"

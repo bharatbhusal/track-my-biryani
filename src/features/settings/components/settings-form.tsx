@@ -22,7 +22,6 @@ import { useUIStore } from "@/store/ui-store";
 import { ActivityList } from "@/features/logs/components/activity-list";
 
 type SettingsSection =
-	| "preferences"
 	| "security"
 	| "data"
 	| "appearance"
@@ -50,8 +49,6 @@ export function SettingsForm() {
 		useState<SettingsSection>(null);
 
 	const sectionTitle = useMemo(() => {
-		if (activeSection === "preferences")
-			return "User Preferences";
 		if (activeSection === "security")
 			return "Security & Privacy";
 		if (activeSection === "data") return "Export / Import";

@@ -21,6 +21,9 @@ export function CategoryCard({ category, amount }: Props) {
 		>
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-3">
+					<span aria-hidden="true">
+						{category.emoji ?? "🏷️"}
+					</span>
 					<span
 						style={{ backgroundColor: category.color }}
 						className="inline-block h-3 w-3 rounded-full"

@@ -58,6 +58,16 @@ export function ExpenseManager() {
 	const expensesQuery = useExpensesQuery(filters);
 	const items = expensesQuery.data?.items ?? [];
 	const totalPages = expensesQuery.data?.totalPages ?? 1;
+	const categoryMap = useMemo(
+		() =>
+			new Map(
+				(categoriesQuery.data ?? []).map((category) => [
+					category._id,
+					category,
+				]),
+			),
+		[categoriesQuery.data],
+	);
 
 	return (
 		<div className="space-y-4">
@@ -131,7 +141,10 @@ export function ExpenseManager() {
 				<ul className="space-y-2 text-sm">
 					{items.map((expense) => (
 						<li key={expense._id} data-animate="true">
-							<ExpenseCard expense={expense} />
+							<ExpenseCard
+								expense={expense}
+								category={categoryMap.get(expense.categoryId)}
+							/>
 						</li>
 					))}
 				</ul>

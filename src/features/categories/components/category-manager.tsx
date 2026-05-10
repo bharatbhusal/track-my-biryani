@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "react-toastify";
 
 import { Button } from "@/components/ui/button";
@@ -9,27 +9,36 @@ import {
 	useCategoriesQuery,
 	useExpenseMutations,
 } from "@/hooks/api/use-expenses-api";
+import { useDebouncedValue } from "@/hooks/use-debounce";
 import { Input } from "@/components/ui/input";
 import { CategoryCard } from "@/features/categories/components/category-card";
 
 export function CategoryManager() {
 	const [name, setName] = useState("");
+	const [emoji, setEmoji] = useState("🏷️");
 	const [query, setQuery] = useState("");
 	const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
 		"asc",
 	);
 	const categoriesQuery = useCategoriesQuery();
 	const { createCategory } = useExpenseMutations();
+	const debouncedQuery = useDebouncedValue(query, 300);
 
-	const items = (categoriesQuery.data ?? [])
-		.filter((item) =>
-			item.name.toLowerCase().includes(query.toLowerCase()),
-		)
-		.sort((a, b) =>
-			sortOrder === "asc"
-				? a.name.localeCompare(b.name)
-				: b.name.localeCompare(a.name),
-		);
+	const items = useMemo(
+		() =>
+			(categoriesQuery.data ?? [])
+				.filter((item) =>
+					item.name
+						.toLowerCase()
+						.includes(debouncedQuery.toLowerCase()),
+				)
+				.sort((a, b) =>
+					sortOrder === "asc"
+						? a.name.localeCompare(b.name)
+						: b.name.localeCompare(a.name),
+				),
+		[categoriesQuery.data, debouncedQuery, sortOrder],
+	);
 
 	return (
 		<Card>
@@ -39,9 +48,12 @@ export function CategoryManager() {
 				onSubmit={(event) => {
 					event.preventDefault();
 					if (!name.trim()) return;
-					createCategory.mutate(name, {
+					createCategory.mutate(
+						{ name: name.trim(), emoji: emoji.trim() || "🏷️" },
+						{
 						onSuccess: () => {
 							setName("");
+							setEmoji("🏷️");
 							toast.success("Category created");
 						},
 						onError: (error) => {
@@ -51,13 +63,20 @@ export function CategoryManager() {
 									: "Failed to create category",
 							);
 						},
-					});
+						},
+					);
 				}}
 			>
 				<Input
 					value={name}
 					onChange={(event) => setName(event.target.value)}
 					placeholder="Food, Transport..."
+				/>
+				<Input
+					value={emoji}
+					onChange={(event) => setEmoji(event.target.value)}
+					placeholder="🏷️"
+					className="max-w-20"
 				/>
 				<Button
 					type="submit"

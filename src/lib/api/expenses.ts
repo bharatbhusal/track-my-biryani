@@ -29,14 +29,18 @@ function buildListQuery(filters: ExpenseListQuery): string {
 export const expensesApi = {
 	listCategories: () =>
 		apiRequest<CategoryItem[]>("/categories"),
-	createCategory: (name: string) =>
+	createCategory: (payload: {
+		name: string;
+		color?: string;
+		emoji?: string;
+	}) =>
 		apiRequest<CategoryItem>("/categories", {
 			method: "POST",
-			body: { name },
+			body: payload,
 		}),
 	updateCategory: (
 		id: string,
-		payload: { name: string; color?: string },
+		payload: { name: string; color?: string; emoji?: string },
 	) =>
 		apiRequest<CategoryItem>(`/categories/${id}`, {
 			method: "PUT",

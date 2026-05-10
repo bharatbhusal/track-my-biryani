@@ -9,6 +9,7 @@ import {
 	listExpensesForRange,
 	listRecentExpenses,
 } from "@/repositories/expense.repository";
+import { parseCustomBound } from "@/lib/custom-range";
 
 type Granularity = "hour" | "day" | "month";
 
@@ -19,10 +20,8 @@ function parseRange(url: URL): { from: Date; to: Date } {
 	const toParam = url.searchParams.get("to");
 
 	if (fromParam && toParam) {
-		const from = new Date(fromParam);
-		from.setHours(0, 0, 0, 0);
-		const to = new Date(toParam);
-		to.setHours(23, 59, 59, 999);
+		const from = parseCustomBound(fromParam, "from");
+		const to = parseCustomBound(toParam, "to");
 		return { from, to };
 	}
 

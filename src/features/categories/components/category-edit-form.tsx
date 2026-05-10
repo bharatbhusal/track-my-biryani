@@ -13,6 +13,7 @@ import { expensesApi } from "@/lib/api/expenses";
 type FormValues = {
 	name: string;
 	color: string;
+	emoji: string;
 };
 
 export function CategoryEditForm({ id }: { id: string }) {
@@ -26,6 +27,7 @@ export function CategoryEditForm({ id }: { id: string }) {
 		defaultValues: {
 			name: "",
 			color: "#10b981",
+			emoji: "🏷️",
 		},
 	});
 
@@ -37,6 +39,7 @@ export function CategoryEditForm({ id }: { id: string }) {
 		reset({
 			name: categoryQuery.data.name,
 			color: categoryQuery.data.color,
+			emoji: categoryQuery.data.emoji ?? "🏷️",
 		});
 	}, [categoryQuery.data, reset]);
 
@@ -68,6 +71,7 @@ export function CategoryEditForm({ id }: { id: string }) {
 					{...register("name")}
 					placeholder="Category name"
 				/>
+				<Input {...register("emoji")} placeholder="Emoji" />
 				<Input type="color" {...register("color")} />
 				<Button
 					type="submit"

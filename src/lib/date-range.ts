@@ -1,3 +1,5 @@
+import { parseCustomBound } from "@/lib/custom-range";
+
 export type DateRangePreset =
 	| "this_week"
 	| "this_month"
@@ -52,10 +54,8 @@ export function toIsoBounds(range: GlobalDateRange): {
 	const now = new Date();
 
 	if (range.preset === "custom" && range.from && range.to) {
-		const from = new Date(range.from);
-		from.setHours(0, 0, 0, 0);
-		const to = new Date(range.to);
-		to.setHours(23, 59, 59, 999);
+		const from = parseCustomBound(range.from, "from");
+		const to = parseCustomBound(range.to, "to");
 		return { from: from.toISOString(), to: to.toISOString() };
 	}
 

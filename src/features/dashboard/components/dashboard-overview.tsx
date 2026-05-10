@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
+import { CustomDateTimeRangeModal } from "@/components/charts/custom-date-time-range-modal";
 import { CategoryRankingBarChart } from "@/components/charts/category-ranking-bar-chart";
 import { ExportableChart } from "@/components/charts/exportable-chart";
 import { WeeklyBarChart } from "@/components/charts/weekly-bar-chart";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { Modal } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
 import {
 	hasValidCustomRange,
@@ -33,34 +32,26 @@ export function DashboardOverview() {
 	const setCustomRangeModalOpen = useUIStore(
 		(state) => state.setCustomRangeModalOpen,
 	);
-	const [from, setFrom] = useState(
-		globalDateRange.from ?? "",
+	const [localDateRange, setLocalDateRange] = useState<{
+		from: string;
+		to: string;
+	} | null>(null);
+	const activeDateRange = useMemo(
+		() =>
+			localDateRange
+				? {
+						preset: "custom" as const,
+						from: localDateRange.from,
+						to: localDateRange.to,
+					}
+				: globalDateRange,
+		[globalDateRange, localDateRange],
 	);
-	const [to, setTo] = useState(globalDateRange.to ?? "");
 	const rangeParams = useMemo(
-		() => toRangeParams(globalDateRange),
-		[globalDateRange],
+		() => toRangeParams(activeDateRange),
+		[activeDateRange],
 	);
 	const dashboardQuery = useDashboardQuery(rangeParams);
-
-	useEffect(() => {
-		if (!customRangeModalOpen) {
-			return;
-		}
-
-		if (!customRangeModalOpen) return;
-
-		const t = setTimeout(() => {
-			setFrom(globalDateRange.from ?? "");
-			setTo(globalDateRange.to ?? "");
-		}, 0);
-
-		return () => clearTimeout(t);
-	}, [
-		customRangeModalOpen,
-		globalDateRange.from,
-		globalDateRange.to,
-	]);
 
 	const data = dashboardQuery.data;
 
@@ -74,16 +65,20 @@ export function DashboardOverview() {
 				className="flex items-center justify-between"
 				data-animate="true"
 			>
-				<CardTitle>{rangeLabel(globalDateRange)}</CardTitle>
-				{globalDateRange.preset === "custom" &&
-					hasValidCustomRange(globalDateRange) && (
-						<Button
-							variant="outline"
-							onClick={() => setCustomRangeModalOpen(true)}
-						>
-							Edit Custom Range
-						</Button>
-					)}
+				<CardTitle>
+					{localDateRange
+						? "Custom (Dashboard)"
+						: rangeLabel(globalDateRange)}
+				</CardTitle>
+				<Button
+					variant="outline"
+					onClick={() => setCustomRangeModalOpen(true)}
+				>
+					{globalDateRange.preset === "custom" &&
+					hasValidCustomRange(globalDateRange)
+						? "Edit Custom Range"
+						: "Set Custom Range"}
+				</Button>
 			</div>
 
 			<div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -125,46 +120,24 @@ export function DashboardOverview() {
 				</ExportableChart>
 			</div>
 
-			<Modal
+			<CustomDateTimeRangeModal
+				key={`${customRangeModalOpen}-${localDateRange?.from ?? globalDateRange.from ?? ""}-${localDateRange?.to ?? globalDateRange.to ?? ""}`}
 				open={customRangeModalOpen}
-				title="Choose Custom Range"
+				initialFrom={localDateRange?.from ?? globalDateRange.from ?? ""}
+				initialTo={localDateRange?.to ?? globalDateRange.to ?? ""}
+				hasLocalOverride={Boolean(localDateRange)}
 				onClose={() => setCustomRangeModalOpen(false)}
-			>
-				<div className="space-y-3">
-					<div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-						<label className="text-sm">
-							From
-							<Input
-								type="date"
-								value={from}
-								onChange={(event) => setFrom(event.target.value)}
-							/>
-						</label>
-						<label className="text-sm">
-							To
-							<Input
-								type="date"
-								value={to}
-								onChange={(event) => setTo(event.target.value)}
-							/>
-						</label>
-					</div>
-					<Button
-						disabled={!from || !to}
-						onClick={() => {
-							setGlobalDateRange({
-								preset: "custom",
-								from,
-								to,
-							});
-							setCustomRangeModalOpen(false);
-						}}
-						className="w-full"
-					>
-						Apply Range
-					</Button>
-				</div>
-			</Modal>
+				onApplyGlobal={(from, to) => {
+					setLocalDateRange(null);
+					setGlobalDateRange({ preset: "custom", from, to });
+					setCustomRangeModalOpen(false);
+				}}
+				onApplyLocal={(from, to) => {
+					setLocalDateRange({ from, to });
+					setCustomRangeModalOpen(false);
+				}}
+				onClearLocal={() => setLocalDateRange(null)}
+			/>
 		</div>
 	);
 }

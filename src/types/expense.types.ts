@@ -26,6 +26,7 @@ export type CategoryItem = {
 	_id: string;
 	name: string;
 	color: string;
+	emoji?: string;
 };
 
 export type ExpensesListPayload = PaginationMeta & {

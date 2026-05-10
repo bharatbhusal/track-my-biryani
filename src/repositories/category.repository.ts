@@ -6,6 +6,7 @@ export async function createCategory(data: {
 	userId: string;
 	name: string;
 	color: string;
+	emoji?: string;
 }) {
 	const category = await CategoryModel.create(data);
 	return category.toObject();
@@ -20,7 +21,7 @@ export async function listCategories(userId: string) {
 export async function updateCategory(
 	userId: string,
 	categoryId: string,
-	data: { name: string; color: string },
+	data: { name: string; color: string; emoji?: string },
 ) {
 	if (!Types.ObjectId.isValid(categoryId)) {
 		return null;
