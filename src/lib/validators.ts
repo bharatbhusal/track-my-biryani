@@ -16,11 +16,17 @@ export const loginSchema = z.object({
 export const categorySchema = z.object({
 	name: z.string().min(1).max(50),
 	color: z.string().regex(HEX_COLOR_REGEX).optional(),
+	emoji: z.string().trim().max(8).optional(),
 });
+
+const roundedAmountSchema = z
+	.number()
+	.positive()
+	.transform((value) => Number(value.toFixed(2)));
 
 export const expenseSchema = z.object({
 	title: z.string().min(1).max(120),
-	amount: z.number().positive(),
+	amount: roundedAmountSchema,
 	categoryId: z.string().min(1),
 	notes: z.string().max(400).optional(),
 	paymentMethod: z.string().max(60).optional(),

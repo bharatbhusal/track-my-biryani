@@ -3,12 +3,12 @@
 import {
 	Bar,
 	BarChart,
-	CartesianGrid,
 	ResponsiveContainer,
 	Tooltip,
 	XAxis,
 	YAxis,
 } from "recharts";
+import { themedTooltipProps } from "@/components/charts/chart-tooltip";
 
 export function CategoryRankingBarChart({
 	data,
@@ -25,10 +25,9 @@ export function CategoryRankingBarChart({
 					layout="vertical"
 					margin={{ left: 24 }}
 				>
-					<CartesianGrid strokeDasharray="3 3" />
 					<XAxis type="number" />
 					<YAxis dataKey="name" type="category" width={90} />
-					<Tooltip />
+					<Tooltip {...themedTooltipProps} />
 					<Bar
 						dataKey="value"
 						fill="#16a34a"

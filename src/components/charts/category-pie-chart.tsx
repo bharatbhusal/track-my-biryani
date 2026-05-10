@@ -7,6 +7,7 @@ import {
 	ResponsiveContainer,
 	Tooltip,
 } from "recharts";
+import { themedTooltipProps } from "@/components/charts/chart-tooltip";
 
 const COLORS = [
 	"#14b8a6",
@@ -47,7 +48,7 @@ export function CategoryPieChart({
 							/>
 						))}
 					</Pie>
-					<Tooltip />
+					<Tooltip {...themedTooltipProps} />
 				</PieChart>
 			</ResponsiveContainer>
 		</div>

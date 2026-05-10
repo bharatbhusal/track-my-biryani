@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import {
 	Area,
 	AreaChart,
-	CartesianGrid,
 	ResponsiveContainer,
 	Tooltip,
 	XAxis,
@@ -27,6 +27,7 @@ import { toIsoBounds } from "@/lib/date-range";
 import { formatCurrency } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
 import { ExpenseListQuery } from "@/types";
+import { themedTooltipProps } from "@/components/charts/chart-tooltip";
 
 export function CategoryDetailView({ id }: { id: string }) {
 	const router = useRouter();
@@ -36,14 +37,9 @@ export function CategoryDetailView({ id }: { id: string }) {
 	const globalDateRange = useUIStore(
 		(state) => state.globalDateRange,
 	);
-	const {
-		preset,
-		from: rangeFrom,
-		to: rangeTo,
-	} = globalDateRange;
 	const rangeBounds = useMemo(
 		() => toIsoBounds(globalDateRange),
-		[preset, rangeFrom, rangeTo],
+		[globalDateRange],
 	);
 
 	const categoryQuery = useCategoryDetailQuery(id);
@@ -115,16 +111,26 @@ export function CategoryDetailView({ id }: { id: string }) {
 		<div className="space-y-4">
 			<Card>
 				<div className="mb-2 flex items-center justify-between">
-					<CardTitle>{category.name}</CardTitle>
+					<CardTitle>
+						{category.emoji ?? "🏷️"} {category.name}
+					</CardTitle>
 					<div className="flex items-center gap-2">
 						<Link href={`/categories/${id}/edit`}>
-							<Button variant="outline">Edit</Button>
+							<Button
+								variant="outline"
+								className="h-9 w-9 p-0"
+								aria-label="Edit category"
+							>
+								<FiEdit2 />
+							</Button>
 						</Link>
 						<Button
 							variant="destructive"
+							className="h-9 w-9 p-0"
+							aria-label="Delete category"
 							onClick={() => setDeleteOpen(true)}
 						>
-							Delete
+							<FiTrash2 />
 						</Button>
 					</div>
 				</div>
@@ -150,10 +156,9 @@ export function CategoryDetailView({ id }: { id: string }) {
 				<div className="h-64">
 					<ResponsiveContainer width="100%" height="100%">
 						<AreaChart data={analytics.monthlyTrend}>
-							<CartesianGrid strokeDasharray="3 3" />
 							<XAxis dataKey="name" />
 							<YAxis />
-							<Tooltip />
+							<Tooltip {...themedTooltipProps} />
 							<Area
 								dataKey="total"
 								stroke="#10b981"
@@ -171,7 +176,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 				<ul className="space-y-2 text-sm">
 					{expenses.slice(0, 10).map((item) => (
 						<li key={item._id}>
-							<ExpenseCard expense={item} />
+							<ExpenseCard expense={item} category={category} />
 						</li>
 					))}
 				</ul>

@@ -8,6 +8,24 @@ import {
 import { connectToDatabase } from "@/lib/db";
 import { listAuditLogs } from "@/repositories/audit.repository";
 
+function parseCustomBound(
+	value: string,
+	bound: "from" | "to",
+): Date {
+	const parsed = new Date(value);
+	if (Number.isNaN(parsed.getTime())) {
+		return new Date();
+	}
+	if (!value.includes("T")) {
+		if (bound === "from") {
+			parsed.setHours(0, 0, 0, 0);
+		} else {
+			parsed.setHours(23, 59, 59, 999);
+		}
+	}
+	return parsed;
+}
+
 function getDateRangeFromQuery(params: URLSearchParams): {
 	from?: Date;
 	to?: Date;
@@ -18,9 +36,8 @@ function getDateRangeFromQuery(params: URLSearchParams): {
 	const preset = params.get("preset");
 
 	if (fromParam && toParam) {
-		const from = new Date(fromParam);
-		const to = new Date(toParam);
-		to.setHours(23, 59, 59, 999);
+		const from = parseCustomBound(fromParam, "from");
+		const to = parseCustomBound(toParam, "to");
 		return { from, to };
 	}
 

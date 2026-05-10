@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
       userId: auth.userId,
       name: payload.name,
       color: payload.color ?? randomHexColor(),
+      emoji: payload.emoji,
     });
 
     await logAuditEvent({

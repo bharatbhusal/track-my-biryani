@@ -12,6 +12,26 @@ import {
 
 type Granularity = "hour" | "day" | "month";
 
+function parseCustomBound(
+	value: string,
+	bound: "from" | "to",
+): Date {
+	const parsed = new Date(value);
+	if (Number.isNaN(parsed.getTime())) {
+		return new Date();
+	}
+
+	if (!value.includes("T")) {
+		if (bound === "from") {
+			parsed.setHours(0, 0, 0, 0);
+		} else {
+			parsed.setHours(23, 59, 59, 999);
+		}
+	}
+
+	return parsed;
+}
+
 function parseRange(url: URL): { from: Date; to: Date } {
 	const now = new Date();
 	const preset = url.searchParams.get("preset");
@@ -19,10 +39,8 @@ function parseRange(url: URL): { from: Date; to: Date } {
 	const toParam = url.searchParams.get("to");
 
 	if (fromParam && toParam) {
-		const from = new Date(fromParam);
-		from.setHours(0, 0, 0, 0);
-		const to = new Date(toParam);
-		to.setHours(23, 59, 59, 999);
+		const from = parseCustomBound(fromParam, "from");
+		const to = parseCustomBound(toParam, "to");
 		return { from, to };
 	}
 

@@ -58,7 +58,6 @@ export function GlimpsesUpload({
 	const [uploading, setUploading] = useState<
 		UploadingItem[]
 	>([]);
-	const [cloudName, setCloudName] = useState("");
 
 	const hasPending = uploading.some(
 		(item) => item.status === "uploading",

@@ -14,6 +14,26 @@ export const DEFAULT_GLOBAL_RANGE: GlobalDateRange = {
 	preset: "this_month",
 };
 
+function parseCustomBound(
+	value: string,
+	bound: "from" | "to",
+): Date {
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) {
+		return new Date();
+	}
+
+	if (!value.includes("T")) {
+		if (bound === "from") {
+			date.setHours(0, 0, 0, 0);
+		} else {
+			date.setHours(23, 59, 59, 999);
+		}
+	}
+
+	return date;
+}
+
 export function toRangeParams(range: GlobalDateRange): {
 	preset?: string;
 	from?: string;
@@ -52,10 +72,8 @@ export function toIsoBounds(range: GlobalDateRange): {
 	const now = new Date();
 
 	if (range.preset === "custom" && range.from && range.to) {
-		const from = new Date(range.from);
-		from.setHours(0, 0, 0, 0);
-		const to = new Date(range.to);
-		to.setHours(23, 59, 59, 999);
+		const from = parseCustomBound(range.from, "from");
+		const to = parseCustomBound(range.to, "to");
 		return { from: from.toISOString(), to: to.toISOString() };
 	}
 
