@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { CustomDateTimeRangeModal } from "@/components/charts/custom-date-time-range-modal";
 import { CategoryRankingBarChart } from "@/components/charts/category-ranking-bar-chart";
 import { ExportableChart } from "@/components/charts/exportable-chart";
-import { WeeklyBarChart } from "@/components/charts/weekly-bar-chart";
+import { BarChart } from "@/components/charts/bar-chart";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
@@ -104,7 +104,7 @@ export function DashboardOverview() {
 
 			<div data-animate="true">
 				<ExportableChart title={data.chartLabel}>
-					<WeeklyBarChart
+					<BarChart
 						data={data.mainSeries}
 						heightClass="h-64"
 					/>

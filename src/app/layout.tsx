@@ -1,11 +1,13 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 
 import { PageTransitionShell } from "@/animations/page-transition-shell";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { QuickAddButton } from "@/components/layout/quick-add-button";
 import { AppProvider } from "@/components/providers/app-provider";
+import { DisableInteractions } from "@/components/ui/disable-interactions";
 import { QuickAddExpenseModal } from "@/features/expenses/components/quick-add-expense-modal";
+import { SettingsModal } from "@/features/settings/components/settings-modal";
 
 import "./globals.css";
 import { Header } from "@/components/layout/header";
@@ -33,6 +35,13 @@ export const metadata: Metadata = {
 	},
 };
 
+export const viewport: Viewport = {
+	width: "device-width",
+	initialScale: 1,
+	maximumScale: 1,
+	userScalable: false,
+};
+
 export default function RootLayout({
 	children,
 }: Readonly<{
@@ -44,6 +53,7 @@ export default function RootLayout({
 				className={`${manrope.variable} min-h-screen transition-colors duration-200`}
 			>
 				<AppProvider>
+					<DisableInteractions />
 					<Header />
 					<main className="mx-auto w-full max-w-6xl p-4 pb-24 pt-6 md:pb-8">
 						<PageTransitionShell>{children}</PageTransitionShell>
@@ -51,6 +61,7 @@ export default function RootLayout({
 					<BottomNav />
 					<QuickAddButton />
 					<QuickAddExpenseModal />
+					<SettingsModal />
 				</AppProvider>
 			</body>
 		</html>

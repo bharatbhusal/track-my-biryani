@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import {
-	FiCamera,
 	FiRefreshCw,
 	FiUploadCloud,
 	FiX,
@@ -30,24 +29,6 @@ type GlimpsesUploadProps = {
 	onChange: (value: string[]) => void;
 	expenseTitle?: string;
 };
-
-function isMobileDevice(): boolean {
-	if (typeof navigator === "undefined") {
-		return false;
-	}
-
-	// Prefer UA check but also allow devices with touch/MediaDevices support
-	return (
-		/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-		!!(
-			navigator.maxTouchPoints && navigator.maxTouchPoints > 0
-		) ||
-		!!(
-			navigator.mediaDevices &&
-			typeof navigator.mediaDevices.getUserMedia === "function"
-		)
-	);
-}
 
 export function GlimpsesUpload({
 	value,
@@ -84,6 +65,8 @@ export function GlimpsesUpload({
 			return;
 		}
 
+		const newUrls: string[] = [];
+
 		for (const file of fileList) {
 			const id = crypto.randomUUID();
 			setUploading((current) => [
@@ -111,7 +94,7 @@ export function GlimpsesUpload({
 					},
 				);
 
-				onChange([...value, uploaded.secureUrl]);
+				newUrls.push(uploaded.secureUrl);
 				setUploading((current) =>
 					current.filter((item) => item.id !== id),
 				);
@@ -127,6 +110,10 @@ export function GlimpsesUpload({
 					),
 				);
 			}
+		}
+
+		if (newUrls.length > 0) {
+			onChange([...value, ...newUrls]);
 		}
 	};
 
@@ -169,28 +156,11 @@ export function GlimpsesUpload({
 				<div className="mt-3 flex flex-wrap items-center justify-center gap-2">
 					<label className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500">
 						<FiUploadCloud />
-						Browse
-						<input
-							type="file"
-							className="hidden"
-							accept="image/jpeg,image/png,image/webp,image/heic"
-							multiple
-							onChange={(event) => {
-								if (!event.target.files) return;
-								void handleUpload(event.target.files);
-							}}
-						/>
-					</label>
-					<label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-[var(--color-border)] px-3 py-2 text-sm">
-						<FiCamera />
-						Camera
+						Upload
 						<input
 							type="file"
 							className="hidden"
 							accept="image/*"
-							{...(isMobileDevice()
-								? { capture: "environment" as const }
-								: {})}
 							multiple
 							onChange={(event) => {
 								if (!event.target.files) return;
