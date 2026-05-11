@@ -5,10 +5,18 @@ import {
 	type GlobalDateRange,
 } from "@/lib/date-range";
 
+export type SettingsSection =
+	| "security"
+	| "data"
+	| "appearance"
+	| "logs"
+	| null;
+
 type UIState = {
 	quickAddOpen: boolean;
 	globalDateRange: GlobalDateRange;
 	customRangeModalOpen: boolean;
+	settingsSection: SettingsSection;
 	locale: string;
 	currency: string;
 	timezone: string;
@@ -17,6 +25,7 @@ type UIState = {
 	setQuickAddOpen: (value: boolean) => void;
 	setGlobalDateRange: (input: GlobalDateRange) => void;
 	setCustomRangeModalOpen: (value: boolean) => void;
+	setSettingsSection: (section: SettingsSection) => void;
 	setPreferences: (input: {
 		locale: string;
 		currency: string;
@@ -30,6 +39,7 @@ export const useUIStore = create<UIState>()((set) => ({
 	quickAddOpen: false,
 	globalDateRange: DEFAULT_GLOBAL_RANGE,
 	customRangeModalOpen: false,
+	settingsSection: null,
 	locale: "en-US",
 	currency: "INR",
 	timezone: "Asia/Kolkata",
@@ -40,6 +50,8 @@ export const useUIStore = create<UIState>()((set) => ({
 		set({ globalDateRange: input }),
 	setCustomRangeModalOpen: (value) =>
 		set({ customRangeModalOpen: value }),
+	setSettingsSection: (section) =>
+		set({ settingsSection: section }),
 	setPreferences: ({
 		locale,
 		currency,

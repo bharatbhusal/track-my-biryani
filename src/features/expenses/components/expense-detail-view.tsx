@@ -13,7 +13,7 @@ import {
 	useExpenseMutations,
 	useExpenseContributionQuery,
 } from "@/hooks/api/use-expenses-api";
-import { WeeklyBarChart } from "@/components/charts/weekly-bar-chart";
+import { BarChart } from "@/components/charts/bar-chart";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
 import type { ExpenseContribution } from "@/types/analytics.types";
@@ -165,9 +165,8 @@ export function ExpenseDetailView({
 								title="map-preview"
 								width="100%"
 								height={240}
-								src={`https://www.google.com/maps?q=${expense.location.latitude},${expense.location.longitude}&z=15&output=embed`}
+								src={`https://www.openstreetmap.org/export/embed.html?bbox=${expense.location.longitude - 0.01},${expense.location.latitude - 0.01},${expense.location.longitude + 0.01},${expense.location.latitude + 0.01}&layer=mapnik&marker=${expense.location.latitude},${expense.location.longitude}`}
 								loading="lazy"
-								referrerPolicy="no-referrer-when-downgrade"
 								className="w-full"
 							/>
 						</div>
@@ -230,7 +229,7 @@ export function ExpenseDetailView({
 							</p>
 						</div>
 						<div>
-							<WeeklyBarChart
+							<BarChart
 								data={[
 									{
 										name: "Week %",
