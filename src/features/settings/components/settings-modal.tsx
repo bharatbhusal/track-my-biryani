@@ -104,7 +104,12 @@ export function SettingsModal() {
 		type?: "all" | "expenses" | "categories" | "logs",
 	) => {
 		try {
-			const payload = await analyticsApi.exportData(type);
+			const payload =
+				type === "all"
+					? await analyticsApi.exportData(type)
+					: await fetch(
+							`/api/export?format=json&type=${type}`,
+						).then((r) => r.json());
 			const blob = new Blob([payload.data], {
 				type: payload.mimeType,
 			});
@@ -195,84 +200,27 @@ export function SettingsModal() {
 							<Button
 								type="button"
 								variant="outline"
-								onClick={async () => {
-									try {
-										const payload = await fetch(
-											`/api/export?format=json&type=expenses`,
-										).then((r) => r.json());
-										const blob = new Blob([payload.data], {
-											type: payload.mimeType,
-										});
-										const url = URL.createObjectURL(blob);
-										const link = document.createElement("a");
-										link.href = url;
-										link.download = payload.filename;
-										link.click();
-										URL.revokeObjectURL(url);
-									} catch (error) {
-										toast.error(
-											error instanceof Error
-												? error.message
-												: "Export failed",
-										);
-									}
-								}}
+								onClick={() =>
+									void handleExportDownload("expenses")
+								}
 							>
 								Export Expenses
 							</Button>
 							<Button
 								type="button"
 								variant="outline"
-								onClick={async () => {
-									try {
-										const payload = await fetch(
-											`/api/export?format=json&type=categories`,
-										).then((r) => r.json());
-										const blob = new Blob([payload.data], {
-											type: payload.mimeType,
-										});
-										const url = URL.createObjectURL(blob);
-										const link = document.createElement("a");
-										link.href = url;
-										link.download = payload.filename;
-										link.click();
-										URL.revokeObjectURL(url);
-									} catch (error) {
-										toast.error(
-											error instanceof Error
-												? error.message
-												: "Export failed",
-										);
-									}
-								}}
+								onClick={() =>
+									void handleExportDownload("categories")
+								}
 							>
 								Export Categories
 							</Button>
 							<Button
 								type="button"
 								variant="outline"
-								onClick={async () => {
-									try {
-										const payload = await fetch(
-											`/api/export?format=json&type=logs`,
-										).then((r) => r.json());
-										const blob = new Blob([payload.data], {
-											type: payload.mimeType,
-										});
-										const url = URL.createObjectURL(blob);
-										const link = document.createElement("a");
-										link.href = url;
-										link.download = payload.filename;
-										link.click();
-										URL.revokeObjectURL(url);
-									} catch (error) {
-										toast.error(
-											error instanceof Error
-												? error.message
-												: "Export failed",
-										);
-									}
-								}}
+								onClick={() =>
+									void handleExportDownload("logs")
+								}
 							>
 								Export Logs
 							</Button>

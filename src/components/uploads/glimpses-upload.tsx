@@ -95,7 +95,6 @@ export function GlimpsesUpload({
 				);
 
 				newUrls.push(uploaded.secureUrl);
-				onChange([...value, ...newUrls]);
 				setUploading((current) =>
 					current.filter((item) => item.id !== id),
 				);
@@ -111,6 +110,10 @@ export function GlimpsesUpload({
 					),
 				);
 			}
+		}
+
+		if (newUrls.length > 0) {
+			onChange([...value, ...newUrls]);
 		}
 	};
 
