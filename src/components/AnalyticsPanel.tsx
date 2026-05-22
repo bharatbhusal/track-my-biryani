@@ -110,16 +110,15 @@ export function AnalyticsPanel({ data }: AnalyticsPanelProps) {
 								cy="50%"
 								innerRadius={65}
 								outerRadius={95}
-								activeIndex={activeIndex}
-								activeShape={{
-									outerRadius: 105,
-								}}
 								onMouseEnter={(_, index) => setActiveIndex(index)}
 							>
 								{data.rankedCategories.map((entry, index) => (
 									<Cell
 										key={entry.name}
 										fill={`var(--chart-${(index % 5) + 1})`}
+										stroke="var(--color-surface)"
+										strokeWidth={index === activeIndex ? 4 : 1}
+										fillOpacity={index === activeIndex ? 1 : 0.8}
 									/>
 								))}
 							</Pie>

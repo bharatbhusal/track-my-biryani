@@ -70,7 +70,6 @@ export function DateTimePicker({
 									.slice(0, 16),
 							);
 						}}
-						initialFocus
 					/>
 				</PopoverContent>
 			</Popover>
