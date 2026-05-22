@@ -4,13 +4,14 @@ import { useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTheme } from "next-themes";
 import { useForm, useWatch } from "react-hook-form";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
 import { analyticsApi } from "@/lib/api/analytics";
 import { useSettingsMutations } from "@/hooks/api/use-analytics-api";
 import {
@@ -237,7 +238,14 @@ export function SettingsModal() {
 							className="w-full"
 							disabled={isSubmitting}
 						>
-							Save changes
+							{isSubmitting ? (
+								<>
+									<Spinner className="mr-2" />
+									Saving...
+								</>
+							) : (
+								"Save changes"
+							)}
 						</Button>
 					)}
 			</form>

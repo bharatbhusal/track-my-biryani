@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope } from "next/font/google";
 
 import { PageTransitionShell } from "@/animations/page-transition-shell";
 import { BottomNav } from "@/components/layout/bottom-nav";
@@ -12,16 +11,13 @@ import { SettingsModal } from "@/features/settings/components/settings-modal";
 import "./globals.css";
 import { Header } from "@/components/layout/header";
 
-const manrope = Manrope({
-	subsets: ["latin"],
-	weight: ["400", "500", "600", "700", "800"],
-	variable: "--font-sans",
-});
+const APP_THEME_COLOR = "#059669";
 
 export const metadata: Metadata = {
 	metadataBase: new URL(
 		"https://daily-expenses-tracker.app",
 	),
+	manifest: "/manifest.webmanifest",
 	title: {
 		default: "Daily Expenses Tracker",
 		template: "%s | Daily Expenses Tracker",
@@ -38,8 +34,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
 	width: "device-width",
 	initialScale: 1,
-	maximumScale: 1,
-	userScalable: false,
+	themeColor: APP_THEME_COLOR,
 };
 
 export default function RootLayout({
@@ -50,12 +45,12 @@ export default function RootLayout({
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<body
-				className={`${manrope.variable} min-h-screen transition-colors duration-200`}
+				className="min-h-screen transition-colors duration-200"
 			>
 				<AppProvider>
 					<DisableInteractions />
 					<Header />
-					<main className="mx-auto w-full max-w-6xl p-4 pb-24 pt-6 md:pb-8">
+					<main className="safe-area-px safe-area-pb mx-auto w-full max-w-6xl p-4 pb-24 pt-6 md:pb-8">
 						<PageTransitionShell>{children}</PageTransitionShell>
 					</main>
 					<BottomNav />

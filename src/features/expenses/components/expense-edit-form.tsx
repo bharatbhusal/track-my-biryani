@@ -3,14 +3,23 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { z } from "zod";
 
 import { GlimpsesUpload } from "@/components/uploads/glimpses-upload";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
+import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
 import {
 	useCategoriesQuery,
 	useExpenseDetailQuery,
@@ -48,12 +57,7 @@ export function ExpenseEditForm({
 	const { updateExpense } = useExpenseMutations();
 	const [images, setImages] = useState<string[]>([]);
 
-	const {
-		register,
-		handleSubmit,
-		reset,
-		formState: { isSubmitting },
-	} = useForm<FormValues>({
+	const form = useForm<FormValues>({
 		resolver: zodResolver(schema),
 		defaultValues: {
 			title: "",
@@ -66,6 +70,13 @@ export function ExpenseEditForm({
 			tags: "",
 		},
 	});
+	const {
+		register,
+		handleSubmit,
+		reset,
+		control,
+		formState: { isSubmitting },
+	} = form;
 
 	useEffect(() => {
 		if (!expenseQuery.data) {
@@ -125,29 +136,77 @@ export function ExpenseEditForm({
 	};
 
 	if (!expenseQuery.data) {
-		return <Card>Loading expense...</Card>;
+		return (
+			<Card>
+				<div className="space-y-3">
+					<div className="h-5 w-40 animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" />
+					<div className="h-10 w-full animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" />
+					<div className="h-10 w-full animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" />
+				</div>
+			</Card>
+		);
 	}
 
 	return (
 		<Card>
 			<CardTitle className="mb-3">Edit Expense</CardTitle>
-			<form
-				className="space-y-3"
-				onSubmit={handleSubmit(onSubmit)}
-			>
-				<Input {...register("title")} placeholder="Title" />
-				<div className="grid grid-cols-2 gap-3">
-					<Input
-						type="number"
-						step="0.01"
-						{...register("amount", { valueAsNumber: true })}
-						placeholder="Amount"
+			<Form {...form}>
+				<form
+					className="space-y-3"
+					onSubmit={handleSubmit(onSubmit)}
+				>
+					<FormField
+						control={control}
+						name="title"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Title</FormLabel>
+								<FormControl>
+									<Input {...field} placeholder="Title" />
+								</FormControl>
+							</FormItem>
+						)}
 					/>
-					<Input
-						type="datetime-local"
-						{...register("dateTime")}
-					/>
-				</div>
+					<div className="grid grid-cols-2 gap-3">
+						<FormField
+							control={control}
+							name="amount"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Amount</FormLabel>
+									<FormControl>
+										<Input
+											type="number"
+											step="0.01"
+											value={field.value ?? ""}
+											onChange={(event) =>
+												field.onChange(
+													event.target.value
+														? Number(event.target.value)
+														: undefined,
+												)
+											}
+										/>
+									</FormControl>
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={control}
+							name="dateTime"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Time • Date</FormLabel>
+									<FormControl>
+										<DateTimePicker
+											value={field.value}
+											onChange={field.onChange}
+										/>
+									</FormControl>
+								</FormItem>
+							)}
+						/>
+					</div>
 				<Select {...register("categoryId")}>
 					<option value="">Select category</option>
 					{(categoriesQuery.data ?? []).map((category) => (
@@ -172,16 +231,22 @@ export function ExpenseEditForm({
 					expenseTitle={expenseQuery.data.title}
 				/>
 
-				<Button
-					type="submit"
-					className="w-full"
-					disabled={isSubmitting || updateExpense.isPending}
-				>
-					{updateExpense.isPending
-						? "Saving..."
-						: "Save changes"}
-				</Button>
-			</form>
+					<Button
+						type="submit"
+						className="w-full"
+						disabled={isSubmitting || updateExpense.isPending}
+					>
+						{updateExpense.isPending ? (
+							<>
+								<Spinner className="mr-2" />
+								Saving...
+							</>
+						) : (
+							"Save changes"
+						)}
+					</Button>
+				</form>
+			</Form>
 		</Card>
 	);
 }

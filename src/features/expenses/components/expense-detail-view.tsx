@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";

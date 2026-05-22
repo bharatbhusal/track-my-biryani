@@ -6,7 +6,7 @@ import {
 	FiUploadCloud,
 	FiX,
 } from "react-icons/fi";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { uploadsApi } from "@/lib/api/uploads";

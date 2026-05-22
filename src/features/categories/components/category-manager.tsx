@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import {
 } from "@/hooks/api/use-expenses-api";
 import { useDebouncedValue } from "@/hooks/use-debounce";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { CategoryCard } from "@/features/categories/components/category-card";
 
 export function CategoryManager() {
@@ -82,7 +83,14 @@ export function CategoryManager() {
 					type="submit"
 					disabled={createCategory.isPending}
 				>
-					Add
+					{createCategory.isPending ? (
+						<>
+							<Spinner className="mr-2" />
+							Adding...
+						</>
+					) : (
+						"Add"
+					)}
 				</Button>
 			</form>
 

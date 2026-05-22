@@ -4,13 +4,22 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardTitle } from '@/components/ui/card';
 import { useAuthActions } from '@/hooks/api/use-auth-api';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 
 type AuthMode = 'login' | 'signup';
 
@@ -33,13 +42,14 @@ export function AuthForm({ mode, nextPath }: { mode: AuthMode; nextPath?: string
   const { login, signup } = useAuthActions();
   const schema = mode === 'signup' ? signupFormSchema : loginFormSchema;
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<SignupValues | LoginValues>({
+  const form = useForm<SignupValues | LoginValues>({
     resolver: zodResolver(schema),
   });
+  const {
+    handleSubmit,
+    control,
+    formState: { errors, isSubmitting },
+  } = form;
   const fieldErrors = errors as Record<string, { message?: string }>;
   const getFieldError = (field: string) => fieldErrors[field]?.message;
 
@@ -63,31 +73,62 @@ export function AuthForm({ mode, nextPath }: { mode: AuthMode; nextPath?: string
   return (
     <Card className="mx-auto w-full max-w-md">
       <CardTitle className="mb-4 text-lg">{mode === 'signup' ? 'Create account' : 'Login'}</CardTitle>
+      <Form {...form}>
       <form className="space-y-3" onSubmit={handleSubmit(onSubmit)}>
         {mode === 'signup' && (
-          <label className="block space-y-1 text-sm">
-            <span>Name</span>
-            <Input {...register('name' as const)} aria-invalid={Boolean(getFieldError('name'))} />
-            {getFieldError('name') && <span className="text-xs text-red-600">{getFieldError('name')}</span>}
-          </label>
+          <FormField
+            control={control}
+            name={'name' as const}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage>{getFieldError('name')}</FormMessage>
+              </FormItem>
+            )}
+          />
         )}
 
-        <label className="block space-y-1 text-sm">
-          <span>Email</span>
-          <Input type="email" {...register('email' as const)} aria-invalid={Boolean(getFieldError('email'))} />
-          {getFieldError('email') && <span className="text-xs text-red-600">{getFieldError('email')}</span>}
-        </label>
+        <FormField
+          control={control}
+          name={'email' as const}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" {...field} />
+              </FormControl>
+              <FormMessage>{getFieldError('email')}</FormMessage>
+            </FormItem>
+          )}
+        />
 
-        <label className="block space-y-1 text-sm">
-          <span>Password</span>
-          <Input type="password" {...register('password' as const)} aria-invalid={Boolean(getFieldError('password'))} />
-          {getFieldError('password') && <span className="text-xs text-red-600">{getFieldError('password')}</span>}
-        </label>
+        <FormField
+          control={control}
+          name={'password' as const}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input type="password" {...field} />
+              </FormControl>
+              <FormMessage>{getFieldError('password')}</FormMessage>
+            </FormItem>
+          )}
+        />
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? 'Please wait...' : mode === 'signup' ? 'Sign up' : 'Login'}
+          {isSubmitting ? (
+            <>
+              <Spinner className="mr-2" />
+              Please wait...
+            </>
+          ) : mode === 'signup' ? 'Sign up' : 'Login'}
         </Button>
       </form>
+      </Form>
       <p className="mt-4 text-xs text-zinc-500">
         {mode === 'signup' ? 'Already have an account?' : 'Need an account?'}{' '}
         <Link href={mode === 'signup' ? '/auth/login' : '/auth/signup'} className="underline">

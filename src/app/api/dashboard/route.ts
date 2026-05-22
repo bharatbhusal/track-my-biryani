@@ -119,6 +119,38 @@ function groupExpenses(
 	}));
 }
 
+function buildMonthlyCategorySeries(
+	expenses: Array<{
+		amount: number;
+		dateTime: Date | string;
+		categoryId: { toString: () => string };
+	}>,
+	categories: Array<{ _id: { toString: () => string }; name: string }>,
+	locale = "en-US",
+): Array<Record<string, string | number>> {
+	const byMonth = new Map<string, Record<string, string | number>>();
+	const categoryNameById = new Map(
+		categories.map((category) => [category._id.toString(), category.name]),
+	);
+
+	expenses.forEach((expense) => {
+		const date = new Date(expense.dateTime);
+		const month = new Intl.DateTimeFormat(locale, {
+			month: "short",
+			year: "2-digit",
+		}).format(date);
+		const categoryName =
+			categoryNameById.get(expense.categoryId.toString()) ??
+			"Uncategorized";
+		const current = byMonth.get(month) ?? { month };
+		current[categoryName] =
+			Number(current[categoryName] ?? 0) + expense.amount;
+		byMonth.set(month, current);
+	});
+
+	return Array.from(byMonth.values());
+}
+
 export async function GET(request: Request) {
 	try {
 		await connectToDatabase();
@@ -167,6 +199,11 @@ export async function GET(request: Request) {
 			.sort((left, right) => right.value - left.value);
 
 		const topCategory = rankedCategories[0]?.name ?? "N/A";
+		const dailyCashFlowSeries = groupExpenses(expenses, "day");
+		const monthlyCategorySeries = buildMonthlyCategorySeries(
+			expenses,
+			categories,
+		);
 
 		return successResponse({
 			totalSpend,
@@ -176,6 +213,8 @@ export async function GET(request: Request) {
 			chartGranularity: granularityMeta.granularity,
 			mainSeries,
 			rankedCategories,
+			monthlyCategorySeries,
+			dailyCashFlowSeries,
 			topCategory,
 			recentActivity: recentActivity.map((item) => ({
 				title: item.title,
