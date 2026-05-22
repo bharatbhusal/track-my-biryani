@@ -58,6 +58,16 @@ export function LogsTable() {
 	const data = expensesQuery.data?.items ?? [];
 	const totalPages = expensesQuery.data?.totalPages ?? 1;
 
+	const applySort = (field: "amount" | "dateTime") => {
+		setSortBy((previousField) => {
+			setOrder((currentOrder) =>
+				previousField === field && currentOrder === "desc" ? "asc" : "desc",
+			);
+			return field;
+		});
+		setPage(1);
+	};
+
 	const columns = useMemo<ColumnDef<ExpenseItem>[]>(
 		() => [
 			{
@@ -114,11 +124,7 @@ export function LogsTable() {
 						variant="outline"
 						size="sm"
 						type="button"
-						onClick={() => {
-							setSortBy("amount");
-							setOrder((current) => (sortBy === "amount" && current === "desc" ? "asc" : "desc"));
-							setPage(1);
-						}}
+						onClick={() => applySort("amount")}
 					>
 						<ArrowDownNarrowWide className="mr-1 h-4 w-4" />
 						Amount
@@ -127,11 +133,7 @@ export function LogsTable() {
 						variant="outline"
 						size="sm"
 						type="button"
-						onClick={() => {
-							setSortBy("dateTime");
-							setOrder((current) => (sortBy === "dateTime" && current === "desc" ? "asc" : "desc"));
-							setPage(1);
-						}}
+						onClick={() => applySort("dateTime")}
 					>
 						<ArrowDownAZ className="mr-1 h-4 w-4" />
 						Date

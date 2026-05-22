@@ -11,6 +11,8 @@ import { SettingsModal } from "@/features/settings/components/settings-modal";
 import "./globals.css";
 import { Header } from "@/components/layout/header";
 
+const APP_THEME_COLOR = "#059669";
+
 export const metadata: Metadata = {
 	metadataBase: new URL(
 		"https://daily-expenses-tracker.app",
@@ -32,7 +34,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
 	width: "device-width",
 	initialScale: 1,
-	themeColor: "#059669",
+	themeColor: APP_THEME_COLOR,
 };
 
 export default function RootLayout({

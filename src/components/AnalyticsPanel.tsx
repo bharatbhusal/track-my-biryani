@@ -65,7 +65,6 @@ export function AnalyticsPanel({ data }: AnalyticsPanelProps) {
 									dataKey={key}
 									stackId="spend"
 									fill={`var(--chart-${(index % 5) + 1})`}
-									radius={index === categoryKeys.length - 1 ? [6, 6, 0, 0] : [0, 0, 0, 0]}
 								/>
 							))}
 						</BarChart>

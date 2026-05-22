@@ -1,5 +1,12 @@
 const CACHE_NAME = "expense-tracker-v1";
-const OFFLINE_URLS = ["/", "/dashboard", "/expenses", "/categories", "/logs"];
+const OFFLINE_URLS = [
+	"/",
+	"/dashboard",
+	"/expenses",
+	"/categories",
+	"/logs",
+	"/settings",
+];
 
 self.addEventListener("install", (event) => {
 	event.waitUntil(

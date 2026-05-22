@@ -19,6 +19,8 @@ type DateTimePickerProps = {
 	id?: string;
 };
 
+const DEFAULT_TIME = "12:00";
+
 function toDate(value: string): Date | undefined {
 	if (!value) return undefined;
 	const date = new Date(value);
@@ -31,7 +33,7 @@ export function DateTimePicker({
 	id,
 }: DateTimePickerProps) {
 	const selectedDate = useMemo(() => toDate(value), [value]);
-	const timePart = value?.slice(11, 16) || "12:00";
+	const timePart = (value && value.slice(11, 16)) || DEFAULT_TIME;
 
 	return (
 		<div className="space-y-2">

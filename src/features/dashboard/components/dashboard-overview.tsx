@@ -105,7 +105,7 @@ export function DashboardOverview() {
 					<CarouselContent>
 						<CarouselItem>
 							<Card>
-								<CardTitle>Daily Cash Flow</CardTitle>
+								<CardTitle>Total Spend</CardTitle>
 								<p className="mt-2 text-2xl font-bold">
 									{formatCurrency(data.totalSpend, currency, locale)}
 								</p>
@@ -113,7 +113,7 @@ export function DashboardOverview() {
 						</CarouselItem>
 						<CarouselItem>
 							<Card>
-								<CardTitle>Weekly Spending</CardTitle>
+								<CardTitle>{data.averageLabel}</CardTitle>
 								<p className="mt-2 text-2xl font-bold">
 									{formatCurrency(data.averageSpend, currency, locale)}
 								</p>
@@ -121,7 +121,7 @@ export function DashboardOverview() {
 						</CarouselItem>
 						<CarouselItem>
 							<Card>
-								<CardTitle>Category breakdown</CardTitle>
+								<CardTitle>Top Category</CardTitle>
 								<p className="mt-2 text-2xl font-bold">{data.topCategory}</p>
 							</Card>
 						</CarouselItem>
