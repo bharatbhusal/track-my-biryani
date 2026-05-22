@@ -4,7 +4,7 @@ import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { FiLogOut, FiMoon, FiSun } from "react-icons/fi";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { TimeRangeSelector } from "@/components/charts/time-range-selector";
 import { Button } from "@/components/ui/button";

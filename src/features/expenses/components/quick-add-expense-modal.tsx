@@ -3,14 +3,24 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { z } from "zod";
 
 import { GlimpsesUpload } from "@/components/uploads/glimpses-upload";
 import { Button } from "@/components/ui/button";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Modal } from "@/components/ui/dialog";
+import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
 import {
 	useCategoriesQuery,
 	useExpenseMutations,
@@ -74,13 +84,7 @@ export function QuickAddExpenseModal() {
 	const [images, setImages] = useState<string[]>([]);
 	const [dirty, setDirty] = useState(false);
 
-	const {
-		register,
-		handleSubmit,
-		reset,
-		control,
-		formState: { errors, isSubmitting },
-	} = useForm<FormValues>({
+	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			title: "",
@@ -90,6 +94,13 @@ export function QuickAddExpenseModal() {
 			address: "",
 		},
 	});
+	const {
+		register,
+		handleSubmit,
+		reset,
+		control,
+		formState: { errors, isSubmitting },
+	} = form;
 
 	// useWatch avoids memoization warnings and provides a stable subscription
 	// to form values for draft autosave.
@@ -190,101 +201,131 @@ export function QuickAddExpenseModal() {
 			description="Drafts are auto-saved while you type."
 			className="max-h-[95dvh] overflow-y-auto"
 		>
-			<form
-				className="space-y-3"
-				onSubmit={handleSubmit(onSubmit)}
-			>
-				<label className="block space-y-1 text-sm">
-					<span>Title</span>
-					<Input {...register("title")} autoFocus />
-					{errors.title?.message && (
-						<span className="text-xs text-red-600">
-							{errors.title.message}
-						</span>
-					)}
-				</label>
+			<Form {...form}>
+				<form
+					className="space-y-3"
+					onSubmit={handleSubmit(onSubmit)}
+				>
+					<FormField
+						control={control}
+						name="title"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Title</FormLabel>
+								<FormControl>
+									<Input {...field} autoFocus />
+								</FormControl>
+								<FormMessage>{errors.title?.message}</FormMessage>
+							</FormItem>
+						)}
+					/>
 
-				<div className="grid grid-cols-2 gap-3">
-					<label className="space-y-1 text-sm">
-						<span>Amount</span>
-						<Input
-							type="number"
-							step="0.01"
-							{...register("amount", { valueAsNumber: true })}
+					<div className="grid grid-cols-2 gap-3">
+						<FormField
+							control={control}
+							name="amount"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Amount</FormLabel>
+									<FormControl>
+										<Input
+											type="number"
+											step="0.01"
+											value={field.value ?? ""}
+											onChange={(event) =>
+												field.onChange(
+													event.target.value
+														? Number(event.target.value)
+														: undefined,
+												)
+											}
+										/>
+									</FormControl>
+									<FormMessage>{errors.amount?.message}</FormMessage>
+								</FormItem>
+							)}
 						/>
-						{errors.amount?.message && (
+						<FormField
+							control={control}
+							name="dateTime"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Time • Date</FormLabel>
+									<FormControl>
+										<DateTimePicker
+											value={field.value}
+											onChange={field.onChange}
+										/>
+									</FormControl>
+								</FormItem>
+							)}
+						/>
+					</div>
+
+					<label className="block space-y-1 text-sm">
+						<span>Category</span>
+						<Select {...register("categoryId")}>
+							<option value="">Select</option>
+							{(categoriesQuery.data ?? []).map((category) => (
+								<option key={category._id} value={category._id}>
+									{category.name}
+								</option>
+							))}
+						</Select>
+						{errors.categoryId?.message && (
 							<span className="text-xs text-red-600">
-								{errors.amount.message}
+								{errors.categoryId.message}
 							</span>
 						)}
 					</label>
-					<label className="space-y-1 text-sm">
-						<span>Time • Date</span>
+
+					<div className="space-y-1 text-sm">
+						<span>Glimpses</span>
+						<GlimpsesUpload
+							value={images}
+							onChange={setImages}
+							expenseTitle={watchedValues?.title || "expense"}
+						/>
+					</div>
+
+					<label className="block space-y-1 text-sm">
+						<span>Address (optional)</span>
 						<Input
-							type="datetime-local"
-							{...register("dateTime")}
+							{...register("address")}
+							placeholder="Address"
 						/>
 					</label>
-				</div>
 
-				<label className="block space-y-1 text-sm">
-					<span>Category</span>
-					<Select {...register("categoryId")}>
-						<option value="">Select</option>
-						{(categoriesQuery.data ?? []).map((category) => (
-							<option key={category._id} value={category._id}>
-								{category.name}
-							</option>
-						))}
-					</Select>
-					{errors.categoryId?.message && (
-						<span className="text-xs text-red-600">
-							{errors.categoryId.message}
-						</span>
-					)}
-				</label>
-
-				<div className="space-y-1 text-sm">
-					<span>Glimpses</span>
-					<GlimpsesUpload
-						value={images}
-						onChange={setImages}
-						expenseTitle={watchedValues?.title || "expense"}
-					/>
-				</div>
-
-				<label className="block space-y-1 text-sm">
-					<span>Address (optional)</span>
-					<Input
-						{...register("address")}
-						placeholder="Address"
-					/>
-				</label>
-
-				<div className="flex gap-2">
-					<Button
-						type="button"
-						variant="outline"
-						className="w-1/3"
-						onClick={closeModal}
-					>
-						Cancel
-					</Button>
-					<Button
-						type="submit"
-						className="w-2/3"
-						disabled={
-							isSubmitting ||
-							createExpense.isPending ||
-							isDetectingLocation
-						}
-					>
-						{createExpense.isPending
-							? "Saving..."
-							: "Add expense"}
-					</Button>
-				</div>
-			</form>
+					<div className="flex gap-2">
+						<Button
+							type="button"
+							variant="outline"
+							className="w-1/3"
+							onClick={closeModal}
+						>
+							Cancel
+						</Button>
+						<Button
+							type="submit"
+							className="w-2/3"
+							disabled={
+								isSubmitting ||
+								createExpense.isPending ||
+								isDetectingLocation
+							}
+						>
+							{createExpense.isPending ? (
+								<>
+									<Spinner className="mr-2" />
+									Saving...
+								</>
+							) : (
+								"Add expense"
+							)}
+						</Button>
+					</div>
+				</form>
+			</Form>
 		</Modal>
 	);
 }

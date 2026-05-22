@@ -1,6 +1,6 @@
 "use client";
 
-import { ToastContainer } from "react-toastify";
+import { Toaster } from "sonner";
 import { useTheme } from "next-themes";
 
 export function ToastProvider() {
@@ -8,17 +8,10 @@ export function ToastProvider() {
 	const theme = resolvedTheme === "dark" ? "dark" : "light";
 
 	return (
-		<ToastContainer
+		<Toaster
 			position="top-right"
-			autoClose={3000}
-			hideProgressBar={false}
-			newestOnTop
-			closeOnClick
-			rtl={false}
-			pauseOnFocusLoss
-			draggable
-			pauseOnHover
 			theme={theme}
+			richColors
 		/>
 	);
 }

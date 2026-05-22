@@ -3,8 +3,9 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Modal } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type CustomDateTimeRangeModalProps = {
 	open: boolean;
@@ -38,22 +39,20 @@ export function CustomDateTimeRangeModal({
 		>
 			<div className="space-y-3">
 				<div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-					<label className="text-sm">
-						From
-						<Input
-							type="datetime-local"
+					<div className="space-y-1">
+						<Label>From</Label>
+						<DateTimePicker
 							value={from}
-							onChange={(event) => setFrom(event.target.value)}
+							onChange={setFrom}
 						/>
-					</label>
-					<label className="text-sm">
-						To
-						<Input
-							type="datetime-local"
+					</div>
+					<div className="space-y-1">
+						<Label>To</Label>
+						<DateTimePicker
 							value={to}
-							onChange={(event) => setTo(event.target.value)}
+							onChange={setTo}
 						/>
-					</label>
+					</div>
 				</div>
 				<div className="grid grid-cols-1 gap-2 md:grid-cols-3">
 					<Button

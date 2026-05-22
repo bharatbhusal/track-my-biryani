@@ -6,6 +6,8 @@ export type DashboardAnalytics = {
 	chartGranularity: "hour" | "day" | "month";
 	mainSeries: TrendPoint[];
 	rankedCategories: CategoryBreakdownPoint[];
+	monthlyCategorySeries: Array<Record<string, string | number>>;
+	dailyCashFlowSeries: TrendPoint[];
 	topCategory: string;
 	recentActivity: RecentActivityPoint[];
 };

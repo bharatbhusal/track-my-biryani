@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import {
 	Area,
 	AreaChart,

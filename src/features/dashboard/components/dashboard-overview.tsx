@@ -2,12 +2,18 @@
 
 import { useMemo, useState } from "react";
 
+import { AnalyticsPanel } from "@/components/AnalyticsPanel";
 import { CustomDateTimeRangeModal } from "@/components/charts/custom-date-time-range-modal";
-import { CategoryRankingBarChart } from "@/components/charts/category-ranking-bar-chart";
-import { ExportableChart } from "@/components/charts/exportable-chart";
-import { BarChart } from "@/components/charts/bar-chart";
 import { Button } from "@/components/ui/button";
+import {
+	Carousel,
+	CarouselContent,
+	CarouselItem,
+	CarouselNext,
+	CarouselPrevious,
+} from "@/components/ui/carousel";
 import { Card, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
 import {
 	hasValidCustomRange,
@@ -56,7 +62,20 @@ export function DashboardOverview() {
 	const data = dashboardQuery.data;
 
 	if (!data) {
-		return <Card>Loading dashboard...</Card>;
+		return (
+			<Card>
+				<div className="space-y-3">
+					<Skeleton className="h-6 w-52" />
+					<div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+						<Skeleton className="h-24 w-full" />
+						<Skeleton className="h-24 w-full" />
+						<Skeleton className="h-24 w-full" />
+					</div>
+					<Skeleton className="h-64 w-full" />
+					<Skeleton className="h-64 w-full" />
+				</div>
+			</Card>
+		);
 	}
 
 	return (
@@ -81,44 +100,38 @@ export function DashboardOverview() {
 				</Button>
 			</div>
 
-			<div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-				<Card data-animate="true">
-					<CardTitle>Total Spend</CardTitle>
-					<p className="mt-2 text-2xl font-bold">
-						{formatCurrency(data.totalSpend, currency, locale)}
-					</p>
-				</Card>
-				<Card data-animate="true">
-					<CardTitle>{data.averageLabel}</CardTitle>
-					<p className="mt-2 text-2xl font-bold">
-						{formatCurrency(data.averageSpend, currency, locale)}
-					</p>
-				</Card>
-				<Card data-animate="true">
-					<CardTitle>Top Category</CardTitle>
-					<p className="mt-2 text-2xl font-bold">
-						{data.topCategory}
-					</p>
-				</Card>
+			<div data-animate="true">
+				<Carousel className="w-full">
+					<CarouselContent>
+						<CarouselItem>
+							<Card>
+								<CardTitle>Daily Cash Flow</CardTitle>
+								<p className="mt-2 text-2xl font-bold">
+									{formatCurrency(data.totalSpend, currency, locale)}
+								</p>
+							</Card>
+						</CarouselItem>
+						<CarouselItem>
+							<Card>
+								<CardTitle>Weekly Spending</CardTitle>
+								<p className="mt-2 text-2xl font-bold">
+									{formatCurrency(data.averageSpend, currency, locale)}
+								</p>
+							</Card>
+						</CarouselItem>
+						<CarouselItem>
+							<Card>
+								<CardTitle>Category breakdown</CardTitle>
+								<p className="mt-2 text-2xl font-bold">{data.topCategory}</p>
+							</Card>
+						</CarouselItem>
+					</CarouselContent>
+					<CarouselPrevious />
+					<CarouselNext />
+				</Carousel>
 			</div>
 
-			<div data-animate="true">
-				<ExportableChart title={data.chartLabel}>
-					<BarChart
-						data={data.mainSeries}
-						heightClass="h-64"
-					/>
-				</ExportableChart>
-			</div>
-
-			<div data-animate="true">
-				<ExportableChart title="Category Ranking">
-					<CategoryRankingBarChart
-						data={data.rankedCategories}
-						heightClass="h-72"
-					/>
-				</ExportableChart>
-			</div>
+			<AnalyticsPanel data={data} />
 
 			<CustomDateTimeRangeModal
 				key={`${customRangeModalOpen}-${localDateRange?.from ?? globalDateRange.from ?? ""}-${localDateRange?.to ?? globalDateRange.to ?? ""}`}

@@ -2,11 +2,12 @@
 
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { useCategoryDetailQuery } from "@/hooks/api/use-expenses-api";
 import { expensesApi } from "@/lib/api/expenses";
 
@@ -78,7 +79,14 @@ export function CategoryEditForm({ id }: { id: string }) {
 					className="w-full"
 					disabled={isSubmitting}
 				>
-					Save category
+					{isSubmitting ? (
+						<>
+							<Spinner className="mr-2" />
+							Saving...
+						</>
+					) : (
+						"Save category"
+					)}
 				</Button>
 			</form>
 		</Card>

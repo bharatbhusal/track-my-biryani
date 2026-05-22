@@ -4,10 +4,9 @@ import { ReactNode } from "react";
 import { ToastProvider } from "@/components/ui/toast-provider";
 
 import { AppQueryProvider } from "@/components/providers/query-provider";
+import { PwaProvider } from "@/components/providers/pwa-provider";
 import { AppThemeProvider } from "@/components/providers/theme-provider";
 import { useLocalePreferences } from "@/hooks/use-locale-preferences";
-
-import "react-toastify/dist/ReactToastify.css";
 
 export function AppProvider({
 	children,
@@ -19,6 +18,7 @@ export function AppProvider({
 	return (
 		<AppThemeProvider>
 			<AppQueryProvider>
+				<PwaProvider />
 				{children}
 				<ToastProvider />
 			</AppQueryProvider>
