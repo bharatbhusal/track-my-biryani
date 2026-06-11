@@ -26,6 +26,7 @@ import {
 import { toIsoBounds } from "@/lib/date-range";
 import { formatCurrency } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
+import { useDateRange } from "@/components/charts/date-range-context";
 import { ExpenseListQuery } from "@/types";
 import { themedTooltipProps } from "@/components/charts/chart-tooltip";
 
@@ -34,12 +35,11 @@ export function CategoryDetailView({ id }: { id: string }) {
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const locale = useUIStore((state) => state.locale);
 	const currency = useUIStore((state) => state.currency);
-	const globalDateRange = useUIStore(
-		(state) => state.globalDateRange,
-	);
+
+	const { range: localRange } = useDateRange();
 	const rangeBounds = useMemo(
-		() => toIsoBounds(globalDateRange),
-		[globalDateRange],
+		() => toIsoBounds(localRange),
+		[localRange],
 	);
 
 	const categoryQuery = useCategoryDetailQuery(id);

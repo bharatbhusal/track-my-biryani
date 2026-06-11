@@ -14,6 +14,7 @@ import {
 } from "@/hooks/api/use-expenses-api";
 import { toIsoBounds } from "@/lib/date-range";
 import { useUIStore } from "@/store/ui-store";
+import { useDateRange } from "@/components/charts/date-range-context";
 
 export function ExpenseManager() {
 	const setQuickAddOpen = useUIStore(
@@ -28,15 +29,13 @@ export function ExpenseManager() {
 	const [amountMin, setAmountMin] = useState("");
 	const [amountMax, setAmountMax] = useState("");
 	const [page, setPage] = useState(1);
-	const globalDateRange = useUIStore(
-		(state) => state.globalDateRange,
-	);
+	const { range: localRange } = useDateRange();
 
 	const categoriesQuery = useCategoriesQuery();
 	const debouncedQuery = useDebouncedValue(query, 300);
 
 	const filters = useMemo(() => {
-		const bounds = toIsoBounds(globalDateRange);
+		const bounds = toIsoBounds(localRange);
 		return {
 			page,
 			limit: 20,
@@ -49,7 +48,7 @@ export function ExpenseManager() {
 		};
 	}, [
 		categoryId,
-		globalDateRange,
+		localRange,
 		order,
 		page,
 		debouncedQuery,

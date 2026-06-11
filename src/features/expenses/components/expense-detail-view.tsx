@@ -14,6 +14,7 @@ import {
 	useExpenseContributionQuery,
 } from "@/hooks/api/use-expenses-api";
 import { BarChart } from "@/components/charts/bar-chart";
+import GoogleMap from "@/components/maps/google-map";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
 import type { ExpenseContribution } from "@/types/analytics.types";
@@ -161,13 +162,11 @@ export function ExpenseDetailView({
 					<Card>
 						<CardTitle className="mb-2">Map Preview</CardTitle>
 						<div className="overflow-hidden rounded border border-[var(--color-border)]">
-							<iframe
-								title="map-preview"
-								width="100%"
+							<GoogleMap
+								latitude={expense.location.latitude}
+								longitude={expense.location.longitude}
+								address={expense.location.address}
 								height={240}
-								src={`https://www.openstreetmap.org/export/embed.html?bbox=${expense.location.longitude - 0.01},${expense.location.latitude - 0.01},${expense.location.longitude + 0.01},${expense.location.latitude + 0.01}&layer=mapnik&marker=${expense.location.latitude},${expense.location.longitude}`}
-								loading="lazy"
-								className="w-full"
 							/>
 						</div>
 					</Card>

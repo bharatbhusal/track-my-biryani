@@ -76,7 +76,12 @@ export function useExpenseMutations() {
 				});
 
 			previousLists.forEach(([key, payload]) => {
-				if (!payload) {
+				// Only update queries that look like an expenses list (have an `items` array)
+				if (
+					!payload ||
+					typeof payload !== "object" ||
+					!Array.isArray((payload as any).items)
+				) {
 					return;
 				}
 
@@ -94,10 +99,12 @@ export function useExpenseMutations() {
 					tags: newExpense.tags,
 				};
 
+				const listPayload = payload as ExpensesListPayload;
+
 				queryClient.setQueryData<ExpensesListPayload>(key, {
-					...payload,
-					items: [optimisticExpense, ...payload.items],
-					total: payload.total + 1,
+					...listPayload,
+					items: [optimisticExpense, ...listPayload.items],
+					total: (listPayload.total ?? 0) + 1,
 				});
 			});
 

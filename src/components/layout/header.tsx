@@ -6,11 +6,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { FiLogOut, FiMoon, FiSun } from "react-icons/fi";
 import { toast } from "sonner";
 
-import { TimeRangeSelector } from "@/components/charts/time-range-selector";
+// TimeRangeSelector removed; date ranges are per-chart via drawer
 import { Button } from "@/components/ui/button";
 import { useAuthActions } from "@/hooks/api/use-auth-api";
 import { useAuthMe } from "@/hooks/api/use-auth-api";
-import type { DateRangePreset } from "@/lib/date-range";
 import { useUIStore } from "@/store/ui-store";
 
 export function Header() {
@@ -19,29 +18,13 @@ export function Header() {
 	const { resolvedTheme, setTheme } = useTheme();
 	const { logout } = useAuthActions();
 	const authQuery = useAuthMe();
-	const globalDateRange = useUIStore(
-		(state) => state.globalDateRange,
-	);
-	const setGlobalDateRange = useUIStore(
-		(state) => state.setGlobalDateRange,
-	);
 	const setCustomRangeModalOpen = useUIStore(
 		(state) => state.setCustomRangeModalOpen,
 	);
 	const currentTheme = resolvedTheme ?? "light";
 	const isAuthRoute = pathname.startsWith("/auth");
 
-	const handleRangeChange = (preset: DateRangePreset) => {
-		if (preset === "custom") {
-			if (!pathname.startsWith("/dashboard")) {
-				router.push("/dashboard");
-			}
-			setCustomRangeModalOpen(true);
-			return;
-		}
-
-		setGlobalDateRange({ preset });
-	};
+	// header no longer controls a global date range
 
 	return (
 		<header className="sticky top-0 z-20 border-b border-[var(--color-border)] bg-[color-mix(in_oklab,var(--color-bg)_88%,transparent)] px-4 py-3 backdrop-blur">
@@ -53,13 +36,7 @@ export function Header() {
 					Daily Expenses Tracker
 				</Link>
 				<div className="flex items-center gap-2">
-					{authQuery.data && !isAuthRoute && (
-						<TimeRangeSelector
-							value={globalDateRange.preset}
-							onChange={handleRangeChange}
-							className="h-9 min-w-36"
-						/>
-					)}
+					{/* per-chart date ranges now handled locally */}
 					<Button
 						variant="ghost"
 						aria-label="Toggle theme"

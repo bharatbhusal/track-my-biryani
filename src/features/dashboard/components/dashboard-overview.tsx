@@ -19,6 +19,7 @@ import {
 	hasValidCustomRange,
 	rangeLabel,
 	toRangeParams,
+	DEFAULT_GLOBAL_RANGE,
 } from "@/lib/date-range";
 import { formatCurrency } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
@@ -26,12 +27,6 @@ import { useUIStore } from "@/store/ui-store";
 export function DashboardOverview() {
 	const locale = useUIStore((state) => state.locale);
 	const currency = useUIStore((state) => state.currency);
-	const globalDateRange = useUIStore(
-		(state) => state.globalDateRange,
-	);
-	const setGlobalDateRange = useUIStore(
-		(state) => state.setGlobalDateRange,
-	);
 	const customRangeModalOpen = useUIStore(
 		(state) => state.customRangeModalOpen,
 	);
@@ -50,8 +45,8 @@ export function DashboardOverview() {
 						from: localDateRange.from,
 						to: localDateRange.to,
 					}
-				: globalDateRange,
-		[globalDateRange, localDateRange],
+				: DEFAULT_GLOBAL_RANGE,
+		[localDateRange],
 	);
 	const rangeParams = useMemo(
 		() => toRangeParams(activeDateRange),
@@ -87,16 +82,13 @@ export function DashboardOverview() {
 				<CardTitle>
 					{localDateRange
 						? "Custom (Dashboard)"
-						: rangeLabel(globalDateRange)}
+						: rangeLabel(DEFAULT_GLOBAL_RANGE)}
 				</CardTitle>
 				<Button
 					variant="outline"
 					onClick={() => setCustomRangeModalOpen(true)}
 				>
-					{globalDateRange.preset === "custom" &&
-					hasValidCustomRange(globalDateRange)
-						? "Edit Custom Range"
-						: "Set Custom Range"}
+					{"Set Custom Range"}
 				</Button>
 			</div>
 
@@ -115,14 +107,20 @@ export function DashboardOverview() {
 							<Card>
 								<CardTitle>{data.averageLabel}</CardTitle>
 								<p className="mt-2 text-2xl font-bold">
-									{formatCurrency(data.averageSpend, currency, locale)}
+									{formatCurrency(
+										data.averageSpend,
+										currency,
+										locale,
+									)}
 								</p>
 							</Card>
 						</CarouselItem>
 						<CarouselItem>
 							<Card>
 								<CardTitle>Top Category</CardTitle>
-								<p className="mt-2 text-2xl font-bold">{data.topCategory}</p>
+								<p className="mt-2 text-2xl font-bold">
+									{data.topCategory}
+								</p>
 							</Card>
 						</CarouselItem>
 					</CarouselContent>
@@ -134,15 +132,15 @@ export function DashboardOverview() {
 			<AnalyticsPanel data={data} />
 
 			<CustomDateTimeRangeModal
-				key={`${customRangeModalOpen}-${localDateRange?.from ?? globalDateRange.from ?? ""}-${localDateRange?.to ?? globalDateRange.to ?? ""}`}
+				key={`${customRangeModalOpen}-${localDateRange?.from ?? ""}-${localDateRange?.to ?? ""}`}
 				open={customRangeModalOpen}
-				initialFrom={localDateRange?.from ?? globalDateRange.from ?? ""}
-				initialTo={localDateRange?.to ?? globalDateRange.to ?? ""}
+				initialFrom={localDateRange?.from ?? ""}
+				initialTo={localDateRange?.to ?? ""}
 				hasLocalOverride={Boolean(localDateRange)}
 				onClose={() => setCustomRangeModalOpen(false)}
 				onApplyGlobal={(from, to) => {
-					setLocalDateRange(null);
-					setGlobalDateRange({ preset: "custom", from, to });
+					// Global range removed; treat Apply Global as dashboard-local
+					setLocalDateRange({ from, to });
 					setCustomRangeModalOpen(false);
 				}}
 				onApplyLocal={(from, to) => {

@@ -1,9 +1,6 @@
 import { create } from "zustand";
 
-import {
-	DEFAULT_GLOBAL_RANGE,
-	type GlobalDateRange,
-} from "@/lib/date-range";
+// date range state moved to per-component context
 
 export type SettingsSection =
 	| "security"
@@ -14,7 +11,6 @@ export type SettingsSection =
 
 type UIState = {
 	quickAddOpen: boolean;
-	globalDateRange: GlobalDateRange;
 	customRangeModalOpen: boolean;
 	settingsSection: SettingsSection;
 	locale: string;
@@ -23,7 +19,6 @@ type UIState = {
 	hapticFeedback: boolean;
 	detectionCompleted: boolean;
 	setQuickAddOpen: (value: boolean) => void;
-	setGlobalDateRange: (input: GlobalDateRange) => void;
 	setCustomRangeModalOpen: (value: boolean) => void;
 	setSettingsSection: (section: SettingsSection) => void;
 	setPreferences: (input: {
@@ -37,7 +32,6 @@ type UIState = {
 
 export const useUIStore = create<UIState>()((set) => ({
 	quickAddOpen: false,
-	globalDateRange: DEFAULT_GLOBAL_RANGE,
 	customRangeModalOpen: false,
 	settingsSection: null,
 	locale: "en-US",
@@ -46,8 +40,6 @@ export const useUIStore = create<UIState>()((set) => ({
 	hapticFeedback: true,
 	detectionCompleted: false,
 	setQuickAddOpen: (value) => set({ quickAddOpen: value }),
-	setGlobalDateRange: (input) =>
-		set({ globalDateRange: input }),
 	setCustomRangeModalOpen: (value) =>
 		set({ customRangeModalOpen: value }),
 	setSettingsSection: (section) =>

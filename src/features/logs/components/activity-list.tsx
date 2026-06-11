@@ -4,16 +4,15 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { useActivityLogsQueryWithRange } from "@/hooks/api/use-analytics-api";
 import { toRangeParams } from "@/lib/date-range";
 import { formatDate } from "@/lib/format";
+import { useDateRange } from "@/components/charts/date-range-context";
 import { useUIStore } from "@/store/ui-store";
 
 export function ActivityList() {
-	const globalDateRange = useUIStore(
-		(state) => state.globalDateRange,
-	);
+	const { range: localRange } = useDateRange();
 	const logsQuery = useActivityLogsQueryWithRange(
 		1,
 		25,
-		toRangeParams(globalDateRange),
+		toRangeParams(localRange),
 	);
 	const locale = useUIStore((state) => state.locale);
 	const timezone = useUIStore((state) => state.timezone);

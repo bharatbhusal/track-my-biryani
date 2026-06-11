@@ -7,7 +7,12 @@ import {
 	useReactTable,
 	type ColumnDef,
 } from "@tanstack/react-table";
-import { ArrowDownAZ, ArrowDownNarrowWide, ArrowLeft, ArrowRight } from "lucide-react";
+import {
+	ArrowDownAZ,
+	ArrowDownNarrowWide,
+	ArrowLeft,
+	ArrowRight,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -27,20 +32,26 @@ import {
 import { toIsoBounds } from "@/lib/date-range";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
+import { useDateRange } from "@/components/charts/date-range-context";
 import type { ExpenseItem } from "@/types/expense.types";
 
 export function LogsTable() {
 	const [categoryId, setCategoryId] = useState("");
 	const [page, setPage] = useState(1);
-	const [sortBy, setSortBy] = useState<"amount" | "dateTime">("dateTime");
+	const [sortBy, setSortBy] = useState<
+		"amount" | "dateTime"
+	>("dateTime");
 	const [order, setOrder] = useState<"asc" | "desc">("desc");
-	const globalDateRange = useUIStore((state) => state.globalDateRange);
+	const { range: localRange } = useDateRange();
 	const locale = useUIStore((state) => state.locale);
 	const timezone = useUIStore((state) => state.timezone);
 	const currency = useUIStore((state) => state.currency);
 
 	const categoriesQuery = useCategoriesQuery();
-	const bounds = useMemo(() => toIsoBounds(globalDateRange), [globalDateRange]);
+	const bounds = useMemo(
+		() => toIsoBounds(localRange),
+		[localRange],
+	);
 	const expensesQuery = useExpensesQuery({
 		page,
 		limit: 12,
@@ -52,7 +63,13 @@ export function LogsTable() {
 	});
 
 	const categoryMap = useMemo(
-		() => new Map((categoriesQuery.data ?? []).map((cat) => [cat._id, cat.name])),
+		() =>
+			new Map(
+				(categoriesQuery.data ?? []).map((cat) => [
+					cat._id,
+					cat.name,
+				]),
+			),
 		[categoriesQuery.data],
 	);
 	const data = expensesQuery.data?.items ?? [];
@@ -61,7 +78,9 @@ export function LogsTable() {
 	const applySort = (field: "amount" | "dateTime") => {
 		setSortBy((previousField) => {
 			setOrder((currentOrder) =>
-				previousField === field && currentOrder === "desc" ? "asc" : "desc",
+				previousField === field && currentOrder === "desc"
+					? "asc"
+					: "desc",
 			);
 			return field;
 		});
@@ -77,17 +96,21 @@ export function LogsTable() {
 			{
 				accessorKey: "categoryId",
 				header: "Category",
-				cell: ({ row }) => categoryMap.get(row.original.categoryId) ?? "Uncategorized",
+				cell: ({ row }) =>
+					categoryMap.get(row.original.categoryId) ??
+					"Uncategorized",
 			},
 			{
 				accessorKey: "amount",
 				header: "Amount",
-				cell: ({ row }) => formatCurrency(row.original.amount, currency, locale),
+				cell: ({ row }) =>
+					formatCurrency(row.original.amount, currency, locale),
 			},
 			{
 				accessorKey: "dateTime",
 				header: "Date",
-				cell: ({ row }) => formatDate(row.original.dateTime, locale, timezone),
+				cell: ({ row }) =>
+					formatDate(row.original.dateTime, locale, timezone),
 			},
 		],
 		[categoryMap, currency, locale, timezone],
@@ -148,7 +171,10 @@ export function LogsTable() {
 								<TableHead key={header.id}>
 									{header.isPlaceholder
 										? null
-										: flexRender(header.column.columnDef.header, header.getContext())}
+										: flexRender(
+												header.column.columnDef.header,
+												header.getContext(),
+											)}
 								</TableHead>
 							))}
 						</TableRow>
@@ -160,14 +186,20 @@ export function LogsTable() {
 							<TableRow key={row.id}>
 								{row.getVisibleCells().map((cell) => (
 									<TableCell key={cell.id}>
-										{flexRender(cell.column.columnDef.cell, cell.getContext())}
+										{flexRender(
+											cell.column.columnDef.cell,
+											cell.getContext(),
+										)}
 									</TableCell>
 								))}
 							</TableRow>
 						))
 					) : (
 						<TableRow>
-							<TableCell colSpan={4} className="h-24 text-center text-[var(--color-muted)]">
+							<TableCell
+								colSpan={4}
+								className="h-24 text-center text-[var(--color-muted)]"
+							>
 								No logs found for selected filters.
 							</TableCell>
 						</TableRow>
@@ -183,7 +215,9 @@ export function LogsTable() {
 						size="icon"
 						variant="outline"
 						disabled={page <= 1}
-						onClick={() => setPage((current) => Math.max(1, current - 1))}
+						onClick={() =>
+							setPage((current) => Math.max(1, current - 1))
+						}
 						aria-label="Previous page"
 					>
 						<ArrowLeft className="h-4 w-4" />
@@ -192,7 +226,11 @@ export function LogsTable() {
 						size="icon"
 						variant="outline"
 						disabled={page >= totalPages}
-						onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+						onClick={() =>
+							setPage((current) =>
+								Math.min(totalPages, current + 1),
+							)
+						}
 						aria-label="Next page"
 					>
 						<ArrowRight className="h-4 w-4" />
