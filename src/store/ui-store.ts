@@ -17,7 +17,7 @@ type UIState = {
 
 export const useUIStore = create<UIState>()((set) => ({
 	quickAddOpen: false,
-	locale: "en-US",
+	locale: "en-IN",
 	currency: "INR",
 	timezone: "Asia/Kolkata",
 	detectionCompleted: false,

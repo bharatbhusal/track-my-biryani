@@ -83,7 +83,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 
 		const monthly = new Map<string, number>();
 		expenses.forEach((item) => {
-			const month = new Intl.DateTimeFormat("en-US", {
+			const month = new Intl.DateTimeFormat("en-IN", {
 				month: "short",
 				year: "2-digit",
 			}).format(new Date(item.dateTime));

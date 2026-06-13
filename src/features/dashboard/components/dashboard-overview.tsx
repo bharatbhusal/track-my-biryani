@@ -1,13 +1,6 @@
 "use client";
 
 import { AnalyticsPanel } from "@/components/AnalyticsPanel";
-import {
-	Carousel,
-	CarouselContent,
-	CarouselItem,
-	CarouselNext,
-	CarouselPrevious,
-} from "@/components/ui/carousel";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
@@ -46,45 +39,38 @@ export function DashboardOverview() {
 
 	return (
 		<div className="space-y-4">
-			<div className="flex items-center justify-between" data-animate="true">
-				<CardTitle>{rangeLabel(DEFAULT_GLOBAL_RANGE)}</CardTitle>
+			<div
+				className="flex items-center justify-between"
+				data-animate="true"
+			>
+				<CardTitle>
+					{rangeLabel(DEFAULT_GLOBAL_RANGE)}
+				</CardTitle>
 			</div>
 
 			<div data-animate="true">
-				<Carousel className="w-full">
-					<CarouselContent>
-						<CarouselItem>
-							<Card>
-								<CardTitle>Total Spend</CardTitle>
-								<p className="mt-2 text-2xl font-bold">
-									{formatCurrency(data.totalSpend, currency, locale)}
-								</p>
-							</Card>
-						</CarouselItem>
-						<CarouselItem>
-							<Card>
-								<CardTitle>{data.averageLabel}</CardTitle>
-								<p className="mt-2 text-2xl font-bold">
-									{formatCurrency(
-										data.averageSpend,
-										currency,
-										locale,
-									)}
-								</p>
-							</Card>
-						</CarouselItem>
-						<CarouselItem>
-							<Card>
-								<CardTitle>Top Category</CardTitle>
-								<p className="mt-2 text-2xl font-bold">
-									{data.topCategory}
-								</p>
-							</Card>
-						</CarouselItem>
-					</CarouselContent>
-					<CarouselPrevious />
-					<CarouselNext />
-				</Carousel>
+				<div className="grid grid-cols-1 gap-4 md:grid-cols-3 w-full">
+					<Card>
+						<CardTitle>Total Spend</CardTitle>
+						<p className="mt-2 text-2xl font-bold">
+							{formatCurrency(data.totalSpend, currency, locale)}
+						</p>
+					</Card>
+
+					<Card>
+						<CardTitle>{data.averageLabel}</CardTitle>
+						<p className="mt-2 text-2xl font-bold">
+							{formatCurrency(data.averageSpend, currency, locale)}
+						</p>
+					</Card>
+
+					<Card>
+						<CardTitle>Top Category</CardTitle>
+						<p className="mt-2 text-2xl font-bold">
+							{data.topCategory}
+						</p>
+					</Card>
+				</div>
 			</div>
 
 			<AnalyticsPanel data={data} />

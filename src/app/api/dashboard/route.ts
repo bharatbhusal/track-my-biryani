@@ -33,10 +33,16 @@ function parseRange(url: URL): { from: Date; to: Date } {
 	}
 
 	if (preset === "this_year") {
-		return { from: new Date(now.getFullYear(), 0, 1), to: now };
+		return {
+			from: new Date(now.getFullYear(), 0, 1),
+			to: now,
+		};
 	}
 
-	return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: now };
+	return {
+		from: new Date(now.getFullYear(), now.getMonth(), 1),
+		to: now,
+	};
 }
 
 function resolveGranularity(
@@ -58,8 +64,9 @@ function resolveGranularity(
 
 	const dayDiff = Math.max(
 		1,
-		Math.ceil((to.getTime() - from.getTime()) / (24 * 60 * 60 * 1000)) +
-			1,
+		Math.ceil(
+			(to.getTime() - from.getTime()) / (24 * 60 * 60 * 1000),
+		) + 1,
 	);
 
 	if (dayDiff <= 1) {
@@ -86,9 +93,12 @@ function resolveGranularity(
 }
 
 function groupExpenses(
-	expenses: Array<{ amount: number; dateTime: Date | string }>,
+	expenses: Array<{
+		amount: number;
+		dateTime: Date | string;
+	}>,
 	granularity: Granularity,
-	locale = "en-US",
+	locale = "en-IN",
 ): Array<{ name: string; total: number }> {
 	const map = new Map<string, number>();
 
@@ -97,7 +107,8 @@ function groupExpenses(
 		let key = "";
 
 		if (granularity === "hour") {
-			key = date.getHours().toString().padStart(2, "0") + ":00";
+			key =
+				date.getHours().toString().padStart(2, "0") + ":00";
 		} else if (granularity === "month") {
 			key = new Intl.DateTimeFormat(locale, {
 				month: "short",
@@ -125,12 +136,21 @@ function buildMonthlyCategorySeries(
 		dateTime: Date | string;
 		categoryId: { toString: () => string };
 	}>,
-	categories: Array<{ _id: { toString: () => string }; name: string }>,
-	locale = "en-US",
+	categories: Array<{
+		_id: { toString: () => string };
+		name: string;
+	}>,
+	locale = "en-IN",
 ): Array<Record<string, string | number>> {
-	const byMonth = new Map<string, Record<string, string | number>>();
+	const byMonth = new Map<
+		string,
+		Record<string, string | number>
+	>();
 	const categoryNameById = new Map(
-		categories.map((category) => [category._id.toString(), category.name]),
+		categories.map((category) => [
+			category._id.toString(),
+			category.name,
+		]),
 	);
 
 	expenses.forEach((expense) => {
@@ -159,34 +179,43 @@ export async function GET(request: Request) {
 		const preset = url.searchParams.get("preset");
 		const { from, to } = parseRange(url);
 
-		const [expenses, categories, recentActivity] = await Promise.all([
-			listExpensesForRange(auth.userId, from, to),
-			listCategories(auth.userId),
-			listRecentExpenses(auth.userId, 8),
-		]);
+		const [expenses, categories, recentActivity] =
+			await Promise.all([
+				listExpensesForRange(auth.userId, from, to),
+				listCategories(auth.userId),
+				listRecentExpenses(auth.userId, 8),
+			]);
 
 		const totalSpend = expenses.reduce(
 			(sum, expense) => sum + expense.amount,
 			0,
 		);
-		const granularityMeta = resolveGranularity(from, to, preset);
+		const granularityMeta = resolveGranularity(
+			from,
+			to,
+			preset,
+		);
 		const mainSeries = groupExpenses(
 			expenses,
 			granularityMeta.granularity,
 		);
 		const averageSpend =
-			mainSeries.length > 0 ? totalSpend / mainSeries.length : 0;
+			mainSeries.length > 0
+				? totalSpend / mainSeries.length
+				: 0;
 
 		const categoryTotals = new Map<string, number>();
 		expenses.forEach((expense) => {
 			categoryTotals.set(
 				expense.categoryId.toString(),
-				(categoryTotals.get(expense.categoryId.toString()) ?? 0) +
-					expense.amount,
+				(categoryTotals.get(expense.categoryId.toString()) ??
+					0) + expense.amount,
 			);
 		});
 
-		const rankedCategories = Array.from(categoryTotals.entries())
+		const rankedCategories = Array.from(
+			categoryTotals.entries(),
+		)
 			.map(([categoryId, value]) => {
 				const category = categories.find(
 					(item) => item._id.toString() === categoryId,
@@ -199,7 +228,10 @@ export async function GET(request: Request) {
 			.sort((left, right) => right.value - left.value);
 
 		const topCategory = rankedCategories[0]?.name ?? "N/A";
-		const dailyCashFlowSeries = groupExpenses(expenses, "day");
+		const dailyCashFlowSeries = groupExpenses(
+			expenses,
+			"day",
+		);
 		const monthlyCategorySeries = buildMonthlyCategorySeries(
 			expenses,
 			categories,

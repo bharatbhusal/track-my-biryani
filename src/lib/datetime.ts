@@ -13,7 +13,7 @@ export function toUtcIsoString(input: string): string {
 
 export function formatDateTime(
 	value: Date | string,
-	locale = "en-US",
+	locale = "en-IN",
 	timeZone?: string,
 ): string {
 	const date =
@@ -45,5 +45,3 @@ export function formatDateTime(
 
 	return `${hour}:${minute} • ${day} ${month} ${year}`;
 }
-
-
