@@ -1,4 +1,4 @@
-# Daily Expenses Tracker
+# Track My Biryani
 
 Production-grade full-stack expense tracker built with Next.js App Router, TypeScript, MongoDB, React Query, GSAP, and Cloudinary.
 

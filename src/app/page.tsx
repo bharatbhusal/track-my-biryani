@@ -1,25 +1,28 @@
-import Link from 'next/link';
+import Link from "next/link";
 
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 export default function Home() {
-  return (
-    <div className="mx-auto grid min-h-[70vh] max-w-3xl place-items-center">
-      <Card className="w-full text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Daily Expenses Tracker</h1>
-        <p className="mt-2 text-sm text-[var(--color-muted)]">
-          Fast, mobile-first expense management with charts, categories, and secure auth.
-        </p>
-        <div className="mt-5 flex justify-center gap-3">
-          <Link href="/auth/signup">
-            <Button>Get Started</Button>
-          </Link>
-          <Link href="/auth/login">
-            <Button variant="outline">Login</Button>
-          </Link>
-        </div>
-      </Card>
-    </div>
-  );
+	return (
+		<div className="mx-auto grid min-h-[70vh] max-w-3xl place-items-center">
+			<Card className="w-full text-center">
+				<h1 className="text-2xl font-semibold tracking-tight">
+					Track My Biryani
+				</h1>
+				<p className="mt-2 text-sm text-[var(--color-muted)]">
+					Fast, mobile-first expense management with charts,
+					categories, and secure auth.
+				</p>
+				<div className="mt-5 flex justify-center gap-3">
+					<Link href="/auth/signup">
+						<Button>Get Started</Button>
+					</Link>
+					<Link href="/auth/login">
+						<Button variant="outline">Login</Button>
+					</Link>
+				</div>
+			</Card>
+		</div>
+	);
 }

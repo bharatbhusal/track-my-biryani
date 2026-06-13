@@ -14,13 +14,11 @@ import { UiRestriction } from "@/components/providers/ui-restriction";
 const APP_THEME_COLOR = "#059669";
 
 export const metadata: Metadata = {
-	metadataBase: new URL(
-		"https://trackmybiryani.bharatbhusal.com",
-	),
+	metadataBase: new URL("https://trackmybiryani.vercel.app"),
 	manifest: "/manifest.webmanifest",
 	title: {
-		default: "Daily Expenses Tracker",
-		template: "%s | Daily Expenses Tracker",
+		default: "Track My Biryani",
+		template: "%s | Track My Biryani",
 	},
 	description:
 		"Track daily expenses with analytics and categories.",
@@ -36,7 +34,7 @@ export const metadata: Metadata = {
 		},
 	],
 	openGraph: {
-		title: "Daily Expenses Tracker",
+		title: "Track My Biryani",
 		description: "A production-grade expenses tracker SaaS.",
 		type: "website",
 	},

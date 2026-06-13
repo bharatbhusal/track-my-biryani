@@ -7,7 +7,10 @@ import { FiLogOut, FiMoon, FiSun } from "react-icons/fi";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { useAuthActions, useAuthMe } from "@/hooks/api/use-auth-api";
+import {
+	useAuthActions,
+	useAuthMe,
+} from "@/hooks/api/use-auth-api";
 
 export function Header() {
 	const router = useRouter();
@@ -23,7 +26,7 @@ export function Header() {
 					href="/dashboard"
 					className="text-sm font-semibold tracking-tight"
 				>
-					Daily Expenses Tracker
+					Track My Biryani
 				</Link>
 				<div className="flex items-center gap-1.5">
 					<Button

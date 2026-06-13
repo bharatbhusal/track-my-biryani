@@ -2,7 +2,7 @@
 
 ## System Overview
 
-Daily Expenses Tracker is a Next.js App Router monolith that serves UI and API routes from the same deployment unit. It supports secure JWT cookie auth, expense and category management, analytics dashboards, and Cloudinary image uploads.
+Track My Biryani is a Next.js App Router monolith that serves UI and API routes from the same deployment unit. It supports secure JWT cookie auth, expense and category management, analytics dashboards, and Cloudinary image uploads.
 
 ## Core Modules
 
