@@ -42,7 +42,7 @@ export function CategoryManager() {
 	);
 
 	return (
-		<Card>
+		<Card data-animate="true">
 			<CardTitle className="mb-4">Categories</CardTitle>
 			<form
 				className="mb-4 flex gap-2"

@@ -1,15 +1,16 @@
 # Daily Expenses Tracker
 
-Production-grade full-stack expense tracker built with Next.js App Router, TypeScript, MongoDB, React Query, Zustand, and Cloudinary.
+Production-grade full-stack expense tracker built with Next.js App Router, TypeScript, MongoDB, React Query, GSAP, and Cloudinary.
 
 ## Features
 
-- JWT cookie auth with protected routes and redirect-safe middleware
+- JWT cookie auth with protected routes via middleware
 - Expense/category management with analytics dashboard
-- Dark/light/system theme with persisted preference (`next-themes`)
+- Dark/light theme with persisted preference (`next-themes`)
 - Locale-aware currency/timezone preference detection
-- Glimpse upload via drag/drop + camera capture + Cloudinary signed uploads
-- Data export (JSON/CSV) including expenses, activity logs, and analytics metadata
+- Cloudinary image upload with client-side compression
+- Data export (JSON/CSV) and import
+- PWA installable with service worker
 
 ## Setup
 
@@ -38,7 +39,7 @@ npm run dev
 - `CLOUDINARY_CLOUD_NAME`: Cloudinary cloud name
 - `CLOUDINARY_API_KEY`: Cloudinary API key
 - `CLOUDINARY_API_SECRET`: Cloudinary API secret
-- `CLOUDINARY_FOLDER_NAME`: Cloudinary folder for glimpses
+- `CLOUDINARY_FOLDER_NAME`: Cloudinary folder for images
 - `NEXT_PUBLIC_API_URL`: Client API base URL (default `/api`)
 
 ## Scripts
@@ -48,12 +49,12 @@ npm run dev
 - `npm run build` - production build
 - `npm run start` - run production server
 
-## Architecture Overview
+## Architecture
 
 - `src/app`: routes + API handlers
 - `src/features`: feature UI modules
-- `src/components`: reusable UI/layout/providers/uploads
-- `src/lib`: shared utilities, env config, API layer, cloudinary/uploads
+- `src/components`: reusable UI/layout/providers
+- `src/lib`: shared utilities, env config, API layer, cloudinary
 - `src/hooks`: app hooks and React Query hooks
 - `src/models`, `src/repositories`, `src/services`, `src/controllers`: backend layering
 - `src/types`: centralized domain types
@@ -66,17 +67,10 @@ Main APIs:
 - Expenses: `/api/expenses`
 - Categories: `/api/categories`
 - Analytics: `/api/dashboard`
-- Logs: `/api/logs`
 - Upload Signature: `/api/uploads/signature`
 - Export/Import: `/api/export`, `/api/import`
 
 Detailed docs: [`docs/API.md`](docs/API.md)
-
-## Screenshots
-
-- Dashboard: `docs/screenshots/dashboard.png` (placeholder)
-- Expenses: `docs/screenshots/expenses.png` (placeholder)
-- Settings: `docs/screenshots/settings.png` (placeholder)
 
 ## Deployment Guide
 

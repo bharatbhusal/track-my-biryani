@@ -13,18 +13,17 @@ export function usePageTransition(routeKey: string) {
 			const reduceMotion = window.matchMedia(
 				"(prefers-reduced-motion: reduce)",
 			).matches;
-			if (reduceMotion) {
-				return;
-			}
+			if (reduceMotion) return;
 
 			gsap.fromTo(
 				ref.current,
-				{ opacity: 0, y: 12 },
+				{ opacity: 0, y: 16, scale: 0.98 },
 				{
 					opacity: 1,
 					y: 0,
-					duration: 0.35,
-					ease: "power2.out",
+					scale: 1,
+					duration: 0.4,
+					ease: "power3.out",
 				},
 			);
 
@@ -32,18 +31,20 @@ export function usePageTransition(routeKey: string) {
 				"[data-animate]",
 			);
 			if (animatedNodes.length > 0) {
-				gsap.fromTo(
-					animatedNodes,
-					{ opacity: 0, y: 10 },
-					{
-						opacity: 1,
-						y: 0,
-						duration: 0.28,
-						ease: "power2.out",
-						stagger: 0.05,
-						delay: 0.05,
+				gsap.set(animatedNodes, { opacity: 0, y: 12 });
+				gsap.to(animatedNodes, {
+					opacity: 1,
+					y: 0,
+					duration: 0.35,
+					ease: "power2.out",
+					stagger: 0.06,
+					delay: 0.1,
+					onComplete: () => {
+						animatedNodes.forEach((node) =>
+							(node as HTMLElement).classList.add("gsap-done"),
+						);
 					},
-				);
+				});
 			}
 		},
 		{ dependencies: [routeKey] },

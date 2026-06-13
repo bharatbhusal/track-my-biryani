@@ -1,14 +1,17 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
 	color-scheme: light;
-	--color-bg: #f6fbf8;
+	--color-bg: #f0f7f3;
 	--color-surface: #ffffff;
-	--color-surface-muted: #eff7f2;
-	--color-text: #0f172a;
-	--color-muted: #475569;
-	--color-border: #d8e6dd;
+	--color-surface-muted: #e6f0ea;
+	--color-text: #0a1f14;
+	--color-muted: #4a6a57;
+	--color-border: #c4d9cd;
 	--color-primary: #059669;
+	--color-primary-muted: #d1fae5;
 	--color-primary-foreground: #ecfdf5;
 	--color-danger: #dc2626;
 	--font-size-xs: 0.75rem;
@@ -17,7 +20,14 @@
 	--font-size-lg: 1.125rem;
 	--font-size-xl: 1.5rem;
 	--line-tight: 1.2;
-	--line-normal: 1.45;
+	--line-normal: 1.5;
+	--radius-sm: 0.5rem;
+	--radius-md: 0.75rem;
+	--radius-lg: 1rem;
+	--radius-xl: 1.25rem;
+	--shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+	--shadow-elevated: 0 4px 12px -2px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+	--shadow-modal: 0 20px 48px -8px rgb(0 0 0 / 0.12), 0 8px 16px -4px rgb(0 0 0 / 0.08);
 	--chart-1: #059669;
 	--chart-2: #0ea5e9;
 	--chart-3: #8b5cf6;
@@ -31,15 +41,19 @@
 
 .dark {
 	color-scheme: dark;
-	--color-bg: #07150f;
-	--color-surface: #123324;
-	--color-surface-muted: #1b4733;
-	--color-text: #e2f8eb;
-	--color-muted: #97b7a4;
-	--color-border: #24553f;
+	--color-bg: #05120c;
+	--color-surface: #0d2819;
+	--color-surface-muted: #123322;
+	--color-text: #d4f0e0;
+	--color-muted: #70a185;
+	--color-border: #1d4a33;
 	--color-primary: #10b981;
+	--color-primary-muted: #064e3b;
 	--color-primary-foreground: #052e1f;
 	--color-danger: #f87171;
+	--shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.2);
+	--shadow-elevated: 0 4px 12px -2px rgb(0 0 0 / 0.3);
+	--shadow-modal: 0 20px 48px -8px rgb(0 0 0 / 0.4);
 	--chart-1: #10b981;
 	--chart-2: #38bdf8;
 	--chart-3: #a78bfa;
@@ -63,15 +77,13 @@ textarea,
 
 body {
 	font-family: var(--font-sans), "Segoe UI", sans-serif;
-	font-feature-settings:
-		"tnum" 1,
-		"ss01" 1;
+	font-feature-settings: "tnum" 1, "ss01" 1;
 	background-color: var(--color-bg);
 	color: var(--color-text);
 	line-height: var(--line-normal);
-	transition:
-		background-color 200ms ease,
-		color 200ms ease;
+	transition: background-color 250ms ease, color 250ms ease;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
 .safe-area-px {
@@ -83,10 +95,35 @@ body {
 	padding-bottom: max(1rem, var(--safe-area-bottom));
 }
 
-h1,
-h2,
-h3,
-h4 {
-	letter-spacing: -0.02em;
+h1, h2, h3, h4 {
+	letter-spacing: -0.025em;
 	line-height: var(--line-tight);
+}
+
+[data-animate] {
+	opacity: 0;
+	transform: translateY(12px);
+}
+
+[data-animate].gsap-done {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+::-webkit-scrollbar {
+	width: 6px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--color-border);
+	border-radius: 3px;
+}
+
+::selection {
+	background-color: var(--color-primary-muted);
+	color: var(--color-text);
 }

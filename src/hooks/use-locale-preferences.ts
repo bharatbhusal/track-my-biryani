@@ -51,7 +51,6 @@ export function useLocalePreferences(): void {
       locale,
       currency: detectCurrency(locale),
       timezone,
-      hapticFeedback: true,
       detectionCompleted: true,
     });
   }, [detectionCompleted, setPreferences]);

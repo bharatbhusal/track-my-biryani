@@ -11,11 +11,4 @@ export const queryKeys = {
 		detail: (id: string) =>
 			["expenses", "detail", id] as const,
 	},
-	logs: {
-		list: (
-			page = 1,
-			limit = 25,
-			params?: { preset?: string; from?: string; to?: string },
-		) => ["logs", "list", page, limit, params ?? {}] as const,
-	},
 };

@@ -1,10 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-
 import { AnalyticsPanel } from "@/components/AnalyticsPanel";
-import { CustomDateTimeRangeModal } from "@/components/charts/custom-date-time-range-modal";
-import { Button } from "@/components/ui/button";
 import {
 	Carousel,
 	CarouselContent,
@@ -16,7 +12,6 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
 import {
-	hasValidCustomRange,
 	rangeLabel,
 	toRangeParams,
 	DEFAULT_GLOBAL_RANGE,
@@ -27,31 +22,7 @@ import { useUIStore } from "@/store/ui-store";
 export function DashboardOverview() {
 	const locale = useUIStore((state) => state.locale);
 	const currency = useUIStore((state) => state.currency);
-	const customRangeModalOpen = useUIStore(
-		(state) => state.customRangeModalOpen,
-	);
-	const setCustomRangeModalOpen = useUIStore(
-		(state) => state.setCustomRangeModalOpen,
-	);
-	const [localDateRange, setLocalDateRange] = useState<{
-		from: string;
-		to: string;
-	} | null>(null);
-	const activeDateRange = useMemo(
-		() =>
-			localDateRange
-				? {
-						preset: "custom" as const,
-						from: localDateRange.from,
-						to: localDateRange.to,
-					}
-				: DEFAULT_GLOBAL_RANGE,
-		[localDateRange],
-	);
-	const rangeParams = useMemo(
-		() => toRangeParams(activeDateRange),
-		[activeDateRange],
-	);
+	const rangeParams = toRangeParams(DEFAULT_GLOBAL_RANGE);
 	const dashboardQuery = useDashboardQuery(rangeParams);
 
 	const data = dashboardQuery.data;
@@ -75,21 +46,8 @@ export function DashboardOverview() {
 
 	return (
 		<div className="space-y-4">
-			<div
-				className="flex items-center justify-between"
-				data-animate="true"
-			>
-				<CardTitle>
-					{localDateRange
-						? "Custom (Dashboard)"
-						: rangeLabel(DEFAULT_GLOBAL_RANGE)}
-				</CardTitle>
-				<Button
-					variant="outline"
-					onClick={() => setCustomRangeModalOpen(true)}
-				>
-					{"Set Custom Range"}
-				</Button>
+			<div className="flex items-center justify-between" data-animate="true">
+				<CardTitle>{rangeLabel(DEFAULT_GLOBAL_RANGE)}</CardTitle>
 			</div>
 
 			<div data-animate="true">
@@ -130,25 +88,6 @@ export function DashboardOverview() {
 			</div>
 
 			<AnalyticsPanel data={data} />
-
-			<CustomDateTimeRangeModal
-				key={`${customRangeModalOpen}-${localDateRange?.from ?? ""}-${localDateRange?.to ?? ""}`}
-				open={customRangeModalOpen}
-				initialFrom={localDateRange?.from ?? ""}
-				initialTo={localDateRange?.to ?? ""}
-				hasLocalOverride={Boolean(localDateRange)}
-				onClose={() => setCustomRangeModalOpen(false)}
-				onApplyGlobal={(from, to) => {
-					// Global range removed; treat Apply Global as dashboard-local
-					setLocalDateRange({ from, to });
-					setCustomRangeModalOpen(false);
-				}}
-				onApplyLocal={(from, to) => {
-					setLocalDateRange({ from, to });
-					setCustomRangeModalOpen(false);
-				}}
-				onClearLocal={() => setLocalDateRange(null)}
-			/>
 		</div>
 	);
 }

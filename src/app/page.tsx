@@ -9,7 +9,7 @@ export default function Home() {
       <Card className="w-full text-center">
         <h1 className="text-2xl font-semibold tracking-tight">Daily Expenses Tracker</h1>
         <p className="mt-2 text-sm text-[var(--color-muted)]">
-          Fast, mobile-first expense management with charts, audit logs, and secure auth.
+          Fast, mobile-first expense management with charts, categories, and secure auth.
         </p>
         <div className="mt-5 flex justify-center gap-3">
           <Link href="/auth/signup">

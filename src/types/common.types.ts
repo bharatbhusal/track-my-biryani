@@ -10,8 +10,3 @@ export type UserPreferences = {
 	theme: ThemeMode;
 	hapticFeedback: boolean;
 };
-
-export type Option<T = string> = {
-	label: string;
-	value: T;
-};

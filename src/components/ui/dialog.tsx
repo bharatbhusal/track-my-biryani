@@ -27,20 +27,20 @@ export function Modal({
 	return (
 		<DialogPrimitive.Root open={open} onOpenChange={(v) => !v && onClose()}>
 			<DialogPrimitive.Portal>
-				<DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40" />
+				<DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
 				<DialogPrimitive.Content
 					className={cn(
-						"fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-xl max-h-[90vh] overflow-auto",
+						"fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--shadow-modal)] max-h-[85vh] overflow-auto data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
 						className,
 					)}
 				>
-					<div className="mb-3 flex items-start justify-between gap-3">
+					<div className="mb-4 flex items-start justify-between gap-3">
 						<div>
-							<DialogPrimitive.Title className="text-base font-semibold">
+							<DialogPrimitive.Title className="text-base font-semibold tracking-tight">
 								{title}
 							</DialogPrimitive.Title>
 							{description ? (
-								<DialogPrimitive.Description className="text-sm text-[var(--color-muted)]">
+								<DialogPrimitive.Description className="mt-1 text-sm text-[var(--color-muted)]">
 									{description}
 								</DialogPrimitive.Description>
 							) : null}
@@ -90,8 +90,4 @@ export function ConfirmDialog({
 			</div>
 		</Modal>
 	);
-}
-
-export function DialogBody({ children }: { children: React.ReactNode }) {
-	return <>{children}</>;
 }

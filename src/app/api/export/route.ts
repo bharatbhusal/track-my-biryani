@@ -7,14 +7,11 @@ import {
 } from "@/lib/api-response";
 import { connectToDatabase } from "@/lib/db";
 import { buildTimestampedFilename } from "@/lib/naming";
-import { listAuditLogs } from "@/repositories/audit.repository";
 import { listCategories } from "@/repositories/category.repository";
 import {
 	listExpenses,
 	listExpensesForRange,
 } from "@/repositories/expense.repository";
-
-type ExportFormat = "json" | "csv";
 
 type ExportPayload = {
 	exportedAt: string;
@@ -42,45 +39,12 @@ type ExportPayload = {
 		dateTime: string;
 		createdAt?: string;
 	}>;
-	activityLogs: Array<{
-		id: string;
-		action: string;
-		entityType: string;
-		entityId?: string;
-		timestamp: string;
-	}>;
 };
-
-function asCsvValue(value: unknown): string {
-	const raw = String(value ?? "").replace(/[\n\r\t]/g, " ");
-	return `"${raw.replaceAll('"', '""')}"`;
-}
-
-function buildCsv(rows: string[][]): string {
-	return rows
-		.map((row) => row.map(asCsvValue).join(","))
-		.join("\n");
-}
-
-function addSection(
-	rows: string[][],
-	title: string,
-	headers: string[],
-	data: Array<Array<unknown>>,
-): void {
-	rows.push([title]);
-	rows.push(headers);
-	data.forEach((item) =>
-		rows.push(item.map((value) => String(value ?? ""))),
-	);
-	rows.push([]);
-}
 
 export async function GET(request: NextRequest) {
 	try {
 		await connectToDatabase();
 		const auth = await getAuthPayload();
-		const format = "json" as ExportFormat;
 		const type = request.nextUrl.searchParams.get("type");
 		const now = new Date();
 		const monthStart = new Date(
@@ -89,7 +53,7 @@ export async function GET(request: NextRequest) {
 			1,
 		);
 
-		const [categories, expenses, logs, monthlyExpenses] =
+		const [categories, expenses, monthlyExpenses] =
 			await Promise.all([
 				listCategories(auth.userId),
 				listExpenses(auth.userId, {
@@ -98,7 +62,6 @@ export async function GET(request: NextRequest) {
 					sortBy: "dateTime",
 					order: "desc",
 				}),
-				listAuditLogs(auth.userId, 1, 5000),
 				listExpensesForRange(auth.userId, monthStart, now),
 			]);
 
@@ -113,7 +76,7 @@ export async function GET(request: NextRequest) {
 			exportGeneratedAt: exportedAt,
 		};
 
-		const normalizedPayload = {
+		const normalizedPayload: ExportPayload = {
 			exportedAt,
 			analytics,
 			categories: categories.map((category) => ({
@@ -139,21 +102,9 @@ export async function GET(request: NextRequest) {
 				dateTime: expense.dateTime,
 				createdAt: expense.createdAt,
 			})),
-			activityLogs: logs.items.map((log) => ({
-				id: log._id.toString(),
-				action: log.action,
-				entityType: log.entityType,
-				entityId: log.entityId,
-				timestamp: log.timestamp,
-			})),
 		};
 
-		// Only JSON export is supported. Allow exporting specific sections via `type` query param.
-		let payload:
-			| ExportPayload
-			| Pick<ExportPayload, "expenses">
-			| Pick<ExportPayload, "categories">
-			| Pick<ExportPayload, "activityLogs"> =
+		let payload: ExportPayload | Pick<ExportPayload, "expenses"> | Pick<ExportPayload, "categories"> =
 			normalizedPayload;
 
 		if (!type || type === "all") {
@@ -162,10 +113,6 @@ export async function GET(request: NextRequest) {
 			payload = { expenses: normalizedPayload.expenses };
 		} else if (type === "categories") {
 			payload = { categories: normalizedPayload.categories };
-		} else if (type === "logs") {
-			payload = {
-				activityLogs: normalizedPayload.activityLogs,
-			};
 		}
 
 		return successResponse({

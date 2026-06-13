@@ -2,7 +2,7 @@
 
 ## System Overview
 
-Daily Expenses Tracker is a Next.js App Router monolith that serves UI and API routes from the same deployment unit. It supports secure JWT cookie auth, expense and category management, analytics dashboards, audit logs, and glimpse uploads to Cloudinary.
+Daily Expenses Tracker is a Next.js App Router monolith that serves UI and API routes from the same deployment unit. It supports secure JWT cookie auth, expense and category management, analytics dashboards, and Cloudinary image uploads.
 
 ## Core Modules
 
@@ -11,7 +11,7 @@ Daily Expenses Tracker is a Next.js App Router monolith that serves UI and API r
 - **API Layer**: Centralized typed API client and domain services (`src/lib/api/*`).
 - **Domain Layer**: Controllers/services/repositories with schema validation.
 - **Persistence Layer**: MongoDB via Mongoose models and repositories.
-- **Media Layer**: Signed Cloudinary uploads with client-side progress/camera/dropzone support.
+- **Media Layer**: Signed Cloudinary uploads with client-side compression/drag-drop support.
 
 ## Key Architecture Decisions
 

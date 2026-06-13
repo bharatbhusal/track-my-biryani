@@ -1,7 +1,7 @@
 {
 	"name": "Daily Expenses Tracker",
 	"short_name": "Expenses",
-	"description": "Track daily expenses with analytics, categories, settings and logs.",
+	"description": "Track daily expenses with analytics, categories, and secure auth.",
 	"start_url": "/dashboard",
 	"display": "standalone",
 	"background_color": "#f6fbf8",

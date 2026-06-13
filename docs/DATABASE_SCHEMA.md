@@ -5,7 +5,7 @@
 - **User**: identity + preferences (locale, timezone, currency).
 - **Category**: user-scoped expense classification.
 - **Expense**: transaction record with amount/category/time/location/images; includes metadata (notes, paymentMethod, tags) and soft-delete flag.
-- **AuditLog**: immutable action history.
+- **AuditLog**: immutable action history (server-only; no UI).
 
 ## Relations
 

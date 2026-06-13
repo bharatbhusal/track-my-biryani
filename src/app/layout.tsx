@@ -6,7 +6,6 @@ import { QuickAddButton } from "@/components/layout/quick-add-button";
 import { AppProvider } from "@/components/providers/app-provider";
 import { DisableInteractions } from "@/components/ui/disable-interactions";
 import { QuickAddExpenseModal } from "@/features/expenses/components/quick-add-expense-modal";
-import { SettingsModal } from "@/features/settings/components/settings-modal";
 
 import "./globals.css";
 import { Header } from "@/components/layout/header";
@@ -23,7 +22,18 @@ export const metadata: Metadata = {
 		template: "%s | Daily Expenses Tracker",
 	},
 	description:
-		"Track daily expenses with analytics, categories, settings and audit logs.",
+		"Track daily expenses with analytics and categories.",
+	other: {
+		"apple-mobile-web-app-capable": "yes",
+		"apple-mobile-web-app-status-bar-style": "default",
+	},
+	icons: [
+		{ rel: "icon", url: "/icons/icon-192.png" },
+		{
+			rel: "apple-touch-icon",
+			url: "/icons/icon-192.png",
+		},
+	],
 	openGraph: {
 		title: "Daily Expenses Tracker",
 		description: "A production-grade expenses tracker SaaS.",
@@ -56,7 +66,6 @@ export default function RootLayout({
 					<BottomNav />
 					<QuickAddButton />
 					<QuickAddExpenseModal />
-					<SettingsModal />
 				</AppProvider>
 			</body>
 		</html>

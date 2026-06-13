@@ -3,9 +3,9 @@ import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 
 import { AUTH_COOKIE } from '@/lib/constants';
-import { env, getJwtSecret } from '@/lib/env';
+import { env, getJwtSecret } from '@/config/env';
 import { AppError } from '@/lib/errors';
-import type { JwtPayload } from '@/types/auth';
+import type { JwtPayload } from '@/types/auth.types';
 
 const COOKIE_MAX_AGE_SEVEN_DAYS = 60 * 60 * 24 * 7;
 

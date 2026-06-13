@@ -1,8 +1,3 @@
-type DateRangePreset =
-	| "this_week"
-	| "this_month"
-	| "this_year";
-
 export function getLocalDateTimeInputValue(
 	date = new Date(),
 ): string {
@@ -51,23 +46,4 @@ export function formatDateTime(
 	return `${hour}:${minute} • ${day} ${month} ${year}`;
 }
 
-export function getPresetDateRange(
-	preset: DateRangePreset,
-): { from: Date; to: Date } {
-	const to = new Date();
 
-	if (preset === "this_week") {
-		const from = new Date(to);
-		from.setDate(to.getDate() - 6);
-		from.setHours(0, 0, 0, 0);
-		return { from, to };
-	}
-
-	if (preset === "this_month") {
-		const from = new Date(to.getFullYear(), to.getMonth(), 1);
-		return { from, to };
-	}
-
-	const from = new Date(to.getFullYear(), 0, 1);
-	return { from, to };
-}

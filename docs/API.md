@@ -72,7 +72,7 @@ All APIs return `{ success, data }` or `{ success, error }`.
 - `PUT /api/categories/:id` — update category
 - `DELETE /api/categories/:id` — delete category
 
-## Analytics & Logs APIs
+## Analytics APIs
 
 ### `GET /api/dashboard`
 
@@ -83,12 +83,6 @@ All APIs return `{ success, data }` or `{ success, error }`.
   - `to`: ISO date string for custom range
 - Response: totals, trends, breakdowns, recent activity scoped to selected time range
 - Notes: Server aggregates expenses within the selected range and computes analytics (KPIs, category breakdown, daily trend, etc.)
-
-### `GET /api/logs`
-
-- Auth: Yes
-- Query: `page`, `limit`, `action`
-- Response: paginated logs
 
 ## Upload APIs
 
@@ -108,7 +102,7 @@ All APIs return `{ success, data }` or `{ success, error }`.
 
 - Auth: Yes
 - Response: `{ data, filename, mimeType, exportedAt }`
-- Includes expenses, logs, analytics metadata
+- Includes expenses, categories, analytics metadata
 
 ### `POST /api/import`
 
@@ -128,7 +122,6 @@ All APIs return `{ success, data }` or `{ success, error }`.
 - `getLocalDateTimeInputValue(date?)`: returns `datetime-local` input-compatible string (timezone-safe).
 - `toUtcIsoString(input)`: converts `datetime-local` input string to UTC ISO string.
 - `formatDateTime(value, locale, timeZone)`: formats as "HH:MM • DD Mon YYYY".
-- `getPresetDateRange(preset)`: returns `{ from, to }` for `this_week`, `this_month`, `this_year`.
 
 ### Export & Upload Naming (`src/lib/naming.ts`)
 

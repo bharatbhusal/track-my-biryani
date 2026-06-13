@@ -1,6 +1,13 @@
 "use client";
 
-// PWA service worker registration removed per project settings.
+import { useEffect } from "react";
+
 export function PwaProvider() {
+	useEffect(() => {
+		if ("serviceWorker" in navigator) {
+			navigator.serviceWorker.register("/sw.js").catch(() => {});
+		}
+	}, []);
+
 	return null;
 }
