@@ -79,8 +79,6 @@ All APIs return `{ success, data }` or `{ success, error }`.
 - Auth: Yes
 - Query Parameters:
   - `preset`: `this_week` | `this_month` | `this_year` (default: `this_month`)
-  - `from`: ISO date string for custom range
-  - `to`: ISO date string for custom range
 - Response: totals, trends, breakdowns, recent activity scoped to selected time range
 - Notes: Server aggregates expenses within the selected range and computes analytics (KPIs, category breakdown, daily trend, etc.)
 

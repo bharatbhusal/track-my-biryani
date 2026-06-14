@@ -9,21 +9,12 @@ import {
 	listExpensesForRange,
 	listRecentExpenses,
 } from "@/repositories/expense.repository";
-import { parseCustomBound } from "@/lib/custom-range";
 
 type Granularity = "hour" | "day" | "month";
 
 function parseRange(url: URL): { from: Date; to: Date } {
 	const now = new Date();
 	const preset = url.searchParams.get("preset");
-	const fromParam = url.searchParams.get("from");
-	const toParam = url.searchParams.get("to");
-
-	if (fromParam && toParam) {
-		const from = parseCustomBound(fromParam, "from");
-		const to = parseCustomBound(toParam, "to");
-		return { from, to };
-	}
 
 	if (preset === "this_week") {
 		const from = new Date(now);

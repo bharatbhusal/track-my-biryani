@@ -37,13 +37,16 @@ import { useDateRange } from "@/components/charts/date-range-context";
 type SortField = "dateTime" | "amount" | "title";
 
 export function ExpenseManager() {
-	const setQuickAddOpen = useUIStore((state) => state.setQuickAddOpen);
+	const setQuickAddOpen = useUIStore(
+		(state) => state.setQuickAddOpen,
+	);
 	const locale = useUIStore((state) => state.locale);
 	const timezone = useUIStore((state) => state.timezone);
 	const currency = useUIStore((state) => state.currency);
 	const [query, setQuery] = useState("");
 	const [categoryId, setCategoryId] = useState("");
-	const [sortBy, setSortBy] = useState<SortField>("dateTime");
+	const [sortBy, setSortBy] =
+		useState<SortField>("dateTime");
 	const [order, setOrder] = useState<"asc" | "desc">("desc");
 	const [amountMin, setAmountMin] = useState("");
 	const [amountMax, setAmountMax] = useState("");
@@ -67,7 +70,16 @@ export function ExpenseManager() {
 			amountMin: amountMin ? Number(amountMin) : undefined,
 			amountMax: amountMax ? Number(amountMax) : undefined,
 		};
-	}, [categoryId, localRange, order, page, debouncedQuery, sortBy, amountMin, amountMax]);
+	}, [
+		categoryId,
+		localRange,
+		order,
+		page,
+		debouncedQuery,
+		sortBy,
+		amountMin,
+		amountMax,
+	]);
 
 	const expensesQuery = useExpensesQuery(filters);
 	const items = expensesQuery.data?.items ?? [];
@@ -76,7 +88,10 @@ export function ExpenseManager() {
 	const categoryMap = useMemo(
 		() =>
 			new Map(
-				(categoriesQuery.data ?? []).map((cat) => [cat._id, cat]),
+				(categoriesQuery.data ?? []).map((cat) => [
+					cat._id,
+					cat,
+				]),
 			),
 		[categoriesQuery.data],
 	);
@@ -102,7 +117,7 @@ export function ExpenseManager() {
 
 	return (
 		<div className="space-y-4">
-			<Card data-animate="true">
+			<Card>
 				<div className="mb-3 flex items-center justify-between gap-2">
 					<CardTitle>Expenses</CardTitle>
 					<Button onClick={() => setQuickAddOpen(true)}>
@@ -263,7 +278,9 @@ export function ExpenseManager() {
 							variant="outline"
 							size="icon"
 							disabled={page >= totalPages}
-							onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+							onClick={() =>
+								setPage((p) => Math.min(totalPages, p + 1))
+							}
 							aria-label="Next page"
 						>
 							<FiChevronRight className="h-4 w-4" />

@@ -2,7 +2,6 @@ import "server-only";
 
 import { getAuthPayload } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
-import { parseCustomBound } from "@/lib/custom-range";
 import {
 	getExpenseById,
 	getExpenseContribution,
@@ -42,13 +41,6 @@ function parseRangeToDates(range: GlobalDateRange): {
 	to: Date;
 } {
 	const now = new Date();
-
-	if (range.preset === "custom" && range.from && range.to) {
-		return {
-			from: parseCustomBound(range.from, "from"),
-			to: parseCustomBound(range.to, "to"),
-		};
-	}
 
 	if (range.preset === "this_week") {
 		const from = new Date(now);
@@ -191,8 +183,7 @@ export async function getServerDashboardData(
 ): Promise<DashboardAnalytics> {
 	const auth = await getSession();
 	const { from, to } = parseRangeToDates(range);
-	const preset =
-		range.preset === "custom" ? undefined : range.preset;
+	const preset = range.preset;
 
 	const [expenses, categories, recentActivity] =
 		await Promise.all([
@@ -341,7 +332,9 @@ export async function getServerCategoryForm(
 ): Promise<{ category: CategoryItem | null }> {
 	const auth = await getSession();
 	const category = await getCategoryById(auth.userId, id);
-	return serialize({ category: category as CategoryItem | null });
+	return serialize({
+		category: category as CategoryItem | null,
+	});
 }
 
 export async function getServerExpensesList(): Promise<{

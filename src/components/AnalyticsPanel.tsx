@@ -16,14 +16,22 @@ import {
 	YAxis,
 } from "recharts";
 
-import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
+import {
+	ChartContainer,
+	type ChartConfig,
+} from "@/components/ui/chart";
 import { ChartCard } from "@/components/charts/chart-card";
 import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
-import { toRangeParams, DEFAULT_GLOBAL_RANGE } from "@/lib/date-range";
+import {
+	toRangeParams,
+	DEFAULT_GLOBAL_RANGE,
+} from "@/lib/date-range";
 import type { GlobalDateRange } from "@/lib/date-range";
 
 function MonthlyCategoryChart() {
-	const [range, setRange] = useState<GlobalDateRange>(DEFAULT_GLOBAL_RANGE);
+	const [range, setRange] = useState<GlobalDateRange>(
+		DEFAULT_GLOBAL_RANGE,
+	);
 	const rangeParams = toRangeParams(range);
 	const { data } = useDashboardQuery(rangeParams);
 
@@ -41,7 +49,10 @@ function MonthlyCategoryChart() {
 	const chartConfig = useMemo<ChartConfig>(
 		() =>
 			categoryKeys.reduce((acc, key, index) => {
-				acc[key] = { label: key, color: `var(--chart-${(index % 5) + 1})` };
+				acc[key] = {
+					label: key,
+					color: `var(--chart-${(index % 5) + 1})`,
+				};
 				return acc;
 			}, {} as ChartConfig),
 		[categoryKeys],
@@ -54,12 +65,23 @@ function MonthlyCategoryChart() {
 			onRangeChange={setRange}
 			className="lg:col-span-2"
 		>
-			<ChartContainer config={chartConfig} className="min-h-[300px]">
+			<ChartContainer
+				config={chartConfig}
+				className="min-h-[300px]"
+			>
 				<ResponsiveContainer width="100%" height={300}>
 					<BarChart data={data?.monthlyCategorySeries ?? []}>
-						<CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-						<XAxis dataKey="month" tick={{ fill: "var(--color-muted)", fontSize: 12 }} />
-						<YAxis tick={{ fill: "var(--color-muted)", fontSize: 12 }} />
+						<CartesianGrid
+							strokeDasharray="3 3"
+							stroke="var(--color-border)"
+						/>
+						<XAxis
+							dataKey="month"
+							tick={{ fill: "var(--color-muted)", fontSize: 12 }}
+						/>
+						<YAxis
+							tick={{ fill: "var(--color-muted)", fontSize: 12 }}
+						/>
 						<Tooltip
 							contentStyle={{
 								backgroundColor: "var(--color-surface)",
@@ -85,21 +107,37 @@ function MonthlyCategoryChart() {
 }
 
 function DailyCashFlowChart() {
-	const [range, setRange] = useState<GlobalDateRange>(DEFAULT_GLOBAL_RANGE);
+	const [range, setRange] = useState<GlobalDateRange>(
+		DEFAULT_GLOBAL_RANGE,
+	);
 	const rangeParams = toRangeParams(range);
 	const { data } = useDashboardQuery(rangeParams);
 
 	return (
-		<ChartCard title="Daily Cash Flow Trend" defaultRange={range} onRangeChange={setRange}>
+		<ChartCard
+			title="Daily Cash Flow Trend"
+			defaultRange={range}
+			onRangeChange={setRange}
+		>
 			<ChartContainer
-				config={{ total: { label: "Total", color: "var(--chart-2)" } }}
+				config={{
+					total: { label: "Total", color: "var(--chart-2)" },
+				}}
 				className="min-h-[250px]"
 			>
 				<ResponsiveContainer width="100%" height={250}>
 					<LineChart data={data?.dailyCashFlowSeries ?? []}>
-						<CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-						<XAxis dataKey="name" tick={{ fill: "var(--color-muted)", fontSize: 12 }} />
-						<YAxis tick={{ fill: "var(--color-muted)", fontSize: 12 }} />
+						<CartesianGrid
+							strokeDasharray="3 3"
+							stroke="var(--color-border)"
+						/>
+						<XAxis
+							dataKey="name"
+							tick={{ fill: "var(--color-muted)", fontSize: 12 }}
+						/>
+						<YAxis
+							tick={{ fill: "var(--color-muted)", fontSize: 12 }}
+						/>
 						<Tooltip
 							contentStyle={{
 								backgroundColor: "var(--color-surface)",
@@ -123,24 +161,39 @@ function DailyCashFlowChart() {
 }
 
 function CategoryPieChart() {
-	const [range, setRange] = useState<GlobalDateRange>(DEFAULT_GLOBAL_RANGE);
+	const [range, setRange] = useState<GlobalDateRange>(
+		DEFAULT_GLOBAL_RANGE,
+	);
 	const [activeIndex, setActiveIndex] = useState(0);
 	const rangeParams = toRangeParams(range);
 	const { data } = useDashboardQuery(rangeParams);
 
-	const rankedCategories = useMemo(() => data?.rankedCategories ?? [], [data?.rankedCategories]);
+	const rankedCategories = useMemo(
+		() => data?.rankedCategories ?? [],
+		[data?.rankedCategories],
+	);
 	const chartConfig = useMemo<ChartConfig>(
 		() =>
 			rankedCategories.reduce((acc, entry, index) => {
-				acc[entry.name] = { label: entry.name, color: `var(--chart-${(index % 5) + 1})` };
+				acc[entry.name] = {
+					label: entry.name,
+					color: `var(--chart-${(index % 5) + 1})`,
+				};
 				return acc;
 			}, {} as ChartConfig),
 		[rankedCategories],
 	);
 
 	return (
-		<ChartCard title="Expenses by Category" defaultRange={range} onRangeChange={setRange}>
-			<ChartContainer config={chartConfig} className="min-h-[250px]">
+		<ChartCard
+			title="Expenses by Category"
+			defaultRange={range}
+			onRangeChange={setRange}
+		>
+			<ChartContainer
+				config={chartConfig}
+				className="min-h-[250px]"
+			>
 				<ResponsiveContainer width="100%" height={250}>
 					<PieChart>
 						<Pie
@@ -181,7 +234,7 @@ function CategoryPieChart() {
 export function AnalyticsPanel() {
 	return (
 		<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-			<MonthlyCategoryChart />
+			{/* <MonthlyCategoryChart /> */}
 			<DailyCashFlowChart />
 			<CategoryPieChart />
 		</div>
