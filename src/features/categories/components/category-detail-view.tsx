@@ -1,12 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
 	FiEdit2,
 	FiTrash2,
-	FiArrowLeft,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import {
@@ -23,6 +21,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { ConfirmDrawer } from "@/components/ui/drawer";
 import { ChartCard } from "@/components/charts/chart-card";
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
+import { AddCategoryDrawer } from "@/features/categories/components/add-category-drawer";
 import {
 	useCategoryDetailQuery,
 	useExpenseMutations,
@@ -50,6 +49,7 @@ export function CategoryDetailView({
 }) {
 	const router = useRouter();
 	const [deleteOpen, setDeleteOpen] = useState(false);
+	const [editDrawerOpen, setEditDrawerOpen] = useState(false);
 	const locale = useUIStore((state) => state.locale);
 	const currency = useUIStore((state) => state.currency);
 
@@ -145,15 +145,14 @@ export function CategoryDetailView({
 						</div>
 					</CardTitle>
 					<div className="flex items-center gap-2">
-						<Link href={`/categories/${id}/edit`}>
-							<Button
-								variant="outline"
-								className="h-9 w-9 p-0"
-								aria-label="Edit category"
-							>
-								<FiEdit2 />
-							</Button>
-						</Link>
+						<Button
+							variant="outline"
+							className="h-9 w-9 p-0"
+							aria-label="Edit category"
+							onClick={() => setEditDrawerOpen(true)}
+						>
+							<FiEdit2 />
+						</Button>
 						<Button
 							variant="destructive"
 							className="h-9 w-9 p-0"
@@ -231,6 +230,12 @@ export function CategoryDetailView({
 					emptyMessage="No expenses in this category"
 				/>
 			</Card>
+
+			<AddCategoryDrawer
+				open={editDrawerOpen}
+				onClose={() => setEditDrawerOpen(false)}
+				category={category}
+			/>
 
 			<ConfirmDrawer
 				open={deleteOpen}

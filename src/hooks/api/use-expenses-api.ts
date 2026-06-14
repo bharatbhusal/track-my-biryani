@@ -140,6 +140,21 @@ export function useExpenseMutations() {
 		},
 	});
 
+	const updateCategory = useMutation({
+		mutationFn: ({
+			id,
+			payload,
+		}: {
+			id: string;
+			payload: { name: string; color?: string; emoji?: string };
+		}) => expensesApi.updateCategory(id, payload),
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.categories,
+			});
+		},
+	});
+
 	const deleteCategory = useMutation({
 		mutationFn: expensesApi.deleteCategory,
 		onSuccess: () => {
@@ -215,6 +230,7 @@ export function useExpenseMutations() {
 		updateExpense,
 		deleteExpense,
 		createCategory,
+		updateCategory,
 		deleteCategory,
 	};
 }

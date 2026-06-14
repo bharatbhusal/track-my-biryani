@@ -1,7 +1,11 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { Drawer as VaulDrawer } from "vaul";
+import {
+	useCallback,
+	useEffect,
+	useRef,
+	type ReactNode,
+} from "react";
 
 type DrawerProps = {
 	open: boolean;
@@ -20,51 +24,77 @@ export function Drawer({
 	children,
 	className = "",
 }: DrawerProps) {
+	const overlayRef = useRef<HTMLDivElement>(null);
+
+	const handleKeyDown = useCallback(
+		(e: KeyboardEvent) => {
+			if (e.key === "Escape") onClose();
+		},
+		[onClose],
+	);
+
+	useEffect(() => {
+		if (open) {
+			document.addEventListener("keydown", handleKeyDown);
+			document.body.style.overflow = "hidden";
+		}
+		return () => {
+			document.removeEventListener("keydown", handleKeyDown);
+			document.body.style.overflow = "";
+		};
+	}, [open, handleKeyDown]);
+
+	if (!open) return null;
+
 	return (
-		<VaulDrawer.Root
-			open={open}
-			onOpenChange={(isOpen) => {
-				if (!isOpen) onClose();
-			}}
+		<div
+			className="fixed inset-0 z-50 flex items-center justify-center"
+			ref={overlayRef}
 		>
-			<VaulDrawer.Portal>
-				<VaulDrawer.Overlay className="fixed inset-0 z-50 bg-black/30" />
-				<VaulDrawer.Content
-					className={`fixed inset-x-0 bottom-0 z-50 mt-24 flex max-h-[90dvh] flex-col rounded-t-xl border border-[var(--color-border)] bg-[var(--color-bg)] ${className}`}
-				>
-					<div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
-						<div>
-							<VaulDrawer.Title className="text-base font-semibold">
-								{title}
-							</VaulDrawer.Title>
-							{description && (
-								<VaulDrawer.Description className="text-xs text-[var(--color-muted)]">
-									{description}
-								</VaulDrawer.Description>
-							)}
-						</div>
-						<VaulDrawer.Close className="rounded-md p-1 text-[var(--color-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)]">
-							<svg
-								width="16"
-								height="16"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-							>
-								<path d="M18 6 6 18" />
-								<path d="m6 6 12 12" />
-							</svg>
-						</VaulDrawer.Close>
+			<div
+				className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+				onClick={onClose}
+			/>
+			<div
+				className={`relative z-10 mx-4 w-full max-w-lg rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] shadow-xl ${className}`}
+			>
+				<div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
+					<div className="min-w-0">
+						<h2 className="truncate text-base font-semibold text-[var(--color-foreground)]">
+							{title}
+						</h2>
+						{description && (
+							<p className="truncate text-xs text-[var(--color-muted)]">
+								{description}
+							</p>
+						)}
 					</div>
-					<div className="overflow-y-auto px-4 py-3">
-						{children}
-					</div>
-				</VaulDrawer.Content>
-			</VaulDrawer.Portal>
-		</VaulDrawer.Root>
+					<button
+						type="button"
+						onClick={onClose}
+						className="ml-4 shrink-0 rounded-md p-1 text-[var(--color-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-foreground)] transition-colors"
+						aria-label="Close"
+					>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						>
+							<path d="M18 6 6 18" />
+							<path d="m6 6 12 12" />
+						</svg>
+					</button>
+				</div>
+				<div className="max-h-[75vh] overflow-y-auto px-4 py-3">
+					{children}
+				</div>
+			</div>
+		</div>
 	);
 }
 
