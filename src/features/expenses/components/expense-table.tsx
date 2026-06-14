@@ -180,33 +180,32 @@ export function ExpenseTable({
 			{/* Pagination */}
 			{page !== undefined &&
 				totalPages !== undefined &&
+				totalPages > 1 &&
 				onPageChange && (
-					<div className="mt-3 flex items-center justify-between text-sm">
+					<div className="mt-3 flex items-center justify-center gap-3 text-sm">
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={() =>
+								onPageChange(page <= 1 ? totalPages : page - 1)
+							}
+							aria-label="Previous page"
+						>
+							<FiChevronLeft className="h-4 w-4" />
+						</Button>
 						<p className="text-[var(--color-muted)]">
-							Page {page} of {totalPages}
+							{page} / {totalPages}
 						</p>
-						<div className="flex gap-2">
-							<Button
-								variant="outline"
-								size="icon"
-								disabled={page <= 1}
-								onClick={() => onPageChange(Math.max(1, page - 1))}
-								aria-label="Previous page"
-							>
-								<FiChevronLeft className="h-4 w-4" />
-							</Button>
-							<Button
-								variant="outline"
-								size="icon"
-								disabled={page >= totalPages}
-								onClick={() =>
-									onPageChange(Math.min(totalPages, page + 1))
-								}
-								aria-label="Next page"
-							>
-								<FiChevronRight className="h-4 w-4" />
-							</Button>
-						</div>
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={() =>
+								onPageChange(page >= totalPages ? 1 : page + 1)
+							}
+							aria-label="Next page"
+						>
+							<FiChevronRight className="h-4 w-4" />
+						</Button>
 					</div>
 				)}
 		</>

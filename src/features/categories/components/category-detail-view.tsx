@@ -2,10 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-	FiEdit2,
-	FiTrash2,
-} from "react-icons/fi";
+import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import { toast } from "sonner";
 import {
 	Area,
@@ -49,7 +46,8 @@ export function CategoryDetailView({
 }) {
 	const router = useRouter();
 	const [deleteOpen, setDeleteOpen] = useState(false);
-	const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+	const [editDrawerOpen, setEditDrawerOpen] =
+		useState(false);
 	const locale = useUIStore((state) => state.locale);
 	const currency = useUIStore((state) => state.currency);
 

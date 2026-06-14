@@ -37,7 +37,7 @@ export function ExpenseManager() {
 		const bounds = toIsoBounds(localRange);
 		return {
 			page,
-			limit: 20,
+			limit: 10,
 			q: debouncedQuery || undefined,
 			categoryId: categoryId || undefined,
 			from: bounds.from,
