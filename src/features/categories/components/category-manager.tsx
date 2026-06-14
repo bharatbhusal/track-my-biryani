@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { FiPlus, FiSearch, FiArrowUp, FiArrowDown, FiTag } from "react-icons/fi";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -18,9 +19,7 @@ export function CategoryManager() {
 	const [name, setName] = useState("");
 	const [emoji, setEmoji] = useState("🏷️");
 	const [query, setQuery] = useState("");
-	const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
-		"asc",
-	);
+	const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 	const categoriesQuery = useCategoriesQuery();
 	const { createCategory } = useExpenseMutations();
 	const debouncedQuery = useDebouncedValue(query, 300);
@@ -29,9 +28,7 @@ export function CategoryManager() {
 		() =>
 			(categoriesQuery.data ?? [])
 				.filter((item) =>
-					item.name
-						.toLowerCase()
-						.includes(debouncedQuery.toLowerCase()),
+					item.name.toLowerCase().includes(debouncedQuery.toLowerCase()),
 				)
 				.sort((a, b) =>
 					sortOrder === "asc"
@@ -43,7 +40,13 @@ export function CategoryManager() {
 
 	return (
 		<Card data-animate="true">
-			<CardTitle className="mb-4">Categories</CardTitle>
+			<div className="flex items-center justify-between gap-2 mb-4">
+				<CardTitle>
+					<FiTag className="inline mr-1.5 h-4 w-4" />
+					Categories
+				</CardTitle>
+			</div>
+
 			<form
 				className="mb-4 flex gap-2"
 				onSubmit={(event) => {
@@ -52,73 +55,81 @@ export function CategoryManager() {
 					createCategory.mutate(
 						{ name: name.trim(), emoji: emoji.trim() || "🏷️" },
 						{
-						onSuccess: () => {
-							setName("");
-							setEmoji("🏷️");
-							toast.success("Category created");
-						},
-						onError: (error) => {
-							toast.error(
-								error instanceof Error
-									? error.message
-									: "Failed to create category",
-							);
-						},
+							onSuccess: () => {
+								setName("");
+								setEmoji("🏷️");
+								toast.success("Category created");
+							},
+							onError: (error) => {
+								toast.error(
+									error instanceof Error ? error.message : "Failed to create category",
+								);
+							},
 						},
 					);
 				}}
 			>
 				<Input
 					value={name}
-					onChange={(event) => setName(event.target.value)}
+					onChange={(e) => setName(e.target.value)}
 					placeholder="Food, Transport..."
 				/>
 				<Input
 					value={emoji}
-					onChange={(event) => setEmoji(event.target.value)}
+					onChange={(e) => setEmoji(e.target.value)}
 					placeholder="🏷️"
 					className="max-w-20"
 				/>
-				<Button
-					type="submit"
-					disabled={createCategory.isPending}
-				>
+				<Button type="submit" disabled={createCategory.isPending}>
 					{createCategory.isPending ? (
 						<>
 							<Spinner className="mr-2" />
 							Adding...
 						</>
 					) : (
-						"Add"
+						<>
+							<FiPlus className="mr-1.5 h-4 w-4" />
+							Add
+						</>
 					)}
 				</Button>
 			</form>
 
-			<div className="mb-3 grid grid-cols-2 gap-2">
-				<Input
-					value={query}
-					onChange={(event) => setQuery(event.target.value)}
-					placeholder="Search categories"
-				/>
+			<div className="mb-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+				<div className="relative">
+					<FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-muted)]" />
+					<Input
+						value={query}
+						onChange={(e) => setQuery(e.target.value)}
+						placeholder="Search categories"
+						className="pl-9"
+					/>
+				</div>
 				<Button
 					variant="outline"
-					onClick={() =>
-						setSortOrder((current) =>
-							current === "asc" ? "desc" : "asc",
-						)
-					}
+					onClick={() => setSortOrder((c) => (c === "asc" ? "desc" : "asc"))}
 				>
+					{sortOrder === "asc" ? (
+						<FiArrowUp className="mr-1.5 h-4 w-4" />
+					) : (
+						<FiArrowDown className="mr-1.5 h-4 w-4" />
+					)}
 					Sort {sortOrder === "asc" ? "A-Z" : "Z-A"}
 				</Button>
 			</div>
 
-			<ul className="space-y-2">
+			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
 				{items.map((category) => (
-					<li key={category._id} data-animate="true">
+					<div key={category._id} data-animate="true">
 						<CategoryCard category={category} />
-					</li>
+					</div>
 				))}
-			</ul>
+				{items.length === 0 && (
+					<p className="col-span-full text-center text-sm text-[var(--color-muted)] py-8">
+						No categories found
+					</p>
+				)}
+			</div>
 		</Card>
 	);
 }

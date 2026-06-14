@@ -3,6 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import Link from "next/link";
+import { FiArrowLeft, FiSave } from "react-icons/fi";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -148,6 +150,14 @@ export function ExpenseEditForm({
 	}
 
 	return (
+		<div className="space-y-4">
+			<Link
+				href={`/expenses/${id}`}
+				className="inline-flex items-center gap-1 text-sm text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors"
+			>
+				<FiArrowLeft className="h-4 w-4" />
+				Back to Expense
+			</Link>
 		<Card>
 			<CardTitle className="mb-3">Edit Expense</CardTitle>
 			<Form {...form}>
@@ -242,11 +252,15 @@ export function ExpenseEditForm({
 								Saving...
 							</>
 						) : (
-							"Save changes"
+							<>
+								<FiSave className="mr-1.5 h-4 w-4" />
+								Save changes
+							</>
 						)}
 					</Button>
 				</form>
 			</Form>
 		</Card>
+		</div>
 	);
 }

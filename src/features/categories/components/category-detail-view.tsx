@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FiEdit2, FiTrash2 } from "react-icons/fi";
+import { FiEdit2, FiTrash2, FiArrowLeft } from "react-icons/fi";
 import { toast } from "sonner";
 import {
 	Area,
@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/dialog";
+import { ChartCard } from "@/components/charts/chart-card";
 import { ExpenseCard } from "@/features/expenses/components/expense-card";
 import {
 	useCategoryDetailQuery,
@@ -27,7 +28,7 @@ import { toIsoBounds } from "@/lib/date-range";
 import { formatCurrency } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
 import { useDateRange } from "@/components/charts/date-range-context";
-import { ExpenseListQuery } from "@/types";
+import type { ExpenseListQuery } from "@/types";
 
 export function CategoryDetailView({ id }: { id: string }) {
 	const router = useRouter();
@@ -36,10 +37,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 	const currency = useUIStore((state) => state.currency);
 
 	const { range: localRange } = useDateRange();
-	const rangeBounds = useMemo(
-		() => toIsoBounds(localRange),
-		[localRange],
-	);
+	const rangeBounds = useMemo(() => toIsoBounds(localRange), [localRange]);
 
 	const categoryQuery = useCategoryDetailQuery(id);
 	const { deleteCategory } = useExpenseMutations();
@@ -58,9 +56,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 		[id, rangeBounds.from, rangeBounds.to],
 	);
 
-	const expensesQuery = useExpensesQuery(
-		expensesQueryParams,
-	);
+	const expensesQuery = useExpensesQuery(expensesQueryParams);
 
 	const category = categoryQuery.data;
 	const expenses = useMemo(
@@ -69,16 +65,9 @@ export function CategoryDetailView({ id }: { id: string }) {
 	);
 
 	const analytics = useMemo(() => {
-		const total = expenses.reduce(
-			(sum, item) => sum + item.amount,
-			0,
-		);
-		const highest = expenses.reduce(
-			(max, item) => Math.max(max, item.amount),
-			0,
-		);
-		const average =
-			expenses.length > 0 ? total / expenses.length : 0;
+		const total = expenses.reduce((sum, item) => sum + item.amount, 0);
+		const highest = expenses.reduce((max, item) => Math.max(max, item.amount), 0);
+		const average = expenses.length > 0 ? total / expenses.length : 0;
 
 		const monthly = new Map<string, number>();
 		expenses.forEach((item) => {
@@ -86,19 +75,17 @@ export function CategoryDetailView({ id }: { id: string }) {
 				month: "short",
 				year: "2-digit",
 			}).format(new Date(item.dateTime));
-			monthly.set(
-				month,
-				(monthly.get(month) ?? 0) + item.amount,
-			);
+			monthly.set(month, (monthly.get(month) ?? 0) + item.amount);
 		});
 
 		return {
 			total,
 			highest,
 			average,
-			monthlyTrend: Array.from(monthly.entries()).map(
-				([name, totalAmount]) => ({ name, total: totalAmount }),
-			),
+			monthlyTrend: Array.from(monthly.entries()).map(([name, totalAmt]) => ({
+				name,
+				total: totalAmt,
+			})),
 		};
 	}, [expenses]);
 
@@ -108,6 +95,14 @@ export function CategoryDetailView({ id }: { id: string }) {
 
 	return (
 		<div className="space-y-4">
+			<Link
+				href="/categories"
+				className="inline-flex items-center gap-1 text-sm text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors"
+			>
+				<FiArrowLeft className="h-4 w-4" />
+				Back to Categories
+			</Link>
+
 			<Card>
 				<div className="mb-2 flex items-center justify-between">
 					<CardTitle>
@@ -133,44 +128,52 @@ export function CategoryDetailView({ id }: { id: string }) {
 						</Button>
 					</div>
 				</div>
-				<div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
+				<div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 md:grid-cols-4">
 					<p>
-						Total spending:{" "}
+						<span className="text-[var(--color-muted)]">Total:</span>{" "}
 						{formatCurrency(analytics.total, currency, locale)}
 					</p>
 					<p>
-						Highest expense:{" "}
+						<span className="text-[var(--color-muted)]">Highest:</span>{" "}
 						{formatCurrency(analytics.highest, currency, locale)}
 					</p>
 					<p>
-						Average expense:{" "}
+						<span className="text-[var(--color-muted)]">Average:</span>{" "}
 						{formatCurrency(analytics.average, currency, locale)}
 					</p>
-					<p>Transactions: {expenses.length}</p>
+					<p>
+						<span className="text-[var(--color-muted)]">Transactions:</span>{" "}
+						{expenses.length}
+					</p>
 				</div>
 			</Card>
 
-			<Card>
-				<CardTitle className="mb-2">Monthly Trend</CardTitle>
+			<ChartCard title="Monthly Trend">
 				<div className="h-64">
 					<ResponsiveContainer width="100%" height="100%">
 						<AreaChart data={analytics.monthlyTrend}>
-							<XAxis dataKey="name" />
-							<YAxis />
+							<XAxis dataKey="name" tick={{ fill: "var(--color-muted)", fontSize: 12 }} />
+							<YAxis tick={{ fill: "var(--color-muted)", fontSize: 12 }} />
+							<Tooltip
+								contentStyle={{
+									backgroundColor: "var(--color-surface)",
+									border: "1px solid var(--color-border)",
+									borderRadius: "0.5rem",
+									fontSize: "0.875rem",
+								}}
+							/>
 							<Area
 								dataKey="total"
-								stroke="#10b981"
-								fill="#10b98122"
+								stroke="var(--chart-1)"
+								fill="color-mix(in srgb, var(--chart-1) 20%, transparent)"
 							/>
 						</AreaChart>
 					</ResponsiveContainer>
 				</div>
-			</Card>
+			</ChartCard>
 
 			<Card>
-				<CardTitle className="mb-2">
-					Recent in Category
-				</CardTitle>
+				<CardTitle className="mb-2">Recent in Category</CardTitle>
 				<ul className="space-y-2 text-sm">
 					{expenses.slice(0, 10).map((item) => (
 						<li key={item._id}>
@@ -193,9 +196,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 						},
 						onError: (error) => {
 							toast.error(
-								error instanceof Error
-									? error.message
-									: "Failed to delete category",
+								error instanceof Error ? error.message : "Failed to delete category",
 							);
 						},
 					});

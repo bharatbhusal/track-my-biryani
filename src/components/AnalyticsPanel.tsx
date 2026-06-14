@@ -16,8 +16,8 @@ import {
 	YAxis,
 } from "recharts";
 
-import { Card, CardTitle } from "@/components/ui/card";
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
+import { ChartCard } from "@/components/charts/chart-card";
 import type { DashboardAnalytics } from "@/types/analytics.types";
 
 type AnalyticsPanelProps = {
@@ -49,41 +49,54 @@ export function AnalyticsPanel({ data }: AnalyticsPanelProps) {
 	);
 
 	return (
-		<div className="grid grid-cols-1 gap-4">
-			<Card>
-				<CardTitle className="mb-2">Monthly Spending by Category</CardTitle>
+		<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+			<ChartCard title="Monthly Spending by Category" className="lg:col-span-2">
 				<ChartContainer config={chartConfig} className="min-h-[300px]">
 					<ResponsiveContainer width="100%" height={300}>
 						<BarChart data={data.monthlyCategorySeries}>
-							<CartesianGrid strokeDasharray="3 3" />
-							<XAxis dataKey="month" />
-							<YAxis />
-							<Tooltip />
+							<CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+							<XAxis dataKey="month" tick={{ fill: "var(--color-muted)", fontSize: 12 }} />
+							<YAxis tick={{ fill: "var(--color-muted)", fontSize: 12 }} />
+							<Tooltip
+								contentStyle={{
+									backgroundColor: "var(--color-surface)",
+									border: "1px solid var(--color-border)",
+									borderRadius: "0.5rem",
+									fontSize: "0.875rem",
+								}}
+							/>
 							{categoryKeys.map((key, index) => (
 								<Bar
 									key={key}
 									dataKey={key}
 									stackId="spend"
 									fill={`var(--chart-${(index % 5) + 1})`}
+									radius={[4, 4, 0, 0]}
 								/>
 							))}
 						</BarChart>
 					</ResponsiveContainer>
 				</ChartContainer>
-			</Card>
+			</ChartCard>
 
-			<Card>
-				<CardTitle className="mb-2">Daily Cash Flow Trend</CardTitle>
+			<ChartCard title="Daily Cash Flow Trend">
 				<ChartContainer
 					config={{ total: { label: "Total", color: "var(--chart-2)" } }}
-					className="min-h-[300px]"
+					className="min-h-[250px]"
 				>
-					<ResponsiveContainer width="100%" height={300}>
+					<ResponsiveContainer width="100%" height={250}>
 						<LineChart data={data.dailyCashFlowSeries}>
-							<CartesianGrid strokeDasharray="3 3" />
-							<XAxis dataKey="name" />
-							<YAxis />
-							<Tooltip />
+							<CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+							<XAxis dataKey="name" tick={{ fill: "var(--color-muted)", fontSize: 12 }} />
+							<YAxis tick={{ fill: "var(--color-muted)", fontSize: 12 }} />
+							<Tooltip
+								contentStyle={{
+									backgroundColor: "var(--color-surface)",
+									border: "1px solid var(--color-border)",
+									borderRadius: "0.5rem",
+									fontSize: "0.875rem",
+								}}
+							/>
 							<Line
 								type="monotone"
 								dataKey="total"
@@ -94,12 +107,11 @@ export function AnalyticsPanel({ data }: AnalyticsPanelProps) {
 						</LineChart>
 					</ResponsiveContainer>
 				</ChartContainer>
-			</Card>
+			</ChartCard>
 
-			<Card>
-				<CardTitle className="mb-2">Expenses by Category</CardTitle>
-				<ChartContainer config={chartConfig} className="min-h-[300px]">
-					<ResponsiveContainer width="100%" height={300}>
+			<ChartCard title="Expenses by Category">
+				<ChartContainer config={chartConfig} className="min-h-[250px]">
+					<ResponsiveContainer width="100%" height={250}>
 						<PieChart>
 							<Pie
 								data={data.rankedCategories}
@@ -121,11 +133,18 @@ export function AnalyticsPanel({ data }: AnalyticsPanelProps) {
 									/>
 								))}
 							</Pie>
-							<Tooltip />
+							<Tooltip
+								contentStyle={{
+									backgroundColor: "var(--color-surface)",
+									border: "1px solid var(--color-border)",
+									borderRadius: "0.5rem",
+									fontSize: "0.875rem",
+								}}
+							/>
 						</PieChart>
 					</ResponsiveContainer>
 				</ChartContainer>
-			</Card>
+			</ChartCard>
 		</div>
 	);
 }

@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { FiArrowLeft, FiSave } from "react-icons/fi";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -62,6 +64,14 @@ export function CategoryEditForm({ id }: { id: string }) {
 	}
 
 	return (
+		<div className="space-y-4">
+			<Link
+				href={`/categories/${id}`}
+				className="inline-flex items-center gap-1 text-sm text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors"
+			>
+				<FiArrowLeft className="h-4 w-4" />
+				Back to Category
+			</Link>
 		<Card>
 			<CardTitle className="mb-3">Edit Category</CardTitle>
 			<form
@@ -85,10 +95,14 @@ export function CategoryEditForm({ id }: { id: string }) {
 							Saving...
 						</>
 					) : (
-						"Save category"
+						<>
+							<FiSave className="mr-1.5 h-4 w-4" />
+							Save category
+						</>
 					)}
 				</Button>
 			</form>
 		</Card>
+		</div>
 	);
 }

@@ -13,7 +13,6 @@ import type {
 	ExpenseListQuery,
 	ExpensesListPayload,
 } from "@/types/expense.types";
-import type { ExpenseContribution } from "@/types/analytics.types";
 
 export function useCategoriesQuery() {
 	return useQuery({
@@ -80,7 +79,7 @@ export function useExpenseMutations() {
 				if (
 					!payload ||
 					typeof payload !== "object" ||
-					!Array.isArray((payload as any).items)
+					!Array.isArray((payload as Record<string, unknown>).items)
 				) {
 					return;
 				}

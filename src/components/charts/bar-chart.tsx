@@ -4,7 +4,6 @@ import {
 	Bar,
 	BarChart as RechartsBarChart,
 	ResponsiveContainer,
-	Tooltip,
 	XAxis,
 	YAxis,
 } from "recharts";

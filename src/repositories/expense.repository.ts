@@ -1,6 +1,4 @@
 import {
-	ObjectIdToString,
-	SchemaTypes,
 	Types,
 } from "mongoose";
 
