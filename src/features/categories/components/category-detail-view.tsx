@@ -17,22 +17,25 @@ import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { ConfirmDrawer } from "@/components/ui/drawer";
 import { ChartCard } from "@/components/charts/chart-card";
+import { DateRangeSelect } from "@/components/charts/date-range-select";
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import { AddCategoryDrawer } from "@/features/categories/components/add-category-drawer";
 import {
 	useCategoryDetailQuery,
+	useCategoryStatsQuery,
 	useExpenseMutations,
 	useExpensesQuery,
 } from "@/hooks/api/use-expenses-api";
 import { toIsoBounds } from "@/lib/date-range";
 import { formatCurrency } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
-import { useDateRange } from "@/components/charts/date-range-context";
 import type { ExpenseListQuery } from "@/types";
 import type {
 	ExpenseItem,
 	CategoryItem,
 } from "@/types/expense.types";
+import type { GlobalDateRange } from "@/lib/date-range";
+import { DEFAULT_GLOBAL_RANGE } from "@/lib/date-range";
 import { EmojiBadge } from "@/components/ui/emoji-badge";
 
 export function CategoryDetailView({
@@ -48,33 +51,41 @@ export function CategoryDetailView({
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [editDrawerOpen, setEditDrawerOpen] =
 		useState(false);
+	const [page, setPage] = useState(1);
+	const [range, setRange] = useState<GlobalDateRange>(
+		DEFAULT_GLOBAL_RANGE,
+	);
 	const locale = useUIStore((state) => state.locale);
 	const currency = useUIStore((state) => state.currency);
 
-	const { range: localRange } = useDateRange();
 	const rangeBounds = useMemo(
-		() => toIsoBounds(localRange),
-		[localRange],
+		() => toIsoBounds(range),
+		[range],
 	);
 
 	const categoryQuery = useCategoryDetailQuery(
 		id,
 		initialCategory,
 	);
+	const statsQuery = useCategoryStatsQuery(
+		id,
+		rangeBounds.from,
+		rangeBounds.to,
+	);
 	const { deleteCategory } = useExpenseMutations();
 
 	const expensesQueryParams = useMemo(
 		() =>
 			({
-				page: 1,
-				limit: 50,
+				page,
+				limit: 20,
 				categoryId: id,
 				from: rangeBounds.from,
 				to: rangeBounds.to,
 				sortBy: "dateTime",
 				order: "desc",
 			}) as ExpenseListQuery,
-		[id, rangeBounds.from, rangeBounds.to],
+		[id, page, rangeBounds.from, rangeBounds.to],
 	);
 
 	const expensesQuery = useExpensesQuery(
@@ -89,17 +100,6 @@ export function CategoryDetailView({
 	);
 
 	const analytics = useMemo(() => {
-		const total = expenses.reduce(
-			(sum, item) => sum + item.amount,
-			0,
-		);
-		const highest = expenses.reduce(
-			(max, item) => Math.max(max, item.amount),
-			0,
-		);
-		const average =
-			expenses.length > 0 ? total / expenses.length : 0;
-
 		const monthly = new Map<string, number>();
 		expenses.forEach((item) => {
 			const month = new Intl.DateTimeFormat("en-IN", {
@@ -113,9 +113,6 @@ export function CategoryDetailView({
 		});
 
 		return {
-			total,
-			highest,
-			average,
 			monthlyTrend: Array.from(monthly.entries()).map(
 				([name, totalAmt]) => ({
 					name,
@@ -195,35 +192,67 @@ export function CategoryDetailView({
 						</Button>
 					</div>
 				</div>
+			</Card>
+
+			<Card>
+				<div className="flex items-center justify-between gap-2 flex-wrap mb-3">
+					<CardTitle>Overview</CardTitle>
+					<DateRangeSelect
+						value={range}
+						onChange={(r) => {
+							setRange(r);
+							setPage(1);
+						}}
+					/>
+				</div>
 				<div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 md:grid-cols-4">
 					<p>
 						<span className="text-[var(--color-muted)]">
 							Total:
 						</span>{" "}
-						{formatCurrency(analytics.total, currency, locale)}
+						{formatCurrency(
+							statsQuery.data?.total ?? 0,
+							currency,
+							locale,
+						)}
 					</p>
 					<p>
 						<span className="text-[var(--color-muted)]">
 							Highest:
 						</span>{" "}
-						{formatCurrency(analytics.highest, currency, locale)}
+						{formatCurrency(
+							statsQuery.data?.max ?? 0,
+							currency,
+							locale,
+						)}
 					</p>
 					<p>
 						<span className="text-[var(--color-muted)]">
 							Average:
 						</span>{" "}
-						{formatCurrency(analytics.average, currency, locale)}
+						{formatCurrency(
+							statsQuery.data?.avg ?? 0,
+							currency,
+							locale,
+						)}
 					</p>
 					<p>
 						<span className="text-[var(--color-muted)]">
 							Transactions:
 						</span>{" "}
-						{expenses.length}
+						{statsQuery.data?.count ?? 0}
 					</p>
 				</div>
 			</Card>
 
-			<ChartCard title="Monthly Trend">
+			<ChartCard
+				title="Monthly Trend"
+				range={range}
+				onRangeChange={(r) => {
+					setRange(r);
+					setPage(1);
+				}}
+			>
 				<div className="h-64">
 					<ResponsiveContainer width="100%" height="100%">
 						<AreaChart data={analytics.monthlyTrend}>
@@ -260,6 +289,9 @@ export function CategoryDetailView({
 					items={expenses.slice(0, 10)}
 					categoryMap={new Map([[category._id, category]])}
 					emptyMessage="No expenses in this category"
+					page={page}
+					totalPages={expensesQuery.data?.totalPages}
+					onPageChange={setPage}
 				/>
 			</Card>
 			<Card>

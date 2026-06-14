@@ -6,7 +6,10 @@ import type {
 	ExpenseListQuery,
 	ExpensesListPayload,
 } from "@/types/expense.types";
-import type { ExpenseContribution } from "@/types/analytics.types";
+import type {
+	ExpenseContribution,
+	CategoryRangeStats,
+} from "@/types/analytics.types";
 
 function buildListQuery(filters: ExpenseListQuery): string {
 	const params = new URLSearchParams();
@@ -52,6 +55,14 @@ export const expensesApi = {
 		apiRequest<{ message: string }>(`/categories/${id}`, {
 			method: "DELETE",
 		}),
+	getCategoryStats: (
+		id: string,
+		from: string,
+		to: string,
+	) =>
+		apiRequest<CategoryRangeStats>(
+			`/categories/${id}/stats?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+		),
 	listExpenses: (filters: ExpenseListQuery = {}) => {
 		const query = buildListQuery({
 			page: 1,

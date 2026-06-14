@@ -14,7 +14,10 @@ import type {
 	ExpensesListPayload,
 } from "@/types/expense.types";
 import type { CategoryItem } from "@/types/expense.types";
-import type { ExpenseContribution } from "@/types/analytics.types";
+import type {
+	ExpenseContribution,
+	CategoryRangeStats,
+} from "@/types/analytics.types";
 
 export function useCategoriesQuery(
 	initialData?: CategoryItem[],
@@ -63,6 +66,19 @@ export function useExpenseContributionQuery(
 		queryFn: () => expensesApi.getExpenseContribution(id),
 		enabled: Boolean(id),
 		...(initialData !== undefined ? { initialData } : {}),
+	});
+}
+
+export function useCategoryStatsQuery(
+	id: string,
+	from?: string,
+	to?: string,
+) {
+	return useQuery({
+		queryKey: [...queryKeys.categories, "stats", id, { from, to }],
+		queryFn: () =>
+			expensesApi.getCategoryStats(id, from!, to!),
+		enabled: Boolean(id) && Boolean(from) && Boolean(to),
 	});
 }
 

@@ -20,7 +20,14 @@ import {
 	useExpenseMutations,
 	useExpenseContributionQuery,
 } from "@/hooks/api/use-expenses-api";
-import { BarChart } from "@/components/charts/bar-chart";
+import {
+	Area,
+	AreaChart,
+	ResponsiveContainer,
+	Tooltip,
+	XAxis,
+	YAxis,
+} from "recharts";
 import GoogleMap from "@/components/maps/google-map";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
@@ -168,89 +175,183 @@ export function ExpenseDetailView({
 			{contribution && (
 				<Card>
 					<CardTitle className="mb-3">Insights</CardTitle>
-					<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-						<div className="text-sm space-y-1">
-							<p>
-								Contribution (week):{" "}
-								{formatCurrency(
-									expense.amount,
-									expense.currency || currency,
-									locale,
-								)}{" "}
-								/{" "}
-								{formatCurrency(
-									contribution.weekTotal,
-									expense.currency || currency,
-									locale,
-								)}
-							</p>
-							<p>
-								Contribution (month):{" "}
-								{formatCurrency(
-									expense.amount,
-									expense.currency || currency,
-									locale,
-								)}{" "}
-								/{" "}
-								{formatCurrency(
-									contribution.monthTotal,
-									expense.currency || currency,
-									locale,
-								)}
-							</p>
-							<p>
-								Contribution (year):{" "}
-								{formatCurrency(
-									expense.amount,
-									expense.currency || currency,
-									locale,
-								)}{" "}
-								/{" "}
-								{formatCurrency(
-									contribution.yearTotal,
-									expense.currency || currency,
-									locale,
-								)}
-							</p>
-							<p>
-								Category percentile:{" "}
-								{contribution.categoryContributionPercent.toFixed(
-									2,
-								)}
-								%
-							</p>
+					<div className="space-y-4">
+						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+							<div className="text-sm space-y-3">
+								{/* Contribution progress bars */}
+								{[
+									{
+										label: "of Week",
+										pct: contribution.weekContributionPercent,
+										total: contribution.weekTotal,
+									},
+									{
+										label: "of Month",
+										pct: contribution.monthContributionPercent,
+										total: contribution.monthTotal,
+									},
+									{
+										label: "of Year",
+										pct: contribution.yearContributionPercent,
+										total: contribution.yearTotal,
+									},
+								].map((item) => (
+									<div key={item.label}>
+										<div className="flex justify-between mb-1 text-xs">
+											<span className="text-[var(--color-muted)]">
+												{item.label}
+											</span>
+											<span>
+												{formatCurrency(
+													contribution.amount,
+													expense.currency || currency,
+													locale,
+												)}{" "}
+												/{" "}
+												{formatCurrency(
+													item.total,
+													expense.currency || currency,
+													locale,
+												)}
+											</span>
+										</div>
+										<div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
+											<div
+												className="h-full rounded-full bg-[var(--chart-1)] transition-all"
+												style={{
+													width: `${Math.min(item.pct, 100)}%`,
+												}}
+											/>
+										</div>
+										<p className="mt-0.5 text-right text-xs text-[var(--color-muted)]">
+											{item.pct.toFixed(1)}%
+										</p>
+									</div>
+								))}
+							</div>
+
+							{/* Category comparison */}
+							<div className="text-sm space-y-3">
+								<p className="text-[var(--color-muted)] text-xs uppercase tracking-wide">
+									Category Comparison
+								</p>
+								<div className="space-y-2">
+									<div className="flex justify-between">
+										<span>Category average</span>
+										<span className="font-medium">
+											{formatCurrency(
+												contribution.categoryAverage,
+												expense.currency || currency,
+												locale,
+											)}
+										</span>
+									</div>
+									<div className="flex justify-between">
+										<span>This expense</span>
+										<span className="font-medium">
+											{formatCurrency(
+												expense.amount,
+												expense.currency || currency,
+												locale,
+											)}
+										</span>
+									</div>
+									<div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
+										<div
+											className="h-full rounded-full bg-[var(--chart-2)] transition-all"
+											style={{
+												width: `${Math.min(
+													contribution.categoryAverage > 0
+														? (expense.amount / contribution.categoryAverage) *
+																100
+														: 0,
+													100,
+												)}%`,
+											}}
+										/>
+									</div>
+									<p className="text-xs text-[var(--color-muted)]">
+										{contribution.categoryAverage > 0
+											? `${
+													expense.amount > contribution.categoryAverage
+														? `${((expense.amount / contribution.categoryAverage - 1) * 100).toFixed(0)}% above`
+														: `${((1 - expense.amount / contribution.categoryAverage) * 100).toFixed(0)}% below`
+												} the category average`
+											: "No other expenses in this category"}
+									</p>
+								</div>
+
+								<div className="pt-2 border-t border-[var(--color-border)]">
+									<div className="flex justify-between">
+										<span>Category total</span>
+										<span className="font-medium">
+											{formatCurrency(
+												contribution.categoryTotal,
+												expense.currency || currency,
+												locale,
+											)}
+										</span>
+									</div>
+									<div className="flex justify-between">
+										<span>Category share</span>
+										<span className="font-medium">
+											{contribution.categoryContributionPercent.toFixed(1)}%
+										</span>
+									</div>
+									<div className="flex justify-between">
+										<span>Transactions in category</span>
+										<span className="font-medium">
+											{contribution.categoryExpenseCount}
+										</span>
+									</div>
+								</div>
+							</div>
 						</div>
-						<div>
-							<BarChart
-								data={[
-									{
-										name: "Week %",
-										total: parseFloat(
-											contribution.weekContributionPercent?.toFixed(
-												2,
-											) || "0",
-										),
-									},
-									{
-										name: "Month %",
-										total: parseFloat(
-											contribution.monthContributionPercent?.toFixed(
-												2,
-											) || "0",
-										),
-									},
-									{
-										name: "Year %",
-										total: parseFloat(
-											contribution.yearContributionPercent?.toFixed(
-												2,
-											) || "0",
-										),
-									},
-								]}
-								heightClass="h-40"
-							/>
-						</div>
+
+						{/* Category monthly trend mini chart */}
+						{contribution.monthlyTrend.length > 0 && (
+							<div className="pt-3 border-t border-[var(--color-border)]">
+								<p className="text-xs text-[var(--color-muted)] uppercase tracking-wide mb-2">
+									Category Monthly Trend (12 months)
+								</p>
+								<div className="h-48">
+									<ResponsiveContainer width="100%" height="100%">
+										<AreaChart
+											data={contribution.monthlyTrend}
+										>
+											<XAxis
+												dataKey="name"
+												tick={{
+													fill: "var(--color-muted)",
+													fontSize: 12,
+												}}
+											/>
+											<YAxis
+												tick={{
+													fill: "var(--color-muted)",
+													fontSize: 12,
+												}}
+											/>
+											<Tooltip
+												contentStyle={{
+													backgroundColor:
+														"var(--color-surface)",
+													border: "1px solid var(--color-border)",
+													borderRadius: "0.5rem",
+													fontSize: "0.875rem",
+												}}
+											/>
+											<Area
+												dataKey="total"
+												stroke="var(--chart-1)"
+												fill="color-mix(in srgb, var(--chart-1) 20%, transparent)"
+												strokeWidth={2}
+											/>
+										</AreaChart>
+									</ResponsiveContainer>
+								</div>
+							</div>
+						)}
 					</div>
 				</Card>
 			)}

@@ -364,14 +364,51 @@ export async function aggregateRangeStats(
 	};
 }
 
+export async function getCategoryRangeStats(
+	userId: string,
+	categoryId: string,
+	from: Date,
+	to: Date,
+) {
+	const match: Record<string, unknown> = {
+		userId: new Types.ObjectId(userId),
+		deletedAt: null,
+		categoryId: new Types.ObjectId(categoryId),
+		dateTime: { $gte: from, $lte: to },
+	};
+
+	const [result] =
+		await ExpenseModel.aggregate<SummaryBucket>([
+			{ $match: match },
+			{
+				$group: {
+					_id: null,
+					total: { $sum: "$amount" },
+					count: { $sum: 1 },
+					avg: { $avg: "$amount" },
+					min: { $min: "$amount" },
+					max: { $max: "$amount" },
+				},
+			},
+		]);
+
+	return {
+		total: result?.total ?? 0,
+		count: result?.count ?? 0,
+		avg: result?.avg ?? 0,
+		min: result?.min ?? 0,
+		max: result?.max ?? 0,
+	};
+}
+
 export async function getExpenseContribution(
 	userId: string,
 	expenseId: string,
 ) {
 	if (!Types.ObjectId.isValid(expenseId)) return null;
 	const expense = await ExpenseModel.findOne({
-		_id: expenseId,
-		userId,
+		_id: new Types.ObjectId(expenseId),
+		userId: new Types.ObjectId(userId),
 		deletedAt: null,
 	}).lean();
 	if (!expense) return null;
@@ -388,60 +425,106 @@ export async function getExpenseContribution(
 		1,
 	);
 	const yearStart = new Date(date.getFullYear(), 0, 1);
+	const trendStart = new Date(date);
+	trendStart.setFullYear(date.getFullYear() - 1);
+	trendStart.setDate(1);
+	trendStart.setHours(0, 0, 0, 0);
 
-	const [weekTotal, monthTotal, yearTotal, categoryTotal] =
-		(await Promise.all([
-			ExpenseModel.aggregate([
-				{
-					$match: {
-						userId,
-						deletedAt: null,
-						dateTime: { $gte: weekStart, $lte: date },
-					},
+	const [
+		weekTotal,
+		monthTotal,
+		yearTotal,
+		categoryTotalResult,
+		monthlyTrendResult,
+		categoryCountResult,
+	] = (await Promise.all([
+		ExpenseModel.aggregate([
+			{
+				$match: {
+					userId: new Types.ObjectId(userId),
+					deletedAt: null,
+					dateTime: { $gte: weekStart, $lte: date },
 				},
-				{ $group: { _id: null, total: { $sum: "$amount" } } },
-			]),
-			ExpenseModel.aggregate([
-				{
-					$match: {
-						userId,
-						deletedAt: null,
-						dateTime: { $gte: monthStart, $lte: date },
-					},
+			},
+			{ $group: { _id: null, total: { $sum: "$amount" } } },
+		]),
+		ExpenseModel.aggregate([
+			{
+				$match: {
+					userId: new Types.ObjectId(userId),
+					deletedAt: null,
+					dateTime: { $gte: monthStart, $lte: date },
 				},
-				{ $group: { _id: null, total: { $sum: "$amount" } } },
-			]),
-			ExpenseModel.aggregate([
-				{
-					$match: {
-						userId,
-						deletedAt: null,
-						dateTime: { $gte: yearStart, $lte: date },
-					},
+			},
+			{ $group: { _id: null, total: { $sum: "$amount" } } },
+		]),
+		ExpenseModel.aggregate([
+			{
+				$match: {
+					userId: new Types.ObjectId(userId),
+					deletedAt: null,
+					dateTime: { $gte: yearStart, $lte: date },
 				},
-				{ $group: { _id: null, total: { $sum: "$amount" } } },
-			]),
-			ExpenseModel.aggregate([
-				{
-					$match: {
-						userId,
-						deletedAt: null,
-						categoryId: expense.categoryId,
-					},
+			},
+			{ $group: { _id: null, total: { $sum: "$amount" } } },
+		]),
+		ExpenseModel.aggregate([
+			{
+				$match: {
+					userId: new Types.ObjectId(userId),
+					deletedAt: null,
+					categoryId: expense.categoryId,
 				},
-				{ $group: { _id: null, total: { $sum: "$amount" } } },
-			]),
-		])) as [
-			AggregateBucket[],
-			AggregateBucket[],
-			AggregateBucket[],
-			AggregateBucket[],
-		];
+			},
+			{ $group: { _id: null, total: { $sum: "$amount" } } },
+		]),
+		ExpenseModel.aggregate([
+			{
+				$match: {
+					userId: new Types.ObjectId(userId),
+					deletedAt: null,
+					categoryId: expense.categoryId,
+					dateTime: { $gte: trendStart, $lte: date },
+				},
+			},
+			{
+				$group: {
+					_id: {
+						$dateToString: {
+							format: "%Y-%m",
+							date: "$dateTime",
+						},
+					},
+					total: { $sum: "$amount" },
+				},
+			},
+			{ $sort: { _id: 1 } },
+		]),
+		ExpenseModel.countDocuments({
+			userId: new Types.ObjectId(userId),
+			deletedAt: null,
+			categoryId: expense.categoryId,
+		}),
+	])) as [
+		AggregateBucket[],
+		AggregateBucket[],
+		AggregateBucket[],
+		AggregateBucket[],
+		AggregateBucket[],
+		number,
+	];
 
 	const week = weekTotal[0]?.total ?? 0;
 	const month = monthTotal[0]?.total ?? 0;
 	const year = yearTotal[0]?.total ?? 0;
-	const cat = categoryTotal[0]?.total ?? 0;
+	const cat = categoryTotalResult[0]?.total ?? 0;
+	const categoryExpenseCount = categoryCountResult;
+	const monthlyTrend: TrendPoint[] = monthlyTrendResult.map(
+		(d) => ({
+			name: d._id ?? "",
+			total: d.total,
+		}),
+	);
 
 	return {
 		expenseId,
@@ -450,6 +533,11 @@ export async function getExpenseContribution(
 		monthTotal: month,
 		yearTotal: year,
 		categoryTotal: cat,
+		categoryExpenseCount,
+		categoryAverage:
+			categoryExpenseCount > 0
+				? cat / categoryExpenseCount
+				: 0,
 		weekContributionPercent:
 			week > 0 ? (amount / week) * 100 : 0,
 		monthContributionPercent:
@@ -458,5 +546,6 @@ export async function getExpenseContribution(
 			year > 0 ? (amount / year) * 100 : 0,
 		categoryContributionPercent:
 			cat > 0 ? (amount / cat) * 100 : 0,
+		monthlyTrend,
 	} satisfies ExpenseContribution;
 }

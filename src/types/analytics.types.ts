@@ -35,10 +35,21 @@ export type ExpenseContribution = {
 	monthTotal: number;
 	yearTotal: number;
 	categoryTotal: number;
+	categoryExpenseCount: number;
+	categoryAverage: number;
 	weekContributionPercent: number;
 	monthContributionPercent: number;
 	yearContributionPercent: number;
 	categoryContributionPercent: number;
+	monthlyTrend: TrendPoint[];
+};
+
+export type CategoryRangeStats = {
+	total: number;
+	count: number;
+	avg: number;
+	min: number;
+	max: number;
 };
 
 export type ActivityLogItem = {
