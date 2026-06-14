@@ -1,7 +1,6 @@
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { QuickAddButton } from "@/components/layout/quick-add-button";
 import { Header } from "@/components/layout/header";
-import { QuickAddExpenseModal } from "@/features/expenses/components/quick-add-expense-modal";
 
 export default function MainLayout({
 	children,
@@ -16,7 +15,6 @@ export default function MainLayout({
 			</div>
 			<BottomNav />
 			<QuickAddButton />
-			<QuickAddExpenseModal />
 		</div>
 	);
 }

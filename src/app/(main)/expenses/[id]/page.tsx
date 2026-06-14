@@ -14,13 +14,11 @@ export default async function ExpenseDetailPage({
 	const { expense, categories, contribution } = await getServerExpenseDetail(id);
 
 	return (
-		<section className="space-y-4 py-4">
-			<ExpenseDetailView
-				id={id}
-				initialExpense={expense}
-				initialCategories={categories}
-				initialContribution={contribution}
-			/>
-		</section>
+		<ExpenseDetailView
+			id={id}
+			initialExpense={expense}
+			initialCategories={categories}
+			initialContribution={contribution}
+		/>
 	);
 }

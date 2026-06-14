@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FiPlus, FiSearch } from "react-icons/fi";
+import { useRouter } from "next/navigation";
+import { FiList, FiPlus, FiSearch } from "react-icons/fi";
 import { useDebouncedValue } from "@/hooks/use-debounce";
 
 import { Button } from "@/components/ui/button";
@@ -12,16 +13,13 @@ import {
 	useExpensesQuery,
 } from "@/hooks/api/use-expenses-api";
 import { toIsoBounds } from "@/lib/date-range";
-import { useUIStore } from "@/store/ui-store";
 import { useDateRange } from "@/components/charts/date-range-context";
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import type { SortField } from "@/features/expenses/components/expense-table";
 import { CategoryDistributionBar } from "@/features/expenses/components/category-distribution-bar";
 
 export function ExpenseManager() {
-	const setQuickAddOpen = useUIStore(
-		(state) => state.setQuickAddOpen,
-	);
+	const router = useRouter();
 	const [query, setQuery] = useState("");
 	const [categoryId, setCategoryId] = useState("");
 	const [sortBy, setSortBy] =
@@ -88,8 +86,11 @@ export function ExpenseManager() {
 		<div className="space-y-4">
 			<Card>
 				<div className="mb-3 flex items-center justify-between gap-2">
-					<CardTitle>Expenses</CardTitle>
-					<Button onClick={() => setQuickAddOpen(true)}>
+					<CardTitle>
+						<FiList className="inline mr-1.5 h-4 w-4" />
+						Expenses
+					</CardTitle>
+					<Button onClick={() => router.push("/expenses/new")}>
 						<FiPlus className="mr-1.5 h-4 w-4" />
 						Add Expense
 					</Button>

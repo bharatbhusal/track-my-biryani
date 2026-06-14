@@ -16,7 +16,9 @@ import type {
 import type { CategoryItem } from "@/types/expense.types";
 import type { ExpenseContribution } from "@/types/analytics.types";
 
-export function useCategoriesQuery(initialData?: CategoryItem[]) {
+export function useCategoriesQuery(
+	initialData?: CategoryItem[],
+) {
 	return useQuery({
 		queryKey: queryKeys.categories,
 		queryFn: expensesApi.listCategories,
@@ -37,7 +39,10 @@ export function useExpensesQuery(
 	});
 }
 
-export function useExpenseDetailQuery(id: string, initialData?: ExpenseItem | null) {
+export function useExpenseDetailQuery(
+	id: string,
+	initialData?: ExpenseItem | null,
+) {
 	return useQuery({
 		queryKey: queryKeys.expenses.detail(id),
 		queryFn: () => expensesApi.getExpenseById(id),
@@ -46,7 +51,10 @@ export function useExpenseDetailQuery(id: string, initialData?: ExpenseItem | nu
 	});
 }
 
-export function useExpenseContributionQuery(id: string, initialData?: ExpenseContribution | null) {
+export function useExpenseContributionQuery(
+	id: string,
+	initialData?: ExpenseContribution | null,
+) {
 	return useQuery({
 		queryKey: [
 			...queryKeys.expenses.detail(id),
@@ -58,7 +66,10 @@ export function useExpenseContributionQuery(id: string, initialData?: ExpenseCon
 	});
 }
 
-export function useCategoryDetailQuery(id: string, initialData?: CategoryItem | null) {
+export function useCategoryDetailQuery(
+	id: string,
+	initialData?: CategoryItem | null,
+) {
 	return useQuery({
 		queryKey: [...queryKeys.categories, "detail", id],
 		queryFn: () => expensesApi.getCategoryById(id),
@@ -86,7 +97,9 @@ export function useExpenseMutations() {
 				if (
 					!payload ||
 					typeof payload !== "object" ||
-					!Array.isArray((payload as Record<string, unknown>).items)
+					!Array.isArray(
+						(payload as Record<string, unknown>).items,
+					)
 				) {
 					return;
 				}
@@ -146,7 +159,11 @@ export function useExpenseMutations() {
 			payload,
 		}: {
 			id: string;
-			payload: { name: string; color?: string; emoji?: string };
+			payload: {
+				name: string;
+				color?: string;
+				emoji?: string;
+			};
 		}) => expensesApi.updateCategory(id, payload),
 		onSuccess: () => {
 			queryClient.invalidateQueries({

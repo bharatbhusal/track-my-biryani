@@ -17,9 +17,12 @@ import { useCategoryDetailQuery } from "@/hooks/api/use-expenses-api";
 import { expensesApi } from "@/lib/api/expenses";
 import type { CategoryItem } from "@/types/expense.types";
 
-const EmojiPicker = dynamic(() => import("emoji-picker-react"), {
-	ssr: false,
-});
+const EmojiPicker = dynamic(
+	() => import("emoji-picker-react"),
+	{
+		ssr: false,
+	},
+);
 
 type FormValues = {
 	name: string;
@@ -34,7 +37,10 @@ export function CategoryEditForm({
 	id: string;
 	initialCategory?: CategoryItem | null;
 }) {
-	const categoryQuery = useCategoryDetailQuery(id, initialCategory);
+	const categoryQuery = useCategoryDetailQuery(
+		id,
+		initialCategory,
+	);
 	const [pickerOpen, setPickerOpen] = useState(false);
 	const { resolvedTheme } = useTheme();
 	const {
@@ -95,72 +101,65 @@ export function CategoryEditForm({
 
 	return (
 		<div className="space-y-4">
-			<Link
-				href={`/categories/${id}`}
-				className="inline-flex items-center gap-1 text-sm text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors"
-			>
-				<FiArrowLeft className="h-4 w-4" />
-				Back to Category
-			</Link>
-		<Card>
-			<CardTitle className="mb-3">Edit Category</CardTitle>
-			<form
-				className="space-y-3"
-				onSubmit={handleSubmit(onSubmit)}
-			>
-				<Input
-					{...register("name")}
-					placeholder="Category name"
-				/>
-				<div>
-					<label className="mb-1 block text-sm font-medium text-[var(--color-muted)]">
-						Emoji
-					</label>
-					<button
-						type="button"
-						onClick={() => setPickerOpen((prev) => !prev)}
-						className="flex h-10 w-10 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-lg hover:bg-[var(--color-surface-muted)] transition-colors"
-						aria-label="Pick emoji"
-					>
-						{emojiValue || "🏷️"}
-					</button>
-					{pickerOpen && (
-						<div
-							className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
-							onClick={() => setPickerOpen(false)}
-						>
-							<div
-								onClick={(e) => e.stopPropagation()}
-								className="max-h-[75vh] max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-lg"
-							>
-								<EmojiPicker
-									theme={emojiPickerTheme}
-									onEmojiClick={handleEmojiClick}
-								/>
-							</div>
-						</div>
-					)}
-				</div>
-				<Input type="color" {...register("color")} />
-				<Button
-					type="submit"
-					className="w-full"
-					disabled={isSubmitting}
+			<Card>
+				<CardTitle className="mb-3">Edit Category</CardTitle>
+				<form
+					className="space-y-3"
+					onSubmit={handleSubmit(onSubmit)}
 				>
-					{isSubmitting ? (
-						<>
-							<Spinner className="mr-2" />
-							Saving...
-						</>
-					) : (
-						<>
-							<FiSave className="mr-1.5 h-4 w-4" />
-							Save category
-						</>
-					)}
-				</Button>
-			</form>
-		</Card>
+					<Input
+						{...register("name")}
+						placeholder="Category name"
+					/>
+					<div>
+						<label className="mb-1 block text-sm font-medium text-[var(--color-muted)]">
+							Emoji
+						</label>
+						<button
+							type="button"
+							onClick={() => setPickerOpen((prev) => !prev)}
+							className="flex h-10 w-10 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-lg hover:bg-[var(--color-surface-muted)] transition-colors"
+							aria-label="Pick emoji"
+						>
+							{emojiValue || "🏷️"}
+						</button>
+						{pickerOpen && (
+							<div
+								className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+								onClick={() => setPickerOpen(false)}
+							>
+								<div
+									onClick={(e) => e.stopPropagation()}
+									className="max-h-[75vh] max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-lg"
+								>
+									<EmojiPicker
+										theme={emojiPickerTheme}
+										onEmojiClick={handleEmojiClick}
+									/>
+								</div>
+							</div>
+						)}
+					</div>
+					<Input type="color" {...register("color")} />
+					<Button
+						type="submit"
+						className="w-full"
+						disabled={isSubmitting}
+					>
+						{isSubmitting ? (
+							<>
+								<Spinner className="mr-2" />
+								Saving...
+							</>
+						) : (
+							<>
+								<FiSave className="mr-1.5 h-4 w-4" />
+								Save category
+							</>
+						)}
+					</Button>
+				</form>
+			</Card>
 		</div>
 	);
 }

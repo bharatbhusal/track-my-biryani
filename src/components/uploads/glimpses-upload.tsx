@@ -137,7 +137,11 @@ export function GlimpsesUpload({
 	return (
 		<div className="space-y-3">
 			<div
-				className={`rounded-lg border border-dashed p-4 text-center transition ${isDragging ? "border-emerald-500 bg-emerald-500/10" : "border-[var(--color-border)] bg-[var(--color-surface)]"}`}
+				className={`rounded-lg border border-dashed p-4 text-center transition ${
+					isDragging
+						? "border-[var(--color-primary)] bg-[var(--color-primary)]/10"
+						: "border-[var(--color-border)] bg-[var(--color-surface)]"
+				}`}
 				onDragOver={(event) => {
 					event.preventDefault();
 					setIsDragging(true);
@@ -149,14 +153,18 @@ export function GlimpsesUpload({
 					void handleUpload(event.dataTransfer.files);
 				}}
 			>
-				<FiUploadCloud className="mx-auto mb-2 text-xl text-emerald-500" />
+				<FiUploadCloud className="mx-auto mb-2 text-xl text-[var(--color-muted)]" />
 				<p className="text-sm text-[var(--color-muted)]">
 					Drag & drop glimpses here, or choose files
 				</p>
 				<div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-					<label className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500">
-						<FiUploadCloud />
-						Upload
+					<label className="cursor-pointer">
+						<Button type="button" variant="default" asChild>
+							<span className="inline-flex items-center gap-2">
+								<FiUploadCloud />
+								Upload
+							</span>
+						</Button>
 						<input
 							type="file"
 							className="hidden"
@@ -183,18 +191,24 @@ export function GlimpsesUpload({
 									<Button
 										type="button"
 										variant="ghost"
-										className="h-auto p-1 text-amber-600"
+										className="h-auto p-1 text-[var(--color-danger)]"
 										onClick={() => void retryUpload(item.id)}
 									>
 										<FiRefreshCw /> Retry
 									</Button>
 								) : (
-									<span>{item.progress}%</span>
+									<span className="text-[var(--color-muted)]">
+										{item.progress}%
+									</span>
 								)}
 							</div>
-							<div className="h-1.5 rounded bg-black/10">
+							<div className="h-1.5 rounded bg-[var(--color-border)]">
 								<div
-									className={`h-1.5 rounded ${item.status === "failed" ? "bg-amber-500" : "bg-emerald-500"}`}
+									className={`h-1.5 rounded ${
+										item.status === "failed"
+											? "bg-[var(--color-danger)]"
+											: "bg-[var(--color-primary)]"
+									}`}
 									style={{ width: `${item.progress}%` }}
 								/>
 							</div>
@@ -219,7 +233,7 @@ export function GlimpsesUpload({
 							/>
 							<button
 								type="button"
-								className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white"
+								className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white hover:bg-black/80 transition-colors"
 								onClick={() =>
 									onChange(value.filter((each) => each !== item))
 								}

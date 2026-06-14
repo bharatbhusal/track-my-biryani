@@ -5,9 +5,5 @@ export const metadata = {
 };
 
 export default function ExpensesPage() {
-	return (
-		<section className="space-y-4 py-4">
-			<ExpenseManager />
-		</section>
-	);
+	return <ExpenseManager />;
 }
