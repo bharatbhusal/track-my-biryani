@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
 	Bar,
 	BarChart,
@@ -16,25 +15,25 @@ import { ChartCard } from "@/components/charts/chart-card";
 import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
 import { toRangeParams } from "@/lib/date-range";
 import type { GlobalDateRange } from "@/lib/date-range";
-import { DEFAULT_GLOBAL_RANGE } from "@/lib/date-range";
 
-export function DashboardBarChart() {
-	const [range, setRange] = useState<GlobalDateRange>(
-		DEFAULT_GLOBAL_RANGE,
-	);
+type Props = {
+	range: GlobalDateRange;
+	selectedCategoryId?: string;
+};
+
+export function DashboardBarChart({ range, selectedCategoryId }: Props) {
 	const rangeParams = toRangeParams(range);
-	const { data, isLoading } = useDashboardQuery(rangeParams);
+	const { data, isLoading } = useDashboardQuery({
+		...rangeParams,
+		categoryId: selectedCategoryId,
+	});
 
 	const chartData = data?.mainSeries ?? [];
 	const average = data?.averageSpend ?? 0;
 	const label = data?.chartLabel ?? "Spending Trend";
 
 	return (
-		<ChartCard
-			title={label}
-			defaultRange={range}
-			onRangeChange={(newRange) => setRange(newRange)}
-		>
+		<ChartCard title={label}>
 			<div className="h-64">
 				{isLoading ? (
 					<div className="flex h-full items-center justify-center text-sm text-[var(--color-muted)]">

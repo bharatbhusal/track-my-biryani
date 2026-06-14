@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
 	CartesianGrid,
 	Line,
@@ -14,25 +13,23 @@ import {
 import { ChartContainer } from "@/components/ui/chart";
 import { ChartCard } from "@/components/charts/chart-card";
 import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
-import {
-	toRangeParams,
-	DEFAULT_GLOBAL_RANGE,
-} from "@/lib/date-range";
+import { toRangeParams } from "@/lib/date-range";
 import type { GlobalDateRange } from "@/lib/date-range";
 
-export function DailyCashFlowChart() {
-	const [range, setRange] = useState<GlobalDateRange>(
-		DEFAULT_GLOBAL_RANGE,
-	);
+type Props = {
+	range: GlobalDateRange;
+	selectedCategoryId?: string;
+};
+
+export function DailyCashFlowChart({ range, selectedCategoryId }: Props) {
 	const rangeParams = toRangeParams(range);
-	const { data } = useDashboardQuery(rangeParams);
+	const { data } = useDashboardQuery({
+		...rangeParams,
+		categoryId: selectedCategoryId,
+	});
 
 	return (
-		<ChartCard
-			title="Daily Cash Flow Trend"
-			defaultRange={range}
-			onRangeChange={setRange}
-		>
+		<ChartCard title="Daily Cash Flow Trend">
 			<ChartContainer
 				config={{
 					total: { label: "Total", color: "var(--chart-2)" },

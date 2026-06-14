@@ -168,11 +168,12 @@ export async function GET(request: Request) {
 		const auth = await getAuthPayload();
 		const url = new URL(request.url);
 		const preset = url.searchParams.get("preset");
+		const categoryId = url.searchParams.get("categoryId");
 		const { from, to } = parseRange(url);
 
 		const [expenses, categories, recentActivity] =
 			await Promise.all([
-				listExpensesForRange(auth.userId, from, to),
+				listExpensesForRange(auth.userId, from, to, categoryId ?? undefined),
 				listCategories(auth.userId),
 				listRecentExpenses(auth.userId, 8),
 			]);

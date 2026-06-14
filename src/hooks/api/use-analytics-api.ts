@@ -9,6 +9,7 @@ export function useDashboardQuery(params?: {
 	preset?: string;
 	from?: string;
 	to?: string;
+	categoryId?: string;
 }) {
 	return useQuery({
 		queryKey: [queryKeys.dashboard, params ?? {}],

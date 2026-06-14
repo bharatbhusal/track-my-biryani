@@ -1,6 +1,4 @@
-import {
-	Types,
-} from "mongoose";
+import { Types } from "mongoose";
 
 import { ExpenseModel } from "@/models/Expense";
 import type {
@@ -233,12 +231,19 @@ export async function listExpensesForRange(
 	userId: string,
 	from: Date,
 	to: Date,
+	categoryId?: string,
 ) {
-	return ExpenseModel.find({
+	const filter: Record<string, unknown> = {
 		userId,
 		deletedAt: null,
 		dateTime: { $gte: from, $lte: to },
-	}).lean();
+	};
+	if (categoryId) {
+		filter.categoryId = categoryId;
+	}
+	return ExpenseModel.find(filter)
+		.sort({ dateTime: 1 })
+		.lean();
 }
 
 export async function aggregateRangeStats(

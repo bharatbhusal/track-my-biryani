@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import {
 	FiCalendar,
 	FiDollarSign,
-	FiTrendingUp,
 	FiAward,
 } from "react-icons/fi";
 
@@ -20,10 +19,11 @@ import {
 } from "@/lib/date-range";
 import { formatCurrency } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
-import { CategoryPieChart } from "@/components/CategoryPieChart";
+
 import { DashboardBarChart } from "@/components/dashboard-bar-chart";
 import type { GlobalDateRange } from "@/lib/date-range";
 import { DailyCashFlowChart } from "@/components/DailyCashFlowChart";
+import { CategoryDistributionBar } from "@/features/expenses/components/category-distribution-bar";
 
 function daysElapsed(preset: string): number {
 	const now = new Date();
@@ -46,6 +46,8 @@ export function DashboardOverview() {
 	const currency = useUIStore((state) => state.currency);
 	const [mainRange, setMainRange] =
 		useState<GlobalDateRange>(DEFAULT_GLOBAL_RANGE);
+	const [selectedCategoryId, setSelectedCategoryId] =
+		useState<string | undefined>();
 	const rangeParams = toRangeParams(mainRange);
 	const { data, isLoading } = useDashboardQuery(rangeParams);
 
@@ -69,7 +71,10 @@ export function DashboardOverview() {
 				</h2>
 				<DateRangeSelect
 					value={mainRange}
-					onChange={setMainRange}
+					onChange={(range) => {
+						setMainRange(range);
+						setSelectedCategoryId(undefined);
+					}}
 				/>
 			</div>
 
@@ -116,9 +121,19 @@ export function DashboardOverview() {
 				</div>
 			)}
 
-			<DashboardBarChart />
-			<DailyCashFlowChart />
-			<CategoryPieChart />
+			<CategoryDistributionBar
+				range={mainRange}
+				selectedCategoryId={selectedCategoryId}
+				onCategorySelect={setSelectedCategoryId}
+			/>
+			<DashboardBarChart
+				range={mainRange}
+				selectedCategoryId={selectedCategoryId}
+			/>
+			<DailyCashFlowChart
+				range={mainRange}
+				selectedCategoryId={selectedCategoryId}
+			/>
 		</div>
 	);
 }

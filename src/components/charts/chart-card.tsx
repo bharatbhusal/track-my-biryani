@@ -10,7 +10,7 @@ type ChartCardProps = {
 	title: string;
 	children: ReactNode;
 	className?: string;
-	defaultRange?: GlobalDateRange;
+	range?: GlobalDateRange;
 	onRangeChange?: (range: GlobalDateRange) => void;
 };
 
@@ -18,14 +18,15 @@ export function ChartCard({
 	title,
 	children,
 	className = "",
-	defaultRange = DEFAULT_GLOBAL_RANGE,
+	range: externalRange,
 	onRangeChange,
 }: ChartCardProps) {
-	const [range, setRange] =
-		useState<GlobalDateRange>(defaultRange);
+	const [internalRange, setInternalRange] =
+		useState<GlobalDateRange>(DEFAULT_GLOBAL_RANGE);
 
+	const range = externalRange ?? internalRange;
 	const handleRangeChange = (newRange: GlobalDateRange) => {
-		setRange(newRange);
+		if (!externalRange) setInternalRange(newRange);
 		onRangeChange?.(newRange);
 	};
 
@@ -33,10 +34,12 @@ export function ChartCard({
 		<Card className={className}>
 			<div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
 				<CardTitle>{title}</CardTitle>
-				<DateRangeSelect
-					value={range}
-					onChange={handleRangeChange}
-				/>
+				{onRangeChange && (
+					<DateRangeSelect
+						value={range}
+						onChange={handleRangeChange}
+					/>
+				)}
 			</div>
 			{children}
 		</Card>

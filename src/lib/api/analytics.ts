@@ -6,6 +6,7 @@ export const analyticsApi = {
 		preset?: string;
 		from?: string;
 		to?: string;
+		categoryId?: string;
 	}) => {
 		const qs = params
 			? "?" +

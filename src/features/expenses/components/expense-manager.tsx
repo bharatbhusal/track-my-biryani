@@ -110,6 +110,7 @@ export function ExpenseManager() {
 			</Card>
 
 			<CategoryDistributionBar
+				range={localRange}
 				selectedCategoryId={categoryId}
 				onCategorySelect={handleCategorySelect}
 			/>
