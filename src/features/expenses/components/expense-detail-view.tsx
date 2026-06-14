@@ -20,21 +20,30 @@ import { BarChart } from "@/components/charts/bar-chart";
 import GoogleMap from "@/components/maps/google-map";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
+import type { ExpenseItem, CategoryItem } from "@/types/expense.types";
 import type { ExpenseContribution } from "@/types/analytics.types";
 
 type ExpenseDetailViewProps = {
 	id: string;
+	initialExpense?: ExpenseItem | null;
+	initialCategories?: CategoryItem[];
+	initialContribution?: ExpenseContribution | null;
 };
 
-export function ExpenseDetailView({ id }: ExpenseDetailViewProps) {
+export function ExpenseDetailView({
+	id,
+	initialExpense,
+	initialCategories,
+	initialContribution,
+}: ExpenseDetailViewProps) {
 	const router = useRouter();
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const locale = useUIStore((state) => state.locale);
 	const timezone = useUIStore((state) => state.timezone);
 	const currency = useUIStore((state) => state.currency);
-	const categoriesQuery = useCategoriesQuery();
-	const expenseQuery = useExpenseDetailQuery(id);
-	const contributionQuery = useExpenseContributionQuery(id);
+	const categoriesQuery = useCategoriesQuery(initialCategories);
+	const expenseQuery = useExpenseDetailQuery(id, initialExpense);
+	const contributionQuery = useExpenseContributionQuery(id, initialContribution);
 	const { deleteExpense } = useExpenseMutations();
 
 	const expense = expenseQuery.data;

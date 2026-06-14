@@ -3,17 +3,17 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-	color-scheme: dark;
-	--color-bg: #121212;
-	--color-surface: #1e1e1e;
-	--color-surface-muted: #2a2a2a;
-	--color-text: #e0e0e0;
-	--color-muted: #9ca3af;
-	--color-border: #333333;
-	--color-primary: #e0e0e0;
-	--color-primary-muted: #333333;
-	--color-primary-foreground: #1a1a1a;
-	--color-danger: #ef4444;
+	color-scheme: light;
+	--color-bg: #f5f0eb;
+	--color-surface: #faf6f2;
+	--color-surface-muted: #efe9e3;
+	--color-text: #1a1410;
+	--color-muted: #8a7e72;
+	--color-border: #e3ddd6;
+	--color-primary: #1a1410;
+	--color-primary-muted: #e3ddd6;
+	--color-primary-foreground: #faf6f2;
+	--color-danger: #dc2626;
 	--font-size-xs: 0.75rem;
 	--font-size-sm: 0.875rem;
 	--font-size-md: 1rem;
@@ -25,9 +25,9 @@
 	--radius-md: 0.75rem;
 	--radius-lg: 1rem;
 	--radius-xl: 1.25rem;
-	--shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.4);
-	--shadow-elevated: 0 4px 12px -2px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
-	--shadow-modal: 0 20px 48px -8px rgb(0 0 0 / 0.5), 0 8px 16px -4px rgb(0 0 0 / 0.4);
+	--shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.08);
+	--shadow-elevated: 0 4px 12px -2px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+	--shadow-modal: 0 20px 48px -8px rgb(0 0 0 / 0.12), 0 8px 16px -4px rgb(0 0 0 / 0.08);
 	--chart-1: #3b82f6;
 	--chart-2: #06b6d4;
 	--chart-3: #8b5cf6;

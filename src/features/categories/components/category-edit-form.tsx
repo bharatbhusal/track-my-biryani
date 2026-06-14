@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useCategoryDetailQuery } from "@/hooks/api/use-expenses-api";
 import { expensesApi } from "@/lib/api/expenses";
+import type { CategoryItem } from "@/types/expense.types";
 
 type FormValues = {
 	name: string;
@@ -19,8 +20,14 @@ type FormValues = {
 	emoji: string;
 };
 
-export function CategoryEditForm({ id }: { id: string }) {
-	const categoryQuery = useCategoryDetailQuery(id);
+export function CategoryEditForm({
+	id,
+	initialCategory,
+}: {
+	id: string;
+	initialCategory?: CategoryItem | null;
+}) {
+	const categoryQuery = useCategoryDetailQuery(id, initialCategory);
 	const {
 		register,
 		handleSubmit,

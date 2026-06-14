@@ -52,17 +52,6 @@ type CategoryBucket = {
 	total: number;
 };
 
-type RangeStats = {
-	total: number;
-	count: number;
-	avg: number;
-	min: number;
-	max: number;
-	categoryBreakdown: CategoryBucket[];
-	dailyTrend: TrendPoint[];
-	weeklyTrend: TrendPoint[];
-};
-
 const WEEKDAY_LABELS = [
 	"Sun",
 	"Mon",

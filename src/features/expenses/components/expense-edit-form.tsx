@@ -32,6 +32,7 @@ import {
 	toUtcIsoString,
 } from "@/lib/datetime";
 import { useUIStore } from "@/store/ui-store";
+import type { ExpenseItem, CategoryItem } from "@/types/expense.types";
 
 const schema = z.object({
 	title: z.string().min(1),
@@ -48,14 +49,18 @@ type FormValues = z.infer<typeof schema>;
 
 type ExpenseEditFormProps = {
 	id: string;
+	initialExpense?: ExpenseItem | null;
+	initialCategories?: CategoryItem[];
 };
 
 export function ExpenseEditForm({
 	id,
+	initialExpense,
+	initialCategories,
 }: ExpenseEditFormProps) {
 	const currency = useUIStore((state) => state.currency);
-	const expenseQuery = useExpenseDetailQuery(id);
-	const categoriesQuery = useCategoriesQuery();
+	const expenseQuery = useExpenseDetailQuery(id, initialExpense);
+	const categoriesQuery = useCategoriesQuery(initialCategories);
 	const { updateExpense } = useExpenseMutations();
 	const [images, setImages] = useState<string[]>([]);
 
@@ -81,24 +86,25 @@ export function ExpenseEditForm({
 	} = form;
 
 	useEffect(() => {
-		if (!expenseQuery.data) {
+		const data = expenseQuery.data;
+		if (!data) {
 			return;
 		}
 
 		reset({
-			title: expenseQuery.data.title,
-			amount: expenseQuery.data.amount,
-			categoryId: expenseQuery.data.categoryId,
+			title: data.title,
+			amount: data.amount,
+			categoryId: data.categoryId,
 			dateTime: getLocalDateTimeInputValue(
-				new Date(expenseQuery.data.dateTime),
+				new Date(data.dateTime),
 			),
-			address: expenseQuery.data.location?.address ?? "",
-			notes: expenseQuery.data.notes ?? "",
-			paymentMethod: expenseQuery.data.paymentMethod ?? "",
-			tags: (expenseQuery.data.tags ?? []).join(", "),
+			address: data.location?.address ?? "",
+			notes: data.notes ?? "",
+			paymentMethod: data.paymentMethod ?? "",
+			tags: (data.tags ?? []).join(", "),
 		});
 		Promise.resolve().then(() => {
-			setImages(expenseQuery.data.images ?? []);
+			setImages(data.images ?? []);
 		});
 	}, [expenseQuery.data, reset]);
 

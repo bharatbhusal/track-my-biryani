@@ -2,7 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { FiPlus, FiSearch, FiArrowUp, FiArrowDown, FiTag } from "react-icons/fi";
+import {
+	FiPlus,
+	FiSearch,
+	FiArrowUp,
+	FiArrowDown,
+	FiTag,
+} from "react-icons/fi";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -19,7 +25,9 @@ export function CategoryManager() {
 	const [name, setName] = useState("");
 	const [emoji, setEmoji] = useState("🏷️");
 	const [query, setQuery] = useState("");
-	const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+	const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
+		"asc",
+	);
 	const categoriesQuery = useCategoriesQuery();
 	const { createCategory } = useExpenseMutations();
 	const debouncedQuery = useDebouncedValue(query, 300);
@@ -28,7 +36,9 @@ export function CategoryManager() {
 		() =>
 			(categoriesQuery.data ?? [])
 				.filter((item) =>
-					item.name.toLowerCase().includes(debouncedQuery.toLowerCase()),
+					item.name
+						.toLowerCase()
+						.includes(debouncedQuery.toLowerCase()),
 				)
 				.sort((a, b) =>
 					sortOrder === "asc"
@@ -39,7 +49,7 @@ export function CategoryManager() {
 	);
 
 	return (
-		<Card data-animate="true">
+		<Card>
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<CardTitle>
 					<FiTag className="inline mr-1.5 h-4 w-4" />
@@ -62,7 +72,9 @@ export function CategoryManager() {
 							},
 							onError: (error) => {
 								toast.error(
-									error instanceof Error ? error.message : "Failed to create category",
+									error instanceof Error
+										? error.message
+										: "Failed to create category",
 								);
 							},
 						},
@@ -80,7 +92,10 @@ export function CategoryManager() {
 					placeholder="🏷️"
 					className="max-w-20"
 				/>
-				<Button type="submit" disabled={createCategory.isPending}>
+				<Button
+					type="submit"
+					disabled={createCategory.isPending}
+				>
 					{createCategory.isPending ? (
 						<>
 							<Spinner className="mr-2" />
@@ -107,7 +122,9 @@ export function CategoryManager() {
 				</div>
 				<Button
 					variant="outline"
-					onClick={() => setSortOrder((c) => (c === "asc" ? "desc" : "asc"))}
+					onClick={() =>
+						setSortOrder((c) => (c === "asc" ? "desc" : "asc"))
+					}
 				>
 					{sortOrder === "asc" ? (
 						<FiArrowUp className="mr-1.5 h-4 w-4" />
@@ -120,7 +137,7 @@ export function CategoryManager() {
 
 			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
 				{items.map((category) => (
-					<div key={category._id} data-animate="true">
+					<div key={category._id}>
 						<CategoryCard category={category} />
 					</div>
 				))}

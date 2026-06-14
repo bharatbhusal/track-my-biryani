@@ -13,34 +13,40 @@ import type {
 	ExpenseListQuery,
 	ExpensesListPayload,
 } from "@/types/expense.types";
+import type { CategoryItem } from "@/types/expense.types";
+import type { ExpenseContribution } from "@/types/analytics.types";
 
-export function useCategoriesQuery() {
+export function useCategoriesQuery(initialData?: CategoryItem[]) {
 	return useQuery({
 		queryKey: queryKeys.categories,
 		queryFn: expensesApi.listCategories,
+		...(initialData !== undefined ? { initialData } : {}),
 	});
 }
 
 export function useExpensesQuery(
 	filters: ExpenseListQuery = {},
+	initialData?: ExpensesListPayload,
 ) {
 	const mergedFilters = { page: 1, limit: 20, ...filters };
 
 	return useQuery({
 		queryKey: queryKeys.expenses.list(mergedFilters),
 		queryFn: () => expensesApi.listExpenses(mergedFilters),
+		...(initialData !== undefined ? { initialData } : {}),
 	});
 }
 
-export function useExpenseDetailQuery(id: string) {
+export function useExpenseDetailQuery(id: string, initialData?: ExpenseItem | null) {
 	return useQuery({
 		queryKey: queryKeys.expenses.detail(id),
 		queryFn: () => expensesApi.getExpenseById(id),
 		enabled: Boolean(id),
+		...(initialData !== undefined ? { initialData } : {}),
 	});
 }
 
-export function useExpenseContributionQuery(id: string) {
+export function useExpenseContributionQuery(id: string, initialData?: ExpenseContribution | null) {
 	return useQuery({
 		queryKey: [
 			...queryKeys.expenses.detail(id),
@@ -48,14 +54,16 @@ export function useExpenseContributionQuery(id: string) {
 		],
 		queryFn: () => expensesApi.getExpenseContribution(id),
 		enabled: Boolean(id),
+		...(initialData !== undefined ? { initialData } : {}),
 	});
 }
 
-export function useCategoryDetailQuery(id: string) {
+export function useCategoryDetailQuery(id: string, initialData?: CategoryItem | null) {
 	return useQuery({
 		queryKey: [...queryKeys.categories, "detail", id],
 		queryFn: () => expensesApi.getCategoryById(id),
 		enabled: Boolean(id),
+		...(initialData !== undefined ? { initialData } : {}),
 	});
 }
 
@@ -75,7 +83,6 @@ export function useExpenseMutations() {
 				});
 
 			previousLists.forEach(([key, payload]) => {
-				// Only update queries that look like an expenses list (have an `items` array)
 				if (
 					!payload ||
 					typeof payload !== "object" ||

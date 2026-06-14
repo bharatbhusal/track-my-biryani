@@ -29,8 +29,17 @@ import { formatCurrency } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
 import { useDateRange } from "@/components/charts/date-range-context";
 import type { ExpenseListQuery } from "@/types";
+import type { ExpenseItem, CategoryItem } from "@/types/expense.types";
 
-export function CategoryDetailView({ id }: { id: string }) {
+export function CategoryDetailView({
+	id,
+	initialCategory,
+	initialExpenses,
+}: {
+	id: string;
+	initialCategory?: CategoryItem | null;
+	initialExpenses?: ExpenseItem[];
+}) {
 	const router = useRouter();
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const locale = useUIStore((state) => state.locale);
@@ -39,7 +48,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 	const { range: localRange } = useDateRange();
 	const rangeBounds = useMemo(() => toIsoBounds(localRange), [localRange]);
 
-	const categoryQuery = useCategoryDetailQuery(id);
+	const categoryQuery = useCategoryDetailQuery(id, initialCategory);
 	const { deleteCategory } = useExpenseMutations();
 
 	const expensesQueryParams = useMemo(
@@ -59,9 +68,10 @@ export function CategoryDetailView({ id }: { id: string }) {
 	const expensesQuery = useExpensesQuery(expensesQueryParams);
 
 	const category = categoryQuery.data;
+
 	const expenses = useMemo(
-		() => expensesQuery.data?.items ?? [],
-		[expensesQuery.data?.items],
+		() => expensesQuery.data?.items ?? initialExpenses ?? [],
+		[expensesQuery.data?.items, initialExpenses],
 	);
 
 	const analytics = useMemo(() => {
