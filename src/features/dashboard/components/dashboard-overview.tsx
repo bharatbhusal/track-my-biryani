@@ -23,7 +23,7 @@ export function DashboardOverview() {
 	if (!data) {
 		return (
 			<Card>
-				<div className="space-y-3">
+				<div className="">
 					<Skeleton className="h-6 w-52" />
 					<div className="grid grid-cols-1 gap-3 md:grid-cols-3">
 						<Skeleton className="h-24 w-full" />
@@ -39,38 +39,29 @@ export function DashboardOverview() {
 
 	return (
 		<div className="space-y-4">
-			<div
-				className="flex items-center justify-between"
-				data-animate="true"
-			>
-				<CardTitle>
-					{rangeLabel(DEFAULT_GLOBAL_RANGE)}
-				</CardTitle>
-			</div>
+			<CardTitle>{rangeLabel(DEFAULT_GLOBAL_RANGE)}</CardTitle>
 
-			<div data-animate="true">
-				<div className="grid grid-cols-1 gap-4 md:grid-cols-3 w-full">
-					<Card>
-						<CardTitle>Total Spend</CardTitle>
-						<p className="mt-2 text-2xl font-bold">
-							{formatCurrency(data.totalSpend, currency, locale)}
-						</p>
-					</Card>
+			<div className="grid grid-cols-1 gap-4 md:grid-cols-3 w-full">
+				<Card>
+					<CardTitle>Total Spend</CardTitle>
+					<p className="mt-2 text-2xl font-bold">
+						{formatCurrency(data.totalSpend, currency, locale)}
+					</p>
+				</Card>
 
-					<Card>
-						<CardTitle>{data.averageLabel}</CardTitle>
-						<p className="mt-2 text-2xl font-bold">
-							{formatCurrency(data.averageSpend, currency, locale)}
-						</p>
-					</Card>
+				<Card>
+					<CardTitle>{data.averageLabel}</CardTitle>
+					<p className="mt-2 text-2xl font-bold">
+						{formatCurrency(data.averageSpend, currency, locale)}
+					</p>
+				</Card>
 
-					<Card>
-						<CardTitle>Top Category</CardTitle>
-						<p className="mt-2 text-2xl font-bold">
-							{data.topCategory}
-						</p>
-					</Card>
-				</div>
+				<Card>
+					<CardTitle>Top Category</CardTitle>
+					<p className="mt-2 text-2xl font-bold">
+						{data.topCategory}
+					</p>
+				</Card>
 			</div>
 
 			<AnalyticsPanel data={data} />

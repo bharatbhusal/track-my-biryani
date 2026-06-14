@@ -4,7 +4,6 @@ import { PageTransitionShell } from "@/animations/page-transition-shell";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { QuickAddButton } from "@/components/layout/quick-add-button";
 import { AppProvider } from "@/components/providers/app-provider";
-import { DisableInteractions } from "@/components/ui/disable-interactions";
 import { QuickAddExpenseModal } from "@/features/expenses/components/quick-add-expense-modal";
 
 import "./globals.css";
@@ -56,14 +55,15 @@ export default function RootLayout({
 			<body className="min-h-screen transition-colors duration-200">
 				<UiRestriction>
 					<AppProvider>
-						<DisableInteractions />
-						<Header />
-						<main className="safe-area-px safe-area-pb mx-auto w-full max-w-6xl p-4 pb-24 pt-6 md:pb-8">
-							<PageTransitionShell>{children}</PageTransitionShell>
-						</main>
-						<BottomNav />
-						<QuickAddButton />
-						<QuickAddExpenseModal />
+						<div className="flex min-h-dvh flex-col">
+							<Header />
+							<div className="mx-auto flex-1 w-full max-w-7xl px-4 py-4 sm:px-6 lg:px-8 pb-18">
+								{children}
+							</div>
+							<BottomNav />
+							<QuickAddButton />
+							<QuickAddExpenseModal />
+						</div>
 					</AppProvider>
 				</UiRestriction>
 			</body>

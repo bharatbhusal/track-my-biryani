@@ -135,11 +135,11 @@ export function ExpenseManager() {
 				</div>
 			</Card>
 
-			<Card data-animate="true">
+			<Card>
 				<CardTitle className="mb-3">Expenses</CardTitle>
 				<ul className="space-y-2 text-sm">
 					{items.map((expense) => (
-						<li key={expense._id} data-animate="true">
+						<li key={expense._id}>
 							<ExpenseCard
 								expense={expense}
 								category={categoryMap.get(expense.categoryId)}

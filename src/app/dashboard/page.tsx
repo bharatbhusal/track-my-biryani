@@ -6,7 +6,7 @@ export const metadata = {
 
 export default function DashboardPage() {
 	return (
-		<section className="space-y-4 py-4">
+		<section className="space-y-4">
 			<DashboardOverview />
 		</section>
 	);
