@@ -28,7 +28,6 @@ import { formatCurrency } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
 import { useDateRange } from "@/components/charts/date-range-context";
 import { ExpenseListQuery } from "@/types";
-import { themedTooltipProps } from "@/components/charts/chart-tooltip";
 
 export function CategoryDetailView({ id }: { id: string }) {
 	const router = useRouter();
@@ -158,7 +157,6 @@ export function CategoryDetailView({ id }: { id: string }) {
 						<AreaChart data={analytics.monthlyTrend}>
 							<XAxis dataKey="name" />
 							<YAxis />
-							<Tooltip {...themedTooltipProps} />
 							<Area
 								dataKey="total"
 								stroke="#10b981"

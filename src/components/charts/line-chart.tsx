@@ -8,7 +8,6 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
-import { themedTooltipProps } from "@/components/charts/chart-tooltip";
 
 export function LineChart({
 	data,
@@ -23,7 +22,6 @@ export function LineChart({
 				<RechartsLineChart data={data}>
 					<XAxis dataKey="name" />
 					<YAxis />
-					<Tooltip {...themedTooltipProps} />
 					<Line
 						dataKey="total"
 						stroke="#4f46e5"

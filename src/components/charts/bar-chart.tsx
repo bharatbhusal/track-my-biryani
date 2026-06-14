@@ -8,7 +8,6 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
-import { themedTooltipProps } from "@/components/charts/chart-tooltip";
 
 export function BarChart({
 	data,
@@ -23,7 +22,6 @@ export function BarChart({
 				<RechartsBarChart data={data}>
 					<XAxis dataKey="name" />
 					<YAxis />
-					<Tooltip {...themedTooltipProps} />
 					<Bar
 						dataKey="total"
 						fill="#0ea5e9"
