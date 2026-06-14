@@ -1,6 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import { useCallback, useMemo, useState } from "react";
+import { useTheme } from "next-themes";
+import { Theme } from "emoji-picker-react";
 import { toast } from "sonner";
 import {
 	FiPlus,
@@ -21,16 +24,23 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { CategoryCard } from "@/features/categories/components/category-card";
 
+const EmojiPicker = dynamic(() => import("emoji-picker-react"), {
+	ssr: false,
+});
+
 export function CategoryManager() {
 	const [name, setName] = useState("");
-	const [emoji, setEmoji] = useState("🏷️");
+	const [emoji, setEmoji] = useState("");
 	const [query, setQuery] = useState("");
-	const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
-		"asc",
-	);
+	const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+	const [pickerOpen, setPickerOpen] = useState(false);
 	const categoriesQuery = useCategoriesQuery();
 	const { createCategory } = useExpenseMutations();
+	const { resolvedTheme } = useTheme();
 	const debouncedQuery = useDebouncedValue(query, 300);
+
+	const emojiPickerTheme =
+		resolvedTheme === "dark" ? Theme.DARK : Theme.LIGHT;
 
 	const items = useMemo(
 		() =>
@@ -48,6 +58,14 @@ export function CategoryManager() {
 		[categoriesQuery.data, debouncedQuery, sortOrder],
 	);
 
+	const handleEmojiClick = useCallback(
+		(emojiObject: { emoji: string }) => {
+			setEmoji(emojiObject.emoji);
+			setPickerOpen(false);
+		},
+		[],
+	);
+
 	return (
 		<Card>
 			<div className="flex items-center justify-between gap-2 mb-4">
@@ -63,11 +81,11 @@ export function CategoryManager() {
 					event.preventDefault();
 					if (!name.trim()) return;
 					createCategory.mutate(
-						{ name: name.trim(), emoji: emoji.trim() || "🏷️" },
+						{ name: name.trim(), emoji: emoji || "🏷️" },
 						{
 							onSuccess: () => {
 								setName("");
-								setEmoji("🏷️");
+								setEmoji("");
 								toast.success("Category created");
 							},
 							onError: (error) => {
@@ -86,12 +104,32 @@ export function CategoryManager() {
 					onChange={(e) => setName(e.target.value)}
 					placeholder="Food, Transport..."
 				/>
-				<Input
-					value={emoji}
-					onChange={(e) => setEmoji(e.target.value)}
-					placeholder="🏷️"
-					className="max-w-20"
-				/>
+				<div>
+					<button
+						type="button"
+						onClick={() => setPickerOpen((prev) => !prev)}
+						className="flex h-10 w-10 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-lg hover:bg-[var(--color-surface-muted)] transition-colors"
+						aria-label="Pick emoji"
+					>
+						{emoji || "🏷️"}
+					</button>
+					{pickerOpen && (
+						<div
+							className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+							onClick={() => setPickerOpen(false)}
+						>
+							<div
+								onClick={(e) => e.stopPropagation()}
+								className="max-h-[75vh] max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-lg"
+							>
+								<EmojiPicker
+									theme={emojiPickerTheme}
+									onEmojiClick={handleEmojiClick}
+								/>
+							</div>
+						</div>
+					)}
+				</div>
 				<Button
 					type="submit"
 					disabled={createCategory.isPending}
