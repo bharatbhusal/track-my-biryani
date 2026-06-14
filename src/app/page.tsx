@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 
 export default function Home() {
 	return (
-		<div className="mx-auto grid min-h-[70vh] max-w-3xl place-items-center">
+		<div className="mx-auto grid min-h-[100vh] max-w-3xl place-items-center">
 			<Card className="w-full text-center">
 				<h1 className="text-2xl font-semibold tracking-tight">
 					Track My Biryani

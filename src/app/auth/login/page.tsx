@@ -12,8 +12,6 @@ export default async function LoginPage({
   const { next } = await searchParams;
 
   return (
-    <section className="py-6">
-      <AuthForm mode="login" nextPath={next} />
-    </section>
+    <AuthForm mode="login" nextPath={next} />
   );
 }

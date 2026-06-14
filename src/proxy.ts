@@ -1,7 +1,13 @@
-import { type NextRequest, NextResponse } from "next/server";
+import {
+	type NextRequest,
+	NextResponse,
+} from "next/server";
 
 import { verifyToken } from "@/lib/auth";
-import { AUTH_COOKIE, PROTECTED_ROUTES } from "@/lib/constants";
+import {
+	AUTH_COOKIE,
+	PROTECTED_ROUTES,
+} from "@/lib/constants";
 
 const AUTH_PAGES = ["/auth/login", "/auth/signup"];
 
@@ -18,11 +24,15 @@ function isAdminProtected(pathname: string): boolean {
 }
 
 function isAppProtected(pathname: string): boolean {
-	return PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
+	return PROTECTED_ROUTES.some((route) =>
+		pathname.startsWith(route),
+	);
 }
 
 function isAuthPage(pathname: string): boolean {
-	return AUTH_PAGES.some((route) => pathname.startsWith(route));
+	return AUTH_PAGES.some((route) =>
+		pathname.startsWith(route),
+	);
 }
 
 function isTokenProbablyValid(token: string): boolean {
@@ -49,13 +59,21 @@ export function proxy(request: NextRequest) {
 	// Admin routes — full signature verification
 	if (isAdminProtected(pathname)) {
 		if (!token) {
-			return redirectToLogin(request, pathname, "/admin/login");
+			return redirectToLogin(
+				request,
+				pathname,
+				"/admin/login",
+			);
 		}
 		try {
 			verifyToken(token);
 			return NextResponse.next();
 		} catch {
-			return redirectToLogin(request, pathname, "/admin/login");
+			return redirectToLogin(
+				request,
+				pathname,
+				"/admin/login",
+			);
 		}
 	}
 

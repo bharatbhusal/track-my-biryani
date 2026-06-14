@@ -1,23 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { FiDollarSign, FiTrendingUp, FiAward } from "react-icons/fi";
+import {
+	FiDollarSign,
+	FiTrendingUp,
+	FiAward,
+} from "react-icons/fi";
 
 import { Card, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DateRangeSelect } from "@/components/charts/date-range-select";
 import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
-import { rangeLabel, toRangeParams, DEFAULT_GLOBAL_RANGE } from "@/lib/date-range";
+import {
+	rangeLabel,
+	toRangeParams,
+	DEFAULT_GLOBAL_RANGE,
+} from "@/lib/date-range";
 import { formatCurrency } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
-import { AnalyticsPanel } from "@/components/AnalyticsPanel";
+import { CategoryPieChart } from "@/components/CategoryPieChart";
 import { DashboardBarChart } from "@/features/dashboard/components/dashboard-bar-chart";
 import type { GlobalDateRange } from "@/lib/date-range";
+import { DailyCashFlowChart } from "@/components/DailyCashFlowChart";
 
 export function DashboardOverview() {
 	const locale = useUIStore((state) => state.locale);
 	const currency = useUIStore((state) => state.currency);
-	const [mainRange, setMainRange] = useState<GlobalDateRange>(DEFAULT_GLOBAL_RANGE);
+	const [mainRange, setMainRange] =
+		useState<GlobalDateRange>(DEFAULT_GLOBAL_RANGE);
 	const rangeParams = toRangeParams(mainRange);
 	const { data, isLoading } = useDashboardQuery(rangeParams);
 
@@ -27,7 +37,10 @@ export function DashboardOverview() {
 				<h2 className="text-lg font-semibold tracking-tight">
 					{rangeLabel(mainRange)}
 				</h2>
-				<DateRangeSelect value={mainRange} onChange={setMainRange} />
+				<DateRangeSelect
+					value={mainRange}
+					onChange={setMainRange}
+				/>
 			</div>
 
 			{isLoading || !data ? (
@@ -62,7 +75,11 @@ export function DashboardOverview() {
 							<div>
 								<CardTitle>{data.averageLabel}</CardTitle>
 								<p className="mt-1 text-xl font-bold">
-									{formatCurrency(data.averageSpend, currency, locale)}
+									{formatCurrency(
+										data.averageSpend,
+										currency,
+										locale,
+									)}
 								</p>
 							</div>
 						</div>
@@ -74,7 +91,9 @@ export function DashboardOverview() {
 							</div>
 							<div>
 								<CardTitle>Top Category</CardTitle>
-								<p className="mt-1 text-xl font-bold">{data.topCategory}</p>
+								<p className="mt-1 text-xl font-bold">
+									{data.topCategory}
+								</p>
 							</div>
 						</div>
 					</Card>
@@ -82,8 +101,9 @@ export function DashboardOverview() {
 			)}
 
 			<DashboardBarChart />
-
-			<AnalyticsPanel />
+			<DailyCashFlowChart />
+			<CategoryPieChart />
+			{/* <AnalyticsPanel /> */}
 		</div>
 	);
 }
