@@ -125,6 +125,40 @@ export function CategoryDetailView({
 		};
 	}, [expenses]);
 
+	const routeUrl = useMemo(() => {
+		if (expenses.length < 2) return null;
+
+		const points = expenses
+			.slice(0, 5)
+			.filter(
+				(item) =>
+					item.location?.latitude && item.location?.longitude,
+			);
+
+		if (points.length < 2) return null;
+
+		const origin = `${points[0].location.latitude},${points[0].location.longitude}`;
+		const destination = `${points[points.length - 1].location.latitude},${points[points.length - 1].location.longitude}`;
+
+		const waypoints = points
+			.slice(1, -1)
+			.map(
+				(item) =>
+					`${item.location.latitude},${item.location.longitude}`,
+			)
+			.join("|");
+
+		return (
+			`https://www.google.com/maps/dir/?api=1` +
+			`&origin=${origin}` +
+			`&destination=${destination}` +
+			(waypoints
+				? `&waypoints=${encodeURIComponent(waypoints)}`
+				: "") +
+			`&travelmode=driving`
+		);
+	}, [expenses]);
+
 	if (!category) {
 		return <Card>Loading category...</Card>;
 	}
@@ -227,6 +261,26 @@ export function CategoryDetailView({
 					categoryMap={new Map([[category._id, category]])}
 					emptyMessage="No expenses in this category"
 				/>
+			</Card>
+			<Card>
+				<CardTitle className="mb-2">Expense Route</CardTitle>
+
+				<p className="mb-3 text-sm text-[var(--color-muted)]">
+					Route connecting the first{" "}
+					{Math.min(expenses.length, 5)} expenses in this
+					category.
+				</p>
+
+				<Button
+					disabled={!routeUrl}
+					onClick={() => {
+						if (routeUrl) {
+							window.open(routeUrl, "_blank");
+						}
+					}}
+				>
+					View Route in Google Maps
+				</Button>
 			</Card>
 
 			<AddCategoryDrawer
