@@ -7,6 +7,7 @@ import type {
 } from "@/types/expense.types";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
+import { EmojiBadge } from "@/components/ui/emoji-badge";
 
 type Props = {
 	expense: ExpenseItem;
@@ -14,7 +15,8 @@ type Props = {
 };
 
 export function ExpenseCard({ expense, category }: Props) {
-	const locale = useUIStore((s) => s.locale);
+	const locale = useUIStore((state) => state.locale);
+	const currency = useUIStore((state) => state.currency);
 	const timezone = useUIStore((s) => s.timezone);
 
 	return (
@@ -22,23 +24,22 @@ export function ExpenseCard({ expense, category }: Props) {
 			href={`/expenses/${expense._id}`}
 			className="block rounded-md border border-[var(--color-border)] p-3 hover:bg-[color-mix(in_oklab,var(--color-bg)_96%,transparent)]"
 		>
-			<div className="flex items-start justify-between">
-				<div>
+			<div className="flex gap-2">
+				<EmojiBadge
+					color={category?.color || ""}
+					emoji={category?.emoji}
+					className="flex-1"
+				/>
+				<div className="flex-4">
 					<p className="font-medium">{expense.title}</p>
-					<p className="text-xs text-[var(--color-muted)]">
-						{category?.emoji ?? "🏷️"} {category?.name ?? "Category"}
-					</p>
+
 					<p className="text-xs text-[var(--color-muted)]">
 						{formatDate(expense.dateTime, locale, timezone)}
 					</p>
 				</div>
-				<div className="text-right">
+				<div className="text-right flex-1">
 					<p className="font-semibold">
-						{formatCurrency(
-							expense.amount,
-							expense.currency,
-							locale,
-						)}
+						{formatCurrency(expense.amount, currency, locale)}
 					</p>
 				</div>
 			</div>

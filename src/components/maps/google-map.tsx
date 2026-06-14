@@ -18,7 +18,7 @@ export default function GoogleMap({
 	if (!latitude || !longitude) return null;
 
 	const zoom = 14;
-	const src = `https://www.google.com/maps?q=${latitude},${longitude}&z=${zoom}&output=embed`;
+	const src = `https://www.google.com/maps?q=${latitude},${longitude}&z=${zoom}&output=embed&t=k`;
 
 	return (
 		<iframe

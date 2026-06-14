@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FiEdit2, FiTrash2, FiArrowLeft } from "react-icons/fi";
+import {
+	FiEdit2,
+	FiTrash2,
+	FiArrowLeft,
+} from "react-icons/fi";
 import { toast } from "sonner";
 import {
 	Area,
@@ -16,9 +20,9 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { ConfirmDialog } from "@/components/ui/dialog";
+import { ConfirmDrawer } from "@/components/ui/drawer";
 import { ChartCard } from "@/components/charts/chart-card";
-import { ExpenseCard } from "@/features/expenses/components/expense-card";
+import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import {
 	useCategoryDetailQuery,
 	useExpenseMutations,
@@ -29,7 +33,11 @@ import { formatCurrency } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
 import { useDateRange } from "@/components/charts/date-range-context";
 import type { ExpenseListQuery } from "@/types";
-import type { ExpenseItem, CategoryItem } from "@/types/expense.types";
+import type {
+	ExpenseItem,
+	CategoryItem,
+} from "@/types/expense.types";
+import { EmojiBadge } from "@/components/ui/emoji-badge";
 
 export function CategoryDetailView({
 	id,
@@ -46,9 +54,15 @@ export function CategoryDetailView({
 	const currency = useUIStore((state) => state.currency);
 
 	const { range: localRange } = useDateRange();
-	const rangeBounds = useMemo(() => toIsoBounds(localRange), [localRange]);
+	const rangeBounds = useMemo(
+		() => toIsoBounds(localRange),
+		[localRange],
+	);
 
-	const categoryQuery = useCategoryDetailQuery(id, initialCategory);
+	const categoryQuery = useCategoryDetailQuery(
+		id,
+		initialCategory,
+	);
 	const { deleteCategory } = useExpenseMutations();
 
 	const expensesQueryParams = useMemo(
@@ -65,7 +79,9 @@ export function CategoryDetailView({
 		[id, rangeBounds.from, rangeBounds.to],
 	);
 
-	const expensesQuery = useExpensesQuery(expensesQueryParams);
+	const expensesQuery = useExpensesQuery(
+		expensesQueryParams,
+	);
 
 	const category = categoryQuery.data;
 
@@ -75,9 +91,16 @@ export function CategoryDetailView({
 	);
 
 	const analytics = useMemo(() => {
-		const total = expenses.reduce((sum, item) => sum + item.amount, 0);
-		const highest = expenses.reduce((max, item) => Math.max(max, item.amount), 0);
-		const average = expenses.length > 0 ? total / expenses.length : 0;
+		const total = expenses.reduce(
+			(sum, item) => sum + item.amount,
+			0,
+		);
+		const highest = expenses.reduce(
+			(max, item) => Math.max(max, item.amount),
+			0,
+		);
+		const average =
+			expenses.length > 0 ? total / expenses.length : 0;
 
 		const monthly = new Map<string, number>();
 		expenses.forEach((item) => {
@@ -85,17 +108,22 @@ export function CategoryDetailView({
 				month: "short",
 				year: "2-digit",
 			}).format(new Date(item.dateTime));
-			monthly.set(month, (monthly.get(month) ?? 0) + item.amount);
+			monthly.set(
+				month,
+				(monthly.get(month) ?? 0) + item.amount,
+			);
 		});
 
 		return {
 			total,
 			highest,
 			average,
-			monthlyTrend: Array.from(monthly.entries()).map(([name, totalAmt]) => ({
-				name,
-				total: totalAmt,
-			})),
+			monthlyTrend: Array.from(monthly.entries()).map(
+				([name, totalAmt]) => ({
+					name,
+					total: totalAmt,
+				}),
+			),
 		};
 	}, [expenses]);
 
@@ -105,18 +133,16 @@ export function CategoryDetailView({
 
 	return (
 		<div className="space-y-4">
-			<Link
-				href="/categories"
-				className="inline-flex items-center gap-1 text-sm text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors"
-			>
-				<FiArrowLeft className="h-4 w-4" />
-				Back to Categories
-			</Link>
-
 			<Card>
 				<div className="mb-2 flex items-center justify-between">
 					<CardTitle>
-						{category.emoji ?? "🏷️"} {category.name}
+						<div className="flex items-center gap-3">
+							<EmojiBadge
+								emoji={category.emoji}
+								color={category.color}
+							/>
+							<p className="text-lg">{category.name}</p>
+						</div>
 					</CardTitle>
 					<div className="flex items-center gap-2">
 						<Link href={`/categories/${id}/edit`}>
@@ -140,19 +166,27 @@ export function CategoryDetailView({
 				</div>
 				<div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 md:grid-cols-4">
 					<p>
-						<span className="text-[var(--color-muted)]">Total:</span>{" "}
+						<span className="text-[var(--color-muted)]">
+							Total:
+						</span>{" "}
 						{formatCurrency(analytics.total, currency, locale)}
 					</p>
 					<p>
-						<span className="text-[var(--color-muted)]">Highest:</span>{" "}
+						<span className="text-[var(--color-muted)]">
+							Highest:
+						</span>{" "}
 						{formatCurrency(analytics.highest, currency, locale)}
 					</p>
 					<p>
-						<span className="text-[var(--color-muted)]">Average:</span>{" "}
+						<span className="text-[var(--color-muted)]">
+							Average:
+						</span>{" "}
 						{formatCurrency(analytics.average, currency, locale)}
 					</p>
 					<p>
-						<span className="text-[var(--color-muted)]">Transactions:</span>{" "}
+						<span className="text-[var(--color-muted)]">
+							Transactions:
+						</span>{" "}
 						{expenses.length}
 					</p>
 				</div>
@@ -162,8 +196,13 @@ export function CategoryDetailView({
 				<div className="h-64">
 					<ResponsiveContainer width="100%" height="100%">
 						<AreaChart data={analytics.monthlyTrend}>
-							<XAxis dataKey="name" tick={{ fill: "var(--color-muted)", fontSize: 12 }} />
-							<YAxis tick={{ fill: "var(--color-muted)", fontSize: 12 }} />
+							<XAxis
+								dataKey="name"
+								tick={{ fill: "var(--color-muted)", fontSize: 12 }}
+							/>
+							<YAxis
+								tick={{ fill: "var(--color-muted)", fontSize: 12 }}
+							/>
 							<Tooltip
 								contentStyle={{
 									backgroundColor: "var(--color-surface)",
@@ -183,17 +222,17 @@ export function CategoryDetailView({
 			</ChartCard>
 
 			<Card>
-				<CardTitle className="mb-2">Recent in Category</CardTitle>
-				<ul className="space-y-2 text-sm">
-					{expenses.slice(0, 10).map((item) => (
-						<li key={item._id}>
-							<ExpenseCard expense={item} category={category} />
-						</li>
-					))}
-				</ul>
+				<CardTitle className="mb-2">
+					Recent in Category
+				</CardTitle>
+				<ExpenseTable
+					items={expenses.slice(0, 10)}
+					categoryMap={new Map([[category._id, category]])}
+					emptyMessage="No expenses in this category"
+				/>
 			</Card>
 
-			<ConfirmDialog
+			<ConfirmDrawer
 				open={deleteOpen}
 				title="Delete category"
 				description="This action cannot be undone."
@@ -206,7 +245,9 @@ export function CategoryDetailView({
 						},
 						onError: (error) => {
 							toast.error(
-								error instanceof Error ? error.message : "Failed to delete category",
+								error instanceof Error
+									? error.message
+									: "Failed to delete category",
 							);
 						},
 					});

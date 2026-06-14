@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { ConfirmDialog } from "@/components/ui/dialog";
+import { ConfirmDrawer } from "@/components/ui/drawer";
 import {
 	useCategoriesQuery,
 	useExpenseDetailQuery,
@@ -216,7 +216,7 @@ export function ExpenseDetailView({
 				</Card>
 			)}
 
-			<ConfirmDialog
+			<ConfirmDrawer
 				open={deleteOpen}
 				title="Delete expense"
 				description="This action cannot be undone."

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -24,9 +25,18 @@ export function Header() {
 			<div className="mx-auto flex w-full max-w-5xl items-center justify-between">
 				<Link
 					href="/dashboard"
-					className="text-sm font-semibold tracking-tight"
+					className="flex items-center gap-2 text-sm font-semibold tracking-tight"
 				>
-					Track My Biryani
+					<Image
+						src="/logo_medium.jpeg"
+						alt=""
+						width={28}
+						height={28}
+						className="size-7 rounded"
+					/>
+					<span className="hidden md:inline">
+						Track My Biryani
+					</span>
 				</Link>
 				<div className="flex items-center gap-1.5">
 					<Button

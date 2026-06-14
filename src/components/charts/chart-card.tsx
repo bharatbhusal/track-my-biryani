@@ -21,7 +21,8 @@ export function ChartCard({
 	defaultRange = DEFAULT_GLOBAL_RANGE,
 	onRangeChange,
 }: ChartCardProps) {
-	const [range, setRange] = useState<GlobalDateRange>(defaultRange);
+	const [range, setRange] =
+		useState<GlobalDateRange>(defaultRange);
 
 	const handleRangeChange = (newRange: GlobalDateRange) => {
 		setRange(newRange);
@@ -32,7 +33,10 @@ export function ChartCard({
 		<Card className={className}>
 			<div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
 				<CardTitle>{title}</CardTitle>
-				<DateRangeSelect value={range} onChange={handleRangeChange} />
+				<DateRangeSelect
+					value={range}
+					onChange={handleRangeChange}
+				/>
 			</div>
 			{children}
 		</Card>

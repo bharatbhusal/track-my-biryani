@@ -9,7 +9,7 @@ import { z } from "zod";
 import { GlimpsesUpload } from "@/components/uploads/glimpses-upload";
 import { Button } from "@/components/ui/button";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
-import { Modal } from "@/components/ui/dialog";
+import { Drawer } from "@/components/ui/drawer";
 import {
 	Form,
 	FormControl,
@@ -194,12 +194,11 @@ export function QuickAddExpenseModal() {
 	};
 
 	return (
-		<Modal
+		<Drawer
 			open={quickAddOpen}
 			onClose={closeModal}
 			title="Quick Add Expense"
 			description="Drafts are auto-saved while you type."
-			className="max-h-[95dvh] overflow-y-auto"
 		>
 			<Form {...form}>
 				<form
@@ -326,6 +325,6 @@ export function QuickAddExpenseModal() {
 					</div>
 				</form>
 			</Form>
-		</Modal>
+		</Drawer>
 	);
 }
