@@ -5,6 +5,7 @@ import {
 	Bar,
 	BarChart,
 	CartesianGrid,
+	ReferenceLine,
 	ResponsiveContainer,
 	Tooltip,
 	XAxis,
@@ -18,11 +19,14 @@ import type { GlobalDateRange } from "@/lib/date-range";
 import { DEFAULT_GLOBAL_RANGE } from "@/lib/date-range";
 
 export function DashboardBarChart() {
-	const [range, setRange] = useState<GlobalDateRange>(DEFAULT_GLOBAL_RANGE);
+	const [range, setRange] = useState<GlobalDateRange>(
+		DEFAULT_GLOBAL_RANGE,
+	);
 	const rangeParams = toRangeParams(range);
 	const { data, isLoading } = useDashboardQuery(rangeParams);
 
 	const chartData = data?.mainSeries ?? [];
+	const average = data?.averageSpend ?? 0;
 	const label = data?.chartLabel ?? "Spending Trend";
 
 	return (
@@ -39,13 +43,18 @@ export function DashboardBarChart() {
 				) : (
 					<ResponsiveContainer width="100%" height="100%">
 						<BarChart data={chartData}>
-							<CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+							<CartesianGrid
+								strokeDasharray="3 3"
+								stroke="var(--color-border)"
+							/>
 							<XAxis
 								dataKey="name"
 								tick={{ fill: "var(--color-muted)", fontSize: 11 }}
 								interval="preserveStartEnd"
 							/>
-							<YAxis tick={{ fill: "var(--color-muted)", fontSize: 11 }} />
+							<YAxis
+								tick={{ fill: "var(--color-muted)", fontSize: 11 }}
+							/>
 							<Tooltip
 								contentStyle={{
 									backgroundColor: "var(--color-surface)",
@@ -59,6 +68,21 @@ export function DashboardBarChart() {
 								fill="var(--chart-1)"
 								radius={[4, 4, 0, 0]}
 							/>
+							{average > 0 && (
+								<ReferenceLine
+									y={average}
+									stroke="var(--chart-2)"
+									strokeDasharray="6 4"
+									strokeWidth={2}
+									label={{
+										value: `Avg: ${average.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
+										position: "left",
+										fill: "var(--chart-2)",
+										fontSize: 11,
+										fontWeight: 600,
+									}}
+								/>
+							)}
 						</BarChart>
 					</ResponsiveContainer>
 				)}
