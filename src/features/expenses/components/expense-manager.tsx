@@ -56,6 +56,7 @@ export function ExpenseManager() {
 	]);
 
 	const expensesQuery = useExpensesQuery(filters);
+	const isLoading = expensesQuery.isLoading;
 	const items = expensesQuery.data?.items ?? [];
 	const totalPages = expensesQuery.data?.totalPages ?? 1;
 
@@ -128,6 +129,7 @@ export function ExpenseManager() {
 			<ExpenseTable
 				items={items}
 				categoryMap={categoryMap}
+				isLoading={isLoading}
 				sortBy={sortBy}
 				order={order}
 				onSort={handleSort}

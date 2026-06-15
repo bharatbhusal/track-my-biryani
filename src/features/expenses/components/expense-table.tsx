@@ -18,6 +18,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
 import { ExpenseCard } from "@/features/expenses/components/expense-card";
@@ -32,6 +33,7 @@ export type SortField = "dateTime" | "amount" | "title";
 type ExpenseTableProps = {
 	items: ExpenseItem[];
 	categoryMap: Map<string, CategoryItem>;
+	isLoading?: boolean;
 	sortBy?: SortField;
 	order?: "asc" | "desc";
 	onSort?: (field: SortField) => void;
@@ -44,6 +46,7 @@ type ExpenseTableProps = {
 export function ExpenseTable({
 	items,
 	categoryMap,
+	isLoading,
 	sortBy,
 	order,
 	onSort,
@@ -69,7 +72,21 @@ export function ExpenseTable({
 		<>
 			{/* Mobile: card layout */}
 			<div className="space-y-2 md:hidden">
-				{items.length === 0 ? (
+				{isLoading ? (
+					[...Array(5)].map((_, i) => (
+						<div
+							key={i}
+							className="flex gap-2 rounded-md border border-[var(--color-border)] p-3"
+						>
+							<Skeleton className="h-10 w-10 rounded-lg shrink-0" />
+							<div className="flex-1 space-y-1.5">
+								<Skeleton className="h-4 w-3/4" />
+								<Skeleton className="h-3 w-1/2" />
+							</div>
+							<Skeleton className="h-5 w-16 self-center" />
+						</div>
+					))
+				) : items.length === 0 ? (
 					<p className="py-8 text-center text-sm text-[var(--color-muted)]">
 						{emptyMessage}
 					</p>
@@ -121,7 +138,17 @@ export function ExpenseTable({
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{items.length === 0 ? (
+						{isLoading ? (
+							[...Array(5)].map((_, i) => (
+								<TableRow key={i}>
+									<TableCell><Skeleton className="h-4 w-32" /></TableCell>
+									<TableCell><Skeleton className="h-4 w-24" /></TableCell>
+									<TableCell><Skeleton className="h-4 w-16" /></TableCell>
+									<TableCell><Skeleton className="h-4 w-20" /></TableCell>
+									<TableCell><Skeleton className="h-8 w-8 rounded-md" /></TableCell>
+								</TableRow>
+							))
+						) : items.length === 0 ? (
 							<TableRow>
 								<TableCell
 									colSpan={5}

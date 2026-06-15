@@ -147,7 +147,10 @@ export function CategoryForm({
 	};
 
 	return (
-		<form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+		<form
+			onSubmit={handleSubmit(onSubmit)}
+			className="space-y-4"
+		>
 			<div className="space-y-1.5">
 				<label className="text-sm font-medium text-[var(--color-foreground)]">
 					Name
@@ -159,41 +162,38 @@ export function CategoryForm({
 				/>
 			</div>
 
-			<div className="space-y-1.5">
-				<label className="text-sm font-medium text-[var(--color-foreground)]">
-					Emoji
-				</label>
-				<button
-					type="button"
-					onClick={() => setPickerOpen((prev) => !prev)}
-					className="flex h-10 w-10 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-lg hover:bg-[var(--color-surface-muted)] transition-colors"
-					aria-label="Pick emoji"
-				>
-					{emojiValue || "🏷️"}
-				</button>
-				{pickerOpen && (
-					<div className="max-h-[40vh] overflow-y-auto rounded-lg">
-						<EmojiPicker
-							theme={emojiPickerTheme}
-							onEmojiClick={handleEmojiClick}
-						/>
-					</div>
-				)}
-			</div>
+			<div className="flex gap-2 ">
+				<div className="space-y-1.5">
+					<label className="text-sm font-medium text-[var(--color-foreground)]">
+						Emoji
+					</label>
+					<button
+						type="button"
+						onClick={() => setPickerOpen((prev) => !prev)}
+						className="flex h-10 w-10 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-lg hover:bg-[var(--color-surface-muted)] transition-colors"
+						aria-label="Pick emoji"
+					>
+						{emojiValue || "🏷️"}
+					</button>
+					{pickerOpen && (
+						<div className="max-h-[40vh] overflow-y-auto rounded-lg">
+							<EmojiPicker
+								theme={emojiPickerTheme}
+								onEmojiClick={handleEmojiClick}
+							/>
+						</div>
+					)}
+				</div>
 
-			<div className="space-y-1.5">
-				<label className="text-sm font-medium text-[var(--color-foreground)]">
-					Color
-				</label>
-				<div className="flex items-center gap-3">
+				<div className="space-y-1.5">
+					<label className="text-sm font-medium text-[var(--color-foreground)]">
+						Color
+					</label>
+
 					<input
 						type="color"
 						{...register("color")}
-						className="h-10 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] p-1 cursor-pointer"
-					/>
-					<div
-						className="h-10 w-10 shrink-0 rounded-md border border-[var(--color-border)]"
-						style={{ backgroundColor: watch("color") }}
+						className="flex h-10 w-10 overflow-hidden items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-lg hover:bg-[var(--color-surface-muted)] transition-colors"
 					/>
 				</div>
 			</div>

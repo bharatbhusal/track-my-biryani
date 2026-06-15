@@ -12,17 +12,45 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { useCategoriesQuery } from "@/hooks/api/use-expenses-api";
+import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
 import { useDebouncedValue } from "@/hooks/use-debounce";
 import { Input } from "@/components/ui/input";
+import { DateRangeSelect } from "@/components/charts/date-range-select";
 import { CategoryCard } from "@/features/categories/components/category-card";
 import { AddCategoryDrawer } from "@/features/categories/components/add-category-drawer";
+import { DEFAULT_GLOBAL_RANGE } from "@/lib/date-range";
+import type { GlobalDateRange } from "@/lib/date-range";
 
 export function CategoryManager() {
 	const [query, setQuery] = useState("");
-	const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+	const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
+		"asc",
+	);
 	const [drawerOpen, setDrawerOpen] = useState(false);
+	const [range, setRange] = useState<GlobalDateRange>(
+		DEFAULT_GLOBAL_RANGE,
+	);
 	const categoriesQuery = useCategoriesQuery();
+	const { data: dashboardData } = useDashboardQuery({
+		preset: range.preset,
+	});
 	const debouncedQuery = useDebouncedValue(query, 300);
+
+	const categorySpendMap = useMemo(() => {
+		const map = new Map<
+			string,
+			{ amount: number; pct: number }
+		>();
+		const ranked = dashboardData?.rankedCategories ?? [];
+		const total = dashboardData?.totalSpend ?? 0;
+		for (const cat of ranked) {
+			map.set(cat.name, {
+				amount: cat.value,
+				pct: total > 0 ? (cat.value / total) * 100 : 0,
+			});
+		}
+		return map;
+	}, [dashboardData]);
 
 	const items = useMemo(
 		() =>
@@ -32,12 +60,20 @@ export function CategoryManager() {
 						.toLowerCase()
 						.includes(debouncedQuery.toLowerCase()),
 				)
-				.sort((a, b) =>
-					sortOrder === "asc"
-						? a.name.localeCompare(b.name)
-						: b.name.localeCompare(a.name),
-				),
-		[categoriesQuery.data, debouncedQuery, sortOrder],
+				.sort((a, b) => {
+					const aSpend =
+						categorySpendMap.get(a.name)?.amount ?? 0;
+					const bSpend =
+						categorySpendMap.get(b.name)?.amount ?? 0;
+					if (sortOrder === "asc") return aSpend - bSpend;
+					return bSpend - aSpend;
+				}),
+		[
+			categoriesQuery.data,
+			debouncedQuery,
+			sortOrder,
+			categorySpendMap,
+		],
 	);
 
 	return (
@@ -47,10 +83,9 @@ export function CategoryManager() {
 					<FiTag className="inline mr-1.5 h-4 w-4" />
 					Categories
 				</CardTitle>
-				<Button onClick={() => setDrawerOpen(true)}>
-					<FiPlus className="mr-1.5 h-4 w-4" />
-					Add Category
-				</Button>
+				<div className="flex items-center gap-2">
+					<DateRangeSelect value={range} onChange={setRange} />
+				</div>
 			</div>
 
 			<div className="mb-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -63,27 +98,40 @@ export function CategoryManager() {
 						className="pl-9"
 					/>
 				</div>
-				<Button
-					variant="outline"
-					onClick={() =>
-						setSortOrder((c) => (c === "asc" ? "desc" : "asc"))
-					}
-				>
-					{sortOrder === "asc" ? (
-						<FiArrowUp className="mr-1.5 h-4 w-4" />
-					) : (
-						<FiArrowDown className="mr-1.5 h-4 w-4" />
-					)}
-					Sort {sortOrder === "asc" ? "A-Z" : "Z-A"}
-				</Button>
+				<div className="flex w-full items-center justify-between">
+					<Button
+						variant="outline"
+						onClick={() =>
+							setSortOrder((c) => (c === "asc" ? "desc" : "asc"))
+						}
+					>
+						{sortOrder === "asc" ? (
+							<FiArrowUp className="mr-1.5 h-4 w-4" />
+						) : (
+							<FiArrowDown className="mr-1.5 h-4 w-4" />
+						)}
+						Sort {sortOrder === "asc" ? "Lowest" : "Highest"}
+					</Button>
+					<Button onClick={() => setDrawerOpen(true)}>
+						<FiPlus className="mr-1.5 h-4 w-4" />
+						Add Category
+					</Button>
+				</div>
 			</div>
 
 			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-				{items.map((category) => (
-					<div key={category._id}>
-						<CategoryCard category={category} />
-					</div>
-				))}
+				{items.map((category) => {
+					const spend = categorySpendMap.get(category.name);
+					return (
+						<div key={category._id}>
+							<CategoryCard
+								category={category}
+								amount={spend?.amount}
+								totalSpend={dashboardData?.totalSpend}
+							/>
+						</div>
+					);
+				})}
 				{items.length === 0 && (
 					<p className="col-span-full text-center text-sm text-[var(--color-muted)] py-8">
 						No categories found

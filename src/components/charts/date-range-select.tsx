@@ -6,10 +6,12 @@ import type {
 	GlobalDateRange,
 } from "@/lib/date-range";
 import { Select } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type DateRangeSelectProps = {
 	value: GlobalDateRange;
 	onChange: (range: GlobalDateRange) => void;
+	loading?: boolean;
 };
 
 const presets: { value: DateRangePreset; label: string }[] =
@@ -22,11 +24,21 @@ const presets: { value: DateRangePreset; label: string }[] =
 export function DateRangeSelect({
 	value,
 	onChange,
+	loading,
 }: DateRangeSelectProps) {
 	const handlePresetChange = (preset: string) => {
 		const p = preset as DateRangePreset;
 		onChange({ preset: p });
 	};
+
+	if (loading) {
+		return (
+			<div className="flex items-center gap-2 flex-nowrap">
+				<Skeleton className="h-4 w-4" />
+				<Skeleton className="h-8 w-28 rounded-md" />
+			</div>
+		);
+	}
 
 	return (
 		<div className="flex items-center gap-2 flex-nowrap">

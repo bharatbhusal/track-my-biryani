@@ -2,7 +2,7 @@
 
 import { useMemo, useCallback } from "react";
 import { ChartCard } from "@/components/charts/chart-card";
-import { EmojiBadge } from "@/components/ui/emoji-badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
 import { useCategoriesQuery } from "@/hooks/api/use-expenses-api";
 import { formatCurrency } from "@/lib/format";
@@ -26,7 +26,7 @@ export function CategoryDistributionBar({
 	const currency = useUIStore((s) => s.currency);
 	const categoriesQuery = useCategoriesQuery();
 
-	const { data } = useDashboardQuery({
+	const { data, isLoading } = useDashboardQuery({
 		preset: range.preset,
 	});
 
@@ -66,7 +66,19 @@ export function CategoryDistributionBar({
 
 	return (
 		<ChartCard title="Category Distribution">
-			{total === 0 ? (
+			{isLoading ? (
+				<div className="space-y-3">
+					<Skeleton className="h-10 w-full rounded-md" />
+					<div className="flex flex-wrap gap-x-4 gap-y-2">
+						{[...Array(4)].map((_, i) => (
+							<div key={i} className="flex items-center gap-2">
+								<Skeleton className="h-3 w-3 rounded-full" />
+								<Skeleton className="h-4 w-20" />
+							</div>
+						))}
+					</div>
+				</div>
+			) : total === 0 ? (
 				<p className="py-4 text-center text-sm text-[var(--color-muted)]">
 					No data
 				</p>
