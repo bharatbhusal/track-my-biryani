@@ -1,32 +1,35 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { FiList, FiPlus, FiSearch } from "react-icons/fi";
+import { FiList, FiSearch } from "react-icons/fi";
 import { useDebouncedValue } from "@/hooks/use-debounce";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
 	useCategoriesQuery,
 	useExpensesQuery,
 } from "@/hooks/api/use-expenses-api";
-import { toIsoBounds } from "@/lib/date-range";
-import { useDateRange } from "@/components/charts/date-range-context";
+import {
+	toIsoBounds,
+	DEFAULT_GLOBAL_RANGE,
+} from "@/lib/date-range";
+import type { GlobalDateRange } from "@/lib/date-range";
+
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import type { SortField } from "@/features/expenses/components/expense-table";
 import { CategoryDistributionBar } from "@/features/expenses/components/category-distribution-bar";
+import { DateRangeSelect } from "@/components/charts/date-range-select";
 
 export function ExpenseManager() {
-	const router = useRouter();
 	const [query, setQuery] = useState("");
 	const [categoryId, setCategoryId] = useState("");
 	const [sortBy, setSortBy] =
 		useState<SortField>("dateTime");
 	const [order, setOrder] = useState<"asc" | "desc">("desc");
 	const [page, setPage] = useState(1);
-	const { range: localRange } = useDateRange();
+	const [localRange, setLocalRange] =
+		useState<GlobalDateRange>(DEFAULT_GLOBAL_RANGE);
 
 	const categoriesQuery = useCategoriesQuery();
 	const debouncedQuery = useDebouncedValue(query, 300);
@@ -82,6 +85,12 @@ export function ExpenseManager() {
 		setPage(1);
 	};
 
+	const handleRangeChange = (range: GlobalDateRange) => {
+		setLocalRange(range);
+		setCategoryId("");
+		setPage(1);
+	};
+
 	return (
 		<div className="space-y-4">
 			<Card>
@@ -90,10 +99,10 @@ export function ExpenseManager() {
 						<FiList className="inline mr-1.5 h-4 w-4" />
 						Expenses
 					</CardTitle>
-					<Button onClick={() => router.push("/expenses/new")}>
-						<FiPlus className="mr-1.5 h-4 w-4" />
-						Add Expense
-					</Button>
+					<DateRangeSelect
+						value={localRange}
+						onChange={(r) => handleRangeChange(r)}
+					/>
 				</div>
 
 				<div className="relative min-w-48 flex-1">
