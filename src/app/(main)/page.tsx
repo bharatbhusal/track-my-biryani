@@ -1,9 +1,5 @@
 import { DashboardOverview } from "@/features/dashboard/components/dashboard-overview";
 
-export const metadata = {
-	title: "Dashboard",
-};
-
-export default function DashboardPage() {
+export default function Home() {
 	return <DashboardOverview />;
 }

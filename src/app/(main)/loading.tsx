@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 
-export default function DashboardLoading() {
+export default function Loading() {
 	return (
 		<div className="space-y-4">
 			<Skeleton className="h-6 w-52" />

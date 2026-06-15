@@ -22,7 +22,7 @@
 
 A single proxy file handles both auth protection and API proxying:
 
-1. Checks JWT auth cookie on all app routes (`/dashboard`, `/expenses`, `/categories`); redirects to `/auth/login` if unauthenticated.
+1. Checks JWT auth cookie on all app routes (`/`, `/expenses`, `/categories`); redirects to `/auth/login` if unauthenticated.
 2. Verifies admin routes (`/admin/*`) with full JWT payload verification.
 3. Passes through auth pages (`/auth/*`) and static files without checks.
 

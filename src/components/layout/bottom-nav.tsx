@@ -7,7 +7,7 @@ import { FiGrid, FiList, FiTag } from "react-icons/fi";
 import { cn } from "@/lib/utils";
 
 const items = [
-	{ href: "/dashboard", label: "Dashboard", icon: FiGrid },
+	{ href: "/", label: "Dashboard", icon: FiGrid },
 	{ href: "/expenses", label: "Expenses", icon: FiList },
 	{ href: "/categories", label: "Categories", icon: FiTag },
 ];

@@ -83,9 +83,7 @@ export function proxy(request: NextRequest) {
 			? isTokenProbablyValid(token)
 			: false;
 		if (hasValidToken) {
-			return NextResponse.redirect(
-				new URL("/dashboard", request.url),
-			);
+			return NextResponse.redirect(new URL("/", request.url));
 		}
 		return NextResponse.next();
 	}
@@ -119,7 +117,7 @@ function redirectToLogin(
 export const config = {
 	matcher: [
 		"/admin/:path*",
-		"/dashboard/:path*",
+		"/:path*",
 		"/expenses/:path*",
 		"/categories/:path*",
 		"/auth/:path*",
