@@ -117,7 +117,6 @@ function redirectToLogin(
 export const config = {
 	matcher: [
 		"/admin/:path*",
-		"/:path*",
 		"/expenses/:path*",
 		"/categories/:path*",
 		"/auth/:path*",
