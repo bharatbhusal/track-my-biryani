@@ -1,6 +1,8 @@
 import { Types } from "mongoose";
 
 import { CategoryModel } from "@/models/Category";
+import { ExpenseModel } from "@/models/Expense";
+import { AppError } from "@/lib/errors";
 
 export async function createCategory(data: {
 	userId: string;
@@ -54,6 +56,19 @@ export async function deleteCategory(
 ) {
 	if (!Types.ObjectId.isValid(categoryId)) {
 		return null;
+	}
+	const hasExpenses = await ExpenseModel.exists({
+		userId,
+		categoryId,
+		deletedAt: null,
+	});
+
+	if (hasExpenses) {
+		throw new AppError(
+			"Cannot delete category with existing expenses. Reassign or delete expenses first.",
+			400,
+			"HAS_EXPENSES",
+		);
 	}
 
 	return CategoryModel.findOneAndDelete({

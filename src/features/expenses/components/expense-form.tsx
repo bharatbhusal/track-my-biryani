@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
@@ -8,6 +9,7 @@ import {
 	FiArrowLeft,
 	FiSave,
 	FiPlus,
+	FiCrosshair,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -41,6 +43,14 @@ import type {
 	CategoryItem,
 } from "@/types/expense.types";
 
+const LocationPicker = dynamic(
+	() =>
+		import("@/components/maps/location-picker").then(
+			(mod) => mod.LocationPicker,
+		),
+	{ ssr: false },
+);
+
 const schema = z.object({
 	title: z.string().min(1),
 	amount: z.number().positive(),
@@ -49,6 +59,11 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
+
+type Location = {
+	latitude: number;
+	longitude: number;
+};
 
 type ExpenseFormProps = {
 	id?: string;
@@ -78,6 +93,11 @@ export function ExpenseForm({
 	const { detect, isLoading: isDetectingLocation } =
 		useGeolocation();
 	const [images, setImages] = useState<string[]>([]);
+	const [location, setLocation] = useState<Location>({
+		latitude: 0,
+		longitude: 0,
+	});
+
 
 	const form = useForm<FormValues>({
 		resolver: zodResolver(schema),
@@ -116,14 +136,31 @@ export function ExpenseForm({
 				new Date(data.dateTime),
 			),
 		});
+		setLocation({
+			latitude: data.location?.latitude ?? 0,
+			longitude: data.location?.longitude ?? 0,
+		});
 		Promise.resolve().then(() => {
 			setImages(data.images ?? []);
 		});
 	}, [expenseQuery.data, reset, isEditing]);
 
+	// Auto-detect location on mount for new expenses
+	useEffect(() => {
+		if (isEditing) return;
+		if (location.latitude !== 0 || location.longitude !== 0)
+			return;
+
+		detect().then((pos) => {
+			if (pos) {
+				setLocation(pos);
+			}
+		});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isEditing]);
+
 	const onSubmit = async (values: FormValues) => {
 		try {
-			const location = await detect();
 			const payload = {
 				title: values.title,
 				amount: values.amount,
@@ -131,8 +168,8 @@ export function ExpenseForm({
 				dateTime: toUtcIsoString(values.dateTime),
 				currency,
 				location: {
-					latitude: location?.latitude ?? 0,
-					longitude: location?.longitude ?? 0,
+					latitude: location.latitude,
+					longitude: location.longitude,
 					address: "",
 				},
 				images,
@@ -201,7 +238,7 @@ export function ExpenseForm({
 								</FormItem>
 							)}
 						/>
-						<div className="grid grid-cols-2 gap-3">
+						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 							<FormField
 								control={control}
 								name="amount"
@@ -241,70 +278,131 @@ export function ExpenseForm({
 							/>
 							<FormField
 								control={control}
-								name="dateTime"
-								render={({ field }) => {
-									const datePart = field.value
-										? field.value.slice(0, 10)
-										: "";
-									const timePart =
-										(field.value && field.value.slice(11, 16)) ||
-										"12:00";
-
-									const handleDateChange = (
-										e: React.ChangeEvent<HTMLInputElement>,
-									) => {
-										const newDate = e.target.value;
-										field.onChange(`${newDate}T${timePart}`);
-									};
-
-									const handleTimeChange = (
-										e: React.ChangeEvent<HTMLInputElement>,
-									) => {
-										const newTime = e.target.value;
-										field.onChange(
-											`${datePart || getLocalDateTimeInputValue().slice(0, 10)}T${newTime}`,
-										);
-									};
-
-									return (
-										<FormItem>
-											<FormLabel>Date • Time</FormLabel>
-											<FormControl>
-												<div className="grid grid-cols-2 gap-2">
-													<Input
-														type="date"
-														value={datePart}
-														onChange={handleDateChange}
-													/>
-													<Input
-														type="time"
-														value={timePart}
-														onChange={handleTimeChange}
-													/>
-												</div>
-											</FormControl>
-										</FormItem>
-									);
-								}}
+								name="categoryId"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Category</FormLabel>
+										<FormControl>
+											<Select
+												value={field.value}
+												onChange={(e) =>
+													field.onChange(e.target.value)
+												}
+											>
+												<option value="">
+													Select category
+												</option>
+												{(categoriesQuery.data ?? []).map(
+													(category) => (
+														<option
+															key={category._id}
+															value={category._id}
+														>
+															{category.name}
+														</option>
+													),
+												)}
+											</Select>
+										</FormControl>
+									</FormItem>
+								)}
 							/>
 						</div>
-						<Select
-							value={form.watch("categoryId")}
-							onChange={(e) =>
-								form.setValue("categoryId", e.target.value)
-							}
-						>
-							<option value="">Select category</option>
-							{(categoriesQuery.data ?? []).map((category) => (
-								<option key={category._id} value={category._id}>
-									{category.name}
-								</option>
-							))}
-						</Select>
+
 						<GlimpsesUpload
 							value={images}
 							onChange={setImages}
 							expenseTitle={watchedTitle || "expense"}
+						/>
+
+						{/* Location */}
+						<div className="space-y-1.5">
+							<div className="flex items-center justify-between">
+								<FormLabel>Location</FormLabel>
+								{location.latitude !== 0 &&
+									location.longitude !== 0 && (
+										<button
+											type="button"
+											onClick={async () => {
+												const pos = await detect();
+												if (pos) setLocation(pos);
+											}}
+											disabled={isDetectingLocation}
+											className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors disabled:opacity-50"
+											aria-label="Use current location"
+										>
+											{isDetectingLocation ? (
+												<Spinner className="h-4 w-4" />
+											) : (
+												<FiCrosshair className="h-4 w-4" />
+											)}
+										</button>
+									)}
+							</div>
+							{location.latitude !== 0 &&
+							location.longitude !== 0 ? (
+								<LocationPicker
+									location={location}
+									onLocationChange={setLocation}
+								/>
+							) : (
+								<p className="text-xs text-[var(--color-muted)]">
+									Detecting your location...
+								</p>
+							)}
+						</div>
+
+						{/* Date & Time at the bottom */}
+						<FormField
+							control={control}
+							name="dateTime"
+							render={({ field }) => {
+								const datePart = field.value
+									? field.value.slice(0, 10)
+									: "";
+								const timePart =
+									(field.value &&
+										field.value.slice(11, 16)) ||
+									"12:00";
+
+								const handleDateChange = (
+									e: React.ChangeEvent<HTMLInputElement>,
+								) => {
+									const newDate = e.target.value;
+									field.onChange(
+										`${newDate}T${timePart}`,
+									);
+								};
+
+								const handleTimeChange = (
+									e: React.ChangeEvent<HTMLInputElement>,
+								) => {
+									const newTime = e.target.value;
+									field.onChange(
+										`${datePart || getLocalDateTimeInputValue().slice(0, 10)}T${newTime}`,
+									);
+								};
+
+								return (
+									<FormItem>
+										<FormLabel>Date • Time</FormLabel>
+										<FormControl>
+											<div className="grid grid-cols-2 gap-2">
+												<Input
+													type="date"
+													value={datePart}
+													onChange={handleDateChange}
+												/>
+												<Input
+													type="time"
+													value={timePart}
+													onChange={handleTimeChange}
+												/>
+											</div>
+										</FormControl>
+									</FormItem>
+								);
+							}}
 						/>
 
 						<div className="flex gap-2">

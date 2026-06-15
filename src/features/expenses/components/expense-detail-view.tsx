@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { ConfirmDrawer } from "@/components/ui/drawer";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
 	useCategoriesQuery,
 	useExpenseDetailQuery,
@@ -71,6 +72,7 @@ export function ExpenseDetailView({
 	const expense = expenseQuery.data;
 	const contribution: ExpenseContribution | null =
 		contributionQuery.data ?? null;
+	const isContributionLoading = contributionQuery.isLoading;
 
 	if (!expense) {
 		return <Card>Loading expense...</Card>;
@@ -172,7 +174,37 @@ export function ExpenseDetailView({
 					</Card>
 				)}
 
-			{contribution && (
+			{isContributionLoading ? (
+				<Card>
+					<CardTitle className="mb-3">Insights</CardTitle>
+					<div className="space-y-4">
+						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+							<div className="space-y-3">
+								<Skeleton className="h-4 w-24" />
+								<Skeleton className="h-2 w-full" />
+								<Skeleton className="h-4 w-16" />
+								<Skeleton className="h-4 w-24" />
+								<Skeleton className="h-2 w-full" />
+								<Skeleton className="h-4 w-16" />
+								<Skeleton className="h-4 w-24" />
+								<Skeleton className="h-2 w-full" />
+								<Skeleton className="h-4 w-16" />
+							</div>
+							<div className="space-y-3">
+								<Skeleton className="h-4 w-32" />
+								<Skeleton className="h-4 w-full" />
+								<Skeleton className="h-4 w-full" />
+								<Skeleton className="h-2 w-full" />
+								<Skeleton className="h-4 w-40" />
+								<Skeleton className="h-4 w-full" />
+								<Skeleton className="h-4 w-full" />
+								<Skeleton className="h-4 w-full" />
+							</div>
+						</div>
+						<Skeleton className="h-48 w-full" />
+					</div>
+				</Card>
+			) : contribution && (
 				<Card>
 					<CardTitle className="mb-3">Insights</CardTitle>
 					<div className="space-y-4">
@@ -262,7 +294,8 @@ export function ExpenseDetailView({
 											style={{
 												width: `${Math.min(
 													contribution.categoryAverage > 0
-														? (expense.amount / contribution.categoryAverage) *
+														? (expense.amount /
+																contribution.categoryAverage) *
 																100
 														: 0,
 													100,
@@ -295,7 +328,10 @@ export function ExpenseDetailView({
 									<div className="flex justify-between">
 										<span>Category share</span>
 										<span className="font-medium">
-											{contribution.categoryContributionPercent.toFixed(1)}%
+											{contribution.categoryContributionPercent.toFixed(
+												1,
+											)}
+											%
 										</span>
 									</div>
 									<div className="flex justify-between">
@@ -316,9 +352,7 @@ export function ExpenseDetailView({
 								</p>
 								<div className="h-48">
 									<ResponsiveContainer width="100%" height="100%">
-										<AreaChart
-											data={contribution.monthlyTrend}
-										>
+										<AreaChart data={contribution.monthlyTrend}>
 											<XAxis
 												dataKey="name"
 												tick={{
@@ -334,8 +368,7 @@ export function ExpenseDetailView({
 											/>
 											<Tooltip
 												contentStyle={{
-													backgroundColor:
-														"var(--color-surface)",
+													backgroundColor: "var(--color-surface)",
 													border: "1px solid var(--color-border)",
 													borderRadius: "0.5rem",
 													fontSize: "0.875rem",
@@ -368,6 +401,7 @@ export function ExpenseDetailView({
 							router.replace("/expenses");
 						},
 						onError: (error) => {
+							console.error(error);
 							toast.error(
 								error instanceof Error
 									? error.message

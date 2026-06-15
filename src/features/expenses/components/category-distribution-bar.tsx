@@ -72,7 +72,7 @@ export function CategoryDistributionBar({
 				</p>
 			) : (
 				<div className="space-y-3">
-					<div className="flex h-10 w-full overflow-hidden gap-1 sm:gap-2">
+					<div className="flex h-10 w-full overflow-hidden gap-1 sm:gap-2 rounded-md">
 						{distribution.map((item) => {
 							const cat = categoryMeta.get(item.name);
 							const pct = (item.value / total) * 100;
@@ -88,7 +88,7 @@ export function CategoryDistributionBar({
 									key={item.name}
 									type="button"
 									onClick={() => toggle(catId)}
-									className={`flex items-center justify-center text-[15px] font-bold text-white transition-all hover:opacity-80 rounded-md ${
+									className={`flex items-center justify-center text-[15px] font-bold text-white transition-all hover:opacity-80 rounded-[4px] ${
 										selectedCategoryId && !isSelected
 											? "opacity-30"
 											: ""

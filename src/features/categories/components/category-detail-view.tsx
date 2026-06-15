@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { ConfirmDrawer } from "@/components/ui/drawer";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ChartCard } from "@/components/charts/chart-card";
 import { DateRangeSelect } from "@/components/charts/date-range-select";
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
@@ -205,44 +206,55 @@ export function CategoryDetailView({
 						}}
 					/>
 				</div>
-				<div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 md:grid-cols-4">
-					<p>
-						<span className="text-[var(--color-muted)]">
-							Total:
-						</span>{" "}
-						{formatCurrency(
-							statsQuery.data?.total ?? 0,
-							currency,
-							locale,
-						)}
-					</p>
-					<p>
-						<span className="text-[var(--color-muted)]">
-							Highest:
-						</span>{" "}
-						{formatCurrency(
-							statsQuery.data?.max ?? 0,
-							currency,
-							locale,
-						)}
-					</p>
-					<p>
-						<span className="text-[var(--color-muted)]">
-							Average:
-						</span>{" "}
-						{formatCurrency(
-							statsQuery.data?.avg ?? 0,
-							currency,
-							locale,
-						)}
-					</p>
-					<p>
-						<span className="text-[var(--color-muted)]">
-							Transactions:
-						</span>{" "}
-						{statsQuery.data?.count ?? 0}
-					</p>
-				</div>
+				{statsQuery.isLoading ? (
+					<div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 md:grid-cols-4">
+						{[...Array(4)].map((_, i) => (
+							<div key={i}>
+								<Skeleton className="h-4 w-16 mb-1" />
+								<Skeleton className="h-5 w-24" />
+							</div>
+						))}
+					</div>
+				) : (
+					<div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 md:grid-cols-4">
+						<p>
+							<span className="text-[var(--color-muted)]">
+								Total:
+							</span>{" "}
+							{formatCurrency(
+								statsQuery.data?.total ?? 0,
+								currency,
+								locale,
+							)}
+						</p>
+						<p>
+							<span className="text-[var(--color-muted)]">
+								Highest:
+							</span>{" "}
+							{formatCurrency(
+								statsQuery.data?.max ?? 0,
+								currency,
+								locale,
+							)}
+						</p>
+						<p>
+							<span className="text-[var(--color-muted)]">
+								Average:
+							</span>{" "}
+							{formatCurrency(
+								statsQuery.data?.avg ?? 0,
+								currency,
+								locale,
+							)}
+						</p>
+						<p>
+							<span className="text-[var(--color-muted)]">
+								Transactions:
+							</span>{" "}
+							{statsQuery.data?.count ?? 0}
+						</p>
+					</div>
+				)}
 			</Card>
 
 			<ChartCard

@@ -87,7 +87,6 @@ export async function DELETE(
 		await connectToDatabase();
 		const auth = await getAuthPayload();
 		const { id } = await context.params;
-
 		const deleted = await deleteCategory(auth.userId, id);
 		if (!deleted) {
 			throw new AppError(

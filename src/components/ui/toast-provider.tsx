@@ -11,7 +11,13 @@ export function ToastProvider() {
 		<Toaster
 			position="top-right"
 			theme={theme}
-			richColors
+			toastOptions={{
+				style: {
+					background: "var(--color-surface)",
+					color: "var(--color-text)",
+					border: "1px solid var(--color-border)",
+				},
+			}}
 		/>
 	);
 }

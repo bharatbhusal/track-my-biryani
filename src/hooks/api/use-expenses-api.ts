@@ -38,7 +38,7 @@ export function useExpensesQuery(
 	return useQuery({
 		queryKey: queryKeys.expenses.list(mergedFilters),
 		queryFn: () => expensesApi.listExpenses(mergedFilters),
-		...(initialData !== undefined ? { initialData } : {}),
+		...(initialData !== undefined && initialData !== null ? { initialData } : {}),
 	});
 }
 
@@ -50,7 +50,7 @@ export function useExpenseDetailQuery(
 		queryKey: queryKeys.expenses.detail(id),
 		queryFn: () => expensesApi.getExpenseById(id),
 		enabled: Boolean(id),
-		...(initialData !== undefined ? { initialData } : {}),
+		...(initialData !== undefined && initialData !== null ? { initialData } : {}),
 	});
 }
 
@@ -65,7 +65,7 @@ export function useExpenseContributionQuery(
 		],
 		queryFn: () => expensesApi.getExpenseContribution(id),
 		enabled: Boolean(id),
-		...(initialData !== undefined ? { initialData } : {}),
+		...(initialData !== undefined && initialData !== null ? { initialData } : {}),
 	});
 }
 
@@ -75,7 +75,12 @@ export function useCategoryStatsQuery(
 	to?: string,
 ) {
 	return useQuery({
-		queryKey: [...queryKeys.categories, "stats", id, { from, to }],
+		queryKey: [
+			...queryKeys.categories,
+			"stats",
+			id,
+			{ from, to },
+		],
 		queryFn: () =>
 			expensesApi.getCategoryStats(id, from!, to!),
 		enabled: Boolean(id) && Boolean(from) && Boolean(to),
@@ -90,7 +95,7 @@ export function useCategoryDetailQuery(
 		queryKey: [...queryKeys.categories, "detail", id],
 		queryFn: () => expensesApi.getCategoryById(id),
 		enabled: Boolean(id),
-		...(initialData !== undefined ? { initialData } : {}),
+		...(initialData !== undefined && initialData !== null ? { initialData } : {}),
 	});
 }
 
@@ -220,34 +225,6 @@ export function useExpenseMutations() {
 
 	const deleteExpense = useMutation({
 		mutationFn: expensesApi.deleteExpense,
-		onMutate: async (id) => {
-			await queryClient.cancelQueries({
-				queryKey: queryKeys.expenses.root,
-			});
-			const previousLists =
-				queryClient.getQueriesData<ExpensesListPayload>({
-					queryKey: queryKeys.expenses.root,
-				});
-
-			previousLists.forEach(([key, payload]) => {
-				if (!payload) {
-					return;
-				}
-
-				queryClient.setQueryData<ExpensesListPayload>(key, {
-					...payload,
-					items: payload.items.filter((item) => item._id !== id),
-					total: Math.max(0, payload.total - 1),
-				});
-			});
-
-			return { previousLists };
-		},
-		onError: (_error, _variables, context) => {
-			context?.previousLists?.forEach(([key, payload]) => {
-				queryClient.setQueryData(key, payload);
-			});
-		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.expenses.root,
