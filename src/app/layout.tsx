@@ -8,7 +8,9 @@ import "./globals.css";
 const APP_THEME_COLOR = "#1a1a1a";
 
 export const metadata: Metadata = {
-	metadataBase: new URL("https://trackmybiryani.vercel.app"),
+	metadataBase: new URL(
+		"https://trackmybiryani.bharatbhusal.com",
+	),
 	manifest: "/manifest.webmanifest",
 	title: {
 		default: "Track My Biryani",
