@@ -28,7 +28,7 @@ import type {
 } from "@/types/expense.types";
 import { EmojiBadge } from "@/components/ui/emoji-badge";
 
-export type SortField = "dateTime" | "amount" | "title";
+export type SortField = "paidAt" | "amount" | "title";
 
 type ExpenseTableProps = {
 	items: ExpenseItem[];
@@ -129,10 +129,10 @@ export function ExpenseTable({
 								className={
 									onSort ? "cursor-pointer select-none" : ""
 								}
-								onClick={() => onSort?.("dateTime")}
+								onClick={() => onSort?.("paidAt")}
 							>
 								Date
-								{renderSortIcon("dateTime")}
+								{renderSortIcon("paidAt")}
 							</TableHead>
 							<TableHead className="w-12">Actions</TableHead>
 						</TableRow>
@@ -141,11 +141,21 @@ export function ExpenseTable({
 						{isLoading ? (
 							[...Array(5)].map((_, i) => (
 								<TableRow key={i}>
-									<TableCell><Skeleton className="h-4 w-32" /></TableCell>
-									<TableCell><Skeleton className="h-4 w-24" /></TableCell>
-									<TableCell><Skeleton className="h-4 w-16" /></TableCell>
-									<TableCell><Skeleton className="h-4 w-20" /></TableCell>
-									<TableCell><Skeleton className="h-8 w-8 rounded-md" /></TableCell>
+									<TableCell>
+										<Skeleton className="h-4 w-32" />
+									</TableCell>
+									<TableCell>
+										<Skeleton className="h-4 w-24" />
+									</TableCell>
+									<TableCell>
+										<Skeleton className="h-4 w-16" />
+									</TableCell>
+									<TableCell>
+										<Skeleton className="h-4 w-20" />
+									</TableCell>
+									<TableCell>
+										<Skeleton className="h-8 w-8 rounded-md" />
+									</TableCell>
 								</TableRow>
 							))
 						) : items.length === 0 ? (
@@ -182,7 +192,7 @@ export function ExpenseTable({
 											)}
 										</TableCell>
 										<TableCell className="text-xs text-[var(--color-muted)]">
-											{formatDate(expense.dateTime, locale, timezone)}
+											{formatDate(expense.paidAt, locale, timezone)}
 										</TableCell>
 										<TableCell>
 											<Link href={`/expenses/${expense._id}`}>

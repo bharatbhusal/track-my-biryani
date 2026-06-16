@@ -8,14 +8,13 @@
 - **Animations**: GSAP for page transitions (`usePageTransition`), staggered `data-animate` entry animations.
 - **State**:
   - React Query for remote state, polling, and cache invalidation.
-  - Zustand (`ui-store`) for locale/currency/timezone/preferences with localStorage persistence.
 
 ## Backend Architecture
 
 - **API**: Route handlers under `src/app/api/*`; dynamic server routes with auth middleware.
 - **Validation**: Zod validators in `src/lib/validators.ts`; centralized error schema.
 - **Business Logic**: Controllers in `src/controllers`, services in `src/services`.
-- **Persistence**: Repositories over Mongoose models; soft-delete pattern for expenses (deletedAt field).
+- **Persistence**: Repositories over Mongoose models.
 - **Database**: MongoDB with indexed queries on userId, dateTime, categoryId, and text search.
 
 ## Proxy (`src/proxy.ts`)
@@ -75,7 +74,6 @@ A single proxy file handles both auth protection and API proxying:
 - Domain hooks in `src/hooks/api/*` (useDashboardQuery, useExpensesQuery, useCategoriesQuery, etc.).
 - Mutations invalidate related cache keys on success (e.g., create expense invalidates expenses and dashboard).
 - Optimistic updates for delete, create, and update operations.
-- UI state persisted in Zustand with localStorage (preferences, theme, locale).
 
 ## PWA
 

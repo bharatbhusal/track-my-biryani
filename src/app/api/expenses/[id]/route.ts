@@ -49,10 +49,11 @@ export async function PUT(
 		const payload = expenseSchema.parse(await request.json());
 		const { id } = await context.params;
 
-		const expense = await updateExpense(auth.userId, id, {
-			...payload,
-			dateTime: new Date(payload.dateTime),
-		});
+		const expense = await updateExpense(
+			auth.userId,
+			id,
+			payload,
+		);
 
 		if (!expense) {
 			throw new AppError(

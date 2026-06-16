@@ -86,7 +86,7 @@ function resolveGranularity(
 function groupExpenses(
 	expenses: Array<{
 		amount: number;
-		dateTime: Date | string;
+		paidAt: Date | string;
 	}>,
 	granularity: Granularity,
 	locale = "en-IN",
@@ -94,7 +94,7 @@ function groupExpenses(
 	const map = new Map<string, number>();
 
 	expenses.forEach((expense) => {
-		const date = new Date(expense.dateTime);
+		const date = new Date(expense.paidAt);
 		let key = "";
 
 		if (granularity === "hour") {
@@ -124,7 +124,7 @@ function groupExpenses(
 function buildMonthlyCategorySeries(
 	expenses: Array<{
 		amount: number;
-		dateTime: Date | string;
+		paidAt: Date | string;
 		categoryId: { toString: () => string };
 	}>,
 	categories: Array<{
@@ -145,7 +145,7 @@ function buildMonthlyCategorySeries(
 	);
 
 	expenses.forEach((expense) => {
-		const date = new Date(expense.dateTime);
+		const date = new Date(expense.paidAt);
 		const month = new Intl.DateTimeFormat(locale, {
 			month: "short",
 			year: "2-digit",
@@ -173,7 +173,12 @@ export async function GET(request: Request) {
 
 		const [expenses, categories, recentActivity] =
 			await Promise.all([
-				listExpensesForRange(auth.userId, from, to, categoryId ?? undefined),
+				listExpensesForRange(
+					auth.userId,
+					from,
+					to,
+					categoryId ?? undefined,
+				),
 				listCategories(auth.userId),
 				listRecentExpenses(auth.userId, 8),
 			]);
@@ -243,7 +248,7 @@ export async function GET(request: Request) {
 			recentActivity: recentActivity.map((item) => ({
 				title: item.title,
 				amount: item.amount,
-				dateTime: item.dateTime,
+				paidAt: item.paidAt,
 			})),
 		});
 	} catch (error) {

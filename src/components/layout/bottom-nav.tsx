@@ -7,7 +7,7 @@ import { FiGrid, FiList, FiTag } from "react-icons/fi";
 import { cn } from "@/lib/utils";
 
 const items = [
-	{ href: "/", label: "Dashboard", icon: FiGrid },
+	{ href: "/dashboard", label: "Dashboard", icon: FiGrid },
 	{ href: "/expenses", label: "Expenses", icon: FiList },
 	{ href: "/categories", label: "Categories", icon: FiTag },
 ];
@@ -21,8 +21,8 @@ export function BottomNav() {
 				{items.map((item) => {
 					const Icon = item.icon;
 					const active =
-						item.href === "/"
-							? pathname === "/"
+						item.href === "/dashboard"
+							? pathname === "/dashboard"
 							: pathname.startsWith(item.href);
 					return (
 						<Link

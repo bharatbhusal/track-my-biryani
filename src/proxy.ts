@@ -77,13 +77,33 @@ export function proxy(request: NextRequest) {
 		}
 	}
 
+	// Root path — redirect based on auth status
+	if (pathname === "/") {
+		const hasValidToken = token
+			? isTokenProbablyValid(token)
+			: false;
+		if (hasValidToken) {
+			return NextResponse.redirect(
+				new URL("/dashboard", request.url),
+			);
+		}
+		return NextResponse.redirect(new URL("/home", request.url));
+	}
+
+	// Home page — public, no auth required
+	if (pathname === "/home") {
+		return NextResponse.next();
+	}
+
 	// App auth pages — redirect to dashboard if already logged in
 	if (isAuthPage(pathname)) {
 		const hasValidToken = token
 			? isTokenProbablyValid(token)
 			: false;
 		if (hasValidToken) {
-			return NextResponse.redirect(new URL("/", request.url));
+			return NextResponse.redirect(
+				new URL("/dashboard", request.url),
+			);
 		}
 		return NextResponse.next();
 	}
@@ -116,6 +136,9 @@ function redirectToLogin(
 
 export const config = {
 	matcher: [
+		"/",
+		"/home",
+		"/dashboard",
 		"/admin/:path*",
 		"/expenses/:path*",
 		"/categories/:path*",

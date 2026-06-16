@@ -45,12 +45,10 @@ export async function POST(request: NextRequest) {
 			amount: payload.amount,
 			categoryId: payload.categoryId,
 			notes: payload.notes,
-			paymentMethod: payload.paymentMethod,
-			tags: payload.tags,
 			images: payload.images,
 			location: payload.location,
 			currency: payload.currency,
-			dateTime: new Date(payload.dateTime),
+			paidAt: new Date(payload.paidAt),
 		});
 
 		await logAuditEvent({

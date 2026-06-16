@@ -5,7 +5,7 @@
 1. **Authentication**: Signup/login redirects to dashboard.
 2. **Quick Add**: Click quick-add button → modal opens → form auto-saves draft → submit records expense.
 3. **Dashboard**: View KPIs, category breakdown, and trends.
-4. **Expense Details**: Click expense → view full metadata (notes, payment method, tags), image carousel, location map.
+4. **Expense Details**: Click expense → view full metadata (notes), image carousel, location map.
 5. **Expense Management**: Search, filter, sort expenses → inline quick actions (view, edit, delete).
 6. **Category Management**: Browse categories → create/edit/delete.
 

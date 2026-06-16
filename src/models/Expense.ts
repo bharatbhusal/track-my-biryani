@@ -17,8 +17,6 @@ const expenseSchema = new Schema(
 			index: true,
 		},
 		notes: { type: String },
-		paymentMethod: { type: String },
-		tags: { type: [String], default: [] },
 		images: { type: [String], default: [] },
 		location: {
 			latitude: { type: Number, required: true },
@@ -26,8 +24,12 @@ const expenseSchema = new Schema(
 			address: { type: String },
 		},
 		currency: { type: String, default: "INR" },
-		dateTime: { type: Date, required: true, index: true },
-		deletedAt: { type: Date, default: null, index: true },
+		paidAt: {
+			type: Date,
+			required: true,
+			index: true,
+			default: Date.now,
+		},
 	},
 	{ timestamps: true },
 );

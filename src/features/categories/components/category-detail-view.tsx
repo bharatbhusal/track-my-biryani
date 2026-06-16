@@ -83,7 +83,7 @@ export function CategoryDetailView({
 				categoryId: id,
 				from: rangeBounds.from,
 				to: rangeBounds.to,
-				sortBy: "dateTime",
+				sortBy: "paidAt",
 				order: "desc",
 			}) as ExpenseListQuery,
 		[id, page, rangeBounds.from, rangeBounds.to],
@@ -106,7 +106,7 @@ export function CategoryDetailView({
 			const month = new Intl.DateTimeFormat("en-IN", {
 				month: "short",
 				year: "2-digit",
-			}).format(new Date(item.dateTime));
+			}).format(new Date(item.paidAt));
 			monthly.set(
 				month,
 				(monthly.get(month) ?? 0) + item.amount,

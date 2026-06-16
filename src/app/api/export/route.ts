@@ -36,7 +36,7 @@ type ExportPayload = {
 		images: string[];
 		location: unknown;
 		currency: string;
-		dateTime: string;
+		paidAt: string;
 		createdAt?: string;
 	}>;
 };
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
 				listExpenses(auth.userId, {
 					page: 1,
 					limit: 5000,
-					sortBy: "dateTime",
+					sortBy: "paidAt",
 					order: "desc",
 				}),
 				listExpensesForRange(auth.userId, monthStart, now),
@@ -99,13 +99,15 @@ export async function GET(request: NextRequest) {
 				images: expense.images,
 				location: expense.location,
 				currency: expense.currency,
-				dateTime: expense.dateTime,
+				paidAt: expense.paidAt,
 				createdAt: expense.createdAt,
 			})),
 		};
 
-		let payload: ExportPayload | Pick<ExportPayload, "expenses"> | Pick<ExportPayload, "categories"> =
-			normalizedPayload;
+		let payload:
+			| ExportPayload
+			| Pick<ExportPayload, "expenses">
+			| Pick<ExportPayload, "categories"> = normalizedPayload;
 
 		if (!type || type === "all") {
 			payload = normalizedPayload;

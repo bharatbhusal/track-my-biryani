@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 		"Track daily expenses with analytics and categories.",
 	other: {
 		"apple-mobile-web-app-capable": "yes",
-		"apple-mobile-web-app-status-bar-style": "default",
+		"apple-mobile-web-app-status-bar-style": "black-translucent",
 	},
 	icons: [
 		{ rel: "icon", url: "/logo_medium.jpeg" },
@@ -39,6 +39,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
 	width: "device-width",
 	initialScale: 1,
+	viewportFit: "cover",
 	themeColor: APP_THEME_COLOR,
 };
 
@@ -49,7 +50,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en" suppressHydrationWarning>
-			<body className="min-h-screen transition-colors duration-200 px-2 pb-20 sm:pb-2">
+			<body className="min-h-screen transition-colors duration-200 pb-20 sm:pb-2">
 				<UiRestriction>
 					<AppProvider>{children}</AppProvider>
 				</UiRestriction>

@@ -5,8 +5,3 @@ export type PaginationMeta = {
 	page: number;
 	totalPages: number;
 };
-
-export type UserPreferences = {
-	theme: ThemeMode;
-	hapticFeedback: boolean;
-};

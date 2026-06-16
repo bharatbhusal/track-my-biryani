@@ -24,8 +24,7 @@ import { DateRangeSelect } from "@/components/charts/date-range-select";
 export function ExpenseManager() {
 	const [query, setQuery] = useState("");
 	const [categoryId, setCategoryId] = useState("");
-	const [sortBy, setSortBy] =
-		useState<SortField>("dateTime");
+	const [sortBy, setSortBy] = useState<SortField>("paidAt");
 	const [order, setOrder] = useState<"asc" | "desc">("desc");
 	const [page, setPage] = useState(1);
 	const [localRange, setLocalRange] =

@@ -7,14 +7,14 @@ All APIs return `{ success, data }` or `{ success, error }`.
 ### `POST /api/auth/signup`
 
 - Auth: No
-- Body: `{ name, email, password }`
-- Response: `{ id, name, email }`
+- Body: `{ name, username, password }`
+- Response: `{ id, name, username }`
 
 ### `POST /api/auth/login`
 
 - Auth: No
-- Body: `{ email, password }`
-- Response: `{ id, name, email }` + auth cookie
+- Body: `{ username, password }`
+- Response: `{ id, name, username }` + auth cookie
 
 ### `POST /api/auth/logout`
 
@@ -25,26 +25,26 @@ All APIs return `{ success, data }` or `{ success, error }`.
 ### `GET /api/auth/me`
 
 - Auth: Yes
-- Response: `{ id, name, email, preferences }`
+- Response: `{ id, name, username }`
 
 ## Expense APIs
 
 ### `GET /api/expenses`
 
 - Auth: Yes
-- Query: `page`, `limit`, `q`, `categoryId`, `sortBy`, `order`, `paymentMethod`, `tags`, `from`, `to`, `amountMin`, `amountMax`
+- Query: `page`, `limit`, `q`, `categoryId`, `sortBy`, `order`, `from`, `to`, `amountMin`, `amountMax`
 - Response: paginated expense list (filters exclude soft-deleted items)
 - Sorting: `dateTime`, `amount`, `title` with `asc`/`desc` order
 
 ### `GET /api/expenses/:id`
 
 - Auth: Yes
-- Response: full expense detail including metadata (notes, paymentMethod, tags, location, images)
+- Response: full expense detail including metadata (notes, location, images)
 
 ### `POST /api/expenses`
 
 - Auth: Yes
-- Body: `{ title, amount, categoryId, images[], location, currency, dateTime, notes?, paymentMethod?, tags[] }`
+- Body: `{ title, amount, categoryId, images[], location, currency, dateTime, notes? }`
 - Validation: Zod `expenseSchema`
 - Response: created expense with generated `_id`
 
@@ -57,7 +57,6 @@ All APIs return `{ success, data }` or `{ success, error }`.
 ### `DELETE /api/expenses/:id`
 
 - Auth: Yes
-- Notes: Soft-delete (sets `deletedAt` field); expense remains retrievable for undo flows
 - Response: deletion confirmation
 
 ### `GET /api/categories/:id`

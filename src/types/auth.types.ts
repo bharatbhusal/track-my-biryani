@@ -1,24 +1,21 @@
-import type { UserPreferences } from '@/types/common.types';
-
 export type JwtPayload = {
-  userId: string;
-  email: string;
+	userId: string;
+	username: string;
 };
 
 export type AuthUser = {
-  id: string;
-  name: string;
-  email: string;
-  preferences?: UserPreferences;
+	id: string;
+	name: string;
+	username: string;
 };
 
 export type LoginPayload = {
-  email: string;
-  password: string;
+	username: string;
+	password: string;
 };
 
 export type SignupPayload = {
-  name: string;
-  email: string;
-  password: string;
+	name: string;
+	username: string;
+	password: string;
 };

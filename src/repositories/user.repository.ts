@@ -4,15 +4,15 @@ import { UserModel } from "@/models/User";
 
 export async function createUser(data: {
 	name: string;
-	email: string;
+	username: string;
 	password: string;
 }) {
 	const user = await UserModel.create(data);
 	return user.toObject();
 }
 
-export async function findUserByEmail(email: string) {
-	return UserModel.findOne({ email })
+export async function findUserByUsername(username: string) {
+	return UserModel.findOne({ username })
 		.select("+password")
 		.lean();
 }
@@ -22,26 +22,6 @@ export async function findUserById(userId: string) {
 		return null;
 	}
 	return UserModel.findById(userId).lean();
-}
-
-export async function updateUserSettings(
-	userId: string,
-	preferences: Record<string, unknown>,
-) {
-	return UserModel.findByIdAndUpdate(
-		userId,
-		{
-			$set: {
-				"preferences.theme": preferences.theme,
-				"preferences.hapticFeedback":
-					preferences.hapticFeedback,
-			},
-		},
-		{
-			new: true,
-			lean: true,
-		},
-	);
 }
 
 export async function updateUserPassword(

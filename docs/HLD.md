@@ -7,7 +7,7 @@ Track My Biryani is a Next.js App Router monolith that serves UI and API routes 
 ## Core Modules
 
 - **Presentation Layer**: App Router pages, reusable UI primitives, feature components.
-- **State Layer**: React Query for server state, Zustand for UI preferences/state.
+- **State Layer**: React Query for server state.
 - **API Layer**: Centralized typed API client and domain services (`src/lib/api/*`).
 - **Domain Layer**: Controllers/services/repositories with schema validation.
 - **Persistence Layer**: MongoDB via Mongoose models and repositories.

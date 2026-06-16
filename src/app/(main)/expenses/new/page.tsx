@@ -8,7 +8,5 @@ export const metadata = {
 export default async function NewExpensePage() {
 	const categories = await getServerCategoriesList();
 
-	return (
-		<ExpenseForm initialCategories={categories} />
-	);
+	return <ExpenseForm initialCategories={categories} />;
 }

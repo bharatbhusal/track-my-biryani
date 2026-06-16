@@ -34,7 +34,7 @@ export function ExpenseCard({ expense, category }: Props) {
 					<p className="font-medium">{expense.title}</p>
 
 					<p className="text-xs text-[var(--color-muted)]">
-						{formatDate(expense.dateTime, locale, timezone)}
+						{formatDate(expense.paidAt, locale, timezone)}
 					</p>
 				</div>
 				<div className="text-right flex-1">

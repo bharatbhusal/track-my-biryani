@@ -60,7 +60,6 @@ export async function deleteCategory(
 	const hasExpenses = await ExpenseModel.exists({
 		userId,
 		categoryId,
-		deletedAt: null,
 	});
 
 	if (hasExpenses) {

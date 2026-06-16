@@ -38,7 +38,7 @@ const formSchema = z.object({
 	title: z.string().min(1),
 	amount: z.number().positive(),
 	categoryId: z.string().min(1),
-	dateTime: z.string().min(1),
+	paidAt: z.string().min(1),
 	address: z.string().optional(),
 });
 
@@ -90,7 +90,7 @@ export function QuickAddExpenseModal() {
 			title: "",
 			amount: undefined,
 			categoryId: "",
-			dateTime: getLocalDateTimeInputValue(),
+			paidAt: getLocalDateTimeInputValue(),
 			address: "",
 		},
 	});
@@ -164,7 +164,7 @@ export function QuickAddExpenseModal() {
 				amount: values.amount,
 				categoryId: values.categoryId,
 				images,
-				dateTime: toUtcIsoString(values.dateTime),
+				paidAt: toUtcIsoString(values.paidAt),
 				currency,
 				location: {
 					latitude: location?.latitude ?? 0,
@@ -180,7 +180,7 @@ export function QuickAddExpenseModal() {
 				title: "",
 				amount: undefined,
 				categoryId: "",
-				dateTime: getLocalDateTimeInputValue(),
+				paidAt: getLocalDateTimeInputValue(),
 				address: "",
 			});
 			setQuickAddOpen(false);
@@ -246,7 +246,7 @@ export function QuickAddExpenseModal() {
 						/>
 						<FormField
 							control={control}
-							name="dateTime"
+							name="paidAt"
 							render={({ field }) => (
 								<FormItem>
 									<FormLabel>Time • Date</FormLabel>

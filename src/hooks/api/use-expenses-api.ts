@@ -38,7 +38,9 @@ export function useExpensesQuery(
 	return useQuery({
 		queryKey: queryKeys.expenses.list(mergedFilters),
 		queryFn: () => expensesApi.listExpenses(mergedFilters),
-		...(initialData !== undefined && initialData !== null ? { initialData } : {}),
+		...(initialData !== undefined && initialData !== null
+			? { initialData }
+			: {}),
 	});
 }
 
@@ -50,7 +52,9 @@ export function useExpenseDetailQuery(
 		queryKey: queryKeys.expenses.detail(id),
 		queryFn: () => expensesApi.getExpenseById(id),
 		enabled: Boolean(id),
-		...(initialData !== undefined && initialData !== null ? { initialData } : {}),
+		...(initialData !== undefined && initialData !== null
+			? { initialData }
+			: {}),
 	});
 }
 
@@ -65,7 +69,9 @@ export function useExpenseContributionQuery(
 		],
 		queryFn: () => expensesApi.getExpenseContribution(id),
 		enabled: Boolean(id),
-		...(initialData !== undefined && initialData !== null ? { initialData } : {}),
+		...(initialData !== undefined && initialData !== null
+			? { initialData }
+			: {}),
 	});
 }
 
@@ -95,7 +101,9 @@ export function useCategoryDetailQuery(
 		queryKey: [...queryKeys.categories, "detail", id],
 		queryFn: () => expensesApi.getCategoryById(id),
 		enabled: Boolean(id),
-		...(initialData !== undefined && initialData !== null ? { initialData } : {}),
+		...(initialData !== undefined && initialData !== null
+			? { initialData }
+			: {}),
 	});
 }
 
@@ -130,13 +138,11 @@ export function useExpenseMutations() {
 					title: newExpense.title,
 					amount: newExpense.amount,
 					currency: newExpense.currency,
-					dateTime: newExpense.dateTime,
+					paidAt: newExpense.paidAt,
 					categoryId: newExpense.categoryId,
 					images: newExpense.images,
 					location: newExpense.location,
 					notes: newExpense.notes,
-					paymentMethod: newExpense.paymentMethod,
-					tags: newExpense.tags,
 				};
 
 				const listPayload = payload as ExpensesListPayload;

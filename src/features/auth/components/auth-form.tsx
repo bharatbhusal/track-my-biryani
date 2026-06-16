@@ -25,12 +25,12 @@ type AuthMode = "login" | "signup";
 
 const signupFormSchema = z.object({
 	name: z.string().min(2),
-	email: z.string().email(),
+	username: z.string().min(6).max(20),
 	password: z.string().min(8),
 });
 
 const loginFormSchema = z.object({
-	email: z.string().email(),
+	username: z.string().min(6).max(20),
 	password: z.string().min(8),
 });
 
@@ -119,14 +119,16 @@ export function AuthForm({
 
 					<FormField
 						control={control}
-						name={"email" as const}
+						name={"username" as const}
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Email</FormLabel>
+								<FormLabel>Username</FormLabel>
 								<FormControl>
-									<Input type="email" {...field} />
+									<Input type="username" {...field} />
 								</FormControl>
-								<FormMessage>{getFieldError("email")}</FormMessage>
+								<FormMessage>
+									{getFieldError("username")}
+								</FormMessage>
 							</FormItem>
 						)}
 					/>

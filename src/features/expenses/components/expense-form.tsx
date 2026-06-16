@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -55,7 +56,7 @@ const schema = z.object({
 	title: z.string().min(1),
 	amount: z.number().positive(),
 	categoryId: z.string().min(1),
-	dateTime: z.string().min(1),
+	paidAt: z.string().min(1),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -98,14 +99,13 @@ export function ExpenseForm({
 		longitude: 0,
 	});
 
-
 	const form = useForm<FormValues>({
 		resolver: zodResolver(schema),
 		defaultValues: {
 			title: "",
 			amount: undefined,
 			categoryId: "",
-			dateTime: getLocalDateTimeInputValue(),
+			paidAt: getLocalDateTimeInputValue(),
 		},
 	});
 	const {
@@ -132,8 +132,8 @@ export function ExpenseForm({
 			title: data.title,
 			amount: data.amount,
 			categoryId: data.categoryId,
-			dateTime: getLocalDateTimeInputValue(
-				new Date(data.dateTime),
+			paidAt: getLocalDateTimeInputValue(
+				new Date(data.paidAt),
 			),
 		});
 		setLocation({
@@ -165,7 +165,7 @@ export function ExpenseForm({
 				title: values.title,
 				amount: values.amount,
 				categoryId: values.categoryId,
-				dateTime: toUtcIsoString(values.dateTime),
+				paidAt: toUtcIsoString(values.paidAt),
 				currency,
 				location: {
 					latitude: location.latitude,
@@ -285,13 +285,9 @@ export function ExpenseForm({
 										<FormControl>
 											<Select
 												value={field.value}
-												onChange={(e) =>
-													field.onChange(e.target.value)
-												}
+												onChange={(e) => field.onChange(e.target.value)}
 											>
-												<option value="">
-													Select category
-												</option>
+												<option value="">Select category</option>
 												{(categoriesQuery.data ?? []).map(
 													(category) => (
 														<option
@@ -355,23 +351,20 @@ export function ExpenseForm({
 						{/* Date & Time at the bottom */}
 						<FormField
 							control={control}
-							name="dateTime"
+							name="paidAt"
 							render={({ field }) => {
 								const datePart = field.value
 									? field.value.slice(0, 10)
 									: "";
 								const timePart =
-									(field.value &&
-										field.value.slice(11, 16)) ||
+									(field.value && field.value.slice(11, 16)) ||
 									"12:00";
 
 								const handleDateChange = (
 									e: React.ChangeEvent<HTMLInputElement>,
 								) => {
 									const newDate = e.target.value;
-									field.onChange(
-										`${newDate}T${timePart}`,
-									);
+									field.onChange(`${newDate}T${timePart}`);
 								};
 
 								const handleTimeChange = (

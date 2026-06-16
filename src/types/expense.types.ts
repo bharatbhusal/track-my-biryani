@@ -11,11 +11,9 @@ export type ExpenseItem = {
 	title: string;
 	amount: number;
 	currency: string;
-	dateTime: string;
+	paidAt: string;
 	categoryId: string;
 	notes?: string;
-	paymentMethod?: string;
-	tags?: string[];
 	images: string[];
 	location: ExpenseLocation;
 	createdAt?: string;
@@ -40,10 +38,8 @@ export type CreateExpensePayload = {
 	images: string[];
 	location: ExpenseLocation;
 	currency: string;
-	dateTime: string;
+	paidAt: string;
 	notes?: string;
-	paymentMethod?: string;
-	tags?: string[];
 };
 
 export type ExpenseListQuery = {
@@ -55,6 +51,6 @@ export type ExpenseListQuery = {
 	to?: string;
 	amountMin?: number;
 	amountMax?: number;
-	sortBy?: "dateTime" | "amount" | "title";
+	sortBy?: "paidAt" | "amount" | "title";
 	order?: "asc" | "desc";
 };

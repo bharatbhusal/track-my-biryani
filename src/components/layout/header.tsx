@@ -24,7 +24,7 @@ export function Header() {
 		<header className="sticky top-0 z-20 border-b border-[var(--color-border)] bg-[color-mix(in_oklab,var(--color-bg)_88%,transparent)] px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--color-bg)_72%,transparent)]">
 			<div className="mx-auto flex w-full max-w-5xl items-center justify-between">
 				<Link
-					href="/"
+					href="/dashboard"
 					className="flex items-center gap-2 text-sm font-semibold tracking-tight"
 				>
 					<Image

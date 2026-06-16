@@ -112,14 +112,14 @@ function resolveGranularity(
 function groupExpenses(
 	expenses: Array<{
 		amount: number;
-		dateTime: Date | string;
+		paidAt: Date | string;
 	}>,
 	granularity: Granularity,
 	locale = "en-IN",
 ): Array<{ name: string; total: number }> {
 	const map = new Map<string, number>();
 	expenses.forEach((expense) => {
-		const date = new Date(expense.dateTime);
+		const date = new Date(expense.paidAt);
 		let key = "";
 		if (granularity === "hour") {
 			key =
@@ -146,7 +146,7 @@ function groupExpenses(
 function buildMonthlyCategorySeries(
 	expenses: Array<{
 		amount: number;
-		dateTime: Date | string;
+		paidAt: Date | string;
 		categoryId: string;
 	}>,
 	categories: Array<{ _id: string; name: string }>,
@@ -161,7 +161,7 @@ function buildMonthlyCategorySeries(
 	);
 
 	expenses.forEach((expense) => {
-		const date = new Date(expense.dateTime);
+		const date = new Date(expense.paidAt);
 		const month = new Intl.DateTimeFormat(locale, {
 			month: "short",
 			year: "2-digit",
@@ -254,7 +254,7 @@ export async function getServerDashboardData(
 		recentActivity: recentActivity.map((item) => ({
 			title: item.title,
 			amount: item.amount,
-			dateTime: item.dateTime,
+			paidAt: item.paidAt,
 		})),
 	});
 }
@@ -314,7 +314,7 @@ export async function getServerCategoryDetail(
 			categoryId: id,
 			page: 1,
 			limit: 50,
-			sortBy: "dateTime",
+			sortBy: "paidAt",
 			order: "desc",
 		}),
 	]);
@@ -346,7 +346,7 @@ export async function getServerExpensesList(): Promise<{
 		listExpenses(auth.userId, {
 			page: 1,
 			limit: 20,
-			sortBy: "dateTime",
+			sortBy: "paidAt",
 			order: "desc",
 		}),
 		listAllCategories(auth.userId),

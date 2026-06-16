@@ -9,13 +9,11 @@ import type {
 type ExpenseFilters = {
 	q?: string;
 	categoryId?: string;
-	paymentMethod?: string;
-	tags?: string;
 	from?: string;
 	to?: string;
 	amountMin?: number;
 	amountMax?: number;
-	sortBy: "dateTime" | "amount" | "title";
+	sortBy: "paidAt" | "amount" | "title";
 	order: "asc" | "desc";
 	page: number;
 	limit: number;
@@ -66,8 +64,6 @@ export async function createExpense(data: {
 	amount: number;
 	categoryId: string;
 	notes?: string;
-	paymentMethod?: string;
-	tags?: string[];
 	images: string[];
 	location: {
 		latitude: number;
@@ -75,7 +71,7 @@ export async function createExpense(data: {
 		address?: string;
 	};
 	currency: string;
-	dateTime: Date;
+	paidAt: Date;
 }) {
 	const expense = await ExpenseModel.create(data);
 	return expense.toObject();
@@ -87,11 +83,10 @@ export async function listExpenses(
 ) {
 	const query: Record<string, unknown> = {
 		userId,
-		deletedAt: null,
 	};
 
 	if (filters.q) {
-		// Use case-insensitive substring search across title, notes, paymentMethod and tags
+		// Use case-insensitive substring search across title and notes
 		const q = filters.q.trim();
 		if (q.length > 0) {
 			const regex = new RegExp(
@@ -101,8 +96,6 @@ export async function listExpenses(
 			query.$or = [
 				{ title: { $regex: regex } },
 				{ notes: { $regex: regex } },
-				{ paymentMethod: { $regex: regex } },
-				{ tags: { $in: [q] } },
 			];
 		}
 	}
@@ -114,21 +107,8 @@ export async function listExpenses(
 		query.categoryId = filters.categoryId;
 	}
 
-	if (filters.paymentMethod) {
-		query.paymentMethod = filters.paymentMethod;
-	}
-
-	if (filters.tags) {
-		query.tags = {
-			$in: filters.tags
-				.split(",")
-				.map((tag) => tag.trim())
-				.filter(Boolean),
-		};
-	}
-
 	if (filters.from || filters.to) {
-		query.dateTime = {
+		query.paidAt = {
 			...(filters.from
 				? { $gte: new Date(filters.from) }
 				: {}),
@@ -181,7 +161,7 @@ export async function updateExpense(
 	}
 
 	return ExpenseModel.findOneAndUpdate(
-		{ _id: expenseId, userId, deletedAt: null },
+		{ _id: expenseId, userId },
 		data,
 		{ new: true, lean: true },
 	);
@@ -195,11 +175,10 @@ export async function deleteExpense(
 		return null;
 	}
 
-	return ExpenseModel.findOneAndUpdate(
-		{ _id: expenseId, userId, deletedAt: null },
-		{ deletedAt: new Date() },
-		{ new: true, lean: true },
-	);
+	return ExpenseModel.findOneAndDelete({
+		_id: expenseId,
+		userId,
+	}).lean();
 }
 
 export async function getExpenseById(
@@ -213,7 +192,6 @@ export async function getExpenseById(
 	return ExpenseModel.findOne({
 		_id: expenseId,
 		userId,
-		deletedAt: null,
 	}).lean();
 }
 
@@ -221,8 +199,8 @@ export async function listRecentExpenses(
 	userId: string,
 	limit = 5,
 ) {
-	return ExpenseModel.find({ userId, deletedAt: null })
-		.sort({ dateTime: -1 })
+	return ExpenseModel.find({ userId })
+		.sort({ paidAt: -1 })
 		.limit(limit)
 		.lean();
 }
@@ -235,14 +213,14 @@ export async function listExpensesForRange(
 ) {
 	const filter: Record<string, unknown> = {
 		userId,
-		deletedAt: null,
-		dateTime: { $gte: from, $lte: to },
+
+		paidAt: { $gte: from, $lte: to },
 	};
 	if (categoryId) {
 		filter.categoryId = categoryId;
 	}
 	return ExpenseModel.find(filter)
-		.sort({ dateTime: 1 })
+		.sort({ paidAt: 1 })
 		.lean();
 }
 
@@ -253,8 +231,8 @@ export async function aggregateRangeStats(
 ) {
 	const match: Record<string, unknown> = {
 		userId: new Types.ObjectId(userId),
-		deletedAt: null,
-		dateTime: { $gte: from, $lte: to },
+
+		paidAt: { $gte: from, $lte: to },
 	};
 
 	const [
@@ -289,11 +267,11 @@ export async function aggregateRangeStats(
 			{ $match: match },
 			{
 				$project: {
-					day: {
-						$dateToString: {
-							format: "%Y-%m-%d",
-							date: "$dateTime",
-						},
+							day: {
+								$dateToString: {
+									format: "%Y-%m-%d",
+									date: "$paidAt",
+								},
 					},
 					amount: "$amount",
 				},
@@ -306,7 +284,7 @@ export async function aggregateRangeStats(
 			{
 				$project: {
 					weekday: {
-						$dayOfWeek: "$dateTime",
+						$dayOfWeek: "$paidAt",
 					},
 					amount: "$amount",
 				},
@@ -372,9 +350,9 @@ export async function getCategoryRangeStats(
 ) {
 	const match: Record<string, unknown> = {
 		userId: new Types.ObjectId(userId),
-		deletedAt: null,
+
 		categoryId: new Types.ObjectId(categoryId),
-		dateTime: { $gte: from, $lte: to },
+		paidAt: { $gte: from, $lte: to },
 	};
 
 	const [result] =
@@ -409,12 +387,11 @@ export async function getExpenseContribution(
 	const expense = await ExpenseModel.findOne({
 		_id: new Types.ObjectId(expenseId),
 		userId: new Types.ObjectId(userId),
-		deletedAt: null,
 	}).lean();
 	if (!expense) return null;
 
 	const amount = expense.amount;
-	const date = new Date(expense.dateTime);
+	const date = new Date(expense.paidAt);
 
 	const weekStart = new Date(date);
 	weekStart.setDate(date.getDate() - 6);
@@ -442,8 +419,8 @@ export async function getExpenseContribution(
 			{
 				$match: {
 					userId: new Types.ObjectId(userId),
-					deletedAt: null,
-					dateTime: { $gte: weekStart, $lte: date },
+
+					paidAt: { $gte: weekStart, $lte: date },
 				},
 			},
 			{ $group: { _id: null, total: { $sum: "$amount" } } },
@@ -452,8 +429,8 @@ export async function getExpenseContribution(
 			{
 				$match: {
 					userId: new Types.ObjectId(userId),
-					deletedAt: null,
-					dateTime: { $gte: monthStart, $lte: date },
+
+					paidAt: { $gte: monthStart, $lte: date },
 				},
 			},
 			{ $group: { _id: null, total: { $sum: "$amount" } } },
@@ -462,8 +439,8 @@ export async function getExpenseContribution(
 			{
 				$match: {
 					userId: new Types.ObjectId(userId),
-					deletedAt: null,
-					dateTime: { $gte: yearStart, $lte: date },
+
+					paidAt: { $gte: yearStart, $lte: date },
 				},
 			},
 			{ $group: { _id: null, total: { $sum: "$amount" } } },
@@ -472,7 +449,7 @@ export async function getExpenseContribution(
 			{
 				$match: {
 					userId: new Types.ObjectId(userId),
-					deletedAt: null,
+
 					categoryId: expense.categoryId,
 				},
 			},
@@ -482,9 +459,9 @@ export async function getExpenseContribution(
 			{
 				$match: {
 					userId: new Types.ObjectId(userId),
-					deletedAt: null,
+
 					categoryId: expense.categoryId,
-					dateTime: { $gte: trendStart, $lte: date },
+					paidAt: { $gte: trendStart, $lte: date },
 				},
 			},
 			{
@@ -492,7 +469,7 @@ export async function getExpenseContribution(
 					_id: {
 						$dateToString: {
 							format: "%Y-%m",
-							date: "$dateTime",
+							date: "$paidAt",
 						},
 					},
 					total: { $sum: "$amount" },
@@ -502,7 +479,7 @@ export async function getExpenseContribution(
 		]),
 		ExpenseModel.countDocuments({
 			userId: new Types.ObjectId(userId),
-			deletedAt: null,
+
 			categoryId: expense.categoryId,
 		}),
 	])) as [
