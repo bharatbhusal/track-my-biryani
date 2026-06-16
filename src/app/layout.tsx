@@ -20,7 +20,8 @@ export const metadata: Metadata = {
 		"Track daily expenses with analytics and categories.",
 	other: {
 		"apple-mobile-web-app-capable": "yes",
-		"apple-mobile-web-app-status-bar-style": "black-translucent",
+		"apple-mobile-web-app-status-bar-style":
+			"black-translucent",
 	},
 	icons: [
 		{ rel: "icon", url: "/logo_medium.jpeg" },

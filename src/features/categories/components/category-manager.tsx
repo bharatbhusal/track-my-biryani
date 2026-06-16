@@ -78,7 +78,7 @@ export function CategoryManager() {
 
 	return (
 		<Card>
-			<div className="flex items-center justify-between gap-2 mb-4">
+			<div className="flex items-center gap-2 mb-4">
 				<CardTitle>
 					<FiTag className="inline mr-1.5 h-4 w-4" />
 					Categories
@@ -88,7 +88,7 @@ export function CategoryManager() {
 				</div>
 			</div>
 
-			<div className="mb-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+			<div className="mb-3 grid grid-cols-1 gap-2">
 				<div className="relative">
 					<FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-muted)]" />
 					<Input
@@ -119,7 +119,7 @@ export function CategoryManager() {
 				</div>
 			</div>
 
-			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+			<div className="grid grid-cols-1 gap-2">
 				{items.map((category) => {
 					const spend = categorySpendMap.get(category.name);
 					return (

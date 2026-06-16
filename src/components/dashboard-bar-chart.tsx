@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
 	Bar,
 	BarChart,
@@ -13,6 +14,7 @@ import {
 
 import { ChartCard } from "@/components/charts/chart-card";
 import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
+import { useCategoriesQuery } from "@/hooks/api/use-expenses-api";
 import { toRangeParams } from "@/lib/date-range";
 import type { GlobalDateRange } from "@/lib/date-range";
 
@@ -21,16 +23,52 @@ type Props = {
 	selectedCategoryId?: string;
 };
 
-export function DashboardBarChart({ range, selectedCategoryId }: Props) {
+const CHART_COLORS = [
+	"var(--chart-1)",
+	"var(--chart-2)",
+	"var(--chart-3)",
+	"var(--chart-4)",
+	"var(--chart-5)",
+];
+
+export function DashboardBarChart({
+	range,
+	selectedCategoryId,
+}: Props) {
 	const rangeParams = toRangeParams(range);
 	const { data, isLoading } = useDashboardQuery({
 		...rangeParams,
 		categoryId: selectedCategoryId,
 	});
+	const categoriesQuery = useCategoriesQuery();
 
-	const chartData = data?.mainSeries ?? [];
+	const stackedData = data?.stackedSeries ?? [];
+	const categoryColorMap = useMemo(() => {
+		const map = new Map<string, string>();
+		const cats = categoriesQuery.data ?? [];
+		cats.forEach((c, i) => {
+			map.set(
+				c.name,
+				c.color ?? CHART_COLORS[i % CHART_COLORS.length],
+			);
+		});
+		return map;
+	}, [categoriesQuery.data]);
+
+	const categoryNames = useMemo(() => {
+		const names = new Set<string>();
+		stackedData.forEach((item) => {
+			Object.keys(item).forEach((key) => {
+				if (key !== "name") names.add(key);
+			});
+		});
+		return Array.from(names);
+	}, [stackedData]);
+
 	const average = data?.averageSpend ?? 0;
 	const label = data?.chartLabel ?? "Spending Trend";
+
+	if (stackedData.length < 1) return null;
 
 	return (
 		<ChartCard title={label}>
@@ -41,7 +79,7 @@ export function DashboardBarChart({ range, selectedCategoryId }: Props) {
 					</div>
 				) : (
 					<ResponsiveContainer width="100%" height="100%">
-						<BarChart data={chartData}>
+						<BarChart data={stackedData}>
 							<CartesianGrid
 								strokeDasharray="3 3"
 								stroke="var(--color-border)"
@@ -62,11 +100,21 @@ export function DashboardBarChart({ range, selectedCategoryId }: Props) {
 									fontSize: "0.875rem",
 								}}
 							/>
-							<Bar
-								dataKey="total"
-								fill="var(--chart-1)"
-								radius={[4, 4, 0, 0]}
-							/>
+							{categoryNames.map((name) => (
+								<Bar
+									key={name}
+									dataKey={name}
+									stackId="spend"
+									fill={
+										categoryColorMap.get(name) ?? "var(--chart-1)"
+									}
+									radius={[2, 2, 2, 2]}
+									activeBar={{
+										stroke: "var(--color-text)",
+										strokeWidth: 2,
+									}}
+								/>
+							))}
 							{average > 0 && (
 								<ReferenceLine
 									y={average}

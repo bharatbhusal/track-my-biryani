@@ -10,7 +10,7 @@ export default function MainLayout({
 	return (
 		<div className="flex min-h-dvh flex-col">
 			<Header />
-			<div className="mx-auto flex-1 w-full max-w-7xl px-4 py-4 sm:px-6 lg:px-8 pb-18">
+			<div className="mx-auto flex-1 w-full max-w-5xl px-4 py-4 sm:px-6 lg:px-8 pb-18">
 				{children}
 			</div>
 			<BottomNav />

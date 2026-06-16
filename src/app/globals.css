@@ -72,7 +72,19 @@
 	user-select: none;
 	-webkit-user-select: none;
 	-webkit-touch-callout: none;
+	-webkit-tap-highlight-color: transparent !important;
 }
+
+svg,
+svg * {
+	outline: none !important;
+}
+
+.recharts-tooltip-cursor {
+	fill: transparent !important;
+}
+
+
 
 input,
 textarea,

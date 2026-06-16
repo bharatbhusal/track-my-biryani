@@ -114,9 +114,9 @@ export function proxy(request: NextRequest) {
 			? isTokenProbablyValid(token)
 			: false;
 		if (!hasValidToken) {
-			const loginUrl = new URL("/auth/login", request.url);
-			loginUrl.searchParams.set("next", pathname);
-			return NextResponse.redirect(loginUrl);
+			return NextResponse.redirect(
+				new URL("/home", request.url),
+			);
 		}
 	}
 

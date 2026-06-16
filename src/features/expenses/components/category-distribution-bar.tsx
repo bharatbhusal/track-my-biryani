@@ -64,6 +64,8 @@ export function CategoryDistributionBar({
 		[onCategorySelect, selectedCategoryId],
 	);
 
+	if (!isLoading && (distribution.length < 2 || total === 0)) return null;
+
 	return (
 		<ChartCard title="Category Distribution">
 			{isLoading ? (
@@ -78,10 +80,6 @@ export function CategoryDistributionBar({
 						))}
 					</div>
 				</div>
-			) : total === 0 ? (
-				<p className="py-4 text-center text-sm text-[var(--color-muted)]">
-					No data
-				</p>
 			) : (
 				<div className="space-y-3">
 					<div className="flex h-10 w-full overflow-hidden gap-1 sm:gap-2 rounded-md">

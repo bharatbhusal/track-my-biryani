@@ -1,11 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-	FiCalendar,
-	FiDollarSign,
-	FiAward,
-} from "react-icons/fi";
+import { FiCalendar, FiDollarSign } from "react-icons/fi";
 
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +15,7 @@ import {
 import { formatCurrency } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
 import type { GlobalDateRange } from "@/lib/date-range";
+import { IndianRupeeIcon } from "lucide-react";
 
 function daysElapsed(preset: string): number {
 	const now = new Date();
@@ -55,13 +52,6 @@ export function ExpenseOverview({
 		[range.preset],
 	);
 
-	const topCategoryPct = useMemo(() => {
-		if (!data?.rankedCategories?.length) return "";
-		const pct =
-			(data.rankedCategories[0].value / data.totalSpend) * 100;
-		return ` (${pct.toFixed(1)}%)`;
-	}, [data]);
-
 	return (
 		<div>
 			<div className="flex items-center justify-between flex-wrap gap-2 mb-3">
@@ -77,8 +67,8 @@ export function ExpenseOverview({
 			</div>
 
 			{isLoading || !data ? (
-				<div className="grid grid-cols-1 gap-4 sm:grid-cols-3 w-full">
-					{[...Array(3)].map((_, i) => (
+				<div className="grid grid-cols-2 gap-4 w-full">
+					{[...Array(2)].map((_, i) => (
 						<Card key={i}>
 							<Skeleton className="h-4 w-24 mb-2" />
 							<Skeleton className="h-8 w-32" />
@@ -86,10 +76,10 @@ export function ExpenseOverview({
 					))}
 				</div>
 			) : (
-				<div className="grid grid-cols-1 gap-4 sm:grid-cols-3 w-full">
+				<div className="grid grid-cols-2 gap-4 w-full">
 					<StatCard
 						icon={
-							<FiDollarSign className="h-5 w-5 text-[var(--color-muted)]" />
+							<IndianRupeeIcon className="h-5 w-5 text-[var(--color-muted)]" />
 						}
 						title="Total Spend"
 						value={formatCurrency(
@@ -97,13 +87,6 @@ export function ExpenseOverview({
 							currency,
 							locale,
 						)}
-					/>
-					<StatCard
-						icon={
-							<FiAward className="h-5 w-5 text-[var(--color-muted)]" />
-						}
-						title="Top Category"
-						value={`${data.topCategory}${topCategoryPct}`}
 					/>
 					<StatCard
 						icon={

@@ -21,13 +21,21 @@ type Props = {
 	selectedCategoryId?: string;
 };
 
-export function DailyCashFlowChart({ range, selectedCategoryId }: Props) {
+export function DailyCashFlowChart({
+	range,
+	selectedCategoryId,
+}: Props) {
 	const rangeParams = toRangeParams(range);
 	const { data } = useDashboardQuery({
 		...rangeParams,
 		categoryId: selectedCategoryId,
 	});
 
+	if (
+		!data?.dailyCashFlowSeries ||
+		data.dailyCashFlowSeries.length < 2
+	)
+		return null;
 	return (
 		<ChartCard title="Daily Cash Flow Trend">
 			<ChartContainer

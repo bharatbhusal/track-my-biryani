@@ -9,6 +9,7 @@ export type DashboardAnalytics = {
 	monthlyCategorySeries: Array<
 		Record<string, string | number>
 	>;
+	stackedSeries: Array<Record<string, string | number>>;
 	dailyCashFlowSeries: TrendPoint[];
 	topCategory: string;
 	recentActivity: RecentActivityPoint[];
