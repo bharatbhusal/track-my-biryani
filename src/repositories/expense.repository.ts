@@ -355,8 +355,14 @@ export async function getCategoryRangeStats(
 		paidAt: { $gte: from, $lte: to },
 	};
 
-	const [result] =
-		await ExpenseModel.aggregate<SummaryBucket>([
+	const dayDiff = Math.ceil(
+		(to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24),
+	);
+	const dateFormat =
+		dayDiff > 60 ? "%Y-%m" : "%Y-%m-%d";
+
+	const [[result], trend] = await Promise.all([
+		ExpenseModel.aggregate<SummaryBucket>([
 			{ $match: match },
 			{
 				$group: {
@@ -368,7 +374,30 @@ export async function getCategoryRangeStats(
 					max: { $max: "$amount" },
 				},
 			},
-		]);
+		]),
+		ExpenseModel.aggregate([
+			{ $match: match },
+			{
+				$group: {
+					_id: {
+						$dateToString: {
+							format: dateFormat,
+							date: "$paidAt",
+						},
+					},
+					total: { $sum: "$amount" },
+				},
+			},
+			{ $sort: { _id: 1 } },
+			{
+				$project: {
+					_id: 0,
+					name: "$_id",
+					total: 1,
+				},
+			},
+		]),
+	]);
 
 	return {
 		total: result?.total ?? 0,
@@ -376,6 +405,7 @@ export async function getCategoryRangeStats(
 		avg: result?.avg ?? 0,
 		min: result?.min ?? 0,
 		max: result?.max ?? 0,
+		trend,
 	};
 }
 

@@ -53,6 +53,7 @@ export type CategoryRangeStats = {
 	avg: number;
 	min: number;
 	max: number;
+	trend: TrendPoint[];
 };
 
 export type ActivityLogItem = {

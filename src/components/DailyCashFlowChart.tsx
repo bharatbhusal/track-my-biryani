@@ -66,7 +66,20 @@ export function DailyCashFlowChart({
 		return Array.from(names);
 	}, [series]);
 
-	if (series.length < 2) return null;
+	const paddedSeries = useMemo(() => {
+		if (categoryNames.length === 0) return series;
+		return series.map((item) => {
+			const copy = { ...item };
+			for (const name of categoryNames) {
+				if (!(name in copy)) {
+					(copy as Record<string, string | number>)[name] = 0;
+				}
+			}
+			return copy;
+		});
+	}, [series, categoryNames]);
+
+	if (paddedSeries.length < 1) return null;
 
 	return (
 		<ChartCard title="Daily Cash Flow Trend">
@@ -84,7 +97,7 @@ export function DailyCashFlowChart({
 				className="min-h-[250px]"
 			>
 				<ResponsiveContainer width="100%" height={250}>
-					<LineChart data={series}>
+					<LineChart data={paddedSeries}>
 						<CartesianGrid
 							strokeDasharray="3 3"
 							stroke="var(--color-border)"

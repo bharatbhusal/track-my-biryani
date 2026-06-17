@@ -100,31 +100,45 @@ export function CategoryDetailView({
 		[expensesQuery.data?.items, initialExpenses],
 	);
 
-	const analytics = useMemo(() => {
-		const monthly = new Map<string, number>();
-		expenses.forEach((item) => {
-			const month = new Intl.DateTimeFormat("en-IN", {
-				month: "short",
-				year: "2-digit",
-			}).format(new Date(item.paidAt));
-			monthly.set(
-				month,
-				(monthly.get(month) ?? 0) + item.amount,
-			);
-		});
+	const chartTrend = useMemo(() => {
+		const raw = statsQuery.data?.trend ?? [];
+		if (raw.length === 0) return [];
 
-		return {
-			monthlyTrend: Array.from(monthly.entries()).map(
-				([name, totalAmt]) => ({
-					name,
-					total: totalAmt,
-				}),
-			),
-		};
-	}, [expenses]);
+		const isDaily = raw[0].name.length === 10;
+
+		return raw.map((point) => {
+			const parts = point.name.split("-");
+			const date = isDaily
+				? new Date(+parts[0], +parts[1] - 1, +parts[2])
+				: new Date(+parts[0], +parts[1] - 1);
+			return {
+				name: new Intl.DateTimeFormat("en-IN", {
+					month: "short",
+					...(isDaily
+						? { day: "2-digit" }
+						: { year: "2-digit" }),
+				}).format(date),
+				total: point.total,
+			};
+		});
+	}, [statsQuery.data?.trend]);
+
+	const chartTrendTitle = useMemo(() => {
+		const from = rangeBounds.from
+			? new Date(rangeBounds.from)
+			: null;
+		const to = rangeBounds.to
+			? new Date(rangeBounds.to)
+			: null;
+		if (!from || !to) return "Trend";
+		const diff = Math.ceil(
+			(to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24),
+		);
+		return diff > 60 ? "Monthly Trend" : "Daily Trend";
+	}, [rangeBounds]);
 
 	const routeUrl = useMemo(() => {
-		if (expenses.length < 2) return null;
+		if (expenses.length < 1) return null;
 
 		const points = expenses
 			.slice(0, 5)
@@ -257,41 +271,43 @@ export function CategoryDetailView({
 				)}
 			</Card>
 
-			<ChartCard
-				title="Monthly Trend"
-				range={range}
-				onRangeChange={(r) => {
-					setRange(r);
-					setPage(1);
-				}}
-			>
-				<div className="h-64">
-					<ResponsiveContainer width="100%" height="100%">
-						<AreaChart data={analytics.monthlyTrend}>
-							<XAxis
-								dataKey="name"
-								tick={{ fill: "var(--color-muted)", fontSize: 12 }}
-							/>
-							<YAxis
-								tick={{ fill: "var(--color-muted)", fontSize: 12 }}
-							/>
-							<Tooltip
-								contentStyle={{
-									backgroundColor: "var(--color-surface)",
-									border: "1px solid var(--color-border)",
-									borderRadius: "0.5rem",
-									fontSize: "0.875rem",
-								}}
-							/>
-							<Area
-								dataKey="total"
-								stroke="var(--chart-1)"
-								fill="color-mix(in srgb, var(--chart-1) 20%, transparent)"
-							/>
-						</AreaChart>
-					</ResponsiveContainer>
-				</div>
-			</ChartCard>
+			{chartTrend.length >= 1 && (
+				<ChartCard
+					title={chartTrendTitle}
+					range={range}
+					onRangeChange={(r) => {
+						setRange(r);
+						setPage(1);
+					}}
+				>
+					<div className="h-64">
+						<ResponsiveContainer width="100%" height="100%">
+							<AreaChart data={chartTrend}>
+								<XAxis
+									dataKey="name"
+									tick={{ fill: "var(--color-muted)", fontSize: 12 }}
+								/>
+								<YAxis
+									tick={{ fill: "var(--color-muted)", fontSize: 12 }}
+								/>
+								<Tooltip
+									contentStyle={{
+										backgroundColor: "var(--color-surface)",
+										border: "1px solid var(--color-border)",
+										borderRadius: "0.5rem",
+										fontSize: "0.875rem",
+									}}
+								/>
+								<Area
+									dataKey="total"
+									stroke="var(--chart-1)"
+									fill="color-mix(in srgb, var(--chart-1) 20%, transparent)"
+								/>
+							</AreaChart>
+						</ResponsiveContainer>
+					</div>
+				</ChartCard>
+			)}
 
 			<Card>
 				<CardTitle className="mb-2">
