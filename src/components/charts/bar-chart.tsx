@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
 	Bar,
 	BarChart as RechartsBarChart,
@@ -18,10 +19,16 @@ export function BarChart({
 	heightClass?: string;
 	unit?: string;
 }) {
+	const [showTooltip, setShowTooltip] = useState(false);
+
 	return (
 		<div className={`${heightClass} w-full`}>
 			<ResponsiveContainer width="100%" height="100%">
-				<RechartsBarChart data={data}>
+				<RechartsBarChart
+					data={data}
+					onClick={() => setShowTooltip(true)}
+					onMouseLeave={() => setShowTooltip(false)}
+				>
 					<XAxis
 						dataKey="name"
 						tick={{ fill: "var(--color-muted)", fontSize: 12 }}
@@ -31,6 +38,7 @@ export function BarChart({
 						tickFormatter={(value: number) => `${value}${unit}`}
 					/>
 					<Tooltip
+						active={showTooltip}
 						contentStyle={{
 							backgroundColor: "var(--color-surface)",
 							border: "1px solid var(--color-border)",

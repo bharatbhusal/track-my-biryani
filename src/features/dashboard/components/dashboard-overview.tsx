@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 
 import { ExpenseOverview } from "@/features/expenses/components/expense-overview";
 import { DashboardBarChart } from "@/components/dashboard-bar-chart";
-import { DailyCashFlowChart } from "@/components/DailyCashFlowChart";
+import { CashFlowChart } from "@/components/cash-flow-chart";
 import { CategoryDistributionBar } from "@/features/expenses/components/category-distribution-bar";
 import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
 import { useCategoriesQuery } from "@/hooks/api/use-expenses-api";
@@ -74,7 +74,14 @@ export function DashboardOverview() {
 				categoryColorMap={categoryColorMap}
 				isLoading={isChartLoading}
 			/>
-			<DailyCashFlowChart
+			<CashFlowChart
+				title={
+					mainRange.preset === "day"
+						? "Hourly Cash Flow"
+						: mainRange.preset === "year"
+							? "Monthly Cash Flow"
+							: "Daily Cash Flow"
+				}
 				stackedSeries={chartData?.stackedSeries ?? []}
 				categoryColorMap={categoryColorMap}
 				isLoading={isChartLoading}

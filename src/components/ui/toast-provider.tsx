@@ -11,7 +11,7 @@ export function ToastProvider() {
 		<Toaster
 			position="top-center"
 			theme={theme}
-			style={{ paddingTop: "var(--safe-area-top)" }}
+			style={{ paddingTop: "calc(var(--safe-area-top) + 1.5rem)" }}
 			toastOptions={{
 				style: {
 					background: "var(--color-surface)",

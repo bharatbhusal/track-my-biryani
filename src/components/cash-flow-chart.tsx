@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
 	CartesianGrid,
 	Line,
@@ -20,11 +20,12 @@ type Props = {
 	isLoading: boolean;
 };
 
-export function DailyCashFlowChart({
+export function CashFlowChart({
 	stackedSeries,
 	categoryColorMap,
 	isLoading,
-}: Props) {
+	title = "Cash Flow Trend",
+}: Props & { title?: string }) {
 	const categoryNames = useMemo(() => {
 		const names = new Set<string>();
 		stackedSeries.forEach((item) => {
@@ -48,10 +49,12 @@ export function DailyCashFlowChart({
 		});
 	}, [stackedSeries, categoryNames]);
 
+	const [showTooltip, setShowTooltip] = useState(false);
+
 	if (paddedSeries.length < 1) return null;
 
 	return (
-		<ChartCard title="Daily Cash Flow Trend">
+		<ChartCard title={title}>
 			{isLoading ? (
 				<div className="flex h-64 items-center justify-center text-sm text-[var(--color-muted)]">
 					Loading...
@@ -72,7 +75,11 @@ export function DailyCashFlowChart({
 					className="min-h-[250px]"
 				>
 					<ResponsiveContainer width="100%" height={250}>
-						<LineChart data={paddedSeries}>
+						<LineChart
+							data={paddedSeries}
+							onClick={() => setShowTooltip(true)}
+							onMouseLeave={() => setShowTooltip(false)}
+						>
 							<CartesianGrid
 								strokeDasharray="3 3"
 								stroke="var(--color-border)"
@@ -91,6 +98,7 @@ export function DailyCashFlowChart({
 								}}
 							/>
 							<Tooltip
+								active={showTooltip}
 								contentStyle={{
 									backgroundColor: "var(--color-surface)",
 									border: "1px solid var(--color-border)",

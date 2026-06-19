@@ -104,6 +104,7 @@ type ConfirmDrawerProps = {
 	description: string;
 	onConfirm: () => void;
 	onCancel: () => void;
+	isPending?: boolean;
 };
 
 export function ConfirmDrawer({
@@ -112,6 +113,7 @@ export function ConfirmDrawer({
 	description,
 	onConfirm,
 	onCancel,
+	isPending,
 }: ConfirmDrawerProps) {
 	return (
 		<Drawer
@@ -124,16 +126,18 @@ export function ConfirmDrawer({
 				<button
 					type="button"
 					onClick={onCancel}
-					className="flex-1 rounded-md border border-[var(--color-border)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-surface-muted)] transition-colors"
+					disabled={isPending}
+					className="flex-1 rounded-md border border-[var(--color-border)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-surface-muted)] transition-colors disabled:opacity-50"
 				>
 					Cancel
 				</button>
 				<button
 					type="button"
 					onClick={onConfirm}
-					className="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors"
+					disabled={isPending}
+					className="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-50"
 				>
-					Confirm
+					{isPending ? "Deleting..." : "Confirm"}
 				</button>
 			</div>
 		</Drawer>

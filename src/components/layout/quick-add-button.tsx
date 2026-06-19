@@ -7,7 +7,10 @@ export function QuickAddButton() {
 	const pathname = usePathname();
 	const router = useRouter();
 
-	if (pathname.startsWith("/auth")) {
+	if (
+		pathname.startsWith("/auth") ||
+		pathname.startsWith("/expenses/new")
+	) {
 		return null;
 	}
 

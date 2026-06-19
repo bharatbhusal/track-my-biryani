@@ -4,21 +4,13 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import { toast } from "sonner";
-import {
-	Area,
-	AreaChart,
-	ResponsiveContainer,
-	Tooltip,
-	XAxis,
-	YAxis,
-} from "recharts";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { ConfirmDrawer } from "@/components/ui/drawer";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChartCard } from "@/components/charts/chart-card";
 import { DateRangeSelect } from "@/components/charts/date-range-select";
+
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import { AddCategoryDrawer } from "@/features/categories/components/add-category-drawer";
 import {
@@ -36,8 +28,8 @@ import type {
 	ExpenseItem,
 	CategoryItem,
 } from "@/types/expense.types";
-import type { GlobalDateRange } from "@/lib/date-range";
 import { EmojiBadge } from "@/components/ui/emoji-badge";
+import { CashFlowChart } from "@/components/cash-flow-chart";
 
 export function CategoryDetailView({
 	id,
@@ -121,19 +113,25 @@ export function CategoryDetailView({
 		});
 	}, [statsQuery.data?.trend]);
 
-	const chartTrendTitle = useMemo(() => {
-		const from = rangeBounds.from
-			? new Date(rangeBounds.from)
-			: null;
-		const to = rangeBounds.to
-			? new Date(rangeBounds.to)
-			: null;
-		if (!from || !to) return "Trend";
-		const diff = Math.ceil(
-			(to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24),
-		);
-		return diff > 60 ? "Monthly Trend" : "Daily Trend";
-	}, [rangeBounds]);
+	const chartStackedSeries = useMemo(
+		() =>
+			chartTrend.map((point) => ({
+				name: point.name,
+				[category?.name ?? "Category"]: point.total,
+			})),
+		[chartTrend, category?.name],
+	);
+
+	const chartColorMap = useMemo(
+		() =>
+			new Map([
+				[
+					category?.name ?? "Category",
+					category?.color ?? "var(--chart-2)",
+				],
+			]),
+		[category?.name, category?.color],
+	);
 
 	const routeUrl = useMemo(() => {
 		if (expenses.length < 1) return null;
@@ -175,49 +173,17 @@ export function CategoryDetailView({
 
 	return (
 		<div className="space-y-4">
-			<Card>
-				<div className="mb-2 flex items-center justify-between">
-					<CardTitle>
-						<div className="flex items-center gap-3">
-							<EmojiBadge
-								emoji={category.emoji}
-								color={category.color}
-							/>
-							<p className="text-lg">{category.name}</p>
-						</div>
-					</CardTitle>
-					<div className="flex items-center gap-2">
-						<Button
-							variant="outline"
-							className="h-9 w-9 p-0"
-							aria-label="Edit category"
-							onClick={() => setEditDrawerOpen(true)}
-						>
-							<FiEdit2 />
-						</Button>
-						<Button
-							variant="destructive"
-							className="h-9 w-9 p-0"
-							aria-label="Delete category"
-							onClick={() => setDeleteOpen(true)}
-						>
-							<FiTrash2 />
-						</Button>
+			<Card className="flex flex-col gap-2">
+				<CardTitle>
+					<div className="flex items-center gap-3">
+						<EmojiBadge
+							emoji={category.emoji}
+							color={category.color}
+						/>
+						<p className="text-lg">{category.name}</p>
 					</div>
-				</div>
-			</Card>
+				</CardTitle>
 
-			<Card>
-				<div className="flex items-center justify-between gap-2 flex-wrap mb-3">
-					<CardTitle>Overview</CardTitle>
-					<DateRangeSelect
-						value={range}
-						onChange={(r) => {
-							setRange(r);
-							setPage(1);
-						}}
-					/>
-				</div>
 				{statsQuery.isLoading ? (
 					<div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 md:grid-cols-4">
 						{[...Array(4)].map((_, i) => (
@@ -268,80 +234,72 @@ export function CategoryDetailView({
 					</div>
 				)}
 			</Card>
-
-			{chartTrend.length >= 1 && (
-				<ChartCard
-					title={chartTrendTitle}
-					range={range}
-					onRangeChange={(r) => {
+			<Card className="flex items-center gap-2 justify-between">
+				<div className="flex gap-2">
+					<Button
+						variant="outline"
+						className="h-9 w-9 p-0"
+						aria-label="Edit category"
+						onClick={() => setEditDrawerOpen(true)}
+					>
+						<FiEdit2 />
+					</Button>
+					<Button
+						variant="destructive"
+						className="h-9 w-9 p-0"
+						aria-label="Delete category"
+						onClick={() => setDeleteOpen(true)}
+					>
+						<FiTrash2 />
+					</Button>
+				</div>
+				<DateRangeSelect
+					value={range}
+					onChange={(r) => {
 						setRange(r);
 						setPage(1);
 					}}
-				>
-					<div className="h-64">
-						<ResponsiveContainer width="100%" height="100%">
-							<AreaChart data={chartTrend}>
-								<XAxis
-									dataKey="name"
-									tick={{ fill: "var(--color-muted)", fontSize: 12 }}
-								/>
-								<YAxis
-									tick={{ fill: "var(--color-muted)", fontSize: 12 }}
-								/>
-								<Tooltip
-									contentStyle={{
-										backgroundColor: "var(--color-surface)",
-										border: "1px solid var(--color-border)",
-										borderRadius: "0.5rem",
-										fontSize: "0.875rem",
-									}}
-								/>
-								<Area
-									dataKey="total"
-									stroke="var(--chart-1)"
-									fill="color-mix(in srgb, var(--chart-1) 20%, transparent)"
-								/>
-							</AreaChart>
-						</ResponsiveContainer>
-					</div>
-				</ChartCard>
-			)}
+				/>
+			</Card>
+			<CashFlowChart
+				title="Trend"
+				stackedSeries={chartStackedSeries}
+				categoryColorMap={chartColorMap}
+				isLoading={statsQuery.isLoading}
+			/>
 
 			{expenses.length > 0 && (
 				<>
-					<Card>
-						<CardTitle className="mb-2">
-							Recent in Category
-						</CardTitle>
-						<ExpenseTable
-							items={expenses.slice(0, 10)}
-							categoryMap={new Map([[category._id, category]])}
-							emptyMessage="No expenses in this category"
-							page={page}
-							totalPages={expensesQuery.data?.totalPages}
-							onPageChange={setPage}
-						/>
-					</Card>
-					<Card>
-						<CardTitle className="mb-2">Expense Route</CardTitle>
+					<ExpenseTable
+						items={expenses.slice(0, 10)}
+						categoryMap={new Map([[category._id, category]])}
+						emptyMessage="No expenses in this category"
+						page={page}
+						totalPages={expensesQuery.data?.totalPages}
+						onPageChange={setPage}
+					/>
 
-						<p className="mb-3 text-sm text-[var(--color-muted)]">
-							Route connecting the first{" "}
-							{Math.min(expenses.length, 5)} expenses in this
-							category.
-						</p>
+					{routeUrl && (
+						<Card>
+							<CardTitle className="mb-2">Expense Route</CardTitle>
 
-						<Button
-							disabled={!routeUrl}
-							onClick={() => {
-								if (routeUrl) {
-									window.open(routeUrl, "_blank");
-								}
-							}}
-						>
-							View Route in Google Maps
-						</Button>
-					</Card>
+							<p className="mb-3 text-sm text-[var(--color-muted)]">
+								Route connecting the first{" "}
+								{Math.min(expenses.length, 5)} expenses in this
+								category.
+							</p>
+
+							<Button
+								onClick={() => {
+									if (routeUrl) {
+										window.open(routeUrl, "_blank");
+									}
+								}}
+							>
+								View Route in Google Maps
+							</Button>
+						</Card>
+					)}
 				</>
 			)}
 
@@ -355,6 +313,7 @@ export function CategoryDetailView({
 				open={deleteOpen}
 				title="Delete category"
 				description="This action cannot be undone."
+				isPending={deleteCategory.isPending}
 				onCancel={() => setDeleteOpen(false)}
 				onConfirm={() => {
 					deleteCategory.mutate(id, {

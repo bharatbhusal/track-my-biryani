@@ -61,13 +61,17 @@ export function useExpenseDetailQuery(
 export function useExpenseContributionQuery(
 	id: string,
 	initialData?: ExpenseContribution | null,
+	from?: string,
+	to?: string,
 ) {
 	return useQuery({
 		queryKey: [
 			...queryKeys.expenses.detail(id),
 			"contribution",
+			from ?? "no-from",
+			to ?? "no-to",
 		],
-		queryFn: () => expensesApi.getExpenseContribution(id),
+		queryFn: () => expensesApi.getExpenseContribution(id, from, to),
 		enabled: Boolean(id),
 		...(initialData !== undefined && initialData !== null
 			? { initialData }

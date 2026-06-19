@@ -10,7 +10,7 @@ import {
 } from "react-icons/fi";
 
 import { Button } from "@/components/ui/button";
-import { CardTitle } from "@/components/ui/card";
+import { Card, CardTitle } from "@/components/ui/card";
 import { useCategoriesQuery } from "@/hooks/api/use-expenses-api";
 import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
@@ -75,46 +75,48 @@ export function CategoryManager() {
 
 	return (
 		<div className="flex gap-2 flex-col">
-			<div className="flex items-center justify-between mb-4">
-				<CardTitle>
-					<FiTag className="inline mr-1.5 h-4 w-4" />
-					Categories
-				</CardTitle>
-				<div className="flex items-center gap-2">
-					<DateRangeSelect value={range} onChange={setRange} />
+			<Card>
+				<div className="flex items-center justify-between mb-4">
+					<CardTitle>
+						<FiTag className="inline mr-1.5 h-4 w-4" />
+						Categories
+					</CardTitle>
+					<div className="flex items-center gap-2">
+						<DateRangeSelect value={range} onChange={setRange} />
+					</div>
 				</div>
-			</div>
 
-			<div className="mb-3 grid grid-cols-1 gap-2">
-				<div className="relative">
-					<FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-muted)]" />
-					<Input
-						value={query}
-						onChange={(e) => setQuery(e.target.value)}
-						placeholder="Search categories"
-						className="pl-9"
-					/>
+				<div className="grid grid-cols-1 gap-2">
+					<div className="relative">
+						<FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-muted)]" />
+						<Input
+							value={query}
+							onChange={(e) => setQuery(e.target.value)}
+							placeholder="Search categories"
+							className="pl-9"
+						/>
+					</div>
+					<div className="flex w-full items-center justify-between">
+						<Button
+							variant="outline"
+							onClick={() =>
+								setSortOrder((c) => (c === "asc" ? "desc" : "asc"))
+							}
+						>
+							{sortOrder === "asc" ? (
+								<FiArrowUp className="mr-1.5 h-4 w-4" />
+							) : (
+								<FiArrowDown className="mr-1.5 h-4 w-4" />
+							)}
+							Sort {sortOrder === "asc" ? "Lowest" : "Highest"}
+						</Button>
+						<Button onClick={() => setDrawerOpen(true)}>
+							<FiPlus className="mr-1.5 h-4 w-4" />
+							Add Category
+						</Button>
+					</div>
 				</div>
-				<div className="flex w-full items-center justify-between">
-					<Button
-						variant="outline"
-						onClick={() =>
-							setSortOrder((c) => (c === "asc" ? "desc" : "asc"))
-						}
-					>
-						{sortOrder === "asc" ? (
-							<FiArrowUp className="mr-1.5 h-4 w-4" />
-						) : (
-							<FiArrowDown className="mr-1.5 h-4 w-4" />
-						)}
-						Sort {sortOrder === "asc" ? "Lowest" : "Highest"}
-					</Button>
-					<Button onClick={() => setDrawerOpen(true)}>
-						<FiPlus className="mr-1.5 h-4 w-4" />
-						Add Category
-					</Button>
-				</div>
-			</div>
+			</Card>
 
 			<div className="grid grid-cols-1 gap-2">
 				{items.map((category) => {

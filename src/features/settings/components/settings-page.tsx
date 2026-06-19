@@ -29,15 +29,15 @@ export function SettingsPage() {
 			router.refresh();
 		} catch (error) {
 			toast.error(
-				error instanceof Error ? error.message : "Logout failed",
+				error instanceof Error
+					? error.message
+					: "Logout failed",
 			);
 		}
 	};
 
 	return (
-		<div className="mx-auto max-w-md space-y-4">
-			<h3 className="text-base font-semibold tracking-tight">Settings</h3>
-
+		<div className="space-y-4">
 			<Card>
 				{authQuery.isLoading ? (
 					<div className="space-y-3">

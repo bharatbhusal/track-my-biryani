@@ -29,9 +29,13 @@ export async function GET(request: NextRequest) {
 			);
 		}
 
+		const from = request.nextUrl.searchParams.get("from");
+		const to = request.nextUrl.searchParams.get("to");
 		const data = await getExpenseContribution(
 			auth.userId,
 			id,
+			from ? new Date(from) : undefined,
+			to ? new Date(to) : undefined,
 		);
 		if (!data) {
 			return errorResponse(

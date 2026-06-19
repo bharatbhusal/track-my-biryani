@@ -1,5 +1,7 @@
 "use client";
 
+import { useMemo } from "react";
+import { useTheme } from "next-themes";
 import {
 	FiChevronLeft,
 	FiChevronRight,
@@ -30,7 +32,15 @@ export function DateRangeSelect({
 	onChange,
 	loading,
 }: DateRangeSelectProps) {
-	const isCurrent = value.offset === 0;
+	const { resolvedTheme } = useTheme();
+	const isNextDisabled = loading || value.offset === 0;
+	const oppositeText = useMemo(
+		() =>
+			resolvedTheme === "dark"
+				? "text-white"
+				: "text-gray-900",
+		[resolvedTheme],
+	);
 
 	const handlePrev = () => {
 		onChange({ ...value, offset: value.offset + 1 });
@@ -60,12 +70,12 @@ export function DateRangeSelect({
 	}
 
 	return (
-		<div className="flex items-center gap-1 flex-nowrap">
+		<div className={`flex items-center gap-1 flex-nowrap ${oppositeText}`}>
 			<button
 				type="button"
 				onClick={handlePrev}
-				disabled={loading}
-				className="flex items-center justify-center h-8 w-8 rounded-md text-[var(--color-muted)] hover:bg-[color-mix(in_oklab,var(--color-bg)_96%,transparent)] disabled:opacity-30"
+				aria-disabled={loading ? true : undefined}
+				className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-[color-mix(in_oklab,var(--color-bg)_96%,transparent)] aria-disabled:opacity-30 aria-disabled:pointer-events-none"
 				aria-label="Previous period"
 			>
 				<FiChevronLeft className="h-4 w-4" />
@@ -84,8 +94,8 @@ export function DateRangeSelect({
 			<button
 				type="button"
 				onClick={handleNext}
-				disabled={loading || isCurrent}
-				className="flex items-center justify-center h-8 w-8 rounded-md text-[var(--color-muted)] hover:bg-[color-mix(in_oklab,var(--color-bg)_96%,transparent)] disabled:opacity-30"
+				aria-disabled={isNextDisabled ? true : undefined}
+				className="flex items-center justify-center h-8 w-8 rounded-md hover:bg-[color-mix(in_oklab,var(--color-bg)_96%,transparent)] aria-disabled:opacity-30 aria-disabled:pointer-events-none"
 				aria-label="Next period"
 			>
 				<FiChevronRight className="h-4 w-4" />

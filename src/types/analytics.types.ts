@@ -7,18 +7,9 @@ export type DashboardCard = {
 export type DashboardAnalytics = {
 	totalSpend: number;
 	averageSpend: number;
-	averageLabel: string;
 	chartLabel: string;
-	chartGranularity: "hour" | "day" | "month";
-	mainSeries: TrendPoint[];
 	rankedCategories: CategoryBreakdownPoint[];
-	monthlyCategorySeries: Array<
-		Record<string, string | number>
-	>;
 	stackedSeries: Array<Record<string, string | number>>;
-	dailyCashFlowSeries: TrendPoint[];
-	topCategory: string;
-	recentActivity: RecentActivityPoint[];
 	periodLabel: string;
 	cards: DashboardCard[];
 };

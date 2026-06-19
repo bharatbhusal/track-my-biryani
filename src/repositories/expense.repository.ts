@@ -267,11 +267,11 @@ export async function aggregateRangeStats(
 			{ $match: match },
 			{
 				$project: {
-							day: {
-								$dateToString: {
-									format: "%Y-%m-%d",
-									date: "$paidAt",
-								},
+					day: {
+						$dateToString: {
+							format: "%Y-%m-%d",
+							date: "$paidAt",
+						},
 					},
 					amount: "$amount",
 				},
@@ -358,8 +358,7 @@ export async function getCategoryRangeStats(
 	const dayDiff = Math.ceil(
 		(to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24),
 	);
-	const dateFormat =
-		dayDiff > 60 ? "%Y-%m" : "%Y-%m-%d";
+	const dateFormat = dayDiff > 60 ? "%Y-%m" : "%Y-%m-%d";
 
 	const [[result], trend] = await Promise.all([
 		ExpenseModel.aggregate<SummaryBucket>([
@@ -412,6 +411,8 @@ export async function getCategoryRangeStats(
 export async function getExpenseContribution(
 	userId: string,
 	expenseId: string,
+	from?: Date,
+	to?: Date,
 ) {
 	if (!Types.ObjectId.isValid(expenseId)) return null;
 	const expense = await ExpenseModel.findOne({
@@ -436,6 +437,17 @@ export async function getExpenseContribution(
 	trendStart.setFullYear(date.getFullYear() - 1);
 	trendStart.setDate(1);
 	trendStart.setHours(0, 0, 0, 0);
+
+	const categoryMatch: Record<string, unknown> = {
+		userId: new Types.ObjectId(userId),
+		categoryId: expense.categoryId,
+	};
+	if (from || to) {
+		const paidAt: Record<string, Date> = {};
+		if (from) paidAt.$gte = from;
+		if (to) paidAt.$lte = to;
+		categoryMatch.paidAt = paidAt;
+	}
 
 	const [
 		weekTotal,
@@ -476,13 +488,7 @@ export async function getExpenseContribution(
 			{ $group: { _id: null, total: { $sum: "$amount" } } },
 		]),
 		ExpenseModel.aggregate([
-			{
-				$match: {
-					userId: new Types.ObjectId(userId),
-
-					categoryId: expense.categoryId,
-				},
-			},
+			{ $match: categoryMatch },
 			{ $group: { _id: null, total: { $sum: "$amount" } } },
 		]),
 		ExpenseModel.aggregate([
@@ -507,11 +513,7 @@ export async function getExpenseContribution(
 			},
 			{ $sort: { _id: 1 } },
 		]),
-		ExpenseModel.countDocuments({
-			userId: new Types.ObjectId(userId),
-
-			categoryId: expense.categoryId,
-		}),
+		ExpenseModel.countDocuments([categoryMatch]),
 	])) as [
 		AggregateBucket[],
 		AggregateBucket[],

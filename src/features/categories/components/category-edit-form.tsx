@@ -1,10 +1,8 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FiArrowLeft } from "react-icons/fi";
-
-import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { CategoryForm } from "@/features/categories/components/category-form";
 import { useCategoryDetailQuery } from "@/hooks/api/use-expenses-api";

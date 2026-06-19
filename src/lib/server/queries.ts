@@ -7,7 +7,6 @@ import {
 	getExpenseContribution,
 	listExpenses,
 	listExpensesForRange,
-	listRecentExpenses,
 } from "@/repositories/expense.repository";
 import {
 	listCategories as listAllCategories,
@@ -93,13 +92,11 @@ function resolveGranularity(
 	preset?: string,
 ): {
 	granularity: Granularity;
-	averageLabel: string;
 	chartLabel: string;
 } {
 	if (preset === "year") {
 		return {
 			granularity: "month",
-			averageLabel: "Average spend per month",
 			chartLabel: "Monthly expenses",
 		};
 	}
@@ -114,7 +111,6 @@ function resolveGranularity(
 	if (dayDiff <= 1) {
 		return {
 			granularity: "hour",
-			averageLabel: "Average spend per hour",
 			chartLabel: "Hourly expenses",
 		};
 	}
@@ -122,50 +118,14 @@ function resolveGranularity(
 	if (dayDiff > 60) {
 		return {
 			granularity: "month",
-			averageLabel: "Average spend per month",
 			chartLabel: "Monthly expenses",
 		};
 	}
 
 	return {
 		granularity: "day",
-		averageLabel: "Average spend per day",
 		chartLabel: "Daily expenses",
 	};
-}
-
-function groupExpenses(
-	expenses: Array<{
-		amount: number;
-		paidAt: Date | string;
-	}>,
-	granularity: Granularity,
-	locale = "en-IN",
-): Array<{ name: string; total: number }> {
-	const map = new Map<string, number>();
-	expenses.forEach((expense) => {
-		const date = new Date(expense.paidAt);
-		let key = "";
-		if (granularity === "hour") {
-			key =
-				date.getHours().toString().padStart(2, "0") + ":00";
-		} else if (granularity === "month") {
-			key = new Intl.DateTimeFormat(locale, {
-				month: "short",
-				year: "2-digit",
-			}).format(date);
-		} else {
-			key = new Intl.DateTimeFormat(locale, {
-				month: "short",
-				day: "2-digit",
-			}).format(date);
-		}
-		map.set(key, (map.get(key) ?? 0) + expense.amount);
-	});
-	return Array.from(map.entries()).map(([name, total]) => ({
-		name,
-		total,
-	}));
 }
 
 function groupExpensesWithCategories(
@@ -216,41 +176,6 @@ function groupExpensesWithCategories(
 	return Array.from(byPeriod.values());
 }
 
-function buildMonthlyCategorySeries(
-	expenses: Array<{
-		amount: number;
-		paidAt: Date | string;
-		categoryId: string;
-	}>,
-	categories: Array<{ _id: string; name: string }>,
-	locale = "en-IN",
-): Array<Record<string, string | number>> {
-	const byMonth = new Map<
-		string,
-		Record<string, string | number>
-	>();
-	const categoryNameById = new Map(
-		categories.map((c) => [c._id.toString(), c.name]),
-	);
-
-	expenses.forEach((expense) => {
-		const date = new Date(expense.paidAt);
-		const month = new Intl.DateTimeFormat(locale, {
-			month: "short",
-			year: "2-digit",
-		}).format(date);
-		const categoryName =
-			categoryNameById.get(expense.categoryId.toString()) ??
-			"Uncategorized";
-		const current = byMonth.get(month) ?? { month };
-		current[categoryName] =
-			Number(current[categoryName] ?? 0) + expense.amount;
-		byMonth.set(month, current);
-	});
-
-	return Array.from(byMonth.values());
-}
-
 export async function getServerDashboardData(
 	range: GlobalDateRange,
 ): Promise<DashboardAnalytics> {
@@ -258,29 +183,28 @@ export async function getServerDashboardData(
 	const { from, to } = parseRangeToDates(range);
 	const preset = range.preset;
 
-	const [expenses, categories, recentActivity] =
-		await Promise.all([
-			listExpensesForRange(auth.userId, from, to),
-			listAllCategories(auth.userId),
-			listRecentExpenses(auth.userId, 8),
-		]);
+	const [expenses, categories] = await Promise.all([
+		listExpensesForRange(auth.userId, from, to),
+		listAllCategories(auth.userId),
+	]);
 
 	const totalSpend = expenses.reduce(
 		(sum, e) => sum + e.amount,
 		0,
 	);
-	const granularityMeta = resolveGranularity(
+	const { granularity, chartLabel } = resolveGranularity(
 		from,
 		to,
 		preset,
 	);
-	const mainSeries = groupExpenses(
+	const stackedSeries = groupExpensesWithCategories(
 		expenses,
-		granularityMeta.granularity,
+		categories,
+		granularity,
 	);
 	const averageSpend =
-		mainSeries.length > 0
-			? totalSpend / mainSeries.length
+		stackedSeries.length > 0
+			? totalSpend / stackedSeries.length
 			: 0;
 
 	const categoryTotals = new Map<string, number>();
@@ -306,35 +230,12 @@ export async function getServerDashboardData(
 		})
 		.sort((a, b) => b.value - a.value);
 
-	const topCategory = rankedCategories[0]?.name ?? "N/A";
-	const dailyCashFlowSeries = groupExpenses(expenses, "day");
-	const stackedSeries = groupExpensesWithCategories(
-		expenses,
-		categories,
-		granularityMeta.granularity,
-	);
-	const monthlyCategorySeries = buildMonthlyCategorySeries(
-		expenses,
-		categories,
-	);
-
 	return serialize({
 		totalSpend,
 		averageSpend,
-		averageLabel: granularityMeta.averageLabel,
-		chartLabel: granularityMeta.chartLabel,
-		chartGranularity: granularityMeta.granularity,
-		mainSeries,
+		chartLabel,
 		rankedCategories,
-		monthlyCategorySeries,
 		stackedSeries,
-		dailyCashFlowSeries,
-		topCategory,
-		recentActivity: recentActivity.map((item) => ({
-			title: item.title,
-			amount: item.amount,
-			paidAt: item.paidAt,
-		})),
 		periodLabel: "",
 		cards: [],
 	});

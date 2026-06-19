@@ -12,7 +12,10 @@ import {
 } from "@/hooks/api/use-expenses-api";
 import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
-import { toIsoBounds, toRangeParams } from "@/lib/date-range";
+import {
+	toIsoBounds,
+	toRangeParams,
+} from "@/lib/date-range";
 import type { GlobalDateRange } from "@/lib/date-range";
 
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
@@ -26,12 +29,12 @@ export function ExpenseManager() {
 	const [sortBy, setSortBy] = useState<SortField>("paidAt");
 	const [order, setOrder] = useState<"asc" | "desc">("desc");
 	const [page, setPage] = useState(1);
-	const [localRange, setLocalRange] =
-		usePersistedRange();
+	const [localRange, setLocalRange] = usePersistedRange();
 
 	const categoriesQuery = useCategoriesQuery();
 	const rangeParams = toRangeParams(localRange);
-	const { data: dashboardData } = useDashboardQuery(rangeParams);
+	const { data: dashboardData } =
+		useDashboardQuery(rangeParams);
 	const debouncedQuery = useDebouncedValue(query, 300);
 
 	const filters = useMemo(() => {
@@ -109,7 +112,7 @@ export function ExpenseManager() {
 				<div className="relative min-w-48 flex-1">
 					<FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-muted)]" />
 					<Input
-						placeholder="Search title, notes, payment..."
+						placeholder="Search title, notes, ..."
 						value={query}
 						className="pl-9"
 						onChange={(e) => {

@@ -75,10 +75,15 @@ export const expensesApi = {
 	},
 	getExpenseById: (id: string) =>
 		apiRequest<ExpenseItem>(`/expenses/${id}`),
-	getExpenseContribution: (id: string) =>
-		apiRequest<ExpenseContribution>(
-			`/expenses/${encodeURIComponent(id)}/contribution`,
-		),
+	getExpenseContribution: (id: string, from?: string, to?: string) => {
+		let url = `/expenses/${encodeURIComponent(id)}/contribution`;
+		const params = new URLSearchParams();
+		if (from) params.set("from", from);
+		if (to) params.set("to", to);
+		const qs = params.toString();
+		if (qs) url += `?${qs}`;
+		return apiRequest<ExpenseContribution>(url);
+	},
 	createExpense: (payload: CreateExpensePayload) =>
 		apiRequest<ExpenseItem>("/expenses", {
 			method: "POST",

@@ -35,7 +35,6 @@ A single proxy file handles both auth protection and API proxying:
 
 ## Upload Flow
 
-1. Client (in QuickAddExpenseModal) computes deterministic `publicId` via `buildUploadPublicId(expenseName)`.
 2. Client requests signed payload: `GET /api/uploads/signature?publicId=<deterministic-id>`.
 3. Server signs the upload request with Cloudinary API, including the `public_id`.
 4. Client compresses image if > 5MB (canvas-based, client-side).

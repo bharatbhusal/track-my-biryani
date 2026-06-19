@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
 	Bar,
 	BarChart,
@@ -39,6 +39,8 @@ export function DashboardBarChart({
 		return Array.from(names);
 	}, [stackedSeries]);
 
+	const [showTooltip, setShowTooltip] = useState(false);
+
 	const label = chartLabel ?? "Spending Trend";
 
 	if (stackedSeries.length < 1) return null;
@@ -52,7 +54,11 @@ export function DashboardBarChart({
 					</div>
 				) : (
 					<ResponsiveContainer width="100%" height="100%">
-						<BarChart data={stackedSeries}>
+						<BarChart
+							data={stackedSeries}
+							onClick={() => setShowTooltip(true)}
+							onMouseLeave={() => setShowTooltip(false)}
+						>
 							<CartesianGrid
 								strokeDasharray="3 3"
 								stroke="var(--color-border)"
@@ -66,6 +72,7 @@ export function DashboardBarChart({
 								tick={{ fill: "var(--color-muted)", fontSize: 11 }}
 							/>
 							<Tooltip
+								active={showTooltip}
 								contentStyle={{
 									backgroundColor: "var(--color-surface)",
 									border: "1px solid var(--color-border)",
