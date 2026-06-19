@@ -10,14 +10,7 @@ import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
 import { useCategoriesQuery } from "@/hooks/api/use-expenses-api";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { toRangeParams } from "@/lib/date-range";
-
-const CHART_COLORS = [
-	"var(--chart-1)",
-	"var(--chart-2)",
-	"var(--chart-3)",
-	"var(--chart-4)",
-	"var(--chart-5)",
-];
+import { getChartLabel } from "@/lib/format";
 
 export function DashboardOverview() {
 	const [mainRange, setMainRange] = usePersistedRange();
@@ -27,10 +20,10 @@ export function DashboardOverview() {
 	const categoriesQuery = useCategoriesQuery();
 	const rangeParams = toRangeParams(mainRange);
 
-	const { data: overviewData, isLoading: isOverviewLoading } =
-		useDashboardQuery(rangeParams);
-
-	const { data: chartData, isLoading: isChartLoading } = useDashboardQuery({
+	const {
+		data: dashboardData,
+		isLoading: isDashboardLoading,
+	} = useDashboardQuery({
 		...rangeParams,
 		categoryId: selectedCategoryId || undefined,
 	});
@@ -38,10 +31,7 @@ export function DashboardOverview() {
 	const categoryColorMap = useMemo(() => {
 		const map = new Map<string, string>();
 		(categoriesQuery.data ?? []).forEach((c, i) => {
-			map.set(
-				c.name,
-				c.color ?? CHART_COLORS[i % CHART_COLORS.length],
-			);
+			map.set(c.name, c.color);
 		});
 		return map;
 	}, [categoriesQuery.data]);
@@ -54,37 +44,31 @@ export function DashboardOverview() {
 	return (
 		<div className="space-y-4">
 			<ExpenseOverview
-				data={overviewData}
-				isLoading={isOverviewLoading}
+				data={dashboardData}
+				isLoading={isDashboardLoading}
 				range={mainRange}
 				onRangeChange={handleRangeChange}
 			/>
 
 			<CategoryDistributionBar
-				distribution={overviewData?.rankedCategories ?? []}
+				distribution={dashboardData?.rankedCategories ?? []}
 				categories={categoriesQuery.data ?? []}
 				selectedCategoryId={selectedCategoryId}
 				onCategorySelect={setSelectedCategoryId}
-				isLoading={isOverviewLoading}
+				isLoading={isDashboardLoading}
 			/>
 			<DashboardBarChart
-				stackedSeries={chartData?.stackedSeries ?? []}
-				chartLabel={chartData?.chartLabel}
-				averageSpend={chartData?.averageSpend}
+				stackedSeries={dashboardData?.stackedSeries ?? []}
+				chartLabel={getChartLabel(mainRange.preset, "Expense")}
+				averageSpend={dashboardData?.averageSpend}
 				categoryColorMap={categoryColorMap}
-				isLoading={isChartLoading}
+				isLoading={isDashboardLoading}
 			/>
 			<CashFlowChart
-				title={
-					mainRange.preset === "day"
-						? "Hourly Cash Flow"
-						: mainRange.preset === "year"
-							? "Monthly Cash Flow"
-							: "Daily Cash Flow"
-				}
-				stackedSeries={chartData?.stackedSeries ?? []}
+				title={getChartLabel(mainRange.preset, "Cash Flow")}
+				stackedSeries={dashboardData?.stackedSeries ?? []}
 				categoryColorMap={categoryColorMap}
-				isLoading={isChartLoading}
+				isLoading={isDashboardLoading}
 			/>
 		</div>
 	);

@@ -202,28 +202,19 @@ export function CategoryDetailView({
 							{formatCurrency(
 								statsQuery.data?.total ?? 0,
 								currency,
-								locale,
 							)}
 						</p>
 						<p>
 							<span className="text-[var(--color-muted)]">
 								Highest:
 							</span>{" "}
-							{formatCurrency(
-								statsQuery.data?.max ?? 0,
-								currency,
-								locale,
-							)}
+							{formatCurrency(statsQuery.data?.max ?? 0, currency)}
 						</p>
 						<p>
 							<span className="text-[var(--color-muted)]">
 								Average:
 							</span>{" "}
-							{formatCurrency(
-								statsQuery.data?.avg ?? 0,
-								currency,
-								locale,
-							)}
+							{formatCurrency(statsQuery.data?.avg ?? 0, currency)}
 						</p>
 						<p>
 							<span className="text-[var(--color-muted)]">

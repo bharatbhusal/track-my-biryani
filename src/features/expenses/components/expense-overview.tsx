@@ -10,7 +10,10 @@ import { formatCurrency } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
 import { IndianRupeeIcon } from "lucide-react";
 import type { GlobalDateRange } from "@/lib/date-range";
-import type { DashboardAnalytics, DashboardCard } from "@/types/analytics.types";
+import type {
+	DashboardAnalytics,
+	DashboardCard,
+} from "@/types/analytics.types";
 
 type ExpenseOverviewProps = {
 	data: DashboardAnalytics | undefined;
@@ -37,7 +40,6 @@ export function ExpenseOverview({
 	range,
 	onRangeChange,
 }: ExpenseOverviewProps) {
-	const locale = useUIStore((state) => state.locale);
 	const currency = useUIStore((state) => state.currency);
 
 	const skeletonCount = range.preset === "day" ? 1 : 2;
@@ -59,7 +61,10 @@ export function ExpenseOverview({
 			{isLoading || !data ? (
 				<div className="flex flex-wrap gap-2">
 					{[...Array(skeletonCount)].map((_, i) => (
-						<div key={i} className="flex-1 min-w-[calc(50%-0.5rem)]">
+						<div
+							key={i}
+							className="flex-1 min-w-[calc(50%-0.5rem)]"
+						>
 							<Card>
 								<Skeleton className="h-4 w-24 mb-2" />
 								<Skeleton className="h-8 w-32" />
@@ -77,11 +82,7 @@ export function ExpenseOverview({
 							<StatCard
 								icon={cardIcons[card.key]}
 								title={card.title}
-								value={formatCurrency(
-									card.value,
-									currency,
-									locale,
-								)}
+								value={formatCurrency(card.value, currency)}
 							/>
 						</div>
 					))}

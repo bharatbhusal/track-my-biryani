@@ -23,7 +23,6 @@ export function CategoryDistributionBar({
 	onCategorySelect,
 	isLoading,
 }: Props) {
-	const locale = useUIStore((s) => s.locale);
 	const currency = useUIStore((s) => s.currency);
 
 	const total = useMemo(
@@ -50,7 +49,8 @@ export function CategoryDistributionBar({
 		[onCategorySelect, selectedCategoryId],
 	);
 
-	if (!isLoading && (distribution.length < 2 || total === 0)) return null;
+	if (!isLoading && (distribution.length < 2 || total === 0))
+		return null;
 
 	return (
 		<ChartCard title="Category Distribution">
@@ -98,7 +98,7 @@ export function CategoryDistributionBar({
 											: undefined,
 										outlineOffset: "-2px",
 									}}
-									title={`${item.name}: ${formatCurrency(item.value, currency, locale)} (${pct.toFixed(1)}%)`}
+									title={`${item.name}: ${formatCurrency(item.value, currency)} (${pct.toFixed(1)}%)`}
 								>
 									{pct >= 8 ? `${pct.toFixed(0)}%` : null}
 								</button>

@@ -96,7 +96,6 @@ export function ExpenseDetailView({
 						{formatCurrency(
 							expense.amount,
 							expense.currency || currency,
-							locale,
 						)}
 					</p>
 					<p>

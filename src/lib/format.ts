@@ -3,7 +3,6 @@ import { formatDateTime } from "@/lib/datetime";
 export function formatCurrency(
 	value: number,
 	currency = "INR",
-	_locale = "en-IN",
 ): string {
 	return new Intl.NumberFormat("en-US", {
 		style: "currency",
@@ -21,4 +20,15 @@ export function formatDate(
 	timeZone?: string,
 ): string {
 	return formatDateTime(date, locale, timeZone);
+}
+
+export function getChartLabel(
+	preset: string,
+	suffix: string,
+) {
+	return preset === "day"
+		? `Hourly ${suffix}`
+		: preset === `year`
+			? `Monthly ${suffix}`
+			: `Daily ${suffix}`;
 }

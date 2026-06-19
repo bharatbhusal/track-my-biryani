@@ -1,7 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
-import { useTheme } from "next-themes";
 import {
 	FiChevronLeft,
 	FiChevronRight,
@@ -32,15 +30,7 @@ export function DateRangeSelect({
 	onChange,
 	loading,
 }: DateRangeSelectProps) {
-	const { resolvedTheme } = useTheme();
 	const isNextDisabled = loading || value.offset === 0;
-	const oppositeText = useMemo(
-		() =>
-			resolvedTheme === "dark"
-				? "text-white"
-				: "text-gray-900",
-		[resolvedTheme],
-	);
 
 	const handlePrev = () => {
 		onChange({ ...value, offset: value.offset + 1 });
@@ -70,7 +60,7 @@ export function DateRangeSelect({
 	}
 
 	return (
-		<div className={`flex items-center gap-1 flex-nowrap ${oppositeText}`}>
+		<div className="flex items-center gap-1 flex-nowrap text-gray-900 dark:text-white">
 			<button
 				type="button"
 				onClick={handlePrev}

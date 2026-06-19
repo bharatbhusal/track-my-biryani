@@ -1,5 +1,7 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
+import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,7 +21,16 @@ export function SettingsPage() {
 	const { resolvedTheme, setTheme } = useTheme();
 	const authQuery = useAuthMe();
 	const { logout } = useAuthActions();
-	const currentTheme = resolvedTheme ?? "light";
+
+	const [mounted, setMounted] = useState(false);
+
+	useEffect(() => {
+		setMounted(true);
+	}, []);
+
+	const currentTheme = mounted
+		? (resolvedTheme ?? "light")
+		: null;
 
 	const handleLogout = async () => {
 		try {
@@ -44,39 +55,37 @@ export function SettingsPage() {
 						<Skeleton className="h-5 w-32" />
 						<Skeleton className="h-4 w-48" />
 					</div>
+				) : authQuery.data ? (
+					<div className="flex items-center justify-between gap-3">
+						<div className="min-w-0">
+							<p className="truncate text-sm font-medium">
+								{authQuery.data.name}
+							</p>
+							<p className="truncate text-xs text-[var(--color-muted)]">
+								Signed in
+							</p>
+						</div>
+
+						<Button
+							variant="ghost"
+							size="sm"
+							aria-label="Logout"
+							onClick={handleLogout}
+						>
+							<FiLogOut className="mr-1.5" />
+							Logout
+						</Button>
+					</div>
 				) : (
-					<>
-						{authQuery.data ? (
-							<div className="flex items-center justify-between gap-3">
-								<div className="min-w-0">
-									<p className="truncate text-sm font-medium">
-										{authQuery.data.name}
-									</p>
-									<p className="truncate text-xs text-[var(--color-muted)]">
-										Signed in
-									</p>
-								</div>
-								<Button
-									variant="ghost"
-									size="sm"
-									aria-label="Logout"
-									onClick={handleLogout}
-								>
-									<FiLogOut className="mr-1.5" />
-									Logout
-								</Button>
-							</div>
-						) : (
-							<div className="flex items-center justify-between gap-3">
-								<p className="text-sm text-[var(--color-muted)]">
-									Not signed in
-								</p>
-								<Link href="/auth/login">
-									<Button size="sm">Login</Button>
-								</Link>
-							</div>
-						)}
-					</>
+					<div className="flex items-center justify-between gap-3">
+						<p className="text-sm text-[var(--color-muted)]">
+							Not signed in
+						</p>
+
+						<Link href="/auth/login">
+							<Button size="sm">Login</Button>
+						</Link>
+					</div>
 				)}
 			</Card>
 
@@ -84,10 +93,16 @@ export function SettingsPage() {
 				<div className="flex items-center justify-between gap-3">
 					<div className="min-w-0">
 						<p className="text-sm font-medium">Theme</p>
-						<p className="text-xs text-[var(--color-muted)] capitalize">
-							{currentTheme}
-						</p>
+
+						{mounted ? (
+							<p className="text-xs text-[var(--color-muted)] capitalize">
+								{currentTheme}
+							</p>
+						) : (
+							<Skeleton className="mt-1 h-3 w-12" />
+						)}
 					</div>
+
 					<Button
 						variant="ghost"
 						size="icon"
@@ -95,6 +110,7 @@ export function SettingsPage() {
 						onClick={() =>
 							setTheme(currentTheme === "dark" ? "light" : "dark")
 						}
+						disabled={!mounted}
 					>
 						<FiMoon className="dark:hidden" />
 						<FiSun className="hidden dark:block" />

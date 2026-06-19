@@ -22,7 +22,10 @@ function getMonday(date: Date): Date {
 function parseRange(url: URL): { from: Date; to: Date } {
 	const now = new Date();
 	const preset = url.searchParams.get("preset") ?? "month";
-	const offset = parseInt(url.searchParams.get("offset") ?? "0", 10);
+	const offset = parseInt(
+		url.searchParams.get("offset") ?? "0",
+		10,
+	);
 
 	if (preset === "day") {
 		const from = new Date(now);
@@ -56,7 +59,15 @@ function parseRange(url: URL): { from: Date; to: Date } {
 	const month = now.getMonth() - offset;
 	const from = new Date(now.getFullYear(), month, 1);
 	if (offset === 0) return { from, to: now };
-	const to = new Date(now.getFullYear(), month + 1, 0, 23, 59, 59, 999);
+	const to = new Date(
+		now.getFullYear(),
+		month + 1,
+		0,
+		23,
+		59,
+		59,
+		999,
+	);
 	return { from, to };
 }
 
@@ -105,7 +116,11 @@ function computeCards(
 	preset: string,
 ): DashboardCard[] {
 	const cards: DashboardCard[] = [
-		{ key: "total_spend", title: "Total Spend", value: totalSpend },
+		{
+			key: "total_spend",
+			title: "Total Spend",
+			value: totalSpend,
+		},
 	];
 
 	if (preset === "day") return cards;
@@ -232,7 +247,9 @@ function periodKey(
 	locale = "en-IN",
 ): string {
 	if (granularity === "hour") {
-		return date.getHours().toString().padStart(2, "0") + ":00";
+		return (
+			date.getHours().toString().padStart(2, "0") + ":00"
+		);
 	}
 	if (granularity === "month") {
 		return new Intl.DateTimeFormat(locale, {
@@ -271,7 +288,9 @@ function groupExpensesWithCategories(
 
 	for (const date of iteratePeriods(from, to, granularity)) {
 		const key = periodKey(date, granularity, locale);
-		const entry: Record<string, string | number> = { name: key };
+		const entry: Record<string, string | number> = {
+			name: key,
+		};
 		for (const name of categoryNames) {
 			entry[name] = 0;
 		}
@@ -280,10 +299,7 @@ function groupExpensesWithCategories(
 	}
 
 	const categoryNameById = new Map(
-		categories.map((c) => [
-			c._id.toString(),
-			c.name,
-		]),
+		categories.map((c) => [c._id.toString(), c.name]),
 	);
 
 	expenses.forEach((expense) => {
@@ -299,7 +315,10 @@ function groupExpensesWithCategories(
 	});
 
 	return Array.from(byPeriod.entries())
-		.sort((a, b) => (order.get(a[0]) ?? 0) - (order.get(b[0]) ?? 0))
+		.sort(
+			(a, b) =>
+				(order.get(a[0]) ?? 0) - (order.get(b[0]) ?? 0),
+		)
 		.map(([, value]) => value);
 }
 

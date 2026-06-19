@@ -51,7 +51,7 @@ export function CategoryCard({
 					<div className="text-right shrink-0">
 						{typeof amount === "number" && (
 							<p className="font-semibold">
-								{formatCurrency(amount, currency, locale)}
+								{formatCurrency(amount, currency)}
 							</p>
 						)}
 					</div>

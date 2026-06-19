@@ -188,7 +188,6 @@ export function ExpenseTable({
 											{formatCurrency(
 												expense.amount,
 												expense.currency || currency,
-												locale,
 											)}
 										</TableCell>
 										<TableCell className="text-xs text-[var(--color-muted)]">

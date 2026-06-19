@@ -39,7 +39,7 @@ export function ExpenseCard({ expense, category }: Props) {
 				</div>
 				<div className="text-right flex-1">
 					<p className="font-semibold">
-						{formatCurrency(expense.amount, currency, locale)}
+						{formatCurrency(expense.amount, currency)}
 					</p>
 				</div>
 			</div>
