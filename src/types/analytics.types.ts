@@ -1,3 +1,9 @@
+export type DashboardCard = {
+	key: string;
+	title: string;
+	value: number;
+};
+
 export type DashboardAnalytics = {
 	totalSpend: number;
 	averageSpend: number;
@@ -13,6 +19,8 @@ export type DashboardAnalytics = {
 	dailyCashFlowSeries: TrendPoint[];
 	topCategory: string;
 	recentActivity: RecentActivityPoint[];
+	periodLabel: string;
+	cards: DashboardCard[];
 };
 
 export type TrendPoint = {

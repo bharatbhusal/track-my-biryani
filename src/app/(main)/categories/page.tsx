@@ -5,9 +5,5 @@ export const metadata = {
 };
 
 export default function CategoriesPage() {
-	return (
-		<section className="space-y-4 py-4">
-			<CategoryManager />
-		</section>
-	);
+	return <CategoryManager />;
 }

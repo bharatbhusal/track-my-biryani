@@ -3,8 +3,8 @@
 import { useState, type ReactNode } from "react";
 import { Card, CardTitle } from "@/components/ui/card";
 import { DateRangeSelect } from "@/components/charts/date-range-select";
+import { usePersistedRange } from "@/hooks/use-persisted-range";
 import type { GlobalDateRange } from "@/lib/date-range";
-import { DEFAULT_GLOBAL_RANGE } from "@/lib/date-range";
 
 type ChartCardProps = {
 	title: string;
@@ -21,8 +21,7 @@ export function ChartCard({
 	range: externalRange,
 	onRangeChange,
 }: ChartCardProps) {
-	const [internalRange, setInternalRange] =
-		useState<GlobalDateRange>(DEFAULT_GLOBAL_RANGE);
+	const [internalRange, setInternalRange] = usePersistedRange();
 
 	const range = externalRange ?? internalRange;
 	const handleRangeChange = (newRange: GlobalDateRange) => {

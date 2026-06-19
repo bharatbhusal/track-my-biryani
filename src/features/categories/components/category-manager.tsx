@@ -10,30 +10,27 @@ import {
 } from "react-icons/fi";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardTitle } from "@/components/ui/card";
+import { CardTitle } from "@/components/ui/card";
 import { useCategoriesQuery } from "@/hooks/api/use-expenses-api";
 import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
+import { usePersistedRange } from "@/hooks/use-persisted-range";
+import { toRangeParams } from "@/lib/date-range";
 import { useDebouncedValue } from "@/hooks/use-debounce";
 import { Input } from "@/components/ui/input";
 import { DateRangeSelect } from "@/components/charts/date-range-select";
 import { CategoryCard } from "@/features/categories/components/category-card";
 import { AddCategoryDrawer } from "@/features/categories/components/add-category-drawer";
-import { DEFAULT_GLOBAL_RANGE } from "@/lib/date-range";
-import type { GlobalDateRange } from "@/lib/date-range";
 
 export function CategoryManager() {
 	const [query, setQuery] = useState("");
 	const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
-		"asc",
+		"desc",
 	);
 	const [drawerOpen, setDrawerOpen] = useState(false);
-	const [range, setRange] = useState<GlobalDateRange>(
-		DEFAULT_GLOBAL_RANGE,
-	);
+	const [range, setRange] = usePersistedRange();
 	const categoriesQuery = useCategoriesQuery();
-	const { data: dashboardData } = useDashboardQuery({
-		preset: range.preset,
-	});
+	const rangeParams = toRangeParams(range);
+	const { data: dashboardData } = useDashboardQuery(rangeParams);
 	const debouncedQuery = useDebouncedValue(query, 300);
 
 	const categorySpendMap = useMemo(() => {
@@ -77,8 +74,8 @@ export function CategoryManager() {
 	);
 
 	return (
-		<Card>
-			<div className="flex items-center gap-2 mb-4">
+		<div className="flex gap-2 flex-col">
+			<div className="flex items-center justify-between mb-4">
 				<CardTitle>
 					<FiTag className="inline mr-1.5 h-4 w-4" />
 					Categories
@@ -143,6 +140,6 @@ export function CategoryManager() {
 				open={drawerOpen}
 				onClose={() => setDrawerOpen(false)}
 			/>
-		</Card>
+		</div>
 	);
 }

@@ -84,6 +84,23 @@ svg * {
 	fill: transparent !important;
 }
 
+.main-content {
+	-webkit-mask-image: linear-gradient(
+		to bottom,
+		transparent 0%,
+		transparent env(safe-area-inset-top, 0px),
+		black calc(env(safe-area-inset-top, 0px) + 0.75rem),
+		black 100%
+	);
+	mask-image: linear-gradient(
+		to bottom,
+		transparent 0%,
+		transparent env(safe-area-inset-top, 0px),
+		black calc(env(safe-area-inset-top, 0px) + 0.75rem),
+		black 100%
+	);
+}
+
 
 
 input,

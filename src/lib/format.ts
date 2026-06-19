@@ -3,13 +3,15 @@ import { formatDateTime } from "@/lib/datetime";
 export function formatCurrency(
 	value: number,
 	currency = "INR",
-	locale = "en-IN",
+	_locale = "en-IN",
 ): string {
-	return new Intl.NumberFormat(locale, {
+	return new Intl.NumberFormat("en-US", {
 		style: "currency",
 		currency,
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
+		notation: "compact",
+		compactDisplay: "short",
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 1,
 	}).format(value);
 }
 

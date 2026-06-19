@@ -51,6 +51,10 @@ export function AuthForm({
 
 	const form = useForm<SignupValues | LoginValues>({
 		resolver: zodResolver(schema),
+		defaultValues:
+			mode === "signup"
+				? { name: "", username: "", password: "" }
+				: { username: "", password: "" },
 	});
 	const {
 		handleSubmit,

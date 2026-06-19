@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FiGrid, FiList, FiTag } from "react-icons/fi";
+import { FiGrid, FiList, FiSettings, FiTag } from "react-icons/fi";
 
 import { cn } from "@/lib/utils";
 
@@ -10,6 +10,7 @@ const items = [
 	{ href: "/dashboard", label: "Dashboard", icon: FiGrid },
 	{ href: "/expenses", label: "Expenses", icon: FiList },
 	{ href: "/categories", label: "Categories", icon: FiTag },
+	{ href: "/settings", label: "Settings", icon: FiSettings },
 ];
 
 export function BottomNav() {
@@ -21,8 +22,8 @@ export function BottomNav() {
 				{items.map((item) => {
 					const Icon = item.icon;
 					const active =
-						item.href === "/dashboard"
-							? pathname === "/dashboard"
+						item.href === "/dashboard" || item.href === "/settings"
+							? pathname === item.href
 							: pathname.startsWith(item.href);
 					return (
 						<Link

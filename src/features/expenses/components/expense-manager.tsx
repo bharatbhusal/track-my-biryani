@@ -10,10 +10,9 @@ import {
 	useCategoriesQuery,
 	useExpensesQuery,
 } from "@/hooks/api/use-expenses-api";
-import {
-	toIsoBounds,
-	DEFAULT_GLOBAL_RANGE,
-} from "@/lib/date-range";
+import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
+import { usePersistedRange } from "@/hooks/use-persisted-range";
+import { toIsoBounds, toRangeParams } from "@/lib/date-range";
 import type { GlobalDateRange } from "@/lib/date-range";
 
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
@@ -28,9 +27,11 @@ export function ExpenseManager() {
 	const [order, setOrder] = useState<"asc" | "desc">("desc");
 	const [page, setPage] = useState(1);
 	const [localRange, setLocalRange] =
-		useState<GlobalDateRange>(DEFAULT_GLOBAL_RANGE);
+		usePersistedRange();
 
 	const categoriesQuery = useCategoriesQuery();
+	const rangeParams = toRangeParams(localRange);
+	const { data: dashboardData } = useDashboardQuery(rangeParams);
 	const debouncedQuery = useDebouncedValue(query, 300);
 
 	const filters = useMemo(() => {
@@ -120,9 +121,11 @@ export function ExpenseManager() {
 			</Card>
 
 			<CategoryDistributionBar
-				range={localRange}
-				selectedCategoryId={categoryId}
+				distribution={dashboardData?.rankedCategories ?? []}
+				categories={categoriesQuery.data ?? []}
+				selectedCategoryId={categoryId || undefined}
 				onCategorySelect={handleCategorySelect}
+				isLoading={!dashboardData}
 			/>
 
 			<ExpenseTable

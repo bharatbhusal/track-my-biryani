@@ -27,6 +27,7 @@ import {
 	useExpenseMutations,
 	useExpensesQuery,
 } from "@/hooks/api/use-expenses-api";
+import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { toIsoBounds } from "@/lib/date-range";
 import { formatCurrency } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
@@ -36,7 +37,6 @@ import type {
 	CategoryItem,
 } from "@/types/expense.types";
 import type { GlobalDateRange } from "@/lib/date-range";
-import { DEFAULT_GLOBAL_RANGE } from "@/lib/date-range";
 import { EmojiBadge } from "@/components/ui/emoji-badge";
 
 export function CategoryDetailView({
@@ -53,9 +53,7 @@ export function CategoryDetailView({
 	const [editDrawerOpen, setEditDrawerOpen] =
 		useState(false);
 	const [page, setPage] = useState(1);
-	const [range, setRange] = useState<GlobalDateRange>(
-		DEFAULT_GLOBAL_RANGE,
-	);
+	const [range, setRange] = usePersistedRange();
 	const locale = useUIStore((state) => state.locale);
 	const currency = useUIStore((state) => state.currency);
 
@@ -309,39 +307,43 @@ export function CategoryDetailView({
 				</ChartCard>
 			)}
 
-			<Card>
-				<CardTitle className="mb-2">
-					Recent in Category
-				</CardTitle>
-				<ExpenseTable
-					items={expenses.slice(0, 10)}
-					categoryMap={new Map([[category._id, category]])}
-					emptyMessage="No expenses in this category"
-					page={page}
-					totalPages={expensesQuery.data?.totalPages}
-					onPageChange={setPage}
-				/>
-			</Card>
-			<Card>
-				<CardTitle className="mb-2">Expense Route</CardTitle>
+			{expenses.length > 0 && (
+				<>
+					<Card>
+						<CardTitle className="mb-2">
+							Recent in Category
+						</CardTitle>
+						<ExpenseTable
+							items={expenses.slice(0, 10)}
+							categoryMap={new Map([[category._id, category]])}
+							emptyMessage="No expenses in this category"
+							page={page}
+							totalPages={expensesQuery.data?.totalPages}
+							onPageChange={setPage}
+						/>
+					</Card>
+					<Card>
+						<CardTitle className="mb-2">Expense Route</CardTitle>
 
-				<p className="mb-3 text-sm text-[var(--color-muted)]">
-					Route connecting the first{" "}
-					{Math.min(expenses.length, 5)} expenses in this
-					category.
-				</p>
+						<p className="mb-3 text-sm text-[var(--color-muted)]">
+							Route connecting the first{" "}
+							{Math.min(expenses.length, 5)} expenses in this
+							category.
+						</p>
 
-				<Button
-					disabled={!routeUrl}
-					onClick={() => {
-						if (routeUrl) {
-							window.open(routeUrl, "_blank");
-						}
-					}}
-				>
-					View Route in Google Maps
-				</Button>
-			</Card>
+						<Button
+							disabled={!routeUrl}
+							onClick={() => {
+								if (routeUrl) {
+									window.open(routeUrl, "_blank");
+								}
+							}}
+						>
+							View Route in Google Maps
+						</Button>
+					</Card>
+				</>
+			)}
 
 			<AddCategoryDrawer
 				open={editDrawerOpen}

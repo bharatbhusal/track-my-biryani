@@ -9,7 +9,7 @@ export function ToastProvider() {
 
 	return (
 		<Toaster
-			position="top-right"
+			position="top-center"
 			theme={theme}
 			style={{ paddingTop: "var(--safe-area-top)" }}
 			toastOptions={{

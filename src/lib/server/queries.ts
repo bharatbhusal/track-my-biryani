@@ -36,30 +36,55 @@ async function getSession() {
 	return auth;
 }
 
+function getMonday(date: Date): Date {
+	const d = new Date(date);
+	const day = d.getDay();
+	const diff = day === 0 ? -6 : 1 - day;
+	d.setDate(d.getDate() + diff);
+	d.setHours(0, 0, 0, 0);
+	return d;
+}
+
 function parseRangeToDates(range: GlobalDateRange): {
 	from: Date;
 	to: Date;
 } {
 	const now = new Date();
 
-	if (range.preset === "this_week") {
+	if (range.preset === "day") {
 		const from = new Date(now);
-		from.setDate(now.getDate() - 6);
+		from.setDate(now.getDate() - (range.offset ?? 0));
 		from.setHours(0, 0, 0, 0);
-		return { from, to: now };
+		if ((range.offset ?? 0) === 0) return { from, to: now };
+		const to = new Date(from);
+		to.setHours(23, 59, 59, 999);
+		return { from, to };
 	}
 
-	if (range.preset === "this_year") {
-		return {
-			from: new Date(now.getFullYear(), 0, 1),
-			to: now,
-		};
+	if (range.preset === "week") {
+		const monday = getMonday(now);
+		monday.setDate(monday.getDate() - (range.offset ?? 0) * 7);
+		const from = new Date(monday);
+		if ((range.offset ?? 0) === 0) return { from, to: now };
+		const to = new Date(monday);
+		to.setDate(to.getDate() + 6);
+		to.setHours(23, 59, 59, 999);
+		return { from, to };
 	}
 
-	return {
-		from: new Date(now.getFullYear(), now.getMonth(), 1),
-		to: now,
-	};
+	if (range.preset === "year") {
+		const year = now.getFullYear() - (range.offset ?? 0);
+		const from = new Date(year, 0, 1);
+		if ((range.offset ?? 0) === 0) return { from, to: now };
+		const to = new Date(year, 11, 31, 23, 59, 59, 999);
+		return { from, to };
+	}
+
+	const month = now.getMonth() - (range.offset ?? 0);
+	const from = new Date(now.getFullYear(), month, 1);
+	if ((range.offset ?? 0) === 0) return { from, to: now };
+	const to = new Date(now.getFullYear(), month + 1, 0, 23, 59, 59, 999);
+	return { from, to };
 }
 
 function resolveGranularity(
@@ -71,7 +96,7 @@ function resolveGranularity(
 	averageLabel: string;
 	chartLabel: string;
 } {
-	if (preset === "this_year") {
+	if (preset === "year") {
 		return {
 			granularity: "month",
 			averageLabel: "Average spend per month",
@@ -310,6 +335,8 @@ export async function getServerDashboardData(
 			amount: item.amount,
 			paidAt: item.paidAt,
 		})),
+		periodLabel: "",
+		cards: [],
 	});
 }
 

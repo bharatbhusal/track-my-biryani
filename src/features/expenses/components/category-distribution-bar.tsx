@@ -3,56 +3,42 @@
 import { useMemo, useCallback } from "react";
 import { ChartCard } from "@/components/charts/chart-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
-import { useCategoriesQuery } from "@/hooks/api/use-expenses-api";
 import { formatCurrency } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
-import type { GlobalDateRange } from "@/lib/date-range";
+import type { CategoryBreakdownPoint } from "@/types/analytics.types";
+import type { CategoryItem } from "@/types/expense.types";
 
 type Props = {
-	range: GlobalDateRange;
+	distribution: CategoryBreakdownPoint[];
+	categories: CategoryItem[];
 	selectedCategoryId?: string;
-	onCategorySelect?: (
-		categoryId: string | undefined,
-	) => void;
+	onCategorySelect: (id: string | undefined) => void;
+	isLoading?: boolean;
 };
 
 export function CategoryDistributionBar({
-	range,
+	distribution,
+	categories,
 	selectedCategoryId,
 	onCategorySelect,
+	isLoading,
 }: Props) {
 	const locale = useUIStore((s) => s.locale);
 	const currency = useUIStore((s) => s.currency);
-	const categoriesQuery = useCategoriesQuery();
 
-	const { data, isLoading } = useDashboardQuery({
-		preset: range.preset,
-	});
-
-	const distribution = data?.rankedCategories ?? [];
 	const total = useMemo(
 		() => distribution.reduce((s, c) => s + c.value, 0),
 		[distribution],
 	);
 
 	const categoryNameToId = useMemo(
-		() =>
-			new Map(
-				(categoriesQuery.data ?? []).map((c) => [
-					c.name,
-					c._id,
-				]),
-			),
-		[categoriesQuery.data],
+		() => new Map(categories.map((c) => [c.name, c._id])),
+		[categories],
 	);
 
 	const categoryMeta = useMemo(
-		() =>
-			new Map(
-				(categoriesQuery.data ?? []).map((c) => [c.name, c]),
-			),
-		[categoriesQuery.data],
+		() => new Map(categories.map((c) => [c.name, c])),
+		[categories],
 	);
 
 	const toggle = useCallback(

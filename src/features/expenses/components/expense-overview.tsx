@@ -1,62 +1,52 @@
 "use client";
 
-import { useMemo } from "react";
-import { FiCalendar, FiDollarSign } from "react-icons/fi";
+import { FiCalendar } from "react-icons/fi";
 
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/stat-card";
 import { DateRangeSelect } from "@/components/charts/date-range-select";
-import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
-import {
-	rangeLabel,
-	toRangeParams,
-} from "@/lib/date-range";
 import { formatCurrency } from "@/lib/format";
 import { useUIStore } from "@/store/ui-store";
-import type { GlobalDateRange } from "@/lib/date-range";
 import { IndianRupeeIcon } from "lucide-react";
-
-function daysElapsed(preset: string): number {
-	const now = new Date();
-	const start = new Date(now);
-	if (preset === "this_week") {
-		start.setDate(now.getDate() - 6);
-	} else if (preset === "this_year") {
-		start.setMonth(0, 1);
-	} else {
-		start.setDate(1);
-	}
-	start.setHours(0, 0, 0, 0);
-	return Math.floor(
-		(now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
-	);
-}
+import type { GlobalDateRange } from "@/lib/date-range";
+import type { DashboardAnalytics, DashboardCard } from "@/types/analytics.types";
 
 type ExpenseOverviewProps = {
+	data: DashboardAnalytics | undefined;
+	isLoading: boolean;
 	range: GlobalDateRange;
 	onRangeChange: (range: GlobalDateRange) => void;
 };
 
+const cardIcons: Record<string, React.ReactNode> = {
+	total_spend: (
+		<IndianRupeeIcon className="h-5 w-5 text-[var(--color-muted)]" />
+	),
+	spend_per_day: (
+		<FiCalendar className="h-5 w-5 text-[var(--color-muted)]" />
+	),
+	spend_per_month: (
+		<FiCalendar className="h-5 w-5 text-[var(--color-muted)]" />
+	),
+};
+
 export function ExpenseOverview({
+	data,
+	isLoading,
 	range,
 	onRangeChange,
 }: ExpenseOverviewProps) {
 	const locale = useUIStore((state) => state.locale);
 	const currency = useUIStore((state) => state.currency);
-	const rangeParams = toRangeParams(range);
-	const { data, isLoading } = useDashboardQuery(rangeParams);
 
-	const days = useMemo(
-		() => daysElapsed(range.preset),
-		[range.preset],
-	);
+	const skeletonCount = range.preset === "day" ? 1 : 2;
 
 	return (
 		<div>
 			<div className="flex items-center justify-between flex-wrap gap-2 mb-3">
 				<h3 className="text-base font-semibold tracking-tight">
-					{rangeLabel(range)}
+					{data?.periodLabel ?? "Overview"}
 				</h3>
 				<DateRangeSelect
 					value={range}
@@ -67,38 +57,34 @@ export function ExpenseOverview({
 			</div>
 
 			{isLoading || !data ? (
-				<div className="grid grid-cols-2 gap-4 w-full">
-					{[...Array(2)].map((_, i) => (
-						<Card key={i}>
-							<Skeleton className="h-4 w-24 mb-2" />
-							<Skeleton className="h-8 w-32" />
-						</Card>
+				<div className="flex flex-wrap gap-2">
+					{[...Array(skeletonCount)].map((_, i) => (
+						<div key={i} className="flex-1 min-w-[calc(50%-0.5rem)]">
+							<Card>
+								<Skeleton className="h-4 w-24 mb-2" />
+								<Skeleton className="h-8 w-32" />
+							</Card>
+						</div>
 					))}
 				</div>
 			) : (
-				<div className="grid grid-cols-2 gap-4 w-full">
-					<StatCard
-						icon={
-							<IndianRupeeIcon className="h-5 w-5 text-[var(--color-muted)]" />
-						}
-						title="Total Spend"
-						value={formatCurrency(
-							data.totalSpend,
-							currency,
-							locale,
-						)}
-					/>
-					<StatCard
-						icon={
-							<FiCalendar className="h-5 w-5 text-[var(--color-muted)]" />
-						}
-						title="Spend per Day"
-						value={formatCurrency(
-							days > 0 ? data.totalSpend / days : data.totalSpend,
-							currency,
-							locale,
-						)}
-					/>
+				<div className="flex flex-wrap gap-2">
+					{data.cards.map((card: DashboardCard) => (
+						<div
+							key={card.key}
+							className="flex-1 min-w-[calc(50%-0.5rem)]"
+						>
+							<StatCard
+								icon={cardIcons[card.key]}
+								title={card.title}
+								value={formatCurrency(
+									card.value,
+									currency,
+									locale,
+								)}
+							/>
+						</div>
+					))}
 				</div>
 			)}
 		</div>

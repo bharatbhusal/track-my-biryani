@@ -3,11 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
 	FiEdit2,
 	FiTrash2,
-	FiArrowLeft,
 } from "react-icons/fi";
 import { toast } from "sonner";
 
@@ -15,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { ConfirmDrawer } from "@/components/ui/drawer";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DateRangeSelect } from "@/components/charts/date-range-select";
+import { CategoryCard } from "@/features/categories/components/category-card";
 import {
 	useCategoriesQuery,
 	useExpenseDetailQuery,
@@ -31,6 +32,10 @@ import {
 } from "recharts";
 import GoogleMap from "@/components/maps/google-map";
 import { formatCurrency, formatDate } from "@/lib/format";
+import {
+	toIsoBounds,
+} from "@/lib/date-range";
+import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { useUIStore } from "@/store/ui-store";
 import type {
 	ExpenseItem,
@@ -53,6 +58,7 @@ export function ExpenseDetailView({
 }: ExpenseDetailViewProps) {
 	const router = useRouter();
 	const [deleteOpen, setDeleteOpen] = useState(false);
+	const [insightRange, setInsightRange] = usePersistedRange();
 	const locale = useUIStore((state) => state.locale);
 	const timezone = useUIStore((state) => state.timezone);
 	const currency = useUIStore((state) => state.currency);
@@ -73,6 +79,17 @@ export function ExpenseDetailView({
 	const contribution: ExpenseContribution | null =
 		contributionQuery.data ?? null;
 	const isContributionLoading = contributionQuery.isLoading;
+
+	const filteredTrend = useMemo(() => {
+		if (!contribution) return [];
+		const bounds = toIsoBounds(insightRange);
+		const from = bounds.from ? new Date(bounds.from).getTime() : 0;
+		const to = bounds.to ? new Date(bounds.to).getTime() : Infinity;
+		return contribution.monthlyTrend.filter((point) => {
+			const d = new Date(point.name);
+			return d.getTime() >= from && d.getTime() <= to;
+		});
+	}, [contribution, insightRange]);
 
 	if (!expense) {
 		return <Card>Loading expense...</Card>;
@@ -207,7 +224,13 @@ export function ExpenseDetailView({
 			) : (
 				contribution && (
 					<Card>
-						<CardTitle className="mb-3">Insights</CardTitle>
+						<div className="flex items-center justify-between mb-3">
+							<CardTitle>Insights</CardTitle>
+							<DateRangeSelect
+								value={insightRange}
+								onChange={setInsightRange}
+							/>
+						</div>
 						<div className="space-y-4">
 							<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 								<div className="text-sm space-y-3">
@@ -265,95 +288,41 @@ export function ExpenseDetailView({
 
 								{/* Category comparison */}
 								<div className="text-sm space-y-3">
-									<p className="text-[var(--color-muted)] text-xs uppercase tracking-wide">
+									<p className="text-[var(--color-muted)] text-xs uppercase tracking-wide pb-1">
 										Category Comparison
 									</p>
-									<div className="space-y-2">
-										<div className="flex justify-between">
-											<span>Category average</span>
-											<span className="font-medium">
-												{formatCurrency(
-													contribution.categoryAverage,
-													expense.currency || currency,
-													locale,
-												)}
-											</span>
-										</div>
-										<div className="flex justify-between">
-											<span>This expense</span>
-											<span className="font-medium">
-												{formatCurrency(
-													expense.amount,
-													expense.currency || currency,
-													locale,
-												)}
-											</span>
-										</div>
-										<div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
-											<div
-												className="h-full rounded-full bg-[var(--chart-2)] transition-all"
-												style={{
-													width: `${Math.min(
-														contribution.categoryAverage > 0
-															? (expense.amount /
-																	contribution.categoryAverage) *
-																	100
-															: 0,
-														100,
-													)}%`,
-												}}
-											/>
-										</div>
-										<p className="text-xs text-[var(--color-muted)]">
-											{contribution.categoryAverage > 0
-												? `${
-														expense.amount > contribution.categoryAverage
-															? `${((expense.amount / contribution.categoryAverage - 1) * 100).toFixed(0)}% above`
-															: `${((1 - expense.amount / contribution.categoryAverage) * 100).toFixed(0)}% below`
-													} the category average`
-												: "No other expenses in this category"}
-										</p>
-									</div>
-
-									<div className="pt-2 border-t border-[var(--color-border)]">
-										<div className="flex justify-between">
-											<span>Category total</span>
-											<span className="font-medium">
-												{formatCurrency(
-													contribution.categoryTotal,
-													expense.currency || currency,
-													locale,
-												)}
-											</span>
-										</div>
-										<div className="flex justify-between">
-											<span>Category share</span>
-											<span className="font-medium">
-												{contribution.categoryContributionPercent.toFixed(
-													1,
-												)}
-												%
-											</span>
-										</div>
-										<div className="flex justify-between">
-											<span>Transactions in category</span>
-											<span className="font-medium">
-												{contribution.categoryExpenseCount}
-											</span>
-										</div>
+									{category && (
+										<CategoryCard
+											category={category}
+											amount={contribution.categoryAverage}
+											count={contribution.categoryExpenseCount}
+											totalSpend={contribution.categoryTotal}
+										/>
+									)}
+									<div className="flex justify-between text-xs">
+										<span className="text-[var(--color-muted)]">
+											This expense
+										</span>
+										<span className="font-medium">
+											{formatCurrency(
+												expense.amount,
+												expense.currency || currency,
+												locale,
+											)}
+										</span>
 									</div>
 								</div>
 							</div>
 
-							{/* Category monthly trend mini chart */}
-							{contribution.monthlyTrend.length > 0 && (
+							{/* Category trend chart */}
+							{filteredTrend.length >= 2 && (
 								<div className="pt-3 border-t border-[var(--color-border)]">
 									<p className="text-xs text-[var(--color-muted)] uppercase tracking-wide mb-2">
-										Category Monthly Trend (12 months)
+										Category Trend
 									</p>
 									<div className="h-48">
 										<ResponsiveContainer width="100%" height="100%">
-											<AreaChart data={contribution.monthlyTrend}>
+											<AreaChart data={filteredTrend}>
 												<XAxis
 													dataKey="name"
 													tick={{

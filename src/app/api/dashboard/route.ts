@@ -9,31 +9,146 @@ import {
 	listExpensesForRange,
 	listRecentExpenses,
 } from "@/repositories/expense.repository";
+import type { DashboardCard } from "@/types/analytics.types";
 
 type Granularity = "hour" | "day" | "month";
 
+function getMonday(date: Date): Date {
+	const d = new Date(date);
+	const day = d.getDay();
+	const diff = day === 0 ? -6 : 1 - day;
+	d.setDate(d.getDate() + diff);
+	d.setHours(0, 0, 0, 0);
+	return d;
+}
+
 function parseRange(url: URL): { from: Date; to: Date } {
 	const now = new Date();
-	const preset = url.searchParams.get("preset");
+	const preset = url.searchParams.get("preset") ?? "month";
+	const offset = parseInt(url.searchParams.get("offset") ?? "0", 10);
 
-	if (preset === "this_week") {
+	if (preset === "day") {
 		const from = new Date(now);
-		from.setDate(now.getDate() - 6);
+		from.setDate(now.getDate() - offset);
 		from.setHours(0, 0, 0, 0);
-		return { from, to: now };
+		if (offset === 0) return { from, to: now };
+		const to = new Date(from);
+		to.setHours(23, 59, 59, 999);
+		return { from, to };
 	}
 
-	if (preset === "this_year") {
-		return {
-			from: new Date(now.getFullYear(), 0, 1),
-			to: now,
-		};
+	if (preset === "week") {
+		const monday = getMonday(now);
+		monday.setDate(monday.getDate() - offset * 7);
+		const from = new Date(monday);
+		if (offset === 0) return { from, to: now };
+		const to = new Date(monday);
+		to.setDate(to.getDate() + 6);
+		to.setHours(23, 59, 59, 999);
+		return { from, to };
 	}
 
-	return {
-		from: new Date(now.getFullYear(), now.getMonth(), 1),
-		to: now,
-	};
+	if (preset === "year") {
+		const year = now.getFullYear() - offset;
+		const from = new Date(year, 0, 1);
+		if (offset === 0) return { from, to: now };
+		const to = new Date(year, 11, 31, 23, 59, 59, 999);
+		return { from, to };
+	}
+
+	const month = now.getMonth() - offset;
+	const from = new Date(now.getFullYear(), month, 1);
+	if (offset === 0) return { from, to: now };
+	const to = new Date(now.getFullYear(), month + 1, 0, 23, 59, 59, 999);
+	return { from, to };
+}
+
+function computePeriodLabel(
+	from: Date,
+	to: Date,
+	preset: string,
+	locale = "en-IN",
+): string {
+	if (preset === "day") {
+		return new Intl.DateTimeFormat(locale, {
+			day: "numeric",
+			month: "long",
+		}).format(from);
+	}
+
+	if (preset === "week") {
+		const fromDay = from.getDate();
+		const toDay = to.getDate();
+		const month = new Intl.DateTimeFormat(locale, {
+			month: "long",
+		}).format(from);
+		if (from.getMonth() === to.getMonth()) {
+			return `${fromDay}-${toDay} ${month}`;
+		}
+		const toMonth = new Intl.DateTimeFormat(locale, {
+			month: "long",
+		}).format(to);
+		return `${fromDay} ${month} - ${toDay} ${toMonth}`;
+	}
+
+	if (preset === "year") {
+		return String(from.getFullYear());
+	}
+
+	return new Intl.DateTimeFormat(locale, {
+		month: "long",
+		year: "numeric",
+	}).format(from);
+}
+
+function computeCards(
+	totalSpend: number,
+	from: Date,
+	to: Date,
+	preset: string,
+): DashboardCard[] {
+	const cards: DashboardCard[] = [
+		{ key: "total_spend", title: "Total Spend", value: totalSpend },
+	];
+
+	if (preset === "day") return cards;
+
+	if (preset === "week") {
+		const days = 7;
+		cards.push({
+			key: "spend_per_day",
+			title: "Spend per Day",
+			value: days > 0 ? totalSpend / days : totalSpend,
+		});
+		return cards;
+	}
+
+	if (preset === "year") {
+		const months =
+			to.getMonth() -
+			from.getMonth() +
+			1 +
+			(to.getFullYear() - from.getFullYear()) * 12;
+		cards.push({
+			key: "spend_per_month",
+			title: "Spend per Month",
+			value: months > 0 ? totalSpend / months : totalSpend,
+		});
+		return cards;
+	}
+
+	const dayDiff = Math.max(
+		1,
+		Math.ceil(
+			(to.getTime() - from.getTime()) / (24 * 60 * 60 * 1000),
+		) + 1,
+	);
+	cards.push({
+		key: "spend_per_day",
+		title: "Spend per Day",
+		value: dayDiff > 0 ? totalSpend / dayDiff : totalSpend,
+	});
+	return cards;
 }
 
 function resolveGranularity(
@@ -45,7 +160,7 @@ function resolveGranularity(
 	averageLabel: string;
 	chartLabel: string;
 } {
-	if (preset === "this_year") {
+	if (preset === "year") {
 		return {
 			granularity: "month",
 			averageLabel: "Average spend per month",
@@ -83,42 +198,91 @@ function resolveGranularity(
 	};
 }
 
+function* iteratePeriods(
+	from: Date,
+	to: Date,
+	granularity: Granularity,
+): Generator<Date> {
+	const cursor = new Date(from);
+
+	if (granularity === "hour") {
+		cursor.setMinutes(0, 0, 0);
+		cursor.setHours(0);
+		const end = new Date(to);
+		for (let h = 0; h < 24; h++) {
+			cursor.setHours(h);
+			if (cursor > end) break;
+			yield new Date(cursor);
+		}
+		return;
+	}
+
+	if (granularity === "day") {
+		cursor.setHours(0, 0, 0, 0);
+		while (cursor <= to) {
+			yield new Date(cursor);
+			cursor.setDate(cursor.getDate() + 1);
+		}
+		return;
+	}
+
+	cursor.setDate(1);
+	cursor.setHours(0, 0, 0, 0);
+	while (cursor <= to) {
+		yield new Date(cursor);
+		cursor.setMonth(cursor.getMonth() + 1);
+	}
+}
+
+function periodKey(
+	date: Date,
+	granularity: Granularity,
+	locale = "en-IN",
+): string {
+	if (granularity === "hour") {
+		return date.getHours().toString().padStart(2, "0") + ":00";
+	}
+	if (granularity === "month") {
+		return new Intl.DateTimeFormat(locale, {
+			month: "short",
+			year: "2-digit",
+		}).format(date);
+	}
+	return new Intl.DateTimeFormat(locale, {
+		month: "short",
+		day: "2-digit",
+	}).format(date);
+}
+
 function groupExpenses(
 	expenses: Array<{
 		amount: number;
 		paidAt: Date | string;
 	}>,
 	granularity: Granularity,
-	locale = "en-IN",
+	locale: string,
+	from: Date,
+	to: Date,
 ): Array<{ name: string; total: number }> {
 	const map = new Map<string, number>();
+	const order = new Map<string, number>();
+	let idx = 0;
+
+	for (const date of iteratePeriods(from, to, granularity)) {
+		const key = periodKey(date, granularity, locale);
+		map.set(key, 0);
+		order.set(key, idx++);
+	}
 
 	expenses.forEach((expense) => {
 		const date = new Date(expense.paidAt);
-		let key = "";
-
-		if (granularity === "hour") {
-			key =
-				date.getHours().toString().padStart(2, "0") + ":00";
-		} else if (granularity === "month") {
-			key = new Intl.DateTimeFormat(locale, {
-				month: "short",
-				year: "2-digit",
-			}).format(date);
-		} else {
-			key = new Intl.DateTimeFormat(locale, {
-				month: "short",
-				day: "2-digit",
-			}).format(date);
-		}
-
+		const key = periodKey(date, granularity, locale);
 		map.set(key, (map.get(key) ?? 0) + expense.amount);
 	});
 
-	return Array.from(map.entries()).map(([name, total]) => ({
-		name,
-		total,
-	}));
+	return Array.from(map.entries())
+		.sort((a, b) => (order.get(a[0]) ?? 0) - (order.get(b[0]) ?? 0))
+		.map(([name, total]) => ({ name, total }));
 }
 
 function groupExpensesWithCategories(
@@ -132,12 +296,28 @@ function groupExpensesWithCategories(
 		name: string;
 	}>,
 	granularity: Granularity,
-	locale = "en-IN",
+	locale: string,
+	from: Date,
+	to: Date,
 ): Array<Record<string, string | number>> {
 	const byPeriod = new Map<
 		string,
 		Record<string, string | number>
 	>();
+	const order = new Map<string, number>();
+	const categoryNames = categories.map((c) => c.name);
+	let idx = 0;
+
+	for (const date of iteratePeriods(from, to, granularity)) {
+		const key = periodKey(date, granularity, locale);
+		const entry: Record<string, string | number> = { name: key };
+		for (const name of categoryNames) {
+			entry[name] = 0;
+		}
+		byPeriod.set(key, entry);
+		order.set(key, idx++);
+	}
+
 	const categoryNameById = new Map(
 		categories.map((c) => [
 			c._id.toString(),
@@ -147,22 +327,7 @@ function groupExpensesWithCategories(
 
 	expenses.forEach((expense) => {
 		const date = new Date(expense.paidAt);
-		let key = "";
-		if (granularity === "hour") {
-			key =
-				date.getHours().toString().padStart(2, "0") + ":00";
-		} else if (granularity === "month") {
-			key = new Intl.DateTimeFormat(locale, {
-				month: "short",
-				year: "2-digit",
-			}).format(date);
-		} else {
-			key = new Intl.DateTimeFormat(locale, {
-				month: "short",
-				day: "2-digit",
-			}).format(date);
-		}
-
+		const key = periodKey(date, granularity, locale);
 		const categoryName =
 			categoryNameById.get(expense.categoryId.toString()) ??
 			"Uncategorized";
@@ -172,7 +337,9 @@ function groupExpensesWithCategories(
 		byPeriod.set(key, current);
 	});
 
-	return Array.from(byPeriod.values());
+	return Array.from(byPeriod.entries())
+		.sort((a, b) => (order.get(a[0]) ?? 0) - (order.get(b[0]) ?? 0))
+		.map(([, value]) => value);
 }
 
 function buildMonthlyCategorySeries(
@@ -185,12 +352,28 @@ function buildMonthlyCategorySeries(
 		_id: { toString: () => string };
 		name: string;
 	}>,
+	from: Date,
+	to: Date,
 	locale = "en-IN",
 ): Array<Record<string, string | number>> {
 	const byMonth = new Map<
 		string,
 		Record<string, string | number>
 	>();
+	const order = new Map<string, number>();
+	const categoryNames = categories.map((c) => c.name);
+	let idx = 0;
+
+	for (const date of iteratePeriods(from, to, "month")) {
+		const key = periodKey(date, "month", locale);
+		const entry: Record<string, string | number> = { month: key };
+		for (const name of categoryNames) {
+			entry[name] = 0;
+		}
+		byMonth.set(key, entry);
+		order.set(key, idx++);
+	}
+
 	const categoryNameById = new Map(
 		categories.map((category) => [
 			category._id.toString(),
@@ -200,10 +383,7 @@ function buildMonthlyCategorySeries(
 
 	expenses.forEach((expense) => {
 		const date = new Date(expense.paidAt);
-		const month = new Intl.DateTimeFormat(locale, {
-			month: "short",
-			year: "2-digit",
-		}).format(date);
+		const month = periodKey(date, "month", locale);
 		const categoryName =
 			categoryNameById.get(expense.categoryId.toString()) ??
 			"Uncategorized";
@@ -213,7 +393,9 @@ function buildMonthlyCategorySeries(
 		byMonth.set(month, current);
 	});
 
-	return Array.from(byMonth.values());
+	return Array.from(byMonth.entries())
+		.sort((a, b) => (order.get(a[0]) ?? 0) - (order.get(b[0]) ?? 0))
+		.map(([, value]) => value);
 }
 
 export async function GET(request: Request) {
@@ -249,6 +431,9 @@ export async function GET(request: Request) {
 		const mainSeries = groupExpenses(
 			expenses,
 			granularityMeta.granularity,
+			"en-IN",
+			from,
+			to,
 		);
 		const averageSpend =
 			mainSeries.length > 0
@@ -282,15 +467,23 @@ export async function GET(request: Request) {
 		const dailyCashFlowSeries = groupExpenses(
 			expenses,
 			"day",
+			"en-IN",
+			from,
+			to,
 		);
 		const stackedSeries = groupExpensesWithCategories(
 			expenses,
 			categories,
 			granularityMeta.granularity,
+			"en-IN",
+			from,
+			to,
 		);
 		const monthlyCategorySeries = buildMonthlyCategorySeries(
 			expenses,
 			categories,
+			from,
+			to,
 		);
 
 		return successResponse({
@@ -310,6 +503,17 @@ export async function GET(request: Request) {
 				amount: item.amount,
 				paidAt: item.paidAt,
 			})),
+			periodLabel: computePeriodLabel(
+				from,
+				to,
+				preset ?? "month",
+			),
+			cards: computeCards(
+				totalSpend,
+				from,
+				to,
+				preset ?? "month",
+			),
 		});
 	} catch (error) {
 		return errorResponse(error);
