@@ -36,7 +36,7 @@ export const expenseSchema = z.object({
 		address: z.string().optional(),
 	}),
 	currency: z.string(),
-	paidAt: z.iso.datetime(),
+	paidAt: z.iso.datetime().optional(),
 });
 
 export const expenseFiltersSchema = z.object({

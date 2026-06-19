@@ -71,7 +71,7 @@ export async function createExpense(data: {
 		address?: string;
 	};
 	currency: string;
-	paidAt: Date;
+	paidAt?: Date;
 }) {
 	const expense = await ExpenseModel.create(data);
 	return expense.toObject();

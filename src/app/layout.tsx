@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 
 import { AppProvider } from "@/components/providers/app-provider";
 import { UiRestriction } from "@/components/providers/ui-restriction";
+import { Analytics } from "@vercel/analytics/next";
 
 import "./globals.css";
 
@@ -55,6 +56,7 @@ export default function RootLayout({
 				<UiRestriction>
 					<AppProvider>{children}</AppProvider>
 				</UiRestriction>
+				<Analytics />
 			</body>
 		</html>
 	);

@@ -48,7 +48,9 @@ export async function POST(request: NextRequest) {
 			images: payload.images,
 			location: payload.location,
 			currency: payload.currency,
-			paidAt: new Date(payload.paidAt),
+			paidAt: payload?.paidAt
+				? new Date(payload.paidAt)
+				: undefined,
 		});
 
 		await logAuditEvent({
