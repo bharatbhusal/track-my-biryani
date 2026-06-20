@@ -49,9 +49,6 @@ export function CategoryDistributionBar({
 		[onCategorySelect, selectedCategoryId],
 	);
 
-	if (!isLoading && (distribution.length < 2 || total === 0))
-		return null;
-
 	return (
 		<ChartCard title="Category Distribution">
 			{isLoading ? (
