@@ -105,6 +105,16 @@ export function ExpenseDetailView({
 						{formatDate(expense.paidAt, locale, timezone)}
 					</p>
 				</div>
+				{expense.notes?.trim() && (
+					<div className="mt-4 border-t border-[var(--color-border)] pt-4">
+						<p className="mb-1 text-sm text-[var(--color-muted)]">
+							Notes
+						</p>
+						<p className="whitespace-pre-wrap text-sm">
+							{expense.notes}
+						</p>
+					</div>
+				)}
 			</Card>
 			<Card className="flex justify-between">
 				<div className="flex gap-2">
