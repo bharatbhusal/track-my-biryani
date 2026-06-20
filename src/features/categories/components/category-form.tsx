@@ -22,8 +22,8 @@ const EmojiPicker = dynamic(
 );
 
 function randomColor(): string {
-	const hue = Math.floor(Math.random() * 360);
-	return `hsl(${hue}, 65%, 55%)`;
+	const random = Math.floor(Math.random() * 0xffffff);
+	return `#${random.toString(16).padStart(6, "0")}`;
 }
 
 type FormValues = {

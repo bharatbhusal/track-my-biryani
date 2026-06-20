@@ -15,6 +15,8 @@ import {
 	listExpenses,
 } from "@/repositories/expense.repository";
 import { logAuditEvent } from "@/services/audit.service";
+import { findUserById } from "@/repositories/user.repository";
+import { AppError } from "@/lib/errors";
 
 export async function GET(request: NextRequest) {
 	try {
@@ -38,6 +40,15 @@ export async function POST(request: NextRequest) {
 		await connectToDatabase();
 		const auth = await getAuthPayload();
 		const payload = expenseSchema.parse(await request.json());
+
+		const existing = await findUserById(auth.userId);
+		if (!existing) {
+			throw new AppError(
+				"User doesn't exist",
+				409,
+				"USER_DOESN'T_EXIST",
+			);
+		}
 
 		const expense = await createExpense({
 			userId: auth.userId,

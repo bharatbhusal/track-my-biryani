@@ -7,18 +7,5 @@ export function ToastProvider() {
 	const { resolvedTheme } = useTheme();
 	const theme = resolvedTheme === "dark" ? "dark" : "light";
 
-	return (
-		<Toaster
-			position="top-center"
-			theme={theme}
-			style={{ paddingTop: "calc(var(--safe-area-top) + 1.5rem)" }}
-			toastOptions={{
-				style: {
-					background: "var(--color-surface)",
-					color: "var(--color-text)",
-					border: "1px solid var(--color-border)",
-				},
-			}}
-		/>
-	);
+	return <Toaster offset="200rem" theme={theme} />;
 }
