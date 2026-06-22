@@ -314,12 +314,40 @@ function groupExpensesWithCategories(
 		byPeriod.set(key, current);
 	});
 
-	return Array.from(byPeriod.entries())
+	const result = Array.from(byPeriod.entries())
 		.sort(
 			(a, b) =>
 				(order.get(a[0]) ?? 0) - (order.get(b[0]) ?? 0),
 		)
 		.map(([, value]) => value);
+
+	const categoryTotals = new Map<string, number>();
+	for (const item of result) {
+		for (const [key, val] of Object.entries(item)) {
+			if (key !== "name" && typeof val === "number") {
+				categoryTotals.set(
+					key,
+					(categoryTotals.get(key) ?? 0) + val,
+				);
+			}
+		}
+	}
+	const activeCategories = new Set(
+		Array.from(categoryTotals.entries())
+			.filter(([, total]) => total > 0)
+			.map(([name]) => name),
+	);
+	return result.map((item) => {
+		const filtered: Record<string, string | number> = {
+			name: item.name as string,
+		};
+		for (const [key, val] of Object.entries(item)) {
+			if (key !== "name" && activeCategories.has(key)) {
+				filtered[key] = val;
+			}
+		}
+		return filtered;
+	});
 }
 
 export async function GET(request: Request) {

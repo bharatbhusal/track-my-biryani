@@ -13,6 +13,7 @@ import {
 
 import { ChartContainer } from "@/components/ui/chart";
 import { ChartCard } from "@/components/charts/chart-card";
+import { ChartTooltip } from "@/components/charts/chart-tooltip";
 
 type Props = {
 	stackedSeries: Array<Record<string, string | number>>;
@@ -99,12 +100,7 @@ export function CashFlowChart({
 							/>
 							<Tooltip
 								active={showTooltip}
-								contentStyle={{
-									backgroundColor: "var(--color-surface)",
-									border: "1px solid var(--color-border)",
-									borderRadius: "0.5rem",
-									fontSize: "0.875rem",
-								}}
+								content={<ChartTooltip />}
 							/>
 							{categoryNames.map((name) => (
 								<Line
