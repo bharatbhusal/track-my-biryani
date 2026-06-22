@@ -2,13 +2,17 @@
 
 import { useState } from "react";
 import {
+	FiDownload,
+	FiPlus,
 	FiRefreshCw,
-	FiUploadCloud,
 	FiX,
 } from "react-icons/fi";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { uploadsApi } from "@/lib/api/uploads";
 import { buildUploadPublicId } from "@/lib/naming";
 import {
@@ -30,15 +34,22 @@ type GlimpsesUploadProps = {
 	expenseTitle?: string;
 };
 
+function getExtension(url: string): string {
+	const match = url.match(/\.(\w+)(?:\?.*)?$/);
+	return match?.[1] ?? "jpg";
+}
+
 export function GlimpsesUpload({
 	value,
 	onChange,
 	expenseTitle = "expense",
 }: GlimpsesUploadProps) {
-	const [isDragging, setIsDragging] = useState(false);
 	const [uploading, setUploading] = useState<
 		UploadingItem[]
 	>([]);
+	const [clickedImage, setClickedImage] = useState<
+		string | null
+	>(null);
 
 	const hasPending = uploading.some(
 		(item) => item.status === "uploading",
@@ -46,9 +57,7 @@ export function GlimpsesUpload({
 
 	const handleUpload = async (files: FileList | File[]) => {
 		const fileList = Array.from(files);
-		if (fileList.length === 0) {
-			return;
-		}
+		if (fileList.length === 0) return;
 
 		if (value.length + fileList.length > 5) {
 			toast.error(
@@ -134,49 +143,65 @@ export function GlimpsesUpload({
 		);
 	};
 
+	const handleFileInput = (
+		e: React.ChangeEvent<HTMLInputElement>,
+	) => {
+		if (!e.target.files) return;
+		void handleUpload(e.target.files);
+		e.target.value = "";
+	};
+
+	const downloadImage = (url: string, index: number) => {
+		const ext = getExtension(url);
+		const filename = `${expenseTitle.replace(/\s+/g, "_")}_image_${index}.${ext}`;
+		const anchor = document.createElement("a");
+		anchor.href = url;
+		anchor.download = filename;
+		document.body.appendChild(anchor);
+		anchor.click();
+		document.body.removeChild(anchor);
+	};
+
 	return (
 		<div className="space-y-3">
-			<div
-				className={`rounded-lg border border-dashed p-4 text-center transition ${
-					isDragging
-						? "border-[var(--color-primary)] bg-[var(--color-primary)]/10"
-						: "border-[var(--color-border)] bg-[var(--color-surface)]"
-				}`}
-				onDragOver={(event) => {
-					event.preventDefault();
-					setIsDragging(true);
-				}}
-				onDragLeave={() => setIsDragging(false)}
-				onDrop={(event) => {
-					event.preventDefault();
-					setIsDragging(false);
-					void handleUpload(event.dataTransfer.files);
-				}}
-			>
-				<FiUploadCloud className="mx-auto mb-2 text-xl text-[var(--color-muted)]" />
-				<p className="text-sm text-[var(--color-muted)]">
-					Drag & drop glimpses here, or choose files
-				</p>
-				<div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-					<label className="cursor-pointer">
-						<Button type="button" variant="default" asChild>
-							<span className="inline-flex items-center gap-2">
-								<FiUploadCloud />
-								Upload
-							</span>
-						</Button>
-						<input
+			<Label>Glimpses</Label>
+			<div className="flex gap-2 overflow-x-auto">
+				{value.map((url) => (
+					<div
+						key={url}
+						className="relative shrink-0 overflow-hidden rounded-lg border border-[var(--color-border)]"
+					>
+						{/* eslint-disable-next-line @next/next/no-img-element */}
+						<img
+							src={url}
+							alt="Glimpse preview"
+							className="h-28 w-28 cursor-pointer object-cover"
+							loading="lazy"
+							onClick={() => setClickedImage(url)}
+						/>
+						<button
+							type="button"
+							className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white hover:bg-black/80 transition-colors"
+							onClick={() =>
+								onChange(value.filter((each) => each !== url))
+							}
+						>
+							<FiX className="h-3 w-3" />
+						</button>
+					</div>
+				))}
+				{value.length < 5 && (
+					<div className="flex h-28 w-28 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-dashed border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors">
+						<FiPlus className="h-6 w-6" />
+						<Input
 							type="file"
-							className="hidden"
 							accept="image/*"
 							multiple
-							onChange={(event) => {
-								if (!event.target.files) return;
-								void handleUpload(event.target.files);
-							}}
+							className="hidden"
+							onChange={handleFileInput}
 						/>
-					</label>
-				</div>
+					</div>
+				)}
 			</div>
 
 			{uploading.length > 0 && (
@@ -217,39 +242,44 @@ export function GlimpsesUpload({
 				</ul>
 			)}
 
-			{value.length > 0 && (
-				<ul className="grid grid-cols-2 gap-2 md:grid-cols-3">
-					{value.map((item) => (
-						<li
-							key={item}
-							className="relative overflow-hidden rounded-lg border border-[var(--color-border)]"
-						>
-							{/* eslint-disable-next-line @next/next/no-img-element */}
-							<img
-								src={item}
-								alt="Glimpse preview"
-								className="h-28 w-full object-cover"
-								loading="lazy"
-							/>
-							<button
-								type="button"
-								className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white hover:bg-black/80 transition-colors"
-								onClick={() =>
-									onChange(value.filter((each) => each !== item))
-								}
-							>
-								<FiX />
-							</button>
-						</li>
-					))}
-				</ul>
-			)}
-
 			{hasPending && (
 				<p className="text-xs text-[var(--color-muted)]">
 					Uploads in progress...
 				</p>
 			)}
+
+			<Modal
+				open={!!clickedImage}
+				title="Image"
+				onClose={() => setClickedImage(null)}
+				className="sm:max-w-3xl"
+			>
+				{clickedImage && (
+					<div className="space-y-4">
+						{/* eslint-disable-next-line @next/next/no-img-element */}
+						<img
+							src={clickedImage}
+							alt="Full size"
+							className="max-h-[80vh] w-full rounded-lg object-contain"
+						/>
+						<div className="flex justify-center">
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() =>
+									downloadImage(
+										clickedImage,
+										value.indexOf(clickedImage),
+									)
+								}
+							>
+								<FiDownload className="mr-2 h-4 w-4" />
+								Download
+							</Button>
+						</div>
+					</div>
+				)}
+			</Modal>
 		</div>
 	);
 }

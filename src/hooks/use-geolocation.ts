@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 const GEOLOCATION_TIMEOUT_MS = 7000;
 
@@ -12,7 +12,7 @@ type GeoPoint = {
 export function useGeolocation() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const detect = async (): Promise<GeoPoint | null> => {
+  const detect = useCallback(async (): Promise<GeoPoint | null> => {
     if (!navigator.geolocation) {
       return null;
     }
@@ -39,7 +39,7 @@ export function useGeolocation() {
 
     setIsLoading(false);
     return result;
-  };
+  }, []);
 
   return { detect, isLoading };
 }

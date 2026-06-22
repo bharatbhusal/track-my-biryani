@@ -2,22 +2,24 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import dynamic from "next/dynamic";
-import { useCallback, useEffect, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import {
 	FiArrowLeft,
 	FiSave,
 	FiPlus,
-	FiCrosshair,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { GlimpsesUpload } from "@/components/uploads/glimpses-upload";
 import { Button } from "@/components/ui/button";
-import { CardTitle } from "@/components/ui/card";
 import {
 	Form,
 	FormControl,
@@ -43,14 +45,6 @@ import type {
 	ExpenseItem,
 	CategoryItem,
 } from "@/types/expense.types";
-
-const LocationPicker = dynamic(
-	() =>
-		import("@/components/maps/location-picker").then(
-			(mod) => mod.LocationPicker,
-		),
-	{ ssr: false },
-);
 
 const DRAFT_KEY = "expense-tracker-draft";
 
@@ -126,6 +120,7 @@ export function ExpenseForm({
 		latitude: 0,
 		longitude: 0,
 	});
+	const hasDetected = useRef(false);
 
 	const defaultValues = useCallback(() => {
 		if (isEditing)
@@ -200,20 +195,18 @@ export function ExpenseForm({
 
 	useEffect(() => {
 		if (isEditing) return;
-		if (location.latitude !== 0 || location.longitude !== 0)
-			return;
+		if (hasDetected.current) return;
 
+		hasDetected.current = true;
 		detect().then((pos) => {
 			if (pos) {
-				setLocation(pos);
+				setLocation({
+					latitude: pos.latitude,
+					longitude: pos.longitude,
+				});
 			}
 		});
-	}, [
-		isEditing,
-		detect,
-		location.latitude,
-		location.longitude,
-	]);
+	}, [isEditing, detect]);
 
 	const onSubmit = async (values: FormValues) => {
 		try {
@@ -223,11 +216,7 @@ export function ExpenseForm({
 				categoryId: values.categoryId,
 				paidAt: toUtcIsoString(values.paidAt),
 				currency,
-				location: {
-					latitude: location.latitude,
-					longitude: location.longitude,
-					address: "",
-				},
+				location,
 				images,
 			};
 
@@ -359,42 +348,6 @@ export function ExpenseForm({
 						onChange={setImages}
 						expenseTitle={allValues?.title || "expense"}
 					/>
-
-					{/* <div className="space-y-1.5">
-						<div className="flex items-center justify-between">
-							<FormLabel>Location</FormLabel>
-							{location.latitude !== 0 &&
-								location.longitude !== 0 && (
-									<button
-										type="button"
-										onClick={async () => {
-											const pos = await detect();
-											if (pos) setLocation(pos);
-										}}
-										disabled={isDetectingLocation}
-										className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--color-muted)] hover:text-[var(--color-text)] transition-colors disabled:opacity-50"
-										aria-label="Use current location"
-									>
-										{isDetectingLocation ? (
-											<Spinner className="h-4 w-4" />
-										) : (
-											<FiCrosshair className="h-4 w-4" />
-										)}
-									</button>
-								)}
-						</div>
-						{location.latitude !== 0 &&
-						location.longitude !== 0 ? (
-							<LocationPicker
-								location={location}
-								onLocationChange={setLocation}
-							/>
-						) : (
-							<p className="text-xs text-[var(--color-muted)]">
-								Detecting your location...
-							</p>
-						)}
-					</div> */}
 
 					<FormField
 						control={control}
