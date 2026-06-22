@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useTheme } from "next-themes";
 import { Theme } from "emoji-picker-react";
@@ -10,6 +10,11 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
 import { useExpenseMutations } from "@/hooks/api/use-expenses-api";
 import type { CategoryItem } from "@/types/expense.types";
@@ -43,7 +48,6 @@ export function CategoryForm({
 	onSuccess,
 	onCancel,
 }: CategoryFormProps) {
-	const [pickerOpen, setPickerOpen] = useState(false);
 	const { createCategory, updateCategory } =
 		useExpenseMutations();
 	const { resolvedTheme } = useTheme();
@@ -89,7 +93,6 @@ export function CategoryForm({
 	const handleEmojiClick = useCallback(
 		(emojiObject: { emoji: string }) => {
 			setValue("emoji", emojiObject.emoji);
-			setPickerOpen(false);
 		},
 		[setValue],
 	);
@@ -162,27 +165,33 @@ export function CategoryForm({
 				/>
 			</div>
 
-			<div className="flex gap-2 ">
+			<div className="flex gap-2">
 				<div className="space-y-1.5">
 					<label className="text-sm font-medium text-[var(--color-foreground)]">
 						Emoji
 					</label>
-					<button
-						type="button"
-						onClick={() => setPickerOpen((prev) => !prev)}
-						className="flex h-10 w-10 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-lg hover:bg-[var(--color-surface-muted)] transition-colors"
-						aria-label="Pick emoji"
-					>
-						{emojiValue || "🏷️"}
-					</button>
-					{pickerOpen && (
-						<div className="max-h-[40vh] overflow-y-auto rounded-lg">
-							<EmojiPicker
-								theme={emojiPickerTheme}
-								onEmojiClick={handleEmojiClick}
-							/>
-						</div>
-					)}
+					<Popover>
+						<PopoverTrigger asChild>
+							<button
+								type="button"
+								className="flex h-10 w-10 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-lg hover:bg-[var(--color-surface-muted)] transition-colors"
+								aria-label="Pick emoji"
+							>
+								{emojiValue || "🏷️"}
+							</button>
+						</PopoverTrigger>
+						<PopoverContent
+							className="w-auto p-0"
+							align="start"
+						>
+							<div className="max-h-[40vh] overflow-y-auto">
+								<EmojiPicker
+									theme={emojiPickerTheme}
+									onEmojiClick={handleEmojiClick}
+								/>
+							</div>
+						</PopoverContent>
+					</Popover>
 				</div>
 
 				<div className="space-y-1.5">
