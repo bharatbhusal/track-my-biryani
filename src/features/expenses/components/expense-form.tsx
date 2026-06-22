@@ -128,7 +128,13 @@ export function ExpenseForm({
 	});
 
 	const defaultValues = useCallback(() => {
-		if (isEditing) return { title: "", amount: undefined, categoryId: "", paidAt: "" };
+		if (isEditing)
+			return {
+				title: "",
+				amount: undefined,
+				categoryId: "",
+				paidAt: "",
+			};
 		const draft = loadDraft();
 		if (draft && draft.title && draft.categoryId) {
 			return {
@@ -202,7 +208,12 @@ export function ExpenseForm({
 				setLocation(pos);
 			}
 		});
-	}, [isEditing, detect, location.latitude, location.longitude]);
+	}, [
+		isEditing,
+		detect,
+		location.latitude,
+		location.longitude,
+	]);
 
 	const onSubmit = async (values: FormValues) => {
 		try {
@@ -281,7 +292,7 @@ export function ExpenseForm({
 							</FormItem>
 						)}
 					/>
-					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+					<div className="grid grid-cols-2 gap-3">
 						<FormField
 							control={control}
 							name="amount"
@@ -331,16 +342,11 @@ export function ExpenseForm({
 											onChange={(e) => field.onChange(e.target.value)}
 										>
 											<option value="">Select category</option>
-											{(categoriesQuery.data ?? []).map(
-												(category) => (
-													<option
-														key={category._id}
-														value={category._id}
-													>
-														{category.name}
-													</option>
-												),
-											)}
+											{(categoriesQuery.data ?? []).map((category) => (
+												<option key={category._id} value={category._id}>
+													{category.name}
+												</option>
+											))}
 										</Select>
 									</FormControl>
 								</FormItem>
@@ -396,7 +402,7 @@ export function ExpenseForm({
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>Date & Time</FormLabel>
-								<FormControl>
+								<FormControl className="min-w-0">
 									<Input
 										type="datetime-local"
 										value={field.value?.slice(0, 16) ?? ""}
