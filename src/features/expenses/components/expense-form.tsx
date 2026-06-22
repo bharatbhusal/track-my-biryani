@@ -360,7 +360,7 @@ export function ExpenseForm({
 						expenseTitle={allValues?.title || "expense"}
 					/>
 
-					<div className="space-y-1.5">
+					{/* <div className="space-y-1.5">
 						<div className="flex items-center justify-between">
 							<FormLabel>Location</FormLabel>
 							{location.latitude !== 0 &&
@@ -394,7 +394,7 @@ export function ExpenseForm({
 								Detecting your location...
 							</p>
 						)}
-					</div>
+					</div> */}
 
 					<FormField
 						control={control}
@@ -402,7 +402,7 @@ export function ExpenseForm({
 						render={({ field }) => (
 							<FormItem>
 								<FormLabel>Date & Time</FormLabel>
-								<FormControl className="min-w-0">
+								<FormControl>
 									<Input
 										type="datetime-local"
 										value={field.value?.slice(0, 16) ?? ""}
@@ -413,7 +413,7 @@ export function ExpenseForm({
 						)}
 					/>
 
-					<div className="flex gap-2">
+					<div className="flex gap-2 flex-wrap">
 						<Button
 							type="button"
 							variant="outline"

@@ -84,7 +84,6 @@ svg * {
 	fill: transparent !important;
 }
 
-
 input,
 textarea,
 [contenteditable] {
@@ -150,4 +149,21 @@ h4 {
 ::selection {
 	background-color: var(--color-primary-muted);
 	color: var(--color-text);
+}
+
+input[type="datetime-local"] {
+	/* Resets native iOS button/picker styling overrides */
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+
+	/* Overrides iOS Safari default 'inline-flex' behavior */
+	display: block;
+
+	/* Forces the layout engine to calculate exact sizing */
+	width: 100%;
+	box-sizing: border-box;
+
+	/* Optional: Standardizes minimum dimensions */
+	min-width: 0;
 }
