@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -9,18 +10,17 @@ import {
 import type { GlobalDateRange } from "@/lib/date-range";
 
 export function usePersistedRange() {
-	const [range, setRange] = useState<GlobalDateRange>(
-		() =>
-			typeof window !== "undefined"
-				? loadPersistedRange()
-				: DEFAULT_GLOBAL_RANGE,
-	);
+	const [range, setRange] = useState<GlobalDateRange>(DEFAULT_GLOBAL_RANGE);
 
 	useEffect(() => {
-		persistRange(range);
-	}, [range]);
+		const persisted = loadPersistedRange();
+		setRange(persisted);
+	}, []);
 
-	const updateRange = useCallback((r: GlobalDateRange) => setRange(r), []);
+	const updateRange = useCallback((r: GlobalDateRange) => {
+		setRange(r);
+		persistRange(r);
+	}, []);
 
 	return [range, updateRange] as const;
 }

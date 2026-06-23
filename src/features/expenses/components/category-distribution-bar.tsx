@@ -64,44 +64,50 @@ export function CategoryDistributionBar({
 					</div>
 				</div>
 			) : (
-				<div className="space-y-3">
-					<div className="flex h-10 w-full overflow-hidden gap-1 sm:gap-2 rounded-md">
-						{distribution.map((item) => {
-							const cat = categoryMeta.get(item.name);
-							const pct = (item.value / total) * 100;
-							const catId = categoryNameToId.get(item.name);
-							if (pct < 0.5) return null;
+				<div className="space-y-2">
+					{total > 1 ? (
+						<div className="flex h-10 w-full overflow-hidden gap-1 sm:gap-2 rounded-md">
+							{distribution.map((item) => {
+								const cat = categoryMeta.get(item.name);
+								const pct = (item.value / total) * 100;
+								const catId = categoryNameToId.get(item.name);
+								if (pct < 0.5) return null;
 
-							const isSelected =
-								selectedCategoryId !== undefined &&
-								selectedCategoryId === catId;
+								const isSelected =
+									selectedCategoryId !== undefined &&
+									selectedCategoryId === catId;
 
-							return (
-								<button
-									key={item.name}
-									type="button"
-									onClick={() => toggle(catId)}
-									className={`flex items-center justify-center text-[15px] font-bold text-white transition-all hover:opacity-80 rounded-[4px] ${
-										selectedCategoryId && !isSelected
-											? "opacity-30"
-											: ""
-									}`}
-									style={{
-										width: `${pct}%`,
-										backgroundColor:
-											cat?.color ?? "var(--color-muted)",
-										outline: isSelected
-											? "2px solid var(--color-foreground)"
-											: undefined,
-										outlineOffset: "-2px",
-									}}
-									title={`${item.name}: ${formatCurrency(item.value, currency)} (${pct.toFixed(1)}%)`}
-								>
-									{pct >= 8 ? `${pct.toFixed(0)}%` : null}
-								</button>
-							);
-						})}
-					</div>
+								return (
+									<button
+										key={item.name}
+										type="button"
+										onClick={() => toggle(catId)}
+										className={`flex items-center justify-center text-[15px] font-bold text-white transition-all hover:opacity-80 rounded-[4px] ${
+											selectedCategoryId && !isSelected
+												? "opacity-30"
+												: ""
+										}`}
+										style={{
+											width: `${pct}%`,
+											backgroundColor:
+												cat?.color ?? "var(--color-muted)",
+											outline: isSelected
+												? "2px solid var(--color-foreground)"
+												: undefined,
+											outlineOffset: "-2px",
+										}}
+										title={`${item.name}: ${formatCurrency(item.value, currency)} (${pct.toFixed(1)}%)`}
+									>
+										{pct >= 8 ? `${pct.toFixed(0)}%` : null}
+									</button>
+								);
+							})}
+						</div>
+					) : (
+						<div className="flex h-full items-center justify-center text-sm text-[var(--color-muted)]">
+							No Data
+						</div>
+					)}
 					<div className="flex flex-wrap gap-x-4 gap-y-2">
 						{distribution.map((item) => {
 							const cat = categoryMeta.get(item.name);

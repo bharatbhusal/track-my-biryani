@@ -17,7 +17,7 @@ export function BottomNav() {
 	const pathname = usePathname();
 
 	return (
-		<nav className="py-2 fixed bottom-0 left-0 right-0 z-30 border-t border-[var(--color-border)] bg-[color-mix(in_oklab,var(--color-bg)_92%,transparent)] backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--color-bg)_76%,transparent)]">
+		<nav className="py-2 border-t border-[var(--color-border)] bg-[var(--color-bg)]">
 			<ul className="safe-area-pb mx-auto flex max-w-md items-center justify-around py-1">
 				{items.map((item) => {
 					const Icon = item.icon;

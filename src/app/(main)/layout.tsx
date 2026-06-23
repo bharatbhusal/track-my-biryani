@@ -7,9 +7,9 @@ export default function MainLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<div className="flex min-h-dvh flex-col overflow-y-auto">
+		<div className="h-dvh grid grid-rows-[1fr_auto] gap-4">
 			<div
-				className="fixed top-0 left-0 right-0 z-50"
+				className="fixed top-0 left-0 right-0 z-50 pointer-events-none"
 				style={{
 					height: "calc(env(safe-area-inset-top, 0px) + 1rem)",
 					backdropFilter: "blur(12px)",
@@ -21,13 +21,13 @@ export default function MainLayout({
 				}}
 			/>
 			<div
-				className="mx-auto flex-1 w-full max-w-5xl px-4 sm:px-6 lg:px-8 pb-18"
+				className="min-h-0 overflow-y-auto"
 				style={{
 					paddingTop:
 						"calc(env(safe-area-inset-top, 0px) + 1rem)",
 				}}
 			>
-				{children}
+				<div className="mx-auto max-w-5xl px-2">{children}</div>
 			</div>
 			<BottomNav />
 			<QuickAddButton />

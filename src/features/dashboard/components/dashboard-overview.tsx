@@ -2,9 +2,9 @@
 
 import { useState, useMemo } from "react";
 
+import { DateRangeBar } from "@/components/charts/date-range-bar";
 import { ExpenseOverview } from "@/features/expenses/components/expense-overview";
 import { DashboardBarChart } from "@/components/dashboard-bar-chart";
-import { CashFlowChart } from "@/components/cash-flow-chart";
 import { CategoryDistributionBar } from "@/features/expenses/components/category-distribution-bar";
 import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
 import { useCategoriesQuery } from "@/hooks/api/use-expenses-api";
@@ -23,10 +23,7 @@ export function DashboardOverview() {
 	const {
 		data: dashboardData,
 		isLoading: isDashboardLoading,
-	} = useDashboardQuery({
-		...rangeParams,
-		categoryId: selectedCategoryId || undefined,
-	});
+	} = useDashboardQuery(rangeParams);
 
 	const categoryColorMap = useMemo(() => {
 		const map = new Map<string, string>();
@@ -36,18 +33,47 @@ export function DashboardOverview() {
 		return map;
 	}, [categoriesQuery.data]);
 
+	const selectedCategoryName = useMemo(
+		() =>
+			selectedCategoryId
+				? categoriesQuery.data?.find(
+						(c) => c._id === selectedCategoryId,
+					)?.name
+				: undefined,
+		[selectedCategoryId, categoriesQuery.data],
+	);
+
+	const filteredStackedSeries = useMemo(() => {
+		const series = dashboardData?.stackedSeries ?? [];
+		if (!selectedCategoryName) return series;
+		return series.map((item) => {
+			const filtered: Record<string, string | number> = {
+				name: item.name as string,
+			};
+			if (selectedCategoryName in item) {
+				filtered[selectedCategoryName] =
+					item[selectedCategoryName];
+			}
+			return filtered;
+		});
+	}, [dashboardData?.stackedSeries, selectedCategoryName]);
+
 	const handleRangeChange = (range: typeof mainRange) => {
 		setMainRange(range);
 		setSelectedCategoryId(undefined);
 	};
 
 	return (
-		<div className="space-y-4">
+		<div className="space-y-2">
+			<DateRangeBar
+				title={dashboardData?.periodLabel ?? "Overview"}
+				range={mainRange}
+				onRangeChange={handleRangeChange}
+				loading={isDashboardLoading}
+			/>
 			<ExpenseOverview
 				data={dashboardData}
 				isLoading={isDashboardLoading}
-				range={mainRange}
-				onRangeChange={handleRangeChange}
 			/>
 
 			<CategoryDistributionBar
@@ -58,15 +84,9 @@ export function DashboardOverview() {
 				isLoading={isDashboardLoading}
 			/>
 			<DashboardBarChart
-				stackedSeries={dashboardData?.stackedSeries ?? []}
+				stackedSeries={filteredStackedSeries}
 				chartLabel={getChartLabel(mainRange.preset, "Expense")}
 				averageSpend={dashboardData?.averageSpend}
-				categoryColorMap={categoryColorMap}
-				isLoading={isDashboardLoading}
-			/>
-			<CashFlowChart
-				title={getChartLabel(mainRange.preset, "Cash Flow")}
-				stackedSeries={dashboardData?.stackedSeries ?? []}
 				categoryColorMap={categoryColorMap}
 				isLoading={isDashboardLoading}
 			/>

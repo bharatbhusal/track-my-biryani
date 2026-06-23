@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { ConfirmDrawer } from "@/components/ui/drawer";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DateRangeSelect } from "@/components/charts/date-range-select";
+import { DateRangeBar } from "@/components/charts/date-range-bar";
 
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import { AddCategoryDrawer } from "@/features/categories/components/add-category-drawer";
@@ -173,14 +173,40 @@ export function CategoryDetailView({
 
 	return (
 		<div className="space-y-4">
+			<DateRangeBar
+				title={category?.name ?? "Category"}
+				range={range}
+				onRangeChange={(r) => {
+					setRange(r);
+					setPage(1);
+				}}
+			/>
 			<Card className="flex flex-col gap-2">
-				<CardTitle>
+				<CardTitle className="flex justify-between">
 					<div className="flex items-center gap-3">
 						<EmojiBadge
 							emoji={category.emoji}
 							color={category.color}
 						/>
 						<p className="text-lg">{category.name}</p>
+					</div>
+					<div className="flex gap-2">
+						<Button
+							variant="outline"
+							className="h-9 w-9 p-0"
+							aria-label="Edit category"
+							onClick={() => setEditDrawerOpen(true)}
+						>
+							<FiEdit2 />
+						</Button>
+						<Button
+							variant="destructive"
+							className="h-9 w-9 p-0"
+							aria-label="Delete category"
+							onClick={() => setDeleteOpen(true)}
+						>
+							<FiTrash2 />
+						</Button>
 					</div>
 				</CardTitle>
 
@@ -225,33 +251,7 @@ export function CategoryDetailView({
 					</div>
 				)}
 			</Card>
-			<Card className="flex items-center gap-2 justify-between">
-				<div className="flex gap-2">
-					<Button
-						variant="outline"
-						className="h-9 w-9 p-0"
-						aria-label="Edit category"
-						onClick={() => setEditDrawerOpen(true)}
-					>
-						<FiEdit2 />
-					</Button>
-					<Button
-						variant="destructive"
-						className="h-9 w-9 p-0"
-						aria-label="Delete category"
-						onClick={() => setDeleteOpen(true)}
-					>
-						<FiTrash2 />
-					</Button>
-				</div>
-				<DateRangeSelect
-					value={range}
-					onChange={(r) => {
-						setRange(r);
-						setPage(1);
-					}}
-				/>
-			</Card>
+
 			<CashFlowChart
 				title="Trend"
 				stackedSeries={chartStackedSeries}

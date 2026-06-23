@@ -6,6 +6,7 @@ import {
 import { connectToDatabase } from "@/lib/db";
 import { listCategories } from "@/repositories/category.repository";
 import { listExpensesForRange } from "@/repositories/expense.repository";
+import { computePeriodLabel } from "@/lib/date-range";
 import type { DashboardCard } from "@/types/analytics.types";
 
 type Granularity = "hour" | "day" | "month";
@@ -69,44 +70,6 @@ function parseRange(url: URL): { from: Date; to: Date } {
 		999,
 	);
 	return { from, to };
-}
-
-function computePeriodLabel(
-	from: Date,
-	to: Date,
-	preset: string,
-	locale = "en-IN",
-): string {
-	if (preset === "day") {
-		return new Intl.DateTimeFormat(locale, {
-			day: "numeric",
-			month: "long",
-		}).format(from);
-	}
-
-	if (preset === "week") {
-		const fromDay = from.getDate();
-		const toDay = to.getDate();
-		const month = new Intl.DateTimeFormat(locale, {
-			month: "long",
-		}).format(from);
-		if (from.getMonth() === to.getMonth()) {
-			return `${fromDay}-${toDay} ${month}`;
-		}
-		const toMonth = new Intl.DateTimeFormat(locale, {
-			month: "long",
-		}).format(to);
-		return `${fromDay} ${month} - ${toDay} ${toMonth}`;
-	}
-
-	if (preset === "year") {
-		return String(from.getFullYear());
-	}
-
-	return new Intl.DateTimeFormat(locale, {
-		month: "long",
-		year: "numeric",
-	}).format(from);
 }
 
 function computeCards(

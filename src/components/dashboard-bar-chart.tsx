@@ -14,6 +14,7 @@ import {
 
 import { ChartCard } from "@/components/charts/chart-card";
 import { ChartTooltip } from "@/components/charts/chart-tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Props = {
 	stackedSeries: Array<Record<string, string | number>>;
@@ -44,17 +45,27 @@ export function DashboardBarChart({
 
 	const label = chartLabel ?? "Spending Trend";
 
-	if (stackedSeries.length < 1) return null;
-
 	return (
 		<ChartCard title={label}>
 			<div className="h-64">
 				{isLoading ? (
+					<div className="flex h-full items-end justify-around">
+						{[60, 80, 45, 90, 55, 70, 85].map((h, i) => (
+							<div
+								key={i}
+								className="w-4"
+								style={{ height: `${h}%` }}
+							>
+								<Skeleton className="h-full w-full rounded-sm" />
+							</div>
+						))}
+					</div>
+				) : categoryNames.length < 1 ? (
 					<div className="flex h-full items-center justify-center text-sm text-[var(--color-muted)]">
-						Loading...
+						No Data
 					</div>
 				) : (
-					<ResponsiveContainer width="100%" height="100%">
+					<ResponsiveContainer>
 						<BarChart
 							data={stackedSeries}
 							onClick={() => setShowTooltip(true)}

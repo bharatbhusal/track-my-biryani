@@ -17,7 +17,7 @@ import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { toRangeParams } from "@/lib/date-range";
 import { useDebouncedValue } from "@/hooks/use-debounce";
 import { Input } from "@/components/ui/input";
-import { DateRangeSelect } from "@/components/charts/date-range-select";
+import { DateRangeBar } from "@/components/charts/date-range-bar";
 import { CategoryCard } from "@/features/categories/components/category-card";
 import { AddCategoryDrawer } from "@/features/categories/components/add-category-drawer";
 
@@ -30,7 +30,8 @@ export function CategoryManager() {
 	const [range, setRange] = usePersistedRange();
 	const categoriesQuery = useCategoriesQuery();
 	const rangeParams = toRangeParams(range);
-	const { data: dashboardData } = useDashboardQuery(rangeParams);
+	const { data: dashboardData } =
+		useDashboardQuery(rangeParams);
 	const debouncedQuery = useDebouncedValue(query, 300);
 
 	const categorySpendMap = useMemo(() => {
@@ -75,15 +76,13 @@ export function CategoryManager() {
 
 	return (
 		<div className="flex gap-2 flex-col">
+			<DateRangeBar range={range} onRangeChange={setRange} />
 			<Card>
 				<div className="flex items-center justify-between mb-4">
 					<CardTitle>
 						<FiTag className="inline mr-1.5 h-4 w-4" />
 						Categories
 					</CardTitle>
-					<div className="flex items-center gap-2">
-						<DateRangeSelect value={range} onChange={setRange} />
-					</div>
 				</div>
 
 				<div className="grid grid-cols-1 gap-2">

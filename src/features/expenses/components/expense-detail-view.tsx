@@ -26,7 +26,7 @@ import type {
 	CategoryItem,
 } from "@/types/expense.types";
 import type { ExpenseContribution } from "@/types/analytics.types";
-import { DateRangeSelect } from "@/components/charts/date-range-select";
+import { DateRangeBar } from "@/components/charts/date-range-bar";
 import { usePersistedRange } from "@/hooks/use-persisted-range";
 import { toIsoBounds } from "@/lib/date-range";
 
@@ -83,9 +83,35 @@ export function ExpenseDetailView({
 
 	return (
 		<div className="space-y-4">
+			<DateRangeBar
+				title={expense.title}
+				range={range}
+				onRangeChange={setRange}
+			/>
 			<Card>
-				<div className="mb-3 flex items-center justify-between gap-2">
-					<CardTitle>{expense.title}</CardTitle>
+				<div className="mb-3 flex flex-col gap-2">
+					<CardTitle className="flex justify-between">
+						<p>{expense.title}</p>
+						<div className="flex gap-2">
+							<Link href={`/expenses/${id}/edit`}>
+								<Button
+									variant="outline"
+									className="h-9 w-9 p-0"
+									aria-label="Edit expense"
+								>
+									<FiEdit2 />
+								</Button>
+							</Link>
+							<Button
+								variant="destructive"
+								className="h-9 w-9 p-0"
+								aria-label="Delete expense"
+								onClick={() => setDeleteOpen(true)}
+							>
+								<FiTrash2 />
+							</Button>
+						</div>
+					</CardTitle>
 				</div>
 
 				<div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
@@ -110,33 +136,6 @@ export function ExpenseDetailView({
 						</p>
 					)}
 				</div>
-			</Card>
-			<Card className="flex justify-between">
-				<div className="flex gap-2">
-					<Link href={`/expenses/${id}/edit`}>
-						<Button
-							variant="outline"
-							className="h-9 w-9 p-0"
-							aria-label="Edit expense"
-						>
-							<FiEdit2 />
-						</Button>
-					</Link>
-					<Button
-						variant="destructive"
-						className="h-9 w-9 p-0"
-						aria-label="Delete expense"
-						onClick={() => setDeleteOpen(true)}
-					>
-						<FiTrash2 />
-					</Button>
-				</div>
-				<DateRangeSelect
-					value={range}
-					onChange={(r) => {
-						setRange(r);
-					}}
-				/>
 			</Card>
 
 			{isContributionLoading ? (

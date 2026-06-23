@@ -18,10 +18,10 @@ import {
 } from "@/lib/date-range";
 import type { GlobalDateRange } from "@/lib/date-range";
 
+import { DateRangeBar } from "@/components/charts/date-range-bar";
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import type { SortField } from "@/features/expenses/components/expense-table";
 import { CategoryDistributionBar } from "@/features/expenses/components/category-distribution-bar";
-import { DateRangeSelect } from "@/components/charts/date-range-select";
 
 export function ExpenseManager() {
 	const [query, setQuery] = useState("");
@@ -96,21 +96,22 @@ export function ExpenseManager() {
 	};
 
 	return (
-		<div className="space-y-4">
-			<Card>
+		<div className="flex flex-1 min-h-0 flex-col gap-2 overflow-hidden">
+			<DateRangeBar
+				range={localRange}
+				onRangeChange={handleRangeChange}
+			/>
+
+			<Card className="shrink-0">
 				<div className="mb-3 flex items-center justify-between gap-2">
 					<CardTitle>
-						<FiList className="inline mr-1.5 h-4 w-4" />
+						<FiList className="mr-1.5 inline h-4 w-4" />
 						Expenses
 					</CardTitle>
-					<DateRangeSelect
-						value={localRange}
-						onChange={(r) => handleRangeChange(r)}
-					/>
 				</div>
 
 				<div className="relative min-w-48 flex-1">
-					<FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-muted)]" />
+					<FiSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted)]" />
 					<Input
 						placeholder="Search title, notes, ..."
 						value={query}
@@ -123,25 +124,28 @@ export function ExpenseManager() {
 				</div>
 			</Card>
 
-			<CategoryDistributionBar
-				distribution={dashboardData?.rankedCategories ?? []}
-				categories={categoriesQuery.data ?? []}
-				selectedCategoryId={categoryId || undefined}
-				onCategorySelect={handleCategorySelect}
-				isLoading={!dashboardData}
-			/>
-
-			<ExpenseTable
-				items={items}
-				categoryMap={categoryMap}
-				isLoading={isLoading}
-				sortBy={sortBy}
-				order={order}
-				onSort={handleSort}
-				page={page}
-				totalPages={totalPages}
-				onPageChange={setPage}
-			/>
+			<div className="shrink-0">
+				<CategoryDistributionBar
+					distribution={dashboardData?.rankedCategories ?? []}
+					categories={categoriesQuery.data ?? []}
+					selectedCategoryId={categoryId || undefined}
+					onCategorySelect={handleCategorySelect}
+					isLoading={!dashboardData}
+				/>
+			</div>
+			<div className="min-h-0 flex-1 overflow-auto">
+				<ExpenseTable
+					items={items}
+					categoryMap={categoryMap}
+					isLoading={isLoading}
+					sortBy={sortBy}
+					order={order}
+					onSort={handleSort}
+					page={page}
+					totalPages={totalPages}
+					onPageChange={setPage}
+				/>
+			</div>
 		</div>
 	);
 }

@@ -7,7 +7,11 @@ type StatCardProps = {
 	value: string;
 };
 
-export function StatCard({ icon, title, value }: StatCardProps) {
+export function StatCard({
+	icon,
+	title,
+	value,
+}: StatCardProps) {
 	return (
 		<Card>
 			<div className="flex items-center gap-3">

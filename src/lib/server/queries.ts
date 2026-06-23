@@ -13,6 +13,7 @@ import {
 	getCategoryById,
 } from "@/repositories/category.repository";
 import type { GlobalDateRange } from "@/lib/date-range";
+import { computePeriodLabel } from "@/lib/date-range";
 import type {
 	ExpenseItem,
 	CategoryItem,
@@ -236,7 +237,7 @@ export async function getServerDashboardData(
 		chartLabel,
 		rankedCategories,
 		stackedSeries,
-		periodLabel: "",
+		periodLabel: computePeriodLabel(from, to, preset),
 		cards: [],
 	});
 }
