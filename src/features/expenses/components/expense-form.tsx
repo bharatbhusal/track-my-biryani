@@ -303,6 +303,7 @@ export function ExpenseForm({
 											</span>
 											<Input
 												type="number"
+												inputMode="decimal"
 												step="0.01"
 												className="pl-10"
 												value={field.value ?? ""}
