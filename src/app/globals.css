@@ -91,7 +91,12 @@ textarea,
 	-webkit-user-select: text;
 }
 
+html {
+	overscroll-behavior: none;
+}
+
 body {
+	overscroll-behavior: none;
 	font-family: var(--font-sans), "Segoe UI", sans-serif;
 	font-feature-settings:
 		"tnum" 1,

@@ -52,7 +52,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en" suppressHydrationWarning>
-			<body className="min-h-screen transition-colors duration-200 pb-20 sm:pb-2">
+			<body className="min-h-dvh transition-colors duration-200">
 				<UiRestriction>
 					<AppProvider>{children}</AppProvider>
 				</UiRestriction>
