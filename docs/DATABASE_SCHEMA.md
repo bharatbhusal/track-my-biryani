@@ -19,7 +19,7 @@
 - `Category(userId, name)` unique.
 - `Expense(userId)` indexed.
 - `Expense(categoryId)` indexed.
-- `Expense(dateTime)` indexed.
+- `Expense(paidAt)` indexed.
 - `Expense(userId, title)` text index.
 - `AuditLog(userId)` indexed.
 - `AuditLog(timestamp)` indexed.

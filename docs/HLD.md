@@ -4,6 +4,41 @@
 
 Track My Biryani is a Next.js App Router monolith that serves UI and API routes from the same deployment unit. It supports secure JWT cookie auth, expense and category management, analytics dashboards, and Cloudinary image uploads.
 
+```mermaid
+flowchart TD
+  subgraph Client["Browser"]
+    UI["Next.js Pages\n(src/app/*)"]
+    SW["Service Worker\n(installability)"]
+    Store["Zustand Store\n(locale, currency, timezone)"]
+    RQ["React Query\n(cache + state)"]
+  end
+
+  subgraph Server["Next.js Server"]
+    API["Route Handlers\n(src/app/api/*)"]
+    Auth["Auth Middleware\n(JWT cookie)"]
+    VAL["Zod Validation\n(src/lib/validators.ts)"]
+    SVC["Services\n(src/services/)"]
+    REPO["Repositories\n(src/repositories/)"]
+    MDL["Mongoose Models\n(src/models/)"]
+  end
+
+  subgraph External["External Services"]
+    DB[("MongoDB")]
+    CLD["Cloudinary"]
+  end
+
+  UI --> RQ
+  RQ --> API
+  API --> Auth
+  Auth --> VAL
+  VAL --> SVC
+  SVC --> REPO
+  REPO --> MDL
+  MDL --> DB
+  API --> CLD
+  Client -.->|"Upload"| CLD
+```
+
 ## Core Modules
 
 - **Presentation Layer**: App Router pages, reusable UI primitives, feature components.

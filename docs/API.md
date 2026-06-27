@@ -2,6 +2,28 @@
 
 All APIs return `{ success, data }` or `{ success, error }`.
 
+```mermaid
+sequenceDiagram
+  actor U as User
+  participant B as Browser
+  participant N as Next.js Server
+  participant M as MongoDB
+
+  Note over U,N: Expense Creation Flow
+  U->>B: Fill form & submit
+  B->>B: Client-side validation (Zod)
+  B->>N: POST /api/expenses
+  N->>N: Zod server validation
+  N->>N: Verify user exists
+  N->>M: Insert expense document
+  M-->>N: Created expense
+  N->>M: Log audit event
+  M-->>N: Audit log created
+  N-->>B: { success, data: expense }
+  B->>B: Invalidate query caches
+  B->>B: Redirect to /expenses/:id
+```
+
 ## Auth APIs
 
 ### `POST /api/auth/signup`

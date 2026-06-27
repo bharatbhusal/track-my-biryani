@@ -97,25 +97,29 @@ flowchart TD
 flowchart TD
   A[Click Expense] --> B[GET /api/expenses/:id]
   B --> C[Render Detail View]
-  C --> D[Show Metadata]
-  D --> E[Show Image Carousel]
-  E --> F[Show Analytics]
-  F --> G[Show Map]
-  G --> H[Action Buttons: Edit/Duplicate/Delete]
+  C --> D[DateRangeBar for\ncontribution scope]
+  C --> E[Metadata: amount,\ndate, notes]
+  E --> F[Category analytics:\navg spend, count, total]
+  F --> G[Image gallery:\nnative snap-x scroll]
+  G --> H[Map preview:\nLeaflet/Google Map]
+  H --> I[Actions:\nEdit / Delete]
 ```
 
 ### Image Upload Flow
 
 ```mermaid
 flowchart TD
-  A[User Selects/Captures Image] --> B[Validate File]
-  B --> C{Size >5MB?}
-  C -->|Yes| D[Compress via Canvas]
-  C -->|No| E[Use Original]
-  D --> E
-  E --> F[Compute Deterministic publicId]
-  F --> G[GET /api/uploads/signature?publicId=X]
-  G --> H[Upload to Cloudinary]
-  H --> I[Receive public_id]
-  I --> J[Add to Images Array]
+    A["User Selects Image"] --> B["Validate File"]
+    B --> C{"Size > 5MB?"}
+    C -->|Yes| D["Compress via Canvas"]
+    C -->|No| E["Use Original"]
+    D --> E
+    E --> F["Compute Deterministic publicId"]
+    F --> G["GET /api/uploads/signature?publicId=X"]
+    G --> H["Upload to Cloudinary with signed params"]
+    H --> I["Receive public_id"]
+    I --> J["Add publicId to images array"]
+    J --> K["POST /api/expenses with images array"]
+    K --> L["Backend stores publicId strings"]
+    L --> M["Rendering: buildCloudinaryUrl()<br/>generates image URL on-the-fly"]
 ```

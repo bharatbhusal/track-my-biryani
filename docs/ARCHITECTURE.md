@@ -15,36 +15,85 @@
 - **Validation**: Zod validators in `src/lib/validators.ts`; centralized error schema.
 - **Business Logic**: Controllers in `src/controllers`, services in `src/services`.
 - **Persistence**: Repositories over Mongoose models.
-- **Database**: MongoDB with indexed queries on userId, dateTime, categoryId, and text search.
+- **Database**: MongoDB with indexed queries on userId, paidAt, categoryId, and text search.
 
 ## Auth Flow
 
-1. User logs in/signup via `POST /api/auth/login` or `POST /api/auth/signup`.
-2. Server validates credentials, hashes password (bcrypt), creates JWT, and sets `httpOnly` JWT cookie.
-3. Unauthenticated users are served the `/home` landing page; authenticated users access app routes.
-4. Client hydrates auth state via `GET /api/auth/me`; hooks (`useAuthMe()`) trigger refetch on mount.
-5. Logout (`POST /api/auth/logout`) clears cookie and removes query cache; returns user to login page.
+```mermaid
+sequenceDiagram
+  actor U as User
+  participant B as Browser
+  participant N as Next.js Server
+  participant M as MongoDB
+
+  U->>B: Enter credentials
+  B->>N: POST /api/auth/login
+  N->>N: Validate credentials (bcrypt)
+  N->>N: Create JWT
+  N->>B: Set httpOnly cookie + user data
+  B->>N: GET /api/auth/me
+  N->>M: Query user
+  M-->>N: User data
+  N-->>B: AuthUser payload
+  B->>B: Hydrate UI
+
+  U->>B: Click Logout
+  B->>N: POST /api/auth/logout
+  N->>B: Clear cookie
+  B->>B: Clear query cache, redirect to login
+```
 
 ## Upload Flow
 
-2. Client requests signed payload: `GET /api/uploads/signature?publicId=<deterministic-id>`.
-3. Server signs the upload request with Cloudinary API, including the `public_id`.
-4. Client compresses image if > 5MB (canvas-based, client-side).
-5. Client uploads directly to Cloudinary with signed params; receives `publicId` from response.
-6. Client stores only `publicId` strings in expense `images[]` array; persists via `POST /api/expenses`.
-7. Rendering generates transformation URLs on-the-fly using `buildCloudinaryUrl()`.
+```mermaid
+sequenceDiagram
+  participant B as Browser
+  participant N as Next.js Server
+  participant C as Cloudinary
+
+  B->>B: Compress image if > 5MB
+  B->>B: Compute deterministic publicId
+  B->>N: GET /api/uploads/signature?publicId=...
+  N->>N: Sign upload params
+  N-->>B: { timestamp, signature, apiKey, ... }
+  B->>C: Upload image with signed params
+  C-->>B: { public_id, ... }
+  B->>B: Add publicId to images[]
+  B->>N: POST /api/expenses { images, ... }
+  N-->>B: created expense
+  Note over B,N: Rendering uses buildCloudinaryUrl()<br/>to generate URLs on-the-fly
+```
 
 ## Dashboard & Analytics
 
-1. Dashboard (`src/features/dashboard/components/dashboard-overview.tsx`) fetches data with a persisted user-selectable range (`usePersistedRange()` — stored in localStorage).
-2. `DateRangeBar` component lets users switch between Day, Week, Month, Year presets.
-3. Component calls `useDashboardQuery(rangeParams)` which sends query params to server.
-4. Server (`src/app/api/dashboard/route.ts`) computes date range, filters expenses, and aggregates:
-   - Cards: totalSpend, spendPerDay, spendPerMonth
-   - Category breakdown (rankedCategories)
-   - Stacked time series (for charts)
-5. Response hydrates dashboard cards and charts with range-scoped data.
-6. GSAP animates the page shell and all `[data-animate]` elements on mount.
+```mermaid
+flowchart LR
+  subgraph Client
+    DR[DateRangeBar\nuser-selectable preset]
+    RQ[useDashboardQuery]
+    D[DashboardOverview]
+    GC[GSAP animation\non mount]
+  end
+
+  subgraph Server
+    API["GET /api/dashboard"]
+    AGG[Aggregate:\ncards, categories,\nstacked series]
+  end
+
+  subgraph DB["MongoDB"]
+    EX[Expenses]
+    CA[Categories]
+  end
+
+  DR -->|preset + offset| RQ
+  RQ -->|range params| API
+  API --> AGG
+  AGG -->|fetch & compute| DB
+  DB -->|filtered data| AGG
+  AGG -->|JSON response| RQ
+  RQ -->|data| D
+  GC -->|animate| D
+```
 
 ## DateTime & Timezone Safety
 
