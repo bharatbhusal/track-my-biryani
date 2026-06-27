@@ -2,10 +2,10 @@
 
 ## Entities
 
-- **User**: identity (locale, timezone, currency).
-- **Category**: user-scoped expense classification.
-- **Expense**: transaction record with amount/category/time/location/images; includes metadata (notes) and soft-delete flag.
-- **AuditLog**: immutable action history (server-only; no UI).
+- **User**: identity with name, username, and password.
+- **Category**: user-scoped expense classification with name, color, emoji.
+- **Expense**: transaction record with amount/category/time/location/images/notes.
+- **AuditLog**: immutable action history with metadata (server-only; no UI).
 
 ## Relations
 
@@ -43,6 +43,7 @@ erDiagram
     ObjectId _id
     string name
     string username
+    string password
   }
 
   CATEGORY {
@@ -50,6 +51,7 @@ erDiagram
     ObjectId userId
     string name
     string color
+    string emoji
   }
 
   EXPENSE {
@@ -70,6 +72,8 @@ erDiagram
     ObjectId userId
     string action
     string entityType
+    string entityId
+    object metadata
     date timestamp
   }
 ```

@@ -33,8 +33,8 @@ All APIs return `{ success, data }` or `{ success, error }`.
 
 - Auth: Yes
 - Query: `page`, `limit`, `q`, `categoryId`, `sortBy`, `order`, `from`, `to`, `amountMin`, `amountMax`
-- Response: paginated expense list (filters exclude soft-deleted items)
-- Sorting: `dateTime`, `amount`, `title` with `asc`/`desc` order
+- Response: paginated expense list
+- Sorting: `paidAt`, `amount`, `title` with `asc`/`desc` order
 
 ### `GET /api/expenses/:id`
 
@@ -44,7 +44,7 @@ All APIs return `{ success, data }` or `{ success, error }`.
 ### `POST /api/expenses`
 
 - Auth: Yes
-- Body: `{ title, amount, categoryId, images[], location, currency, dateTime, notes? }`
+- Body: `{ title, amount, categoryId, images[], location, currency, paidAt, notes? }`
 - Validation: Zod `expenseSchema`
 - Response: created expense with generated `_id`
 
@@ -62,14 +62,22 @@ All APIs return `{ success, data }` or `{ success, error }`.
 ### `GET /api/categories/:id`
 
 - Auth: Yes
-- Response: category detail with analytics (total spending, trends, top expenses)
+- Response: category detail
+
+### `GET /api/categories/:id/stats`
+
+- Auth: Yes
+- Query: `from`, `to`
+- Response: category range stats (total, count, avg, min, max, trend)
 
 ## Category APIs
 
 - `GET /api/categories` — list all categories
 - `POST /api/categories` — create new category
+- `GET /api/categories/:id` — get category detail
 - `PUT /api/categories/:id` — update category
 - `DELETE /api/categories/:id` — delete category
+- `GET /api/categories/:id/stats` — category range statistics (requires `from`, `to` query params)
 
 ## Analytics APIs
 
@@ -77,7 +85,8 @@ All APIs return `{ success, data }` or `{ success, error }`.
 
 - Auth: Yes
 - Query Parameters:
-  - `preset`: `this_week` | `this_month` | `this_year` (default: `this_month`)
+   - `preset`: `day` | `week` | `month` | `year` (default: `month`)
+   - `offset`: number (default: `0`) — paginate backwards from current period
 - Response: totals, trends, breakdowns, recent activity scoped to selected time range
 - Notes: Server aggregates expenses within the selected range and computes analytics (KPIs, category breakdown, daily trend, etc.)
 
@@ -95,21 +104,25 @@ All APIs return `{ success, data }` or `{ success, error }`.
 
 ## Data Portability APIs
 
-### `GET /api/export?format=json|csv`
+### `GET /api/export?type=all|expenses|categories`
 
 - Auth: Yes
 - Response: `{ data, filename, mimeType, exportedAt }`
 - Includes expenses, categories, analytics metadata
+- Output format is JSON only
 
-### `POST /api/import`
+## Additional Endpoints
+
+### `GET /api/expenses/:id/contribution`
 
 - Auth: Yes
-- Body: structured JSON payload
-- Response: `{ message }`
+- Query: `from?`, `to?`
+- Response: expense contribution analytics (week/month/year totals, category breakdown, monthly trend)
 
 ## Error Responses
 
 - Common status codes: `400`, `401`, `404`, `409`, `500`
+- Common error codes: `VALIDATION_ERROR`, `NOT_FOUND`, `USER_DOESN'T_EXIST`
 - Shape: `{ success: false, error: { message, code, details? } }`
 
 ## Utility Functions (Client-Side)

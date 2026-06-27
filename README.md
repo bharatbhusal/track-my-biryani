@@ -9,7 +9,7 @@ Production-grade full-stack expense tracker built with Next.js App Router, TypeS
 - Dark/light theme with persisted preference (`next-themes`)
 - Locale-aware currency/timezone preference detection
 - Cloudinary image upload with client-side compression
-- Data export (JSON/CSV) and import
+- Data export (JSON format)
 - PWA installable with service worker
 
 ## Setup
@@ -68,7 +68,7 @@ Main APIs:
 - Categories: `/api/categories`
 - Analytics: `/api/dashboard`
 - Upload Signature: `/api/uploads/signature`
-- Export/Import: `/api/export`, `/api/import`
+- Export: `/api/export`
 
 Detailed docs: [`docs/API.md`](docs/API.md)
 

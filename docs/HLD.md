@@ -24,5 +24,5 @@ Track My Biryani is a Next.js App Router monolith that serves UI and API routes 
 
 - Query-key based cache invalidation keeps UI updates efficient.
 - Repository layer can be replaced by dedicated services without rewriting UI.
-- Export API streams structured data in CSV/JSON formats for downstream integrations.
+- Export API streams structured data in JSON format for downstream integrations.
 - Cloudinary offloads media storage and transformations from app servers.

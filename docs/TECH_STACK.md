@@ -5,13 +5,21 @@
 - **Next.js 16 + App Router**: unified full-stack runtime.
 - **TypeScript (strict)**: safe contracts and better DX.
 - **Tailwind CSS v4**: utility-first styling with CSS custom properties for theming.
-- **GSAP**: high-performance page transitions and staggered entry animations.
-- **React Query**: caching, retries, invalidation for server-state.
-- **Zustand**: lightweight UI preference state.
+- **GSAP + @gsap/react**: high-performance page transitions and staggered entry animations.
+- **React Query (@tanstack/react-query)**: caching, invalidation for server-state.
+- **Zustand**: lightweight UI preference state (locale, currency, timezone).
 - **Mongoose + MongoDB**: flexible data model for expenses and audit logs.
 - **Zod**: runtime validation for env and API payloads.
 - **Cloudinary**: secure media uploads and transformations.
-- **PWA**: service worker for installability; apple-mobile-web-app meta tags.
+- **react-hook-form + @hookform/resolvers**: form state management with Zod integration.
+- **Recharts**: charting library for dashboard (bar, line charts).
+- **Leaflet + react-leaflet**: map display for expense locations.
+- **Sonner**: toast notifications.
+- **date-fns**: date manipulation utilities.
+- **Embla Carousel**: image carousel for expense detail view.
+- **Radix UI**: accessible primitives (Dialog, Label, Popover, Slot).
+- **TanStack Table**: expense list table with sorting.
+- **PWA**: manifest and apple-mobile-web-app meta tags for installability.
 
 ## Alternatives Considered
 

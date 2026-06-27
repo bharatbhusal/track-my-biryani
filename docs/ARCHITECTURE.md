@@ -7,7 +7,7 @@
 - **Design System**: CSS custom properties for theming (light/dark), glassmorphism aesthetics, Tailwind CSS v4.
 - **Animations**: GSAP for page transitions (`usePageTransition`), staggered `data-animate` entry animations.
 - **State**:
-  - React Query for remote state, polling, and cache invalidation.
+  - React Query for remote state and cache invalidation.
 
 ## Backend Architecture
 
@@ -17,21 +17,13 @@
 - **Persistence**: Repositories over Mongoose models.
 - **Database**: MongoDB with indexed queries on userId, dateTime, categoryId, and text search.
 
-## Proxy (`src/proxy.ts`)
-
-A single proxy file handles both auth protection and API proxying:
-
-1. Checks JWT auth cookie on all app routes (`/`, `/expenses`, `/categories`); redirects to `/auth/login` if unauthenticated.
-2. Verifies admin routes (`/admin/*`) with full JWT payload verification.
-3. Passes through auth pages (`/auth/*`) and static files without checks.
-
 ## Auth Flow
 
 1. User logs in/signup via `POST /api/auth/login` or `POST /api/auth/signup`.
 2. Server validates credentials, hashes password (bcrypt), creates JWT, and sets `httpOnly` JWT cookie.
-3. Proxy (`src/proxy.ts`) checks for valid JWT on protected routes; redirects unauthenticated users to login.
+3. Unauthenticated users are served the `/home` landing page; authenticated users access app routes.
 4. Client hydrates auth state via `GET /api/auth/me`; hooks (`useAuthMe()`) trigger refetch on mount.
-5. Logout (`POST /api/auth/logout`) clears cookie and removes query cache; returns user to auth page.
+5. Logout (`POST /api/auth/logout`) clears cookie and removes query cache; returns user to login page.
 
 ## Upload Flow
 
@@ -44,14 +36,15 @@ A single proxy file handles both auth protection and API proxying:
 
 ## Dashboard & Analytics
 
-1. Dashboard (`src/features/dashboard/components/dashboard-overview.tsx`) fetches data with a fixed `DEFAULT_GLOBAL_RANGE`.
-2. Component calls `useDashboardQuery(rangeParams)` which sends query params to server.
-3. Server (`src/app/api/dashboard/route.ts`) computes date range, filters expenses, and aggregates:
-   - KPIs: totalRangeSpend, weeklySpend, dailyAverage, topCategory
-   - Category breakdown
-   - Daily trend (for charts)
-4. Response hydrates dashboard cards and charts with range-scoped data.
-5. GSAP animates the page shell and all `[data-animate]` elements on mount.
+1. Dashboard (`src/features/dashboard/components/dashboard-overview.tsx`) fetches data with a persisted user-selectable range (`usePersistedRange()` — stored in localStorage).
+2. `DateRangeBar` component lets users switch between Day, Week, Month, Year presets.
+3. Component calls `useDashboardQuery(rangeParams)` which sends query params to server.
+4. Server (`src/app/api/dashboard/route.ts`) computes date range, filters expenses, and aggregates:
+   - Cards: totalSpend, spendPerDay, spendPerMonth
+   - Category breakdown (rankedCategories)
+   - Stacked time series (for charts)
+5. Response hydrates dashboard cards and charts with range-scoped data.
+6. GSAP animates the page shell and all `[data-animate]` elements on mount.
 
 ## DateTime & Timezone Safety
 
@@ -72,11 +65,10 @@ A single proxy file handles both auth protection and API proxying:
 - Query-key factory in `src/lib/api/query-keys.ts` (per-domain keys).
 - Domain hooks in `src/hooks/api/*` (useDashboardQuery, useExpensesQuery, useCategoriesQuery, etc.).
 - Mutations invalidate related cache keys on success (e.g., create expense invalidates expenses and dashboard).
-- Optimistic updates for delete, create, and update operations.
+- Optimistic update for create operations; mutation success invalidates related queries.
 
 ## PWA
 
-- Service worker is registered in `pwa-provider.tsx` for installability only (no caching strategies).
 - Root layout includes apple-mobile-web-app meta tags and safe-area CSS env variables.
 - Manifest at `public/manifest.webmanifest` configures display, icons, and theme color.
 
@@ -88,15 +80,16 @@ A single proxy file handles both auth protection and API proxying:
 - `lib/datetime`: timezone-safe utilities; used across forms and display.
 - `lib/naming`: deterministic filenames for exports and uploads.
 - `types`: centralized TypeScript contracts per domain (auth, expense, analytics, etc.).
-- `features`: domain-oriented UI (expenses, categories, dashboard).
+- `features`: domain-oriented UI (expenses, categories, dashboard, settings).
 - `components/ui`: design system; shared, reusable UI components.
-- `components/charts`: chart components (pie, line, bar) with time-range support.
+- `components/charts`: chart components (bar, line) with time-range support.
 - `components/providers`: React context providers (theme, query client, app-level providers).
 - `hooks/api`: react-query hooks for each domain; centralize fetching logic and invalidation.
 - `repositories`: Mongoose repository pattern; queries and mutations on collections.
-- `services`: business logic (auth, mail, etc.); stateless and reusable.
+- `services`: business logic (auth, audit); stateless and reusable.
+- `controllers`: route handler helpers (auth controller only).
 - `app/api`: route handlers; endpoints grouped by domain.
-- `app/[domain]`: pages for each feature (expenses, categories, dashboard).
+- `app/[domain]`: pages for each feature (expenses, categories, dashboard, settings).
 
 ## Theme-Aware UI
 

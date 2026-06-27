@@ -3,25 +3,25 @@
 ## User Journeys
 
 1. **Authentication**: Signup/login redirects to dashboard.
-2. **Quick Add**: Click quick-add button → modal opens → form auto-saves draft → submit records expense.
+2. **Quick Add**: Click quick-add button → navigates to `/expenses/new` page → form auto-saves draft to localStorage (400ms debounce) → submit records expense.
 3. **Dashboard**: View KPIs, category breakdown, and trends.
 4. **Expense Details**: Click expense → view full metadata (notes), image carousel, location map.
 5. **Expense Management**: Search, filter, sort expenses → inline quick actions (view, edit, delete).
 6. **Category Management**: Browse categories → create/edit/delete.
 
-## Quick Add Modal Flow
+## Quick Add Flow
 
-- **Draft Autosave**: Form values + selected images auto-save to localStorage (debounced 400ms) while modal is open.
-- **Restore on Reopen**: If user closes quick-add and reopens, draft is restored.
-- **Camera Support**: On mobile, camera input defaults to `capture="environment"` (rear camera); fallback to file picker on desktop or if device lacks camera API.
+- **Page Navigation**: Quick-add FAB navigates to `/expenses/new` page.
+- **Draft Autosave**: Form values auto-save to localStorage (debounced) while form has content.
+- **Restore on Return**: If user navigates away and returns, draft is restored.
 - **Image Upload**: Client-side compression (> 5MB), deterministic naming, and Cloudinary signed upload with progress indicator.
-- **Location**: Auto-detects geolocation on submit; user can override address field.
+- **Location**: Auto-detects geolocation on mount; user can override.
 
 ## Dashboard Analytics
 
-- **Range**: Dashboard uses a fixed default range (`this_month`); no user-selectable range selector.
-- **KPI Cards**: Display total spending, weekly spend, daily average, and top category via a swipeable carousel.
-- **Charts**: Category breakdown (pie) and daily trend (line/bar).
+- **Range**: Dashboard uses a persisted user-selectable range (Day, Week, Month, Year) via `DateRangeBar`; preference stored in localStorage.
+- **KPI Cards**: Display total spend and spend-per-day/month via a flex-wrap grid of stat cards.
+- **Charts**: Category breakdown (horizontal bar) and stacked daily trend (bar chart).
 
 ## Header Controls
 
@@ -30,8 +30,9 @@
 
 ## Navigation
 
-- **Bottom Nav**: Three-tab pill-style navigation (Dashboard, Expenses, Categories) with chiclet active indicator.
+- **Bottom Nav**: Four-tab pill-style navigation (Dashboard, Expenses, Categories, Settings) with chiclet active indicator.
 - **Safe Area**: PWA safe-area padding for notched devices.
+- **Quick Add FAB**: Floating action button in bottom-right corner navigates to `/expenses/new`; hidden on auth pages and `/expenses/new`.
 
 ## Responsive Behavior
 
@@ -79,14 +80,14 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  A[Click Quick-Add Button] --> B[Modal Opens]
-  B --> C[Form Auto-Saves Draft 400ms]
+  A[Click Quick-Add FAB] --> B[Navigate to /expenses/new]
+  B --> C[Form Auto-Saves Draft]
   C --> D[User Selects Image]
   D --> E[Compress if >5MB]
   E --> F[Detect Location]
   F --> G[POST /api/expenses]
   G --> H[Invalidate Caches]
-  H --> I[Close Modal + Toast]
+  H --> I[Redirect to /expenses/:id + Toast]
   I --> J[Clear Draft]
 ```
 
