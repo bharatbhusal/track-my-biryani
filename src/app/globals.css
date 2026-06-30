@@ -120,6 +120,12 @@ body {
 	padding-bottom: max(1rem, var(--safe-area-bottom));
 }
 
+@media (display-mode: standalone) {
+	.safe-area-pb {
+		padding-bottom: 0;
+	}
+}
+
 h1,
 h2,
 h3,
