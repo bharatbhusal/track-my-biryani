@@ -17,8 +17,8 @@ export function BottomNav() {
 	const pathname = usePathname();
 
 	return (
-		<nav className="py-2 border-t border-[var(--color-border)] bg-[var(--color-bg)]">
-			<ul className="safe-area-pb mx-auto flex max-w-md items-center justify-around py-1">
+		<nav className="safe-area-pb pt-2 border-t border-[var(--color-border)] bg-[var(--color-bg)]">
+			<ul className="mx-auto flex max-w-md items-center justify-around py-1">
 				{items.map((item) => {
 					const Icon = item.icon;
 					const active =

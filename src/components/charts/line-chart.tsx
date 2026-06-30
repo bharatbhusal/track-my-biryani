@@ -12,16 +12,16 @@ import {
 
 export function LineChart({
 	data,
-	heightClass = "h-52",
+	height = 208,
 }: {
 	data: Array<{ name: string; total: number }>;
-	heightClass?: string;
+	height?: number;
 }) {
 	const [showTooltip, setShowTooltip] = useState(false);
 
 	return (
-		<div className={`${heightClass} w-full`}>
-			<ResponsiveContainer width="100%" height="100%">
+		<div className="w-full" style={{ height }}>
+			<ResponsiveContainer width="100%" height={height}>
 				<RechartsLineChart
 					data={data}
 					onClick={() => setShowTooltip(true)}

@@ -7,7 +7,7 @@ export default function MainLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<div className="h-dvh grid grid-rows-[1fr_auto] gap-4">
+		<div className="h-dvh grid grid-rows-[1fr_auto]">
 			<div
 				className="fixed top-0 left-0 right-0 z-50 pointer-events-none"
 				style={{

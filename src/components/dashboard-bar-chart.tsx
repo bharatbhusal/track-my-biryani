@@ -65,7 +65,7 @@ export function DashboardBarChart({
 						No Data
 					</div>
 				) : (
-					<ResponsiveContainer>
+					<ResponsiveContainer height={256}>
 						<BarChart
 							data={stackedSeries}
 							onClick={() => setShowTooltip(true)}
