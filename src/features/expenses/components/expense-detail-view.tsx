@@ -12,20 +12,22 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { ConfirmDrawer } from "@/components/ui/drawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import GoogleMap from "@/components/maps/google-map";
-import { formatCurrency, formatDate } from "@/lib/format";
 import {
 	useAppSelector,
 	useAppDispatch,
 } from "@/store/hooks";
+import { shallowEqual } from "react-redux";
 import { DateRangeBar } from "@/components/charts/date-range-bar";
-import { toIsoBounds } from "@/lib/date-range";
+import type { GlobalDateRange } from "@/lib/date-range";
 import {
 	fetchExpenseDetail,
-	fetchExpenseContribution,
 	deleteExpense,
 } from "@/store/slices/expenseSlice";
 import { fetchCategories } from "@/store/slices/categorySlice";
-import { setDateRange } from "@/store/slices/uiSlice";
+import { expensesApi } from "@/lib/api/expenses";
+import { ExpenseCard } from "@/features/expenses/components/expense-card";
+import type { ExpenseItem } from "@/types/expense.types";
+import type { DateRangePreset } from "@/lib/date-range";
 
 type ExpenseDetailViewProps = {
 	id: string;
@@ -37,25 +39,29 @@ export function ExpenseDetailView({
 	const router = useRouter();
 	const dispatch = useAppDispatch();
 	const [deleteOpen, setDeleteOpen] = useState(false);
-
-	const locale = useAppSelector((s) => s.ui.locale);
-	const timezone = useAppSelector((s) => s.ui.timezone);
-	const currency = useAppSelector((s) => s.ui.currency);
-	const dateRange = useAppSelector((s) => s.ui.dateRange);
+	const [recentExpenses, setRecentExpenses] = useState<
+		ExpenseItem[]
+	>([]);
+	const [localPreset, setLocalPreset] =
+		useState<DateRangePreset>("month");
 
 	const expense = useAppSelector(
 		(s) => s.expenses.currentExpense,
+		shallowEqual,
 	);
 	const categories = useAppSelector(
 		(s) => s.categories.items,
+		shallowEqual,
 	);
 	const expensesLoading = useAppSelector(
 		(s) => s.expenses.loading,
 	);
 
-	const rangeBounds = useMemo(
-		() => toIsoBounds(dateRange),
-		[dateRange],
+	const category = useMemo(
+		() =>
+			categories.find((c) => c._id === expense?.categoryId) ??
+			null,
+		[categories, expense?.categoryId],
 	);
 
 	useEffect(() => {
@@ -64,16 +70,15 @@ export function ExpenseDetailView({
 	}, [dispatch, id]);
 
 	useEffect(() => {
-		if (rangeBounds.from && rangeBounds.to) {
-			dispatch(
-				fetchExpenseContribution({
-					id,
-					from: rangeBounds.from,
-					to: rangeBounds.to,
-				}),
-			);
-		}
-	}, [dispatch, id, rangeBounds.from, rangeBounds.to]);
+		if (!expense?.categoryId) return;
+		expensesApi
+			.listExpenses({
+				categoryId: expense.categoryId,
+				limit: 5,
+			})
+			.then((res) => setRecentExpenses(res.items))
+			.catch(() => {});
+	}, [expense?.categoryId]);
 
 	if (expensesLoading && !expense) {
 		return (
@@ -87,20 +92,19 @@ export function ExpenseDetailView({
 							<Skeleton className="h-9 w-9 rounded" />
 						</div>
 					</div>
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-						<div className="space-y-2">
-							<Skeleton className="h-4 w-16" />
-							<Skeleton className="h-5 w-32" />
-						</div>
-						<div className="space-y-2">
-							<Skeleton className="h-4 w-16" />
-							<Skeleton className="h-5 w-32" />
-						</div>
-					</div>
+					<Skeleton className="h-14 w-full" />
 				</Card>
 				<Card>
 					<Skeleton className="h-5 w-24 mb-3" />
-					<Skeleton className="h-40 w-full" />
+					<Skeleton className="h-48 w-full" />
+				</Card>
+				<Card>
+					<Skeleton className="h-5 w-32 mb-3" />
+					<div className="space-y-3">
+						{[1, 2, 3].map((i) => (
+							<Skeleton key={i} className="h-14 w-full" />
+						))}
+					</div>
 				</Card>
 			</div>
 		);
@@ -114,56 +118,37 @@ export function ExpenseDetailView({
 		<div className="space-y-4">
 			<DateRangeBar
 				title={expense.title}
-				range={dateRange}
-				onRangeChange={(r) => dispatch(setDateRange(r))}
+				range={{ preset: localPreset, offset: 0 }}
+				onRangeChange={(r: GlobalDateRange) =>
+					setLocalPreset(r.preset)
+				}
 			/>
-			<Card>
-				<div className="mb-3 flex flex-col gap-2">
-					<CardTitle className="flex justify-between">
-						<p>{expense.title}</p>
-						<div className="flex gap-2">
-							<Link href={`/expenses/${id}/edit`}>
-								<Button
-									variant="outline"
-									className="h-9 w-9 p-0"
-									aria-label="Edit expense"
-								>
-									<FiEdit2 />
-								</Button>
-							</Link>
-							<Button
-								variant="destructive"
-								className="h-9 w-9 p-0"
-								aria-label="Delete expense"
-								onClick={() => setDeleteOpen(true)}
-							>
-								<FiTrash2 />
-							</Button>
-						</div>
-					</CardTitle>
-				</div>
 
-				<div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
-					<p>
-						<span className="text-[var(--color-muted)]">
-							Amount:
-						</span>{" "}
-						{formatCurrency(
-							expense.amount,
-							expense.currency || currency,
-						)}
-					</p>
-					<p>
-						<span className="text-[var(--color-muted)]">
-							DateTime:
-						</span>{" "}
-						{formatDate(expense.paidAt, locale, timezone)}
-					</p>
-					{expense.notes?.trim() && (
-						<p className="pt-2 text-sm text-[var(--color-muted)] border-t border-[var(--color-border)]">
-							{expense.notes}
-						</p>
-					)}
+			<Card>
+				<div className="flex items-center justify-between">
+					<ExpenseCard
+						expense={expense}
+						category={category ?? undefined}
+					/>
+					<div className="flex gap-2">
+						<Link href={`/expenses/${id}/edit`}>
+							<Button
+								variant="outline"
+								className="h-9 w-9 p-0"
+								aria-label="Edit expense"
+							>
+								<FiEdit2 />
+							</Button>
+						</Link>
+						<Button
+							variant="destructive"
+							className="h-9 w-9 p-0"
+							aria-label="Delete expense"
+							onClick={() => setDeleteOpen(true)}
+						>
+							<FiTrash2 />
+						</Button>
+					</div>
 				</div>
 			</Card>
 
@@ -200,6 +185,21 @@ export function ExpenseDetailView({
 						height={240}
 					/>
 				)}
+
+			{recentExpenses.length > 0 && (
+				<div className="space-y-2">
+					<p className="text-sm font-semibold px-1">
+						Recent in {category?.name ?? "Category"}
+					</p>
+					{recentExpenses.map((e) => (
+						<ExpenseCard
+							key={e._id}
+							expense={e}
+							category={category ?? undefined}
+						/>
+					))}
+				</div>
+			)}
 
 			<ConfirmDrawer
 				open={deleteOpen}

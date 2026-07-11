@@ -22,7 +22,13 @@ import dashboardReducer from "./slices/dashboardSlice";
 const persistConfig = {
 	key: "root",
 	storage,
-	whitelist: ["auth", "ui"],
+	whitelist: [
+		"auth",
+		"ui",
+		"expenses",
+		"categories",
+		"dashboard",
+	],
 };
 
 const rootReducer = combineReducers({
@@ -33,7 +39,10 @@ const rootReducer = combineReducers({
 	dashboard: dashboardReducer,
 });
 
-const persistedReducer = persistReducer(persistConfig, rootReducer);
+const persistedReducer = persistReducer(
+	persistConfig,
+	rootReducer,
+);
 
 export const makeStore = () =>
 	configureStore({
