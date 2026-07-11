@@ -284,7 +284,6 @@ export function CategoryDetailView({ id }: { id: string }) {
 				<>
 					<ExpenseTable
 						items={expenses.slice(0, 10)}
-						categoryMap={new Map([[category._id, category]])}
 						emptyMessage="No expenses in this category"
 						page={page}
 						totalPages={Math.ceil(expenses.length / 20)}

@@ -1,17 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import type {
-	CategoryItem,
-	ExpenseItem,
-} from "@/types/expense.types";
+import type { ExpenseItem } from "@/types/expense.types";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { useAppSelector } from "@/store/hooks";
 import { EmojiBadge } from "@/components/ui/emoji-badge";
 
 type Props = {
 	expense: ExpenseItem;
-	category?: CategoryItem;
+	category?: { color?: string; emoji?: string };
 };
 
 export function ExpenseCard({ expense, category }: Props) {

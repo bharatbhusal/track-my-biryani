@@ -13,6 +13,8 @@ export type ExpenseItem = {
 	currency: string;
 	paidAt: string;
 	categoryId: string;
+	categoryColor?: string;
+	categoryEmoji?: string;
 	notes?: string;
 	images: string[];
 	location: ExpenseLocation;

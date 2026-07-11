@@ -29,7 +29,6 @@ export function ExpenseManager() {
 	const [page, setPage] = useState(1);
 
 	const localRange = useAppSelector((s) => s.ui.dateRange);
-	const categories = useAppSelector((s) => s.categories.items);
 	const items = useAppSelector((s) => s.expenses.items);
 	const isLoading = useAppSelector((s) => s.expenses.loading);
 	const totalPages = useAppSelector((s) => s.expenses.totalPages);
@@ -74,15 +73,7 @@ export function ExpenseManager() {
 	useEffect(() => {
 		if (!rangeBounds.from || !rangeBounds.to) return;
 		dispatch(fetchCategoryDistribution({ from: rangeBounds.from, to: rangeBounds.to }));
-	}, [dispatch, rangeBounds.from, rangeBounds.to, items, categories]);
-
-	const categoryMap = useMemo(
-		() =>
-			new Map(
-				categories.map((cat) => [cat._id, cat]),
-			),
-		[categories],
-	);
+	}, [dispatch, rangeBounds.from, rangeBounds.to]);
 
 	const handleSort = (field: SortField) => {
 		if (sortBy === field) {
@@ -145,7 +136,6 @@ export function ExpenseManager() {
 			<div className="min-h-0 flex-1 overflow-auto">
 				<ExpenseTable
 					items={items}
-					categoryMap={categoryMap}
 					isLoading={isLoading}
 					sortBy={sortBy}
 					order={order}

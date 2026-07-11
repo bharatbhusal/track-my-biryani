@@ -137,38 +137,56 @@ export async function listExpenses(
 	const limit = filters.limit ?? 50;
 	const skip = (page - 1) * limit;
 
-	if (isPaginated) {
-		const [items, total] = await Promise.all([
-			ExpenseModel.find(query)
-				.sort({
-					[filters.sortBy]: filters.order === "asc" ? 1 : -1,
-				})
-				.skip(skip)
-				.limit(limit)
-				.lean(),
-			ExpenseModel.countDocuments(query),
-		]);
+if (isPaginated) {
+			const [items, total] = await Promise.all([
+				ExpenseModel.find(query)
+					.populate("categoryId", "emoji color")
+					.select("title amount paidAt currency")
+					.sort({
+						[filters.sortBy]: filters.order === "asc" ? 1 : -1,
+					})
+					.skip(skip)
+					.limit(limit)
+					.lean(),
+				ExpenseModel.countDocuments(query),
+			]);
+
+			const transformedItems = items.map((item) => ({
+				...item,
+				categoryColor: item.categoryId?.color ?? "",
+				categoryEmoji: item.categoryId?.emoji ?? "",
+				categoryId: item.categoryId?._id?.toString() ?? item.categoryId?.toString() ?? "",
+			}));
+
+			return {
+				items: transformedItems,
+				total,
+				page,
+				totalPages: Math.ceil(total / limit) || 1,
+			};
+		}
+
+const items = await ExpenseModel.find(query)
+			.populate("categoryId", "emoji color")
+			.select("title amount paidAt currency")
+			.sort({
+				[filters.sortBy]: filters.order === "asc" ? 1 : -1,
+			})
+			.lean();
+
+		const transformedItems = items.map((item) => ({
+			...item,
+			categoryColor: item.categoryId?.color ?? "",
+			categoryEmoji: item.categoryId?.emoji ?? "",
+			categoryId: item.categoryId?._id?.toString() ?? item.categoryId?.toString() ?? "",
+		}));
 
 		return {
-			items,
-			total,
-			page,
-			totalPages: Math.ceil(total / limit) || 1,
+			items: transformedItems,
+			total: transformedItems.length,
+			page: null,
+			totalPages: null,
 		};
-	}
-
-	const items = await ExpenseModel.find(query)
-		.sort({
-			[filters.sortBy]: filters.order === "asc" ? 1 : -1,
-		})
-		.lean();
-
-	return {
-		items,
-		total: items.length,
-		page: null,
-		totalPages: null,
-	};
 }
 
 export async function updateExpense(

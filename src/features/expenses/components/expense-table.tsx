@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import {
 	FiChevronLeft,
@@ -22,17 +20,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { useAppSelector } from "@/store/hooks";
 import { ExpenseCard } from "@/features/expenses/components/expense-card";
-import type {
-	CategoryItem,
-	ExpenseItem,
-} from "@/types/expense.types";
+import type { ExpenseItem } from "@/types/expense.types";
 import { EmojiBadge } from "@/components/ui/emoji-badge";
 
 export type SortField = "paidAt" | "amount" | "title";
 
 type ExpenseTableProps = {
 	items: ExpenseItem[];
-	categoryMap: Map<string, CategoryItem>;
 	isLoading?: boolean;
 	sortBy?: SortField;
 	order?: "asc" | "desc";
@@ -45,7 +39,6 @@ type ExpenseTableProps = {
 
 export function ExpenseTable({
 	items,
-	categoryMap,
 	isLoading,
 	sortBy,
 	order,
@@ -54,7 +47,7 @@ export function ExpenseTable({
 	totalPages,
 	onPageChange,
 	emptyMessage = "No expenses found",
-}: ExpenseTableProps) {
+}: Omit<ExpenseTableProps, "categoryMap">) {
 	const locale = useAppSelector((s) => s.ui.locale);
 	const timezone = useAppSelector((s) => s.ui.timezone);
 	const currency = useAppSelector((s) => s.ui.currency);
@@ -95,7 +88,10 @@ export function ExpenseTable({
 						<ExpenseCard
 							key={expense._id}
 							expense={expense}
-							category={categoryMap.get(expense.categoryId)}
+							category={{
+								color: expense.categoryColor ?? "",
+								emoji: expense.categoryEmoji,
+							}}
 						/>
 					))
 				)}
@@ -168,46 +164,43 @@ export function ExpenseTable({
 								</TableCell>
 							</TableRow>
 						) : (
-							items.map((expense) => {
-								const cat = categoryMap.get(expense.categoryId);
-								return (
-									<TableRow key={expense._id}>
-										<TableCell className="font-medium">
-											{expense.title}
-										</TableCell>
-										<TableCell>
-											<span className="text-md flex gap-2 items-center">
-												<EmojiBadge
-													color={cat?.color ?? "var(--color-muted)"}
-													emoji={cat?.emoji}
-												/>
-												{cat?.name ?? "Unknown"}
-											</span>
-										</TableCell>
-										<TableCell className="font-semibold">
-											{formatCurrency(
-												expense.amount,
-												expense.currency || currency,
-											)}
-										</TableCell>
-										<TableCell className="text-xs text-[var(--color-muted)]">
-											{formatDate(expense.paidAt, locale, timezone)}
-										</TableCell>
-										<TableCell>
-											<Link href={`/expenses/${expense._id}`}>
-												<Button
-													variant="ghost"
-													size="icon"
-													className="h-8 w-8"
-													aria-label="View expense"
-												>
-													<FiEye className="h-4 w-4" />
-												</Button>
-											</Link>
-										</TableCell>
-									</TableRow>
-								);
-							})
+							items.map((expense) => (
+								<TableRow key={expense._id}>
+									<TableCell className="font-medium">
+										{expense.title}
+									</TableCell>
+									<TableCell>
+										<span className="text-md flex gap-2 items-center">
+											<EmojiBadge
+												color={expense.categoryColor ?? "var(--color-muted)"}
+												emoji={expense.categoryEmoji}
+											/>
+											{expense.categoryEmoji ? "" : "Unknown"}
+										</span>
+									</TableCell>
+									<TableCell className="font-semibold">
+										{formatCurrency(
+											expense.amount,
+											expense.currency || currency,
+										)}
+									</TableCell>
+									<TableCell className="text-xs text-[var(--color-muted)]">
+										{formatDate(expense.paidAt, locale, timezone)}
+									</TableCell>
+									<TableCell>
+										<Link href={`/expenses/${expense._id}`}>
+											<Button
+												variant="ghost"
+												size="icon"
+												className="h-8 w-8"
+												aria-label="View expense"
+											>
+												<FiEye className="h-4 w-4" />
+											</Button>
+										</Link>
+									</TableCell>
+								</TableRow>
+							))
 						)}
 					</TableBody>
 				</Table>
