@@ -6,15 +6,12 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/stat-card";
 import { formatCurrency } from "@/lib/format";
-import { useUIStore } from "@/store/ui-store";
+import { useAppSelector } from "@/store/hooks";
 import { IndianRupeeIcon } from "lucide-react";
-import type {
-	DashboardAnalytics,
-	DashboardCard,
-} from "@/types/analytics.types";
+import type { DashboardCard } from "@/types/analytics.types";
 
 type ExpenseOverviewProps = {
-	data: DashboardAnalytics | undefined;
+	data: DashboardCard[] | null;
 	isLoading: boolean;
 };
 
@@ -34,7 +31,7 @@ export function ExpenseOverview({
 	data,
 	isLoading,
 }: ExpenseOverviewProps) {
-	const currency = useUIStore((state) => state.currency);
+	const currency = useAppSelector((s) => s.ui.currency);
 
 	return (
 		<div>
@@ -54,7 +51,7 @@ export function ExpenseOverview({
 				</div>
 			) : (
 				<div className="flex flex-wrap gap-2">
-					{data.cards.map((card: DashboardCard) => (
+					{data.map((card: DashboardCard) => (
 						<div
 							key={card.key}
 							className="flex-1 min-w-[calc(50%-0.5rem)]"

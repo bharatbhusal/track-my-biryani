@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
 	FiPlus,
 	FiSearch,
@@ -11,72 +11,69 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { useCategoriesQuery } from "@/hooks/api/use-expenses-api";
-import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
-import { usePersistedRange } from "@/hooks/use-persisted-range";
-import { toRangeParams } from "@/lib/date-range";
+import {
+	useAppSelector,
+	useAppDispatch,
+} from "@/store/hooks";
+import { fetchCategoriesWithStats } from "@/store/slices/categorySlice";
+import { setDateRange } from "@/store/slices/uiSlice";
 import { useDebouncedValue } from "@/hooks/use-debounce";
 import { Input } from "@/components/ui/input";
 import { DateRangeBar } from "@/components/charts/date-range-bar";
 import { CategoryCard } from "@/features/categories/components/category-card";
 import { AddCategoryDrawer } from "@/features/categories/components/add-category-drawer";
+import { toIsoBounds } from "@/lib/date-range";
 
 export function CategoryManager() {
+	const dispatch = useAppDispatch();
 	const [query, setQuery] = useState("");
 	const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
 		"desc",
 	);
 	const [drawerOpen, setDrawerOpen] = useState(false);
-	const [range, setRange] = usePersistedRange();
-	const categoriesQuery = useCategoriesQuery();
-	const rangeParams = toRangeParams(range);
-	const { data: dashboardData } =
-		useDashboardQuery(rangeParams);
+
+	const range = useAppSelector((s) => s.ui.dateRange);
+	const rangeBounds = useMemo(
+		() => toIsoBounds(range),
+		[range.preset, range.offset],
+	);
+	const categoriesWithStats = useAppSelector(
+		(s) => s.categories.itemsWithStats,
+	);
+
 	const debouncedQuery = useDebouncedValue(query, 300);
 
-	const categorySpendMap = useMemo(() => {
-		const map = new Map<
-			string,
-			{ amount: number; pct: number }
-		>();
-		const ranked = dashboardData?.rankedCategories ?? [];
-		const total = dashboardData?.totalSpend ?? 0;
-		for (const cat of ranked) {
-			map.set(cat.name, {
-				amount: cat.value,
-				pct: total > 0 ? (cat.value / total) * 100 : 0,
-			});
-		}
-		return map;
-	}, [dashboardData]);
+	useEffect(() => {
+		if (!rangeBounds.from || !rangeBounds.to) return;
+		dispatch(
+			fetchCategoriesWithStats({
+				from: rangeBounds.from,
+				to: rangeBounds.to,
+			}),
+		);
+	}, [dispatch, rangeBounds.from, rangeBounds.to]);
 
 	const items = useMemo(
 		() =>
-			(categoriesQuery.data ?? [])
+			categoriesWithStats
 				.filter((item) =>
 					item.name
 						.toLowerCase()
 						.includes(debouncedQuery.toLowerCase()),
 				)
 				.sort((a, b) => {
-					const aSpend =
-						categorySpendMap.get(a.name)?.amount ?? 0;
-					const bSpend =
-						categorySpendMap.get(b.name)?.amount ?? 0;
-					if (sortOrder === "asc") return aSpend - bSpend;
-					return bSpend - aSpend;
+					if (sortOrder === "asc") return a.total - b.total;
+					return b.total - a.total;
 				}),
-		[
-			categoriesQuery.data,
-			debouncedQuery,
-			sortOrder,
-			categorySpendMap,
-		],
+		[categoriesWithStats, debouncedQuery, sortOrder],
 	);
 
 	return (
 		<div className="flex gap-2 flex-col">
-			<DateRangeBar range={range} onRangeChange={setRange} />
+			<DateRangeBar
+				range={range}
+				onRangeChange={(r) => dispatch(setDateRange(r))}
+			/>
 			<Card>
 				<div className="flex items-center justify-between mb-4">
 					<CardTitle>
@@ -119,14 +116,9 @@ export function CategoryManager() {
 
 			<div className="grid grid-cols-1 gap-2">
 				{items.map((category) => {
-					const spend = categorySpendMap.get(category.name);
 					return (
 						<div key={category._id}>
-							<CategoryCard
-								category={category}
-								amount={spend?.amount}
-								totalSpend={dashboardData?.totalSpend}
-							/>
+							<CategoryCard category={category} />
 						</div>
 					);
 				})}

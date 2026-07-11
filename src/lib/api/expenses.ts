@@ -9,6 +9,10 @@ import type {
 import type {
 	ExpenseContribution,
 	CategoryRangeStats,
+	CategoryBreakdownPoint,
+	ChartData,
+	DashboardCard,
+	CategoryWithStats,
 } from "@/types/analytics.types";
 
 function buildListQuery(filters: ExpenseListQuery): string {
@@ -55,27 +59,31 @@ export const expensesApi = {
 		apiRequest<{ message: string }>(`/categories/${id}`, {
 			method: "DELETE",
 		}),
-	getCategoryStats: (
-		id: string,
-		from: string,
-		to: string,
-	) =>
+	getCategoryStats: (id: string, from: string, to: string) =>
 		apiRequest<CategoryRangeStats>(
 			`/categories/${id}/stats?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
 		),
+	getCategoryDistribution: (from: string, to: string) =>
+		apiRequest<CategoryBreakdownPoint[]>(
+			`/categories/distribution?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+		),
+	listCategoriesWithStats: (from: string, to: string) =>
+		apiRequest<CategoryWithStats[]>(
+			`/categories/stats?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+		),
 	listExpenses: (filters: ExpenseListQuery = {}) => {
-		const query = buildListQuery({
-			page: 1,
-			limit: 20,
-			...filters,
-		});
+		const query = buildListQuery(filters);
 		return apiRequest<ExpensesListPayload>(
 			`/expenses${query ? `?${query}` : ""}`,
 		);
 	},
 	getExpenseById: (id: string) =>
 		apiRequest<ExpenseItem>(`/expenses/${id}`),
-	getExpenseContribution: (id: string, from?: string, to?: string) => {
+	getExpenseContribution: (
+		id: string,
+		from?: string,
+		to?: string,
+	) => {
 		let url = `/expenses/${encodeURIComponent(id)}/contribution`;
 		const params = new URLSearchParams();
 		if (from) params.set("from", from);
@@ -101,4 +109,19 @@ export const expensesApi = {
 		apiRequest<{ message: string }>(`/expenses/${id}`, {
 			method: "DELETE",
 		}),
+	getOverviewStats: (from: string, to: string) =>
+		apiRequest<DashboardCard[]>(
+			`/expenses/overview?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+		),
+	getChartData: (
+		from: string,
+		to: string,
+		categoryId?: string,
+	) => {
+		const params = new URLSearchParams({ from, to });
+		if (categoryId) params.set("categoryId", categoryId);
+		return apiRequest<ChartData>(
+			`/expenses/chart?${params.toString()}`,
+		);
+	},
 };

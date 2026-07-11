@@ -9,7 +9,7 @@ export function QuickAddButton() {
 
 	if (
 		pathname.startsWith("/auth") ||
-		pathname.startsWith("/expenses/new")
+		pathname.startsWith("/expenses/")
 	) {
 		return null;
 	}

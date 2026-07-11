@@ -1,5 +1,4 @@
-"use client";
-
+import { useMemo } from "react";
 import Link from "next/link";
 import {
 	FiChevronLeft,
@@ -20,19 +19,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { useUIStore } from "@/store/ui-store";
+import { useAppSelector } from "@/store/hooks";
 import { ExpenseCard } from "@/features/expenses/components/expense-card";
-import type {
-	CategoryItem,
-	ExpenseItem,
-} from "@/types/expense.types";
+import type { ExpenseItem } from "@/types/expense.types";
 import { EmojiBadge } from "@/components/ui/emoji-badge";
+import { formatShortDate } from "@/lib/datetime";
 
 export type SortField = "paidAt" | "amount" | "title";
 
 type ExpenseTableProps = {
 	items: ExpenseItem[];
-	categoryMap: Map<string, CategoryItem>;
 	isLoading?: boolean;
 	sortBy?: SortField;
 	order?: "asc" | "desc";
@@ -43,9 +39,22 @@ type ExpenseTableProps = {
 	emptyMessage?: string;
 };
 
+function groupByDate(
+	items: ExpenseItem[],
+): Map<string, ExpenseItem[]> {
+	const map = new Map<string, ExpenseItem[]>();
+	for (const item of items) {
+		const date = new Date(item.paidAt)
+			.toISOString()
+			.split("T")[0];
+		if (!map.has(date)) map.set(date, []);
+		map.get(date)!.push(item);
+	}
+	return map;
+}
+
 export function ExpenseTable({
 	items,
-	categoryMap,
 	isLoading,
 	sortBy,
 	order,
@@ -54,10 +63,10 @@ export function ExpenseTable({
 	totalPages,
 	onPageChange,
 	emptyMessage = "No expenses found",
-}: ExpenseTableProps) {
-	const locale = useUIStore((state) => state.locale);
-	const timezone = useUIStore((state) => state.timezone);
-	const currency = useUIStore((state) => state.currency);
+}: Omit<ExpenseTableProps, "categoryMap">) {
+	const locale = useAppSelector((s) => s.ui.locale);
+	const timezone = useAppSelector((s) => s.ui.timezone);
+	const currency = useAppSelector((s) => s.ui.currency);
 
 	const renderSortIcon = (field: SortField) => {
 		if (sortBy !== field || !order) return null;
@@ -68,9 +77,14 @@ export function ExpenseTable({
 		);
 	};
 
+	const groupedItems = useMemo(
+		() => groupByDate(items),
+		[items],
+	);
+
 	return (
 		<>
-			{/* Mobile: card layout */}
+			{/* Mobile: card layout grouped by day */}
 			<div className="space-y-2 md:hidden">
 				{isLoading ? (
 					[...Array(5)].map((_, i) => (
@@ -91,13 +105,18 @@ export function ExpenseTable({
 						{emptyMessage}
 					</p>
 				) : (
-					items.map((expense) => (
-						<ExpenseCard
-							key={expense._id}
-							expense={expense}
-							category={categoryMap.get(expense.categoryId)}
-						/>
-					))
+					Array.from(groupedItems.entries()).map(
+						([date, dayItems]) => (
+							<div key={date} className="space-y-2">
+								<div className="px-2 py-1 text-xs font-medium text-[var(--color-muted)] uppercase tracking-wide">
+									{formatShortDate(date, locale)}
+								</div>
+								{dayItems.map((expense) => (
+									<ExpenseCard key={expense._id} expense={expense} />
+								))}
+							</div>
+						),
+					)
 				)}
 			</div>
 
@@ -168,46 +187,45 @@ export function ExpenseTable({
 								</TableCell>
 							</TableRow>
 						) : (
-							items.map((expense) => {
-								const cat = categoryMap.get(expense.categoryId);
-								return (
-									<TableRow key={expense._id}>
-										<TableCell className="font-medium">
-											{expense.title}
-										</TableCell>
-										<TableCell>
-											<span className="text-md flex gap-2 items-center">
-												<EmojiBadge
-													color={cat?.color ?? "var(--color-muted)"}
-													emoji={cat?.emoji}
-												/>
-												{cat?.name ?? "Unknown"}
-											</span>
-										</TableCell>
-										<TableCell className="font-semibold">
-											{formatCurrency(
-												expense.amount,
-												expense.currency || currency,
-											)}
-										</TableCell>
-										<TableCell className="text-xs text-[var(--color-muted)]">
-											{formatDate(expense.paidAt, locale, timezone)}
-										</TableCell>
-										<TableCell>
-											<Link href={`/expenses/${expense._id}`}>
-												<Button
-													variant="ghost"
-													size="icon"
-													className="h-8 w-8"
-													aria-label="View expense"
-												>
-													<FiEye className="h-4 w-4" />
-												</Button>
-											</Link>
-										</TableCell>
-									</TableRow>
-								);
-							})
+							items.map((expense) => (
+								<TableRow key={expense._id}>
+									<TableCell className="font-medium">
+										{expense.title}
+									</TableCell>
+									<TableCell>
+										<span className="text-md flex gap-2 items-center">
+											<EmojiBadge
+												color={
+													expense.categoryColor ?? "var(--color-muted)"
+												}
+												emoji={expense.categoryEmoji}
+											/>
+											{expense.categoryEmoji ? "" : "Unknown"}
+										</span>
+									</TableCell>
+									<TableCell className="font-semibold">
+										{formatCurrency(
+											expense.amount,
+											expense.currency || currency,
+										)}
+									</TableCell>
+									<TableCell className="text-xs text-[var(--color-muted)]">
+										{formatDate(expense.paidAt, locale, timezone)}
+									</TableCell>
+									<TableCell>
+										<Link href={`/expenses/${expense._id}`}>
+											<Button
+												variant="ghost"
+												size="icon"
+												className="h-8 w-8"
+												aria-label="View expense"
+											>
+												<FiEye className="h-4 w-4" />
+											</Button>
+										</Link>
+									</TableCell>
+								</TableRow>
+							))
 						)}
 					</TableBody>
 				</Table>

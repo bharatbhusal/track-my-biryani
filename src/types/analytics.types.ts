@@ -7,11 +7,6 @@ export type DashboardCard = {
 export type DashboardAnalytics = {
 	totalSpend: number;
 	averageSpend: number;
-	chartLabel: string;
-	rankedCategories: CategoryBreakdownPoint[];
-	stackedSeries: Array<Record<string, string | number>>;
-	periodLabel: string;
-	cards: DashboardCard[];
 };
 
 export type TrendPoint = {
@@ -22,6 +17,8 @@ export type TrendPoint = {
 export type CategoryBreakdownPoint = {
 	name: string;
 	value: number;
+	color: string;
+	categoryId: string;
 };
 
 export type RecentActivityPoint = {
@@ -52,7 +49,21 @@ export type CategoryRangeStats = {
 	avg: number;
 	min: number;
 	max: number;
+	pct: number;
 	trend: TrendPoint[];
+};
+
+export type CategoryWithStats = {
+	_id: string;
+	name: string;
+	color: string;
+	emoji?: string;
+	total: number;
+	count: number;
+	min: number;
+	max: number;
+	avg: number;
+	pct: number;
 };
 
 export type ActivityLogItem = {
@@ -61,4 +72,15 @@ export type ActivityLogItem = {
 	entityType: string;
 	entityId?: string;
 	timestamp: string;
+};
+
+export type ChartData = {
+	series: Array<Record<string, string | number>>;
+	stats: {
+		avg: number;
+		min: number;
+		max: number;
+		total: number;
+	};
+	categoryColors: Record<string, string>;
 };

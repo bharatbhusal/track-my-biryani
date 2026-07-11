@@ -1,5 +1,4 @@
 import { BottomNav } from "@/components/layout/bottom-nav";
-import { QuickAddButton } from "@/components/layout/quick-add-button";
 
 export default function MainLayout({
 	children,
@@ -21,16 +20,17 @@ export default function MainLayout({
 				}}
 			/>
 			<div
-				className="min-h-0 overflow-y-auto"
+				className="h-full min-h-0 overflow-y-auto"
 				style={{
 					paddingTop:
 						"calc(env(safe-area-inset-top, 0px) + 1rem)",
 				}}
 			>
-				<div className="mx-auto max-w-5xl px-2">{children}</div>
+				<div className="h-full mx-auto max-w-5xl px-2">
+					{children}
+				</div>
 			</div>
 			<BottomNav />
-			<QuickAddButton />
 		</div>
 	);
 }

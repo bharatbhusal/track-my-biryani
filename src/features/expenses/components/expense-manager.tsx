@@ -1,20 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { FiList, FiSearch } from "react-icons/fi";
 import { useDebouncedValue } from "@/hooks/use-debounce";
 
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-	useCategoriesQuery,
-	useExpensesQuery,
-} from "@/hooks/api/use-expenses-api";
-import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
-import { usePersistedRange } from "@/hooks/use-persisted-range";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { fetchCategories, fetchCategoryDistribution } from "@/store/slices/categorySlice";
+import { fetchExpenses } from "@/store/slices/expenseSlice";
+import { setDateRange } from "@/store/slices/uiSlice";
 import {
 	toIsoBounds,
-	toRangeParams,
 } from "@/lib/date-range";
 import type { GlobalDateRange } from "@/lib/date-range";
 
@@ -24,55 +21,59 @@ import type { SortField } from "@/features/expenses/components/expense-table";
 import { CategoryDistributionBar } from "@/features/expenses/components/category-distribution-bar";
 
 export function ExpenseManager() {
+	const dispatch = useAppDispatch();
 	const [query, setQuery] = useState("");
 	const [categoryId, setCategoryId] = useState("");
 	const [sortBy, setSortBy] = useState<SortField>("paidAt");
 	const [order, setOrder] = useState<"asc" | "desc">("desc");
 	const [page, setPage] = useState(1);
-	const [localRange, setLocalRange] = usePersistedRange();
 
-	const categoriesQuery = useCategoriesQuery();
-	const rangeParams = toRangeParams(localRange);
-	const { data: dashboardData } =
-		useDashboardQuery(rangeParams);
+	const localRange = useAppSelector((s) => s.ui.dateRange);
+	const items = useAppSelector((s) => s.expenses.items);
+	const isLoading = useAppSelector((s) => s.expenses.loading);
+	const totalPages = useAppSelector((s) => s.expenses.totalPages);
+
 	const debouncedQuery = useDebouncedValue(query, 300);
 
-	const filters = useMemo(() => {
-		const bounds = toIsoBounds(localRange);
-		return {
-			page,
-			limit: 10,
-			q: debouncedQuery || undefined,
-			categoryId: categoryId || undefined,
-			from: bounds.from,
-			to: bounds.to,
-			sortBy,
-			order,
-		};
+	const distribution = useAppSelector((s) => s.categories.distribution);
+
+	const rangeBounds = useMemo(
+		() => toIsoBounds(localRange),
+		[localRange.preset, localRange.offset],
+	);
+
+	useEffect(() => {
+		dispatch(fetchCategories());
+	}, [dispatch]);
+
+	useEffect(() => {
+		dispatch(
+			fetchExpenses({
+				page,
+				limit: 10,
+				q: debouncedQuery || undefined,
+				categoryId: categoryId || undefined,
+				from: rangeBounds.from,
+				to: rangeBounds.to,
+				sortBy,
+				order,
+			}),
+		);
 	}, [
-		categoryId,
-		localRange,
-		order,
+		dispatch,
 		page,
 		debouncedQuery,
+		categoryId,
+		rangeBounds.from,
+		rangeBounds.to,
 		sortBy,
+		order,
 	]);
 
-	const expensesQuery = useExpensesQuery(filters);
-	const isLoading = expensesQuery.isLoading;
-	const items = expensesQuery.data?.items ?? [];
-	const totalPages = expensesQuery.data?.totalPages ?? 1;
-
-	const categoryMap = useMemo(
-		() =>
-			new Map(
-				(categoriesQuery.data ?? []).map((cat) => [
-					cat._id,
-					cat,
-				]),
-			),
-		[categoriesQuery.data],
-	);
+	useEffect(() => {
+		if (!rangeBounds.from || !rangeBounds.to) return;
+		dispatch(fetchCategoryDistribution({ from: rangeBounds.from, to: rangeBounds.to }));
+	}, [dispatch, rangeBounds.from, rangeBounds.to]);
 
 	const handleSort = (field: SortField) => {
 		if (sortBy === field) {
@@ -90,7 +91,7 @@ export function ExpenseManager() {
 	};
 
 	const handleRangeChange = (range: GlobalDateRange) => {
-		setLocalRange(range);
+		dispatch(setDateRange(range));
 		setCategoryId("");
 		setPage(1);
 	};
@@ -126,17 +127,15 @@ export function ExpenseManager() {
 
 			<div className="shrink-0">
 				<CategoryDistributionBar
-					distribution={dashboardData?.rankedCategories ?? []}
-					categories={categoriesQuery.data ?? []}
+					distribution={distribution}
 					selectedCategoryId={categoryId || undefined}
 					onCategorySelect={handleCategorySelect}
-					isLoading={!dashboardData}
+					isLoading={isLoading}
 				/>
 			</div>
 			<div className="min-h-0 flex-1 overflow-auto">
 				<ExpenseTable
 					items={items}
-					categoryMap={categoryMap}
 					isLoading={isLoading}
 					sortBy={sortBy}
 					order={order}

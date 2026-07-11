@@ -1,169 +1,120 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState, useMemo } from "react";
-import { FiEdit2, FiTrash2 } from "react-icons/fi";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { ConfirmDrawer } from "@/components/ui/drawer";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CategoryCard } from "@/features/categories/components/category-card";
-import {
-	useCategoriesQuery,
-	useExpenseDetailQuery,
-	useExpenseMutations,
-	useExpenseContributionQuery,
-} from "@/hooks/api/use-expenses-api";
 import GoogleMap from "@/components/maps/google-map";
-import { formatCurrency, formatDate } from "@/lib/format";
-import { useUIStore } from "@/store/ui-store";
-import type {
-	ExpenseItem,
-	CategoryItem,
-} from "@/types/expense.types";
-import type { ExpenseContribution } from "@/types/analytics.types";
+import {
+	useAppSelector,
+	useAppDispatch,
+} from "@/store/hooks";
+import { shallowEqual } from "react-redux";
 import { DateRangeBar } from "@/components/charts/date-range-bar";
-import { usePersistedRange } from "@/hooks/use-persisted-range";
-import { toIsoBounds } from "@/lib/date-range";
+import type { GlobalDateRange } from "@/lib/date-range";
+import {
+	fetchExpenseDetail,
+	deleteExpense,
+} from "@/store/slices/expenseSlice";
+import { setDateRange } from "@/store/slices/uiSlice";
+import { expensesApi } from "@/lib/api/expenses";
+import { ExpenseCard } from "@/features/expenses/components/expense-card";
+import type { ExpenseItem } from "@/types/expense.types";
+import { ExpenseTable } from "./expense-table";
 
 type ExpenseDetailViewProps = {
 	id: string;
-	initialExpense?: ExpenseItem | null;
-	initialCategories?: CategoryItem[];
-	initialContribution?: ExpenseContribution | null;
 };
 
 export function ExpenseDetailView({
 	id,
-	initialExpense,
-	initialCategories,
-	initialContribution,
 }: ExpenseDetailViewProps) {
 	const router = useRouter();
+	const dispatch = useAppDispatch();
 	const [deleteOpen, setDeleteOpen] = useState(false);
-	const locale = useUIStore((state) => state.locale);
-	const timezone = useUIStore((state) => state.timezone);
-	const currency = useUIStore((state) => state.currency);
-	const [range, setRange] = usePersistedRange();
-	const categoriesQuery = useCategoriesQuery(
-		initialCategories,
-	);
-	const expenseQuery = useExpenseDetailQuery(
-		id,
-		initialExpense,
-	);
-	const rangeBounds = useMemo(
-		() => toIsoBounds(range),
-		[range],
-	);
-	const contributionQuery = useExpenseContributionQuery(
-		id,
-		initialContribution,
-		rangeBounds.from,
-		rangeBounds.to,
-	);
-	const { deleteExpense } = useExpenseMutations();
+	const [recentExpenses, setRecentExpenses] = useState<
+		ExpenseItem[]
+	>([]);
 
-	const expense = expenseQuery.data;
-	const contribution: ExpenseContribution | null =
-		contributionQuery.data ?? null;
-	const isContributionLoading = contributionQuery.isLoading;
+	const expense = useAppSelector(
+		(s) => s.expenses.currentExpense,
+		shallowEqual,
+	);
 
-	if (!expense) {
-		return <Card>Loading expense...</Card>;
+	const expensesLoading = useAppSelector(
+		(s) => s.expenses.loading,
+	);
+	const localRange = useAppSelector((s) => s.ui.dateRange);
+
+	useEffect(() => {
+		dispatch(fetchExpenseDetail(id));
+	}, [dispatch, id]);
+
+	useEffect(() => {
+		if (!expense?.categoryId) return;
+		expensesApi
+			.listExpenses({
+				categoryId: expense.categoryId,
+				limit: 20,
+			})
+			.then((res) => setRecentExpenses(res.items))
+			.catch(() => {});
+	}, [expense?.categoryId]);
+
+	if (expensesLoading && !expense) {
+		return (
+			<div className="space-y-4">
+				<Skeleton className="h-10 w-52" />
+				<Card>
+					<div className="flex justify-between mb-4">
+						<Skeleton className="h-6 w-48" />
+						<div className="flex gap-2">
+							<Skeleton className="h-9 w-9 rounded" />
+							<Skeleton className="h-9 w-9 rounded" />
+						</div>
+					</div>
+					<Skeleton className="h-14 w-full" />
+				</Card>
+				<Card>
+					<Skeleton className="h-5 w-24 mb-3" />
+					<Skeleton className="h-48 w-full" />
+				</Card>
+				<Card>
+					<Skeleton className="h-5 w-32 mb-3" />
+					<div className="space-y-3">
+						{[1, 2, 3].map((i) => (
+							<Skeleton key={i} className="h-14 w-full" />
+						))}
+					</div>
+				</Card>
+			</div>
+		);
 	}
 
-	const category = categoriesQuery.data?.find(
-		(item) => item._id === expense.categoryId,
-	);
+	if (!expense) {
+		return <Card>Expense not found</Card>;
+	}
 
 	return (
 		<div className="space-y-4">
 			<DateRangeBar
 				title={expense.title}
-				range={range}
-				onRangeChange={setRange}
+				range={localRange}
+				onRangeChange={(r: GlobalDateRange) =>
+					dispatch(setDateRange(r))
+				}
 			/>
-			<Card>
-				<div className="mb-3 flex flex-col gap-2">
-					<CardTitle className="flex justify-between">
-						<p>{expense.title}</p>
-						<div className="flex gap-2">
-							<Link href={`/expenses/${id}/edit`}>
-								<Button
-									variant="outline"
-									className="h-9 w-9 p-0"
-									aria-label="Edit expense"
-								>
-									<FiEdit2 />
-								</Button>
-							</Link>
-							<Button
-								variant="destructive"
-								className="h-9 w-9 p-0"
-								aria-label="Delete expense"
-								onClick={() => setDeleteOpen(true)}
-							>
-								<FiTrash2 />
-							</Button>
-						</div>
-					</CardTitle>
-				</div>
 
-				<div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
-					<p>
-						<span className="text-[var(--color-muted)]">
-							Amount:
-						</span>{" "}
-						{formatCurrency(
-							expense.amount,
-							expense.currency || currency,
-						)}
-					</p>
-					<p>
-						<span className="text-[var(--color-muted)]">
-							DateTime:
-						</span>{" "}
-						{formatDate(expense.paidAt, locale, timezone)}
-					</p>
-					{expense.notes?.trim() && (
-						<p className="pt-2 text-sm text-[var(--color-muted)] border-t border-[var(--color-border)]">
-							{expense.notes}
-						</p>
-					)}
-				</div>
-			</Card>
+			<ExpenseCard
+				expense={expense}
+				onEdit={() => router.push(`/expenses/${id}/edit`)}
+				onDelete={() => setDeleteOpen(true)}
+			/>
 
-			{isContributionLoading ? (
-				<Card>
-					<div className="space-y-4">
-						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-							<div className="space-y-3">
-								<Skeleton className="h-4 w-24" />
-								<Skeleton className="h-2 w-full" />
-								<Skeleton className="h-4 w-16" />
-								<Skeleton className="h-4 w-24" />
-								<Skeleton className="h-2 w-full" />
-								<Skeleton className="h-4 w-16" />
-							</div>
-						</div>
-					</div>
-				</Card>
-			) : (
-				contribution &&
-				category && (
-					<CategoryCard
-						category={category}
-						amount={contribution.categoryAverage}
-						count={contribution.categoryExpenseCount}
-						totalSpend={contribution.categoryTotal}
-					/>
-				)
-			)}
 			{expense.images.length > 0 && (
 				<Card>
 					<CardTitle className="mb-3">Glimpses</CardTitle>
@@ -190,40 +141,42 @@ export function ExpenseDetailView({
 
 			{expense.location?.latitude !== 0 &&
 				expense.location?.longitude !== 0 && (
-					<Card>
-						<CardTitle className="mb-2">Map Preview</CardTitle>
-						<div className="overflow-hidden rounded border border-[var(--color-border)]">
-							<GoogleMap
-								latitude={expense.location.latitude}
-								longitude={expense.location.longitude}
-								address={expense.location.address}
-								height={240}
-							/>
-						</div>
-					</Card>
+					<GoogleMap
+						latitude={expense.location.latitude}
+						longitude={expense.location.longitude}
+						address={expense.location.address}
+						height={240}
+					/>
 				)}
+
+			{recentExpenses.length > 0 && (
+				<div className="space-y-2">
+					<p className="text-sm font-semibold px-1">
+						Recent in Category
+					</p>
+					<ExpenseTable items={recentExpenses} />
+				</div>
+			)}
 
 			<ConfirmDrawer
 				open={deleteOpen}
 				title="Delete expense"
 				description="This action cannot be undone."
-				isPending={deleteExpense.isPending}
+				isPending={false}
 				onCancel={() => setDeleteOpen(false)}
-				onConfirm={() => {
-					deleteExpense.mutate(id, {
-						onSuccess: () => {
-							toast.success("Expense deleted");
-							router.replace("/expenses");
-						},
-						onError: (error) => {
-							console.error(error);
-							toast.error(
-								error instanceof Error
-									? error.message
-									: "Failed to delete expense",
-							);
-						},
-					});
+				onConfirm={async () => {
+					try {
+						await dispatch(deleteExpense(id)).unwrap();
+						toast.success("Expense deleted");
+						router.replace("/expenses");
+					} catch (error) {
+						console.error(error);
+						toast.error(
+							error instanceof Error
+								? error.message
+								: "Failed to delete expense",
+						);
+					}
 				}}
 			/>
 		</div>

@@ -4,37 +4,42 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryForm } from "@/features/categories/components/category-form";
-import { useCategoryDetailQuery } from "@/hooks/api/use-expenses-api";
-import type { CategoryItem } from "@/types/expense.types";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { fetchCategoryDetail } from "@/store/slices/categorySlice";
 
-export function CategoryEditForm({
-	id,
-	initialCategory,
-}: {
-	id: string;
-	initialCategory?: CategoryItem | null;
-}) {
+export function CategoryEditForm({ id }: { id: string }) {
 	const router = useRouter();
+	const dispatch = useAppDispatch();
 	const [ready, setReady] = useState(false);
-	const categoryQuery = useCategoryDetailQuery(
-		id,
-		initialCategory,
-	);
+
+	const category = useAppSelector((s) => s.categories.currentCategory);
 
 	useEffect(() => {
-		if (categoryQuery.data) {
+		dispatch(fetchCategoryDetail(id));
+	}, [dispatch, id]);
+
+	useEffect(() => {
+		if (category) {
 			setReady(true);
 		}
-	}, [categoryQuery.data]);
+	}, [category]);
 
-	if (!categoryQuery.data && !ready) {
+	if (!category && !ready) {
 		return (
 			<Card>
-				<div className="space-y-3">
-					<div className="h-5 w-40 animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" />
-					<div className="h-10 w-full animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" />
-					<div className="h-10 w-full animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" />
+				<div className="space-y-4">
+					<Skeleton className="h-6 w-40" />
+					<div className="space-y-2">
+						<Skeleton className="h-4 w-16" />
+						<Skeleton className="h-10 w-full" />
+					</div>
+					<div className="space-y-2">
+						<Skeleton className="h-4 w-12" />
+						<Skeleton className="h-10 w-full" />
+					</div>
+					<Skeleton className="h-10 w-32" />
 				</div>
 			</Card>
 		);
@@ -45,7 +50,7 @@ export function CategoryEditForm({
 			<Card>
 				<CardTitle className="mb-3">Edit Category</CardTitle>
 				<CategoryForm
-					category={categoryQuery.data}
+					category={category}
 					onSuccess={() => router.push(`/categories/${id}`)}
 					onCancel={() => router.push(`/categories/${id}`)}
 				/>

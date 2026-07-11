@@ -1,94 +1,126 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 import { DateRangeBar } from "@/components/charts/date-range-bar";
 import { ExpenseOverview } from "@/features/expenses/components/expense-overview";
 import { DashboardBarChart } from "@/components/dashboard-bar-chart";
 import { CategoryDistributionBar } from "@/features/expenses/components/category-distribution-bar";
-import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
-import { useCategoriesQuery } from "@/hooks/api/use-expenses-api";
-import { usePersistedRange } from "@/hooks/use-persisted-range";
-import { toRangeParams } from "@/lib/date-range";
+import {
+	useAppSelector,
+	useAppDispatch,
+} from "@/store/hooks";
+import {
+	fetchOverviewStats,
+	fetchChartData,
+} from "@/store/slices/expenseSlice";
+import { fetchCategoryDistribution } from "@/store/slices/categorySlice";
+import { setDateRange } from "@/store/slices/uiSlice";
 import { getChartLabel } from "@/lib/format";
+import {
+	toRangeDates,
+	computePeriodLabel,
+	toIsoBounds,
+} from "@/lib/date-range";
 
 export function DashboardOverview() {
-	const [mainRange, setMainRange] = usePersistedRange();
+	const dispatch = useAppDispatch();
+	const mainRange = useAppSelector((s) => s.ui.dateRange);
 	const [selectedCategoryId, setSelectedCategoryId] =
 		useState<string | undefined>();
 
-	const categoriesQuery = useCategoriesQuery();
-	const rangeParams = toRangeParams(mainRange);
-
-	const {
-		data: dashboardData,
-		isLoading: isDashboardLoading,
-	} = useDashboardQuery(rangeParams);
-
-	const categoryColorMap = useMemo(() => {
-		const map = new Map<string, string>();
-		(categoriesQuery.data ?? []).forEach((c, i) => {
-			map.set(c.name, c.color);
-		});
-		return map;
-	}, [categoriesQuery.data]);
-
-	const selectedCategoryName = useMemo(
-		() =>
-			selectedCategoryId
-				? categoriesQuery.data?.find(
-						(c) => c._id === selectedCategoryId,
-					)?.name
-				: undefined,
-		[selectedCategoryId, categoriesQuery.data],
+	const distribution = useAppSelector(
+		(s) => s.categories.distribution,
+	);
+	const overviewStats = useAppSelector(
+		(s) => s.expenses.overviewStats,
+	);
+	const chartData = useAppSelector(
+		(s) => s.expenses.chartData,
+	);
+	const isLoading = useAppSelector(
+		(s) => s.expenses.loading,
 	);
 
-	const filteredStackedSeries = useMemo(() => {
-		const series = dashboardData?.stackedSeries ?? [];
-		if (!selectedCategoryName) return series;
-		return series.map((item) => {
-			const filtered: Record<string, string | number> = {
-				name: item.name as string,
-			};
-			if (selectedCategoryName in item) {
-				filtered[selectedCategoryName] =
-					item[selectedCategoryName];
-			}
-			return filtered;
-		});
-	}, [dashboardData?.stackedSeries, selectedCategoryName]);
+	const { from, to } = useMemo(
+		() => toRangeDates(mainRange),
+		[mainRange.preset, mainRange.offset],
+	);
+
+	const isoBounds = useMemo(
+		() => toIsoBounds(mainRange),
+		[mainRange.preset, mainRange.offset],
+	);
+
+	useEffect(() => {
+		if (!isoBounds.from || !isoBounds.to) return;
+		dispatch(
+			fetchOverviewStats({
+				from: isoBounds.from,
+				to: isoBounds.to,
+			}),
+		);
+		dispatch(
+			fetchCategoryDistribution({
+				from: isoBounds.from,
+				to: isoBounds.to,
+			}),
+		);
+	}, [dispatch, isoBounds.from, isoBounds.to]);
+
+	useEffect(() => {
+		if (!isoBounds.from || !isoBounds.to) return;
+		dispatch(
+			fetchChartData({
+				from: isoBounds.from,
+				to: isoBounds.to,
+				categoryId: selectedCategoryId,
+			}),
+		);
+	}, [
+		dispatch,
+		isoBounds.from,
+		isoBounds.to,
+		selectedCategoryId,
+	]);
+
+	const periodLabel = useMemo(
+		() => computePeriodLabel(from, to, mainRange.preset),
+		[from, to, mainRange.preset],
+	);
 
 	const handleRangeChange = (range: typeof mainRange) => {
-		setMainRange(range);
+		dispatch(setDateRange(range));
 		setSelectedCategoryId(undefined);
 	};
 
 	return (
 		<div className="space-y-2">
 			<DateRangeBar
-				title={dashboardData?.periodLabel ?? "Overview"}
+				title={periodLabel}
 				range={mainRange}
 				onRangeChange={handleRangeChange}
-				loading={isDashboardLoading}
+				loading={isLoading}
 			/>
 			<ExpenseOverview
-				data={dashboardData}
-				isLoading={isDashboardLoading}
+				data={overviewStats}
+				isLoading={isLoading}
 			/>
 
 			<CategoryDistributionBar
-				distribution={dashboardData?.rankedCategories ?? []}
-				categories={categoriesQuery.data ?? []}
+				distribution={distribution}
 				selectedCategoryId={selectedCategoryId}
 				onCategorySelect={setSelectedCategoryId}
-				isLoading={isDashboardLoading}
+				isLoading={isLoading}
 			/>
 			<DashboardBarChart
-				stackedSeries={filteredStackedSeries}
+				stackedSeries={chartData?.series ?? []}
 				chartLabel={getChartLabel(mainRange.preset, "Expense")}
-				averageSpend={dashboardData?.averageSpend}
-				categoryColorMap={categoryColorMap}
-				isLoading={isDashboardLoading}
+				averageSpend={chartData?.stats.avg}
+				minSpend={chartData?.stats.min}
+				maxSpend={chartData?.stats.max}
+				categoryColorMap={chartData?.categoryColors ?? {}}
+				isLoading={isLoading}
 			/>
 		</div>
 	);
