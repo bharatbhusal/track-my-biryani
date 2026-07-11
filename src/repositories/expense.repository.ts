@@ -132,61 +132,39 @@ export async function listExpenses(
 		};
 	}
 
-	const isPaginated = typeof filters.page === "number" && typeof filters.limit === "number";
 	const page = filters.page ?? 1;
 	const limit = filters.limit ?? 50;
 	const skip = (page - 1) * limit;
 
-if (isPaginated) {
-			const [items, total] = await Promise.all([
-				ExpenseModel.find(query)
-					.populate("categoryId", "emoji color")
-					.select("title amount paidAt currency")
-					.sort({
-						[filters.sortBy]: filters.order === "asc" ? 1 : -1,
-					})
-					.skip(skip)
-					.limit(limit)
-					.lean(),
-				ExpenseModel.countDocuments(query),
-			]);
-
-			const transformedItems = items.map((item) => ({
-				...item,
-				categoryColor: item.categoryId?.color ?? "",
-				categoryEmoji: item.categoryId?.emoji ?? "",
-				categoryId: item.categoryId?._id?.toString() ?? item.categoryId?.toString() ?? "",
-			}));
-
-			return {
-				items: transformedItems,
-				total,
-				page,
-				totalPages: Math.ceil(total / limit) || 1,
-			};
-		}
-
-const items = await ExpenseModel.find(query)
+	const [items, total] = await Promise.all([
+		ExpenseModel.find(query)
 			.populate("categoryId", "emoji color")
 			.select("title amount paidAt currency")
 			.sort({
 				[filters.sortBy]: filters.order === "asc" ? 1 : -1,
 			})
-			.lean();
+			.skip(skip)
+			.limit(limit)
+			.lean(),
+		ExpenseModel.countDocuments(query),
+	]);
 
-		const transformedItems = items.map((item) => ({
-			...item,
-			categoryColor: item.categoryId?.color ?? "",
-			categoryEmoji: item.categoryId?.emoji ?? "",
-			categoryId: item.categoryId?._id?.toString() ?? item.categoryId?.toString() ?? "",
-		}));
+	const transformedItems = items.map((item) => ({
+		...item,
+		categoryColor: item.categoryId?.color ?? "",
+		categoryEmoji: item.categoryId?.emoji ?? "",
+		categoryId:
+			item.categoryId?._id?.toString() ??
+			item.categoryId?.toString() ??
+			"",
+	}));
 
-		return {
-			items: transformedItems,
-			total: transformedItems.length,
-			page: null,
-			totalPages: null,
-		};
+	return {
+		items: transformedItems,
+		total,
+		page,
+		totalPages: Math.ceil(total / limit) || 1,
+	};
 }
 
 export async function updateExpense(
@@ -218,7 +196,6 @@ export async function deleteExpense(
 		userId,
 	}).lean();
 }
-
 export async function getExpenseById(
 	userId: string,
 	expenseId: string,
@@ -227,12 +204,28 @@ export async function getExpenseById(
 		return null;
 	}
 
-	return ExpenseModel.findOne({
+	const expense = await ExpenseModel.findOne({
 		_id: expenseId,
 		userId,
-	}).lean();
-}
+	})
+		.populate("categoryId", "emoji color")
+		.lean();
 
+	if (!expense) return null;
+
+	const category = expense.categoryId as {
+		_id: Types.ObjectId;
+		emoji: string;
+		color: string;
+	};
+
+	return {
+		...expense,
+		categoryId: category._id.toString(),
+		categoryEmoji: category.emoji,
+		categoryColor: category.color,
+	};
+}
 export async function listRecentExpenses(
 	userId: string,
 	limit = 5,
@@ -401,54 +394,61 @@ export async function getCategoryRangeStats(
 	);
 	const dateFormat = dayDiff > 60 ? "%Y-%m" : "%Y-%m-%d";
 
-	const [categoryResult, totalResult, trend] = await Promise.all([
-		ExpenseModel.aggregate<SummaryBucket>([
-			{ $match: categoryMatch },
-			{
-				$group: {
-					_id: null,
-					total: { $sum: "$amount" },
-					count: { $sum: 1 },
-					avg: { $avg: "$amount" },
-					min: { $min: "$amount" },
-					max: { $max: "$amount" },
-				},
-			},
-		]),
-		ExpenseModel.aggregate<SummaryBucket>([
-			{ $match: match },
-			{
-				$group: {
-					_id: null,
-					total: { $sum: "$amount" },
-				},
-			},
-		]),
-		ExpenseModel.aggregate([
-			{ $match: categoryMatch },
-			{
-				$group: {
-					_id: {
-						$dateToString: {
-							format: dateFormat,
-							date: "$paidAt",
-						},
+	const [categoryResult, totalResult, trend] =
+		await Promise.all([
+			ExpenseModel.aggregate<SummaryBucket>([
+				{ $match: categoryMatch },
+				{
+					$group: {
+						_id: null,
+						total: { $sum: "$amount" },
+						count: { $sum: 1 },
+						avg: { $avg: "$amount" },
+						min: { $min: "$amount" },
+						max: { $max: "$amount" },
 					},
-					total: { $sum: "$amount" },
 				},
-			},
-			{ $sort: { _id: 1 } },
-			{
-				$project: {
-					_id: 0,
-					name: "$_id",
-					total: 1,
+			]),
+			ExpenseModel.aggregate<SummaryBucket>([
+				{ $match: match },
+				{
+					$group: {
+						_id: null,
+						total: { $sum: "$amount" },
+					},
 				},
-			},
-		]),
-	]);
+			]),
+			ExpenseModel.aggregate([
+				{ $match: categoryMatch },
+				{
+					$group: {
+						_id: {
+							$dateToString: {
+								format: dateFormat,
+								date: "$paidAt",
+							},
+						},
+						total: { $sum: "$amount" },
+					},
+				},
+				{ $sort: { _id: 1 } },
+				{
+					$project: {
+						_id: 0,
+						name: "$_id",
+						total: 1,
+					},
+				},
+			]),
+		]);
 
-	const category = categoryResult[0] ?? { total: 0, count: 0, avg: 0, min: 0, max: 0 };
+	const category = categoryResult[0] ?? {
+		total: 0,
+		count: 0,
+		avg: 0,
+		min: 0,
+		max: 0,
+	};
 	const total = totalResult[0]?.total ?? 0;
 
 	return {
@@ -743,7 +743,10 @@ export async function getChartData(
 	const periodTotals = new Map<string, number>();
 
 	for (const row of periodData) {
-		const periodKey = formatPeriodLabel(row._id.period, dayDiff);
+		const periodKey = formatPeriodLabel(
+			row._id.period,
+			dayDiff,
+		);
 		const catName =
 			nameById.get(row._id.categoryId.toString()) ??
 			"Uncategorized";

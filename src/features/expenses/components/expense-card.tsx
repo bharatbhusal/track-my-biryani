@@ -1,45 +1,89 @@
 "use client";
 
 import Link from "next/link";
+import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import type { ExpenseItem } from "@/types/expense.types";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
 import { useAppSelector } from "@/store/hooks";
 import { EmojiBadge } from "@/components/ui/emoji-badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { formatShortDateTime } from "@/lib/datetime";
 
 type Props = {
 	expense: ExpenseItem;
-	category?: { color?: string; emoji?: string };
+	onEdit?: () => void;
+	onDelete?: () => void;
 };
 
-export function ExpenseCard({ expense, category }: Props) {
-	const locale = useAppSelector((s) => s.ui.locale);
+export function ExpenseCard({
+	expense,
+	onEdit,
+	onDelete,
+}: Props) {
 	const currency = useAppSelector((s) => s.ui.currency);
-	const timezone = useAppSelector((s) => s.ui.timezone);
+	const hasActions = onEdit || onDelete;
 
 	return (
-		<Link
-			href={`/expenses/${expense._id}`}
-			className="block rounded-md border border-[var(--color-border)] p-3 hover:bg-[color-mix(in_oklab,var(--color-bg)_96%,transparent)]"
-		>
-			<div className="flex gap-2">
-				<EmojiBadge
-					color={category?.color || ""}
-					emoji={category?.emoji}
-					className="flex-1"
-				/>
-				<div className="flex-4">
-					<p className="font-medium">{expense.title}</p>
+		<Card className="block rounded-md border border-[var(--color-border)] p-3 hover:bg-[color-mix(in_oklab,var(--color-bg)_96%,transparent)]">
+			<Link href={`/expenses/${expense._id}`}>
+				<div className="flex gap-2 items-center justify-between">
+					<div className="flex gap-2 items-center text-medium">
+						<EmojiBadge
+							color={expense?.categoryColor || ""}
+							emoji={expense?.categoryEmoji}
+							className="flex-1"
+						/>
 
-					<p className="text-xs text-[var(--color-muted)]">
-						{formatDate(expense.paidAt, locale, timezone)}
-					</p>
+						<div className="flex flex-col">
+							<p className="font-medium truncate">
+								{expense.title}
+							</p>
+							<p className="text-xs text-[var(--color-muted)]">
+								{formatShortDateTime(expense.paidAt)}
+							</p>
+						</div>
+					</div>
+					<div className="flex gap-2 items-center">
+						<div className="text-right shrink-0">
+							<p className="font-semibold">
+								{formatCurrency(expense.amount, currency)}
+							</p>
+						</div>
+						{hasActions && (
+							<div className="flex gap-1">
+								{onEdit && (
+									<Button
+										variant="outline"
+										size="icon"
+										className="h-8 w-8"
+										aria-label="Edit category"
+										onClick={onEdit}
+									>
+										<FiEdit2 className="h-4 w-4" />
+									</Button>
+								)}
+								{onDelete && (
+									<Button
+										variant="destructive"
+										size="icon"
+										className="h-8 w-8"
+										aria-label="Delete category"
+										onClick={onDelete}
+									>
+										<FiTrash2 className="h-4 w-4" />
+									</Button>
+								)}
+							</div>
+						)}
+					</div>
 				</div>
-				<div className="text-right flex-1">
-					<p className="font-semibold">
-						{formatCurrency(expense.amount, currency)}
+				{expense.notes && (
+					<p className="text-sm border-t-2 mt-4 py-2 text-[var(--color-muted)]">
+						{expense.notes}
 					</p>
-				</div>
-			</div>
-		</Link>
+				)}
+			</Link>
+		</Card>
 	);
 }

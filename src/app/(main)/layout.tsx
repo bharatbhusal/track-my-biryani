@@ -1,5 +1,4 @@
 import { BottomNav } from "@/components/layout/bottom-nav";
-import { QuickAddButton } from "@/components/layout/quick-add-button";
 
 export default function MainLayout({
 	children,
@@ -32,7 +31,6 @@ export default function MainLayout({
 				</div>
 			</div>
 			<BottomNav />
-			<QuickAddButton />
 		</div>
 	);
 }

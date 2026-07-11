@@ -1,13 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useMemo } from "react";
-import { FiEdit2, FiTrash2 } from "react-icons/fi";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { ConfirmDrawer } from "@/components/ui/drawer";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,11 +20,11 @@ import {
 	fetchExpenseDetail,
 	deleteExpense,
 } from "@/store/slices/expenseSlice";
-import { fetchCategories } from "@/store/slices/categorySlice";
 import { setDateRange } from "@/store/slices/uiSlice";
 import { expensesApi } from "@/lib/api/expenses";
 import { ExpenseCard } from "@/features/expenses/components/expense-card";
 import type { ExpenseItem } from "@/types/expense.types";
+import { ExpenseTable } from "./expense-table";
 
 type ExpenseDetailViewProps = {
 	id: string;
@@ -47,25 +44,14 @@ export function ExpenseDetailView({
 		(s) => s.expenses.currentExpense,
 		shallowEqual,
 	);
-	const categories = useAppSelector(
-		(s) => s.categories.items,
-		shallowEqual,
-	);
+
 	const expensesLoading = useAppSelector(
 		(s) => s.expenses.loading,
 	);
 	const localRange = useAppSelector((s) => s.ui.dateRange);
 
-	const category = useMemo(
-		() =>
-			categories.find((c) => c._id === expense?.categoryId) ??
-			null,
-		[categories, expense?.categoryId],
-	);
-
 	useEffect(() => {
 		dispatch(fetchExpenseDetail(id));
-		dispatch(fetchCategories());
 	}, [dispatch, id]);
 
 	useEffect(() => {
@@ -73,7 +59,7 @@ export function ExpenseDetailView({
 		expensesApi
 			.listExpenses({
 				categoryId: expense.categoryId,
-				limit: 5,
+				limit: 20,
 			})
 			.then((res) => setRecentExpenses(res.items))
 			.catch(() => {});
@@ -123,33 +109,11 @@ export function ExpenseDetailView({
 				}
 			/>
 
-			<Card>
-				<div className="flex items-center justify-between">
-					<ExpenseCard
-						expense={expense}
-						category={category ?? undefined}
-					/>
-					<div className="flex gap-2">
-						<Link href={`/expenses/${id}/edit`}>
-							<Button
-								variant="outline"
-								className="h-9 w-9 p-0"
-								aria-label="Edit expense"
-							>
-								<FiEdit2 />
-							</Button>
-						</Link>
-						<Button
-							variant="destructive"
-							className="h-9 w-9 p-0"
-							aria-label="Delete expense"
-							onClick={() => setDeleteOpen(true)}
-						>
-							<FiTrash2 />
-						</Button>
-					</div>
-				</div>
-			</Card>
+			<ExpenseCard
+				expense={expense}
+				onEdit={() => router.push(`/expenses/${id}/edit`)}
+				onDelete={() => setDeleteOpen(true)}
+			/>
 
 			{expense.images.length > 0 && (
 				<Card>
@@ -188,15 +152,9 @@ export function ExpenseDetailView({
 			{recentExpenses.length > 0 && (
 				<div className="space-y-2">
 					<p className="text-sm font-semibold px-1">
-						Recent in {category?.name ?? "Category"}
+						Recent in Category
 					</p>
-					{recentExpenses.map((e) => (
-						<ExpenseCard
-							key={e._id}
-							expense={e}
-							category={category ?? undefined}
-						/>
-					))}
+					<ExpenseTable items={recentExpenses} />
 				</div>
 			)}
 
