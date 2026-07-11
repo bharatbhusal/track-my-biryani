@@ -17,18 +17,11 @@ import authReducer from "./slices/authSlice";
 import uiReducer from "./slices/uiSlice";
 import expenseReducer from "./slices/expenseSlice";
 import categoryReducer from "./slices/categorySlice";
-import dashboardReducer from "./slices/dashboardSlice";
 
 const persistConfig = {
 	key: "root",
 	storage,
-	whitelist: [
-		"auth",
-		"ui",
-		"expenses",
-		"categories",
-		"dashboard",
-	],
+	whitelist: ["auth", "ui", "expenses", "categories"],
 };
 
 const rootReducer = combineReducers({
@@ -36,7 +29,6 @@ const rootReducer = combineReducers({
 	ui: uiReducer,
 	expenses: expenseReducer,
 	categories: categoryReducer,
-	dashboard: dashboardReducer,
 });
 
 const persistedReducer = persistReducer(

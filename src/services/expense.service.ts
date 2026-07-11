@@ -1,10 +1,15 @@
 import { AppError } from "@/lib/errors";
-import { expenseFiltersSchema, expenseSchema } from "@/lib/validators";
+import {
+	expenseFiltersSchema,
+	expenseSchema,
+} from "@/lib/validators";
 import {
 	createExpense,
 	deleteExpense,
 	getExpenseById,
 	getExpenseContribution,
+	getExpenseOverviewStats,
+	getChartData,
 	listExpenses,
 	updateExpense,
 } from "@/repositories/expense.repository";
@@ -76,7 +81,11 @@ export async function updateExpenseService(
 	body: unknown,
 ) {
 	const payload = expenseSchema.parse(body);
-	const expense = await updateExpense(userId, expenseId, payload);
+	const expense = await updateExpense(
+		userId,
+		expenseId,
+		payload,
+	);
 	if (!expense) {
 		throw new AppError("Expense not found", 404, "NOT_FOUND");
 	}
@@ -126,4 +135,90 @@ export async function getContributionService(
 		throw new AppError("Expense not found", 404, "NOT_FOUND");
 	}
 	return data;
+}
+
+export async function getExpenseOverviewStatsService(
+	userId: string,
+	from: string,
+	to: string,
+) {
+	if (!from || !to) {
+		throw new AppError(
+			"from and to query params are required",
+			400,
+		);
+	}
+	const fromDate = new Date(from);
+	const toDate = new Date(to);
+	const { total } = await getExpenseOverviewStats(
+		userId,
+		fromDate,
+		toDate,
+	);
+
+	const dayDiff = Math.ceil(
+		(toDate.getTime() - fromDate.getTime()) /
+			(1000 * 60 * 60 * 24),
+	);
+
+	let periodCount: number;
+	let perPeriodLabel: string;
+	if (dayDiff <= 1) {
+		periodCount = 1;
+		perPeriodLabel = "spend_per_day";
+	} else if (dayDiff <= 7) {
+		periodCount = 7;
+		perPeriodLabel = "spend_per_day";
+	} else if (dayDiff <= 60) {
+		periodCount = dayDiff;
+		perPeriodLabel = "spend_per_day";
+	} else {
+		periodCount =
+			toDate.getMonth() -
+			fromDate.getMonth() +
+			1 +
+			(toDate.getFullYear() - fromDate.getFullYear()) * 12;
+		perPeriodLabel = "spend_per_month";
+	}
+
+	const averageSpend =
+		periodCount > 0 ? total / periodCount : total;
+
+	const cards = [
+		{
+			key: "total_spend",
+			title: "Total Spend",
+			value: total,
+		},
+		{
+			key: perPeriodLabel,
+			title:
+				perPeriodLabel === "spend_per_month"
+					? "Spend per Month"
+					: "Spend per Day",
+			value: averageSpend,
+		},
+	];
+
+	return cards;
+}
+
+export async function getChartDataService(
+	userId: string,
+	from: string,
+	to: string,
+	categoryId?: string,
+) {
+	if (!from || !to) {
+		throw new AppError(
+			"from and to query params are required",
+			400,
+		);
+	}
+	return getChartData(
+		userId,
+		new Date(from),
+		new Date(to),
+		categoryId || undefined,
+	);
 }

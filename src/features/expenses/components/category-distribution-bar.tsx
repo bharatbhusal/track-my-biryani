@@ -6,11 +6,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/format";
 import { useAppSelector } from "@/store/hooks";
 import type { CategoryBreakdownPoint } from "@/types/analytics.types";
-import type { CategoryItem } from "@/types/expense.types";
 
 type Props = {
 	distribution: CategoryBreakdownPoint[];
-	categories: CategoryItem[];
 	selectedCategoryId?: string;
 	onCategorySelect: (id: string | undefined) => void;
 	isLoading?: boolean;
@@ -18,7 +16,6 @@ type Props = {
 
 export function CategoryDistributionBar({
 	distribution,
-	categories,
 	selectedCategoryId,
 	onCategorySelect,
 	isLoading,
@@ -28,16 +25,6 @@ export function CategoryDistributionBar({
 	const total = useMemo(
 		() => distribution.reduce((s, c) => s + c.value, 0),
 		[distribution],
-	);
-
-	const categoryNameToId = useMemo(
-		() => new Map(categories.map((c) => [c.name, c._id])),
-		[categories],
-	);
-
-	const categoryMeta = useMemo(
-		() => new Map(categories.map((c) => [c.name, c])),
-		[categories],
 	);
 
 	const toggle = useCallback(
@@ -68,20 +55,18 @@ export function CategoryDistributionBar({
 					{total > 1 ? (
 						<div className="flex h-10 w-full overflow-hidden gap-1 sm:gap-2 rounded-md">
 							{distribution.map((item) => {
-								const cat = categoryMeta.get(item.name);
 								const pct = (item.value / total) * 100;
-								const catId = categoryNameToId.get(item.name);
 								if (pct < 0.5) return null;
 
 								const isSelected =
 									selectedCategoryId !== undefined &&
-									selectedCategoryId === catId;
+									selectedCategoryId === item.categoryId;
 
 								return (
 									<button
 										key={item.name}
 										type="button"
-										onClick={() => toggle(catId)}
+										onClick={() => toggle(item.categoryId)}
 										className={`flex items-center justify-center text-[15px] font-bold text-white transition-all hover:opacity-80 rounded-[4px] ${
 											selectedCategoryId && !isSelected
 												? "opacity-30"
@@ -90,7 +75,7 @@ export function CategoryDistributionBar({
 										style={{
 											width: `${pct}%`,
 											backgroundColor:
-												cat?.color ?? "var(--color-muted)",
+												item.color ?? "var(--color-muted)",
 											outline: isSelected
 												? "2px solid var(--color-foreground)"
 												: undefined,
@@ -110,17 +95,15 @@ export function CategoryDistributionBar({
 					)}
 					<div className="flex flex-wrap gap-x-4 gap-y-2">
 						{distribution.map((item) => {
-							const cat = categoryMeta.get(item.name);
-							const catId = categoryNameToId.get(item.name);
 							const isSelected =
 								selectedCategoryId !== undefined &&
-								selectedCategoryId === catId;
+								selectedCategoryId === item.categoryId;
 
 							return (
 								<button
 									key={item.name}
 									type="button"
-									onClick={() => toggle(catId)}
+									onClick={() => toggle(item.categoryId)}
 									className={`flex items-center gap-2 text-sm transition-all hover:opacity-80 ${
 										selectedCategoryId && !isSelected
 											? "opacity-30"
@@ -131,7 +114,7 @@ export function CategoryDistributionBar({
 										className={`p-2 rounded-full`}
 										style={{
 											backgroundColor:
-												cat?.color ?? "var(--color-muted)",
+												item.color ?? "var(--color-muted)",
 										}}
 									></span>
 									<span>{item.name}</span>

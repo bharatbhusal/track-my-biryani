@@ -4,6 +4,7 @@ import { getAuthPayload } from "@/lib/auth";
 import {
 	createCategoryService,
 	deleteCategoryService,
+	getCategoryDistributionService,
 	getCategoryService,
 	getCategoryStatsService,
 	listCategoriesService,
@@ -58,4 +59,13 @@ export async function getCategoryStats(
 	const from = request.nextUrl.searchParams.get("from") ?? "";
 	const to = request.nextUrl.searchParams.get("to") ?? "";
 	return getCategoryStatsService(auth.userId, id, from, to);
+}
+
+export async function getCategoryDistribution(
+	request: NextRequest,
+) {
+	const auth = await getAuthPayload();
+	const from = request.nextUrl.searchParams.get("from") ?? "";
+	const to = request.nextUrl.searchParams.get("to") ?? "";
+	return getCategoryDistributionService(auth.userId, from, to);
 }

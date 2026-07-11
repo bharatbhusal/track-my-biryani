@@ -1,12 +1,13 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { expensesApi } from "@/lib/api/expenses";
 import type { CategoryItem } from "@/types/expense.types";
-import type { CategoryRangeStats } from "@/types/analytics.types";
+import type { CategoryRangeStats, CategoryBreakdownPoint } from "@/types/analytics.types";
 
 type CategoryState = {
 	items: CategoryItem[];
 	currentCategory: CategoryItem | null;
 	stats: CategoryRangeStats | null;
+	distribution: CategoryBreakdownPoint[];
 	loading: boolean;
 	error: string | null;
 };
@@ -15,6 +16,7 @@ const initialState: CategoryState = {
 	items: [],
 	currentCategory: null,
 	stats: null,
+	distribution: [],
 	loading: false,
 	error: null,
 };
@@ -72,6 +74,13 @@ export const deleteCategory = createAsyncThunk(
 	"categories/delete",
 	async (id: string) => {
 		return expensesApi.deleteCategory(id);
+	},
+);
+
+export const fetchCategoryDistribution = createAsyncThunk(
+	"categories/fetchDistribution",
+	async ({ from, to }: { from: string; to: string }) => {
+		return expensesApi.getCategoryDistribution(from, to);
 	},
 );
 
@@ -143,6 +152,10 @@ const categorySlice = createSlice({
 				if (state.currentCategory?._id === action.meta.arg) {
 					state.currentCategory = null;
 				}
+			})
+			// fetchCategoryDistribution
+			.addCase(fetchCategoryDistribution.fulfilled, (state, action) => {
+				state.distribution = action.payload;
 			});
 	},
 });

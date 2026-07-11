@@ -7,7 +7,10 @@ import {
 	listCategories,
 	updateCategory,
 } from "@/repositories/category.repository";
-import { getCategoryRangeStats } from "@/repositories/expense.repository";
+import {
+	getCategoryRangeStats,
+	getCategoryDistribution,
+} from "@/repositories/expense.repository";
 import { findUserById } from "@/repositories/user.repository";
 import { logAuditEvent } from "@/services/audit.service";
 import { randomHexColor } from "@/lib/utils";
@@ -135,4 +138,18 @@ export async function getCategoryStatsService(
 		new Date(from),
 		new Date(to),
 	);
+}
+
+export async function getCategoryDistributionService(
+	userId: string,
+	from: string,
+	to: string,
+) {
+	if (!from || !to) {
+		throw new AppError(
+			"from and to query params are required",
+			400,
+		);
+	}
+	return getCategoryDistribution(userId, new Date(from), new Date(to));
 }

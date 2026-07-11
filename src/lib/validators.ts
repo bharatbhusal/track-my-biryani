@@ -50,8 +50,8 @@ export const expenseFiltersSchema = z.object({
 		.enum(["paidAt", "amount", "title"])
 		.default("paidAt"),
 	order: z.enum(["asc", "desc"]).default("desc"),
-	page: z.coerce.number().int().min(1).default(1),
-	limit: z.coerce.number().int().min(1).max(50).default(10),
+	page: z.coerce.number().int().min(1).optional(),
+	limit: z.coerce.number().int().min(1).max(50).optional(),
 });
 
 export const settingsSchema = z.object({

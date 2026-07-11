@@ -24,10 +24,10 @@ import {
 	deleteExpense,
 } from "@/store/slices/expenseSlice";
 import { fetchCategories } from "@/store/slices/categorySlice";
+import { setDateRange } from "@/store/slices/uiSlice";
 import { expensesApi } from "@/lib/api/expenses";
 import { ExpenseCard } from "@/features/expenses/components/expense-card";
 import type { ExpenseItem } from "@/types/expense.types";
-import type { DateRangePreset } from "@/lib/date-range";
 
 type ExpenseDetailViewProps = {
 	id: string;
@@ -42,8 +42,6 @@ export function ExpenseDetailView({
 	const [recentExpenses, setRecentExpenses] = useState<
 		ExpenseItem[]
 	>([]);
-	const [localPreset, setLocalPreset] =
-		useState<DateRangePreset>("month");
 
 	const expense = useAppSelector(
 		(s) => s.expenses.currentExpense,
@@ -56,6 +54,7 @@ export function ExpenseDetailView({
 	const expensesLoading = useAppSelector(
 		(s) => s.expenses.loading,
 	);
+	const localRange = useAppSelector((s) => s.ui.dateRange);
 
 	const category = useMemo(
 		() =>
@@ -118,9 +117,9 @@ export function ExpenseDetailView({
 		<div className="space-y-4">
 			<DateRangeBar
 				title={expense.title}
-				range={{ preset: localPreset, offset: 0 }}
+				range={localRange}
 				onRangeChange={(r: GlobalDateRange) =>
-					setLocalPreset(r.preset)
+					dispatch(setDateRange(r))
 				}
 			/>
 

@@ -6,19 +6,22 @@ import { DateRangeBar } from "@/components/charts/date-range-bar";
 import { ExpenseOverview } from "@/features/expenses/components/expense-overview";
 import { DashboardBarChart } from "@/components/dashboard-bar-chart";
 import { CategoryDistributionBar } from "@/features/expenses/components/category-distribution-bar";
-import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { fetchDashboardData } from "@/store/slices/dashboardSlice";
+import {
+	useAppSelector,
+	useAppDispatch,
+} from "@/store/hooks";
+import {
+	fetchOverviewStats,
+	fetchChartData,
+} from "@/store/slices/expenseSlice";
+import { fetchCategoryDistribution } from "@/store/slices/categorySlice";
 import { setDateRange } from "@/store/slices/uiSlice";
 import { getChartLabel } from "@/lib/format";
 import {
-	selectTotalSpend,
-	selectRankedCategories,
-	selectStackedSeries,
-	selectPeriodLabel,
-	selectAverageSpend,
-	selectCards,
-	selectDashboardIsLoading,
-} from "@/store/selectors/dashboard.selectors";
+	toRangeDates,
+	computePeriodLabel,
+	toIsoBounds,
+} from "@/lib/date-range";
 
 export function DashboardOverview() {
 	const dispatch = useAppDispatch();
@@ -26,86 +29,70 @@ export function DashboardOverview() {
 	const [selectedCategoryId, setSelectedCategoryId] =
 		useState<string | undefined>();
 
-	const categories = useAppSelector((s) => s.dashboard.categories);
-	const isLoading = useAppSelector(selectDashboardIsLoading);
-	const totalSpend = useAppSelector(selectTotalSpend);
-	const rankedCategories = useAppSelector(selectRankedCategories);
-	const stackedSeries = useAppSelector((s) =>
-		selectStackedSeries(s, mainRange),
+	const distribution = useAppSelector(
+		(s) => s.categories.distribution,
 	);
-	const periodLabel = useAppSelector((s) =>
-		selectPeriodLabel(s, mainRange),
+	const overviewStats = useAppSelector(
+		(s) => s.expenses.overviewStats,
 	);
-	const averageSpend = useAppSelector((s) =>
-		selectAverageSpend(s, mainRange),
+	const chartData = useAppSelector(
+		(s) => s.expenses.chartData,
 	);
-	const cards = useAppSelector((s) =>
-		selectCards(s, mainRange),
+	const isLoading = useAppSelector(
+		(s) => s.expenses.loading,
+	);
+
+	const { from, to } = useMemo(
+		() => toRangeDates(mainRange),
+		[mainRange.preset, mainRange.offset],
+	);
+
+	const isoBounds = useMemo(
+		() => toIsoBounds(mainRange),
+		[mainRange.preset, mainRange.offset],
 	);
 
 	useEffect(() => {
-		dispatch(fetchDashboardData(mainRange));
-	}, [dispatch, mainRange.preset, mainRange.offset]);
+		if (!isoBounds.from || !isoBounds.to) return;
+		dispatch(
+			fetchOverviewStats({
+				from: isoBounds.from,
+				to: isoBounds.to,
+			}),
+		);
+		dispatch(
+			fetchCategoryDistribution({
+				from: isoBounds.from,
+				to: isoBounds.to,
+			}),
+		);
+	}, [dispatch, isoBounds.from, isoBounds.to]);
 
-	const categoryColorMap = useMemo(() => {
-		const map = new Map<string, string>();
-		categories.forEach((c) => {
-			map.set(c.name, c.color);
-		});
-		return map;
-	}, [categories]);
+	useEffect(() => {
+		if (!isoBounds.from || !isoBounds.to) return;
+		dispatch(
+			fetchChartData({
+				from: isoBounds.from,
+				to: isoBounds.to,
+				categoryId: selectedCategoryId,
+			}),
+		);
+	}, [
+		dispatch,
+		isoBounds.from,
+		isoBounds.to,
+		selectedCategoryId,
+	]);
 
-	const selectedCategoryName = useMemo(
-		() =>
-			selectedCategoryId
-				? categories.find(
-						(c) => c._id === selectedCategoryId,
-					)?.name
-				: undefined,
-		[selectedCategoryId, categories],
+	const periodLabel = useMemo(
+		() => computePeriodLabel(from, to, mainRange.preset),
+		[from, to, mainRange.preset],
 	);
-
-	const filteredStackedSeries = useMemo(() => {
-		if (!selectedCategoryName) return stackedSeries;
-		return stackedSeries.map((item) => {
-			const filtered: Record<string, string | number> = {
-				name: item.name as string,
-			};
-			if (selectedCategoryName in item) {
-				filtered[selectedCategoryName] =
-					item[selectedCategoryName];
-			}
-			return filtered;
-		});
-	}, [stackedSeries, selectedCategoryName]);
 
 	const handleRangeChange = (range: typeof mainRange) => {
 		dispatch(setDateRange(range));
 		setSelectedCategoryId(undefined);
 	};
-
-	const overviewData = useMemo(
-		() =>
-			totalSpend > 0
-				? {
-						totalSpend,
-						averageSpend,
-						cards,
-						chartLabel: "",
-						rankedCategories,
-						stackedSeries,
-						periodLabel,
-					}
-				: undefined,
-		[
-			totalSpend,
-			averageSpend,
-			cards,
-			rankedCategories,
-			stackedSeries,
-			periodLabel,
-		],
-	);
 
 	return (
 		<div className="space-y-2">
@@ -116,22 +103,23 @@ export function DashboardOverview() {
 				loading={isLoading}
 			/>
 			<ExpenseOverview
-				data={overviewData}
+				data={overviewStats}
 				isLoading={isLoading}
 			/>
 
 			<CategoryDistributionBar
-				distribution={rankedCategories}
-				categories={categories}
+				distribution={distribution}
 				selectedCategoryId={selectedCategoryId}
 				onCategorySelect={setSelectedCategoryId}
 				isLoading={isLoading}
 			/>
 			<DashboardBarChart
-				stackedSeries={filteredStackedSeries}
+				stackedSeries={chartData?.series ?? []}
 				chartLabel={getChartLabel(mainRange.preset, "Expense")}
-				averageSpend={averageSpend}
-				categoryColorMap={categoryColorMap}
+				averageSpend={chartData?.stats.avg}
+				minSpend={chartData?.stats.min}
+				maxSpend={chartData?.stats.max}
+				categoryColorMap={chartData?.categoryColors ?? {}}
 				isLoading={isLoading}
 			/>
 		</div>

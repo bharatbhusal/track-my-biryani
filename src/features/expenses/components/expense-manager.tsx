@@ -7,9 +7,8 @@ import { useDebouncedValue } from "@/hooks/use-debounce";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { fetchCategories } from "@/store/slices/categorySlice";
+import { fetchCategories, fetchCategoryDistribution } from "@/store/slices/categorySlice";
 import { fetchExpenses } from "@/store/slices/expenseSlice";
-import { fetchDashboardData } from "@/store/slices/dashboardSlice";
 import { setDateRange } from "@/store/slices/uiSlice";
 import {
 	toIsoBounds,
@@ -34,29 +33,10 @@ export function ExpenseManager() {
 	const items = useAppSelector((s) => s.expenses.items);
 	const isLoading = useAppSelector((s) => s.expenses.loading);
 	const totalPages = useAppSelector((s) => s.expenses.totalPages);
-	const dashboardExpenses = useAppSelector((s) => s.dashboard.expenses);
-	const dashboardCategories = useAppSelector((s) => s.dashboard.categories);
 
 	const debouncedQuery = useDebouncedValue(query, 300);
 
-	const rankedCategories = useMemo(() => {
-		const totals = new Map<string, number>();
-		for (const expense of dashboardExpenses) {
-			totals.set(
-				expense.categoryId,
-				(totals.get(expense.categoryId) ?? 0) + expense.amount,
-			);
-		}
-		const categoryNameById = new Map(
-			dashboardCategories.map((c) => [c._id, c.name]),
-		);
-		return Array.from(totals.entries())
-			.map(([categoryId, value]) => ({
-				name: categoryNameById.get(categoryId) ?? "Uncategorized",
-				value,
-			}))
-			.sort((a, b) => b.value - a.value);
-	}, [dashboardExpenses, dashboardCategories]);
+	const distribution = useAppSelector((s) => s.categories.distribution);
 
 	const rangeBounds = useMemo(
 		() => toIsoBounds(localRange),
@@ -92,8 +72,9 @@ export function ExpenseManager() {
 	]);
 
 	useEffect(() => {
-		dispatch(fetchDashboardData(localRange));
-	}, [dispatch, localRange.preset, localRange.offset]);
+		if (!rangeBounds.from || !rangeBounds.to) return;
+		dispatch(fetchCategoryDistribution({ from: rangeBounds.from, to: rangeBounds.to }));
+	}, [dispatch, rangeBounds.from, rangeBounds.to, items, categories]);
 
 	const categoryMap = useMemo(
 		() =>
@@ -155,11 +136,10 @@ export function ExpenseManager() {
 
 			<div className="shrink-0">
 				<CategoryDistributionBar
-					distribution={rankedCategories}
-					categories={categories}
+					distribution={distribution}
 					selectedCategoryId={categoryId || undefined}
 					onCategorySelect={handleCategorySelect}
-					isLoading={dashboardExpenses.length === 0}
+					isLoading={isLoading}
 				/>
 			</div>
 			<div className="min-h-0 flex-1 overflow-auto">

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { fetchCategories } from "@/store/slices/categorySlice";
-import { fetchDashboardData } from "@/store/slices/dashboardSlice";
+import { fetchExpensesInRange } from "@/store/slices/expenseSlice";
 import { setDateRange } from "@/store/slices/uiSlice";
 import { useDebouncedValue } from "@/hooks/use-debounce";
 import { Input } from "@/components/ui/input";
@@ -31,8 +31,8 @@ export function CategoryManager() {
 
 	const range = useAppSelector((s) => s.ui.dateRange);
 	const categories = useAppSelector((s) => s.categories.items);
-	const dashboardExpenses = useAppSelector((s) => s.dashboard.expenses);
-	const dashboardCategories = useAppSelector((s) => s.dashboard.categories);
+	const dashboardExpenses = useAppSelector((s) => s.expenses.items);
+	const dashboardCategories = useAppSelector((s) => s.categories.items);
 
 	const debouncedQuery = useDebouncedValue(query, 300);
 
@@ -41,7 +41,7 @@ export function CategoryManager() {
 	}, [dispatch]);
 
 	useEffect(() => {
-		dispatch(fetchDashboardData(range));
+		dispatch(fetchExpensesInRange(range));
 	}, [dispatch, range.preset, range.offset]);
 
 	const categorySpendMap = useMemo(() => {

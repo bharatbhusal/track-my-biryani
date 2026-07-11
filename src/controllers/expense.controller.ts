@@ -4,7 +4,9 @@ import { getAuthPayload } from "@/lib/auth";
 import {
 	createExpenseService,
 	deleteExpenseService,
+	getChartDataService,
 	getContributionService,
+	getExpenseOverviewStatsService,
 	getExpenseService,
 	listExpensesService,
 	updateExpenseService,
@@ -58,7 +60,39 @@ export async function getContribution(
 ) {
 	const auth = await getAuthPayload();
 	const { id } = await context.params;
-	const from = request.nextUrl.searchParams.get("from") ?? undefined;
-	const to = request.nextUrl.searchParams.get("to") ?? undefined;
+	const from =
+		request.nextUrl.searchParams.get("from") ?? undefined;
+	const to =
+		request.nextUrl.searchParams.get("to") ?? undefined;
 	return getContributionService(auth.userId, id, from, to);
+}
+
+export async function getExpenseOverviewStats(
+	request: NextRequest,
+) {
+	const auth = await getAuthPayload();
+	const from =
+		request.nextUrl.searchParams.get("from") ?? "";
+	const to = request.nextUrl.searchParams.get("to") ?? "";
+	return getExpenseOverviewStatsService(
+		auth.userId,
+		from,
+		to,
+	);
+}
+
+export async function getChartData(request: NextRequest) {
+	const auth = await getAuthPayload();
+	const from =
+		request.nextUrl.searchParams.get("from") ?? "";
+	const to = request.nextUrl.searchParams.get("to") ?? "";
+	const categoryId =
+		request.nextUrl.searchParams.get("categoryId") ??
+		undefined;
+	return getChartDataService(
+		auth.userId,
+		from,
+		to,
+		categoryId,
+	);
 }

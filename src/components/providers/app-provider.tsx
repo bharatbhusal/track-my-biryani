@@ -16,7 +16,10 @@ export function AppProvider({
 	children: ReactNode;
 }) {
 	const store = useMemo(() => makeStore(), []);
-	const persistor = useMemo(() => persistStore(store), [store]);
+	const persistor = useMemo(
+		() => persistStore(store),
+		[store],
+	);
 
 	return (
 		<AppThemeProvider>

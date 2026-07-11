@@ -1,4 +1,7 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import {
+	createSlice,
+	createAsyncThunk,
+} from "@reduxjs/toolkit";
 import { expensesApi } from "@/lib/api/expenses";
 import type {
 	ExpenseItem,
@@ -6,12 +9,20 @@ import type {
 	ExpensesListPayload,
 	CreateExpensePayload,
 } from "@/types/expense.types";
-import type { ExpenseContribution } from "@/types/analytics.types";
+import type {
+	ExpenseContribution,
+	ChartData,
+	DashboardCard,
+} from "@/types/analytics.types";
+import type { GlobalDateRange } from "@/lib/date-range";
+import { toIsoBounds } from "@/lib/date-range";
 
 type ExpenseState = {
 	items: ExpenseItem[];
 	currentExpense: ExpenseItem | null;
 	contribution: ExpenseContribution | null;
+	overviewStats: DashboardCard[] | null;
+	chartData: ChartData | null;
 	total: number;
 	totalPages: number;
 	currentPage: number;
@@ -23,6 +34,8 @@ const initialState: ExpenseState = {
 	items: [],
 	currentExpense: null,
 	contribution: null,
+	overviewStats: null,
+	chartData: null,
 	total: 0,
 	totalPages: 0,
 	currentPage: 1,
@@ -34,6 +47,22 @@ export const fetchExpenses = createAsyncThunk(
 	"expenses/fetchList",
 	async (filters: ExpenseListQuery = {}) => {
 		return expensesApi.listExpenses(filters);
+	},
+);
+
+export const fetchExpensesInRange = createAsyncThunk(
+	"expenses/fetchInRange",
+	async (range: GlobalDateRange) => {
+		const { from, to } = toIsoBounds(range);
+		if (!from || !to) {
+			return {
+				items: [],
+				total: 0,
+				page: null,
+				totalPages: null,
+			};
+		}
+		return expensesApi.listExpenses({ from, to });
 	},
 );
 
@@ -86,6 +115,28 @@ export const deleteExpense = createAsyncThunk(
 	},
 );
 
+export const fetchOverviewStats = createAsyncThunk(
+	"expenses/fetchOverviewStats",
+	async ({ from, to }: { from: string; to: string }) => {
+		return expensesApi.getOverviewStats(from, to);
+	},
+);
+
+export const fetchChartData = createAsyncThunk(
+	"expenses/fetchChartData",
+	async ({
+		from,
+		to,
+		categoryId,
+	}: {
+		from: string;
+		to: string;
+		categoryId?: string;
+	}) => {
+		return expensesApi.getChartData(from, to, categoryId);
+	},
+);
+
 const expenseSlice = createSlice({
 	name: "expenses",
 	initialState,
@@ -118,24 +169,57 @@ const expenseSlice = createSlice({
 				state.error =
 					action.error.message ?? "Failed to fetch expenses";
 			})
+			// fetchExpensesInRange
+			.addCase(fetchExpensesInRange.pending, (state) => {
+				state.loading = true;
+				state.error = null;
+			})
+			.addCase(
+				fetchExpensesInRange.fulfilled,
+				(state, action) => {
+					state.loading = false;
+					const data = action.payload as ExpensesListPayload;
+					state.items = data.items ?? [];
+					state.total = data.total ?? 0;
+					state.totalPages = data.totalPages ?? 0;
+					state.currentPage = data.page ?? 1;
+				},
+			)
+			.addCase(
+				fetchExpensesInRange.rejected,
+				(state, action) => {
+					state.loading = false;
+					state.error =
+						action.error.message ?? "Failed to fetch expenses";
+				},
+			)
 			// fetchExpenseDetail
 			.addCase(fetchExpenseDetail.pending, (state) => {
 				state.loading = true;
 				state.error = null;
 			})
-			.addCase(fetchExpenseDetail.fulfilled, (state, action) => {
-				state.loading = false;
-				state.currentExpense = action.payload;
-			})
-			.addCase(fetchExpenseDetail.rejected, (state, action) => {
-				state.loading = false;
-				state.error =
-					action.error.message ?? "Failed to fetch expense";
-			})
+			.addCase(
+				fetchExpenseDetail.fulfilled,
+				(state, action) => {
+					state.loading = false;
+					state.currentExpense = action.payload;
+				},
+			)
+			.addCase(
+				fetchExpenseDetail.rejected,
+				(state, action) => {
+					state.loading = false;
+					state.error =
+						action.error.message ?? "Failed to fetch expense";
+				},
+			)
 			// fetchExpenseContribution
-			.addCase(fetchExpenseContribution.fulfilled, (state, action) => {
-				state.contribution = action.payload;
-			})
+			.addCase(
+				fetchExpenseContribution.fulfilled,
+				(state, action) => {
+					state.contribution = action.payload;
+				},
+			)
 			// createExpense
 			.addCase(createExpense.fulfilled, (state, action) => {
 				state.items.unshift(action.payload);
@@ -160,6 +244,17 @@ const expenseSlice = createSlice({
 				if (state.currentExpense?._id === action.meta.arg) {
 					state.currentExpense = null;
 				}
+			})
+			// fetchOverviewStats
+			.addCase(
+				fetchOverviewStats.fulfilled,
+				(state, action) => {
+					state.overviewStats = action.payload;
+				},
+			)
+			// fetchChartData
+			.addCase(fetchChartData.fulfilled, (state, action) => {
+				state.chartData = action.payload;
 			});
 	},
 });
