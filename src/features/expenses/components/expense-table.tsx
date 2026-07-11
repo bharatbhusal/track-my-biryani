@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { useUIStore } from "@/store/ui-store";
+import { useAppSelector } from "@/store/hooks";
 import { ExpenseCard } from "@/features/expenses/components/expense-card";
 import type {
 	CategoryItem,
@@ -55,9 +55,9 @@ export function ExpenseTable({
 	onPageChange,
 	emptyMessage = "No expenses found",
 }: ExpenseTableProps) {
-	const locale = useUIStore((state) => state.locale);
-	const timezone = useUIStore((state) => state.timezone);
-	const currency = useUIStore((state) => state.currency);
+	const locale = useAppSelector((s) => s.ui.locale);
+	const timezone = useAppSelector((s) => s.ui.timezone);
+	const currency = useAppSelector((s) => s.ui.currency);
 
 	const renderSortIcon = (field: SortField) => {
 		if (sortBy !== field || !order) return null;

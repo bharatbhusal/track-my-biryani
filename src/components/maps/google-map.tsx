@@ -27,7 +27,7 @@ export default function GoogleMap({
 			width="100%"
 			height={height}
 			loading="lazy"
-			style={{ border: 0 }}
+			style={{ border: 0, borderRadius: "1rem" }}
 		/>
 	);
 }

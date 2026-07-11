@@ -1,6 +1,6 @@
 "use client";
 
-import { useUIStore } from "@/store/ui-store";
+import { useAppSelector } from "@/store/hooks";
 
 type TooltipPayloadItem = {
 	name: string;
@@ -19,7 +19,7 @@ export function ChartTooltip({
 	payload,
 	label,
 }: ChartTooltipProps) {
-	const currency = useUIStore((state) => state.currency);
+	const currency = useAppSelector((s) => s.ui.currency);
 
 	if (!active || !payload?.length) return null;
 

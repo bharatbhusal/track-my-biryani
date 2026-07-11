@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTheme } from "next-themes";
 import { Theme } from "emoji-picker-react";
@@ -16,7 +16,11 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
-import { useExpenseMutations } from "@/hooks/api/use-expenses-api";
+import { useAppDispatch } from "@/store/hooks";
+import {
+	createCategory,
+	updateCategory,
+} from "@/store/slices/categorySlice";
 import type { CategoryItem } from "@/types/expense.types";
 
 const EmojiPicker = dynamic(
@@ -48,9 +52,9 @@ export function CategoryForm({
 	onSuccess,
 	onCancel,
 }: CategoryFormProps) {
-	const { createCategory, updateCategory } =
-		useExpenseMutations();
+	const dispatch = useAppDispatch();
 	const { resolvedTheme } = useTheme();
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const isEditing = Boolean(category);
 
@@ -63,7 +67,6 @@ export function CategoryForm({
 		reset,
 		setValue,
 		watch,
-		formState: { isSubmitting },
 	} = useForm<FormValues>({
 		defaultValues: {
 			name: "",
@@ -97,55 +100,43 @@ export function CategoryForm({
 		[setValue],
 	);
 
-	const isPending =
-		createCategory.isPending || updateCategory.isPending;
-
 	const onSubmit = async (values: FormValues) => {
-		if (isEditing && category) {
-			updateCategory.mutate(
-				{
-					id: category._id,
-					payload: {
+		setIsSubmitting(true);
+		try {
+			if (isEditing && category) {
+				await dispatch(
+					updateCategory({
+						id: category._id,
+						payload: {
+							name: values.name.trim(),
+							emoji: values.emoji || "🏷️",
+							color: values.color,
+						},
+					}),
+				).unwrap();
+				toast.success("Category updated");
+				onSuccess?.();
+			} else {
+				await dispatch(
+					createCategory({
 						name: values.name.trim(),
 						emoji: values.emoji || "🏷️",
 						color: values.color,
-					},
-				},
-				{
-					onSuccess: () => {
-						toast.success("Category updated");
-						onSuccess?.();
-					},
-					onError: (error) => {
-						toast.error(
-							error instanceof Error
-								? error.message
-								: "Failed to update category",
-						);
-					},
-				},
+					}),
+				).unwrap();
+				toast.success("Category created");
+				onSuccess?.();
+			}
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: isEditing
+						? "Failed to update category"
+						: "Failed to create category",
 			);
-		} else {
-			createCategory.mutate(
-				{
-					name: values.name.trim(),
-					emoji: values.emoji || "🏷️",
-					color: values.color,
-				},
-				{
-					onSuccess: () => {
-						toast.success("Category created");
-						onSuccess?.();
-					},
-					onError: (error) => {
-						toast.error(
-							error instanceof Error
-								? error.message
-								: "Failed to create category",
-						);
-					},
-				},
-			);
+		} finally {
+			setIsSubmitting(false);
 		}
 	};
 
@@ -221,9 +212,9 @@ export function CategoryForm({
 				<Button
 					type="submit"
 					className={onCancel ? "flex-1" : "w-full"}
-					disabled={isPending || isSubmitting}
+					disabled={isSubmitting}
 				>
-					{isPending ? (
+					{isSubmitting ? (
 						<>
 							<Spinner className="mr-2" />
 							Saving...

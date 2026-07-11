@@ -29,23 +29,22 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
-import {
-	useCategoriesQuery,
-	useExpenseDetailQuery,
-	useExpenseMutations,
-} from "@/hooks/api/use-expenses-api";
 import {
 	getLocalDateTimeInputValue,
 	toUtcIsoString,
 } from "@/lib/datetime";
 import { useGeolocation } from "@/hooks/use-geolocation";
-import { useUIStore } from "@/store/ui-store";
-import type {
-	ExpenseItem,
-	CategoryItem,
-} from "@/types/expense.types";
-
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import {
+	fetchCategories,
+} from "@/store/slices/categorySlice";
+import {
+	fetchExpenseDetail,
+	createExpense,
+	updateExpense,
+} from "@/store/slices/expenseSlice";
 const DRAFT_KEY = "expense-tracker-draft";
 
 const schema = z.object({
@@ -64,8 +63,6 @@ type Location = {
 
 type ExpenseFormProps = {
 	id?: string;
-	initialExpense?: ExpenseItem | null;
-	initialCategories?: CategoryItem[];
 };
 
 function loadDraft(): Partial<FormValues> | null {
@@ -94,25 +91,17 @@ function clearDraft() {
 	}
 }
 
-export function ExpenseForm({
-	id,
-	initialExpense,
-	initialCategories,
-}: ExpenseFormProps) {
+export function ExpenseForm({ id }: ExpenseFormProps) {
 	const router = useRouter();
-	const currency = useUIStore((state) => state.currency);
-	const locale = useUIStore((state) => state.locale);
+	const dispatch = useAppDispatch();
+	const currency = useAppSelector((s) => s.ui.currency);
+	const locale = useAppSelector((s) => s.ui.locale);
 	const isEditing = Boolean(id);
 
-	const categoriesQuery = useCategoriesQuery(
-		initialCategories,
-	);
-	const expenseQuery = useExpenseDetailQuery(
-		id ?? "",
-		isEditing ? initialExpense : undefined,
-	);
-	const { createExpense, updateExpense } =
-		useExpenseMutations();
+	const categories = useAppSelector((s) => s.categories.items);
+	const currentExpense = useAppSelector((s) => s.expenses.currentExpense);
+	const expensesLoading = useAppSelector((s) => s.expenses.loading);
+
 	const { detect, isLoading: isDetectingLocation } =
 		useGeolocation();
 	const [images, setImages] = useState<string[]>([]);
@@ -121,6 +110,17 @@ export function ExpenseForm({
 		longitude: 0,
 	});
 	const hasDetected = useRef(false);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	useEffect(() => {
+		dispatch(fetchCategories());
+	}, [dispatch]);
+
+	useEffect(() => {
+		if (isEditing && id) {
+			dispatch(fetchExpenseDetail(id));
+		}
+	}, [dispatch, isEditing, id]);
 
 	const defaultValues = useCallback(() => {
 		if (isEditing)
@@ -155,7 +155,6 @@ export function ExpenseForm({
 		handleSubmit,
 		reset,
 		control,
-		formState: { isSubmitting },
 	} = form;
 
 	const allValues = useWatch({
@@ -168,30 +167,26 @@ export function ExpenseForm({
 		}
 	}, [allValues, isEditing]);
 
-	const isPending =
-		createExpense.isPending || updateExpense.isPending;
-
 	useEffect(() => {
 		if (!isEditing) return;
-		const data = expenseQuery.data;
-		if (!data) return;
+		if (!currentExpense) return;
 
 		reset({
-			title: data.title,
-			amount: data.amount,
-			categoryId: data.categoryId,
+			title: currentExpense.title,
+			amount: currentExpense.amount,
+			categoryId: currentExpense.categoryId,
 			paidAt: getLocalDateTimeInputValue(
-				new Date(data.paidAt),
+				new Date(currentExpense.paidAt),
 			),
 		});
 		setLocation({
-			latitude: data.location?.latitude ?? 0,
-			longitude: data.location?.longitude ?? 0,
+			latitude: currentExpense.location?.latitude ?? 0,
+			longitude: currentExpense.location?.longitude ?? 0,
 		});
 		Promise.resolve().then(() => {
-			setImages(data.images ?? []);
+			setImages(currentExpense.images ?? []);
 		});
-	}, [expenseQuery.data, reset, isEditing]);
+	}, [currentExpense, reset, isEditing]);
 
 	useEffect(() => {
 		if (isEditing) return;
@@ -209,6 +204,7 @@ export function ExpenseForm({
 	}, [isEditing, detect]);
 
 	const onSubmit = async (values: FormValues) => {
+		setIsSubmitting(true);
 		try {
 			const payload = {
 				title: values.title,
@@ -221,12 +217,11 @@ export function ExpenseForm({
 			};
 
 			if (isEditing && id) {
-				await updateExpense.mutateAsync({ id, payload });
+				await dispatch(updateExpense({ id, payload })).unwrap();
 				toast.success("Expense updated");
 				router.replace(`/expenses/${id}`);
 			} else {
-				const newExpense =
-					await createExpense.mutateAsync(payload);
+				const newExpense = await dispatch(createExpense(payload)).unwrap();
 				clearDraft();
 				toast.success("Expense created");
 				router.replace(`/expenses/${newExpense._id}`);
@@ -239,15 +234,30 @@ export function ExpenseForm({
 						? "Update failed"
 						: "Failed to create expense",
 			);
+		} finally {
+			setIsSubmitting(false);
 		}
 	};
 
-	if (isEditing && !expenseQuery.data) {
+	if (isEditing && expensesLoading && !currentExpense) {
 		return (
-			<div className="space-y-3">
-				<div className="h-5 w-40 animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" />
-				<div className="h-10 w-full animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" />
-				<div className="h-10 w-full animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" />
+			<div className="space-y-4">
+				<Skeleton className="h-6 w-40" />
+				<div className="grid grid-cols-2 gap-3">
+					<div className="space-y-2">
+						<Skeleton className="h-4 w-16" />
+						<Skeleton className="h-10 w-full" />
+					</div>
+					<div className="space-y-2">
+						<Skeleton className="h-4 w-16" />
+						<Skeleton className="h-10 w-full" />
+					</div>
+				</div>
+				<div className="space-y-2">
+					<Skeleton className="h-4 w-20" />
+					<Skeleton className="h-10 w-full" />
+				</div>
+				<Skeleton className="h-10 w-32" />
 			</div>
 		);
 	}
@@ -332,7 +342,7 @@ export function ExpenseForm({
 											onChange={(e) => field.onChange(e.target.value)}
 										>
 											<option value="">Select category</option>
-											{(categoriesQuery.data ?? []).map((category) => (
+											{categories.map((category) => (
 												<option key={category._id} value={category._id}>
 													{category.name}
 												</option>
@@ -381,10 +391,10 @@ export function ExpenseForm({
 							type="submit"
 							className="flex-1"
 							disabled={
-								isSubmitting || isPending || isDetectingLocation
+								isSubmitting || isDetectingLocation
 							}
 						>
-							{isPending || isDetectingLocation ? (
+							{isSubmitting || isDetectingLocation ? (
 								<>
 									<Spinner className="mr-2" />
 									Saving...

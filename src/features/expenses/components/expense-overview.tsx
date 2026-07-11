@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/stat-card";
 import { formatCurrency } from "@/lib/format";
-import { useUIStore } from "@/store/ui-store";
+import { useAppSelector } from "@/store/hooks";
 import { IndianRupeeIcon } from "lucide-react";
 import type {
 	DashboardAnalytics,
@@ -34,7 +34,7 @@ export function ExpenseOverview({
 	data,
 	isLoading,
 }: ExpenseOverviewProps) {
-	const currency = useUIStore((state) => state.currency);
+	const currency = useAppSelector((s) => s.ui.currency);
 
 	return (
 		<div>

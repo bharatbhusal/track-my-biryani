@@ -4,7 +4,7 @@ import { useMemo, useCallback } from "react";
 import { ChartCard } from "@/components/charts/chart-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/format";
-import { useUIStore } from "@/store/ui-store";
+import { useAppSelector } from "@/store/hooks";
 import type { CategoryBreakdownPoint } from "@/types/analytics.types";
 import type { CategoryItem } from "@/types/expense.types";
 
@@ -23,7 +23,7 @@ export function CategoryDistributionBar({
 	onCategorySelect,
 	isLoading,
 }: Props) {
-	const currency = useUIStore((s) => s.currency);
+	const currency = useAppSelector((s) => s.ui.currency);
 
 	const total = useMemo(
 		() => distribution.reduce((s, c) => s + c.value, 0),

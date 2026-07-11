@@ -6,7 +6,7 @@ import type {
 	ExpenseItem,
 } from "@/types/expense.types";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { useUIStore } from "@/store/ui-store";
+import { useAppSelector } from "@/store/hooks";
 import { EmojiBadge } from "@/components/ui/emoji-badge";
 
 type Props = {
@@ -15,9 +15,9 @@ type Props = {
 };
 
 export function ExpenseCard({ expense, category }: Props) {
-	const locale = useUIStore((state) => state.locale);
-	const currency = useUIStore((state) => state.currency);
-	const timezone = useUIStore((s) => s.timezone);
+	const locale = useAppSelector((s) => s.ui.locale);
+	const currency = useAppSelector((s) => s.ui.currency);
+	const timezone = useAppSelector((s) => s.ui.timezone);
 
 	return (
 		<Link

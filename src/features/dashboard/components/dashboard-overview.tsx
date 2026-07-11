@@ -1,46 +1,57 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 import { DateRangeBar } from "@/components/charts/date-range-bar";
 import { ExpenseOverview } from "@/features/expenses/components/expense-overview";
 import { DashboardBarChart } from "@/components/dashboard-bar-chart";
 import { CategoryDistributionBar } from "@/features/expenses/components/category-distribution-bar";
-import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
-import { useCategoriesQuery } from "@/hooks/api/use-expenses-api";
-import { usePersistedRange } from "@/hooks/use-persisted-range";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { fetchDashboard } from "@/store/slices/dashboardSlice";
+import { fetchCategories } from "@/store/slices/categorySlice";
+import { setDateRange } from "@/store/slices/uiSlice";
 import { toRangeParams } from "@/lib/date-range";
 import { getChartLabel } from "@/lib/format";
 
 export function DashboardOverview() {
-	const [mainRange, setMainRange] = usePersistedRange();
+	const dispatch = useAppDispatch();
+	const mainRange = useAppSelector((s) => s.ui.dateRange);
 	const [selectedCategoryId, setSelectedCategoryId] =
 		useState<string | undefined>();
 
-	const categoriesQuery = useCategoriesQuery();
-	const rangeParams = toRangeParams(mainRange);
+	const categories = useAppSelector((s) => s.categories.items);
+	const dashboardData = useAppSelector((s) => s.dashboard.data);
+	const isDashboardLoading = useAppSelector((s) => s.dashboard.loading);
 
-	const {
-		data: dashboardData,
-		isLoading: isDashboardLoading,
-	} = useDashboardQuery(rangeParams);
+	const rangeParams = useMemo(
+		() => toRangeParams(mainRange),
+		[mainRange.preset, mainRange.offset],
+	);
+
+	useEffect(() => {
+		dispatch(fetchCategories());
+	}, [dispatch]);
+
+	useEffect(() => {
+		dispatch(fetchDashboard(rangeParams));
+	}, [dispatch, rangeParams.preset, rangeParams.offset]);
 
 	const categoryColorMap = useMemo(() => {
 		const map = new Map<string, string>();
-		(categoriesQuery.data ?? []).forEach((c, i) => {
+		categories.forEach((c) => {
 			map.set(c.name, c.color);
 		});
 		return map;
-	}, [categoriesQuery.data]);
+	}, [categories]);
 
 	const selectedCategoryName = useMemo(
 		() =>
 			selectedCategoryId
-				? categoriesQuery.data?.find(
+				? categories.find(
 						(c) => c._id === selectedCategoryId,
 					)?.name
 				: undefined,
-		[selectedCategoryId, categoriesQuery.data],
+		[selectedCategoryId, categories],
 	);
 
 	const filteredStackedSeries = useMemo(() => {
@@ -59,7 +70,7 @@ export function DashboardOverview() {
 	}, [dashboardData?.stackedSeries, selectedCategoryName]);
 
 	const handleRangeChange = (range: typeof mainRange) => {
-		setMainRange(range);
+		dispatch(setDateRange(range));
 		setSelectedCategoryId(undefined);
 	};
 
@@ -72,13 +83,13 @@ export function DashboardOverview() {
 				loading={isDashboardLoading}
 			/>
 			<ExpenseOverview
-				data={dashboardData}
+				data={dashboardData ?? undefined}
 				isLoading={isDashboardLoading}
 			/>
 
 			<CategoryDistributionBar
 				distribution={dashboardData?.rankedCategories ?? []}
-				categories={categoriesQuery.data ?? []}
+				categories={categories}
 				selectedCategoryId={selectedCategoryId}
 				onCategorySelect={setSelectedCategoryId}
 				isLoading={isDashboardLoading}

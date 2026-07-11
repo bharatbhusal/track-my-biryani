@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { CategoryItem } from "@/types/expense.types";
 import { formatCurrency } from "@/lib/format";
-import { useUIStore } from "@/store/ui-store";
+import { useAppSelector } from "@/store/hooks";
 import { EmojiBadge } from "@/components/ui/emoji-badge";
 import { Card } from "@/components/ui/card";
 
@@ -20,8 +20,7 @@ export function CategoryCard({
 	count,
 	totalSpend,
 }: Props) {
-	const locale = useUIStore((s) => s.locale);
-	const currency = useUIStore((s) => s.currency);
+	const currency = useAppSelector((s) => s.ui.currency);
 
 	const pct =
 		typeof amount === "number" &&

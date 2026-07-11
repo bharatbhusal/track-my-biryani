@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import { toast } from "sonner";
@@ -13,85 +13,73 @@ import { DateRangeBar } from "@/components/charts/date-range-bar";
 
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import { AddCategoryDrawer } from "@/features/categories/components/add-category-drawer";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import {
-	useCategoryDetailQuery,
-	useCategoryStatsQuery,
-	useExpenseMutations,
-	useExpensesQuery,
-} from "@/hooks/api/use-expenses-api";
-import { usePersistedRange } from "@/hooks/use-persisted-range";
+	fetchCategoryDetail,
+	fetchCategoryStats,
+	deleteCategory,
+} from "@/store/slices/categorySlice";
+import {
+	fetchExpenses,
+} from "@/store/slices/expenseSlice";
+import { setDateRange } from "@/store/slices/uiSlice";
 import { toIsoBounds } from "@/lib/date-range";
 import { formatCurrency } from "@/lib/format";
-import { useUIStore } from "@/store/ui-store";
 import type { ExpenseListQuery } from "@/types";
-import type {
-	ExpenseItem,
-	CategoryItem,
-} from "@/types/expense.types";
 import { EmojiBadge } from "@/components/ui/emoji-badge";
 import { CashFlowChart } from "@/components/cash-flow-chart";
 
-export function CategoryDetailView({
-	id,
-	initialCategory,
-	initialExpenses,
-}: {
-	id: string;
-	initialCategory?: CategoryItem | null;
-	initialExpenses?: ExpenseItem[];
-}) {
+export function CategoryDetailView({ id }: { id: string }) {
 	const router = useRouter();
+	const dispatch = useAppDispatch();
 	const [deleteOpen, setDeleteOpen] = useState(false);
-	const [editDrawerOpen, setEditDrawerOpen] =
-		useState(false);
+	const [editDrawerOpen, setEditDrawerOpen] = useState(false);
 	const [page, setPage] = useState(1);
-	const [range, setRange] = usePersistedRange();
-	const locale = useUIStore((state) => state.locale);
-	const currency = useUIStore((state) => state.currency);
+
+	const currency = useAppSelector((s) => s.ui.currency);
+	const dateRange = useAppSelector((s) => s.ui.dateRange);
+
+	const category = useAppSelector((s) => s.categories.currentCategory);
+	const stats = useAppSelector((s) => s.categories.stats);
+	const expenses = useAppSelector((s) => s.expenses.items);
+	const expensesLoading = useAppSelector((s) => s.expenses.loading);
 
 	const rangeBounds = useMemo(
-		() => toIsoBounds(range),
-		[range],
+		() => toIsoBounds(dateRange),
+		[dateRange],
 	);
 
-	const categoryQuery = useCategoryDetailQuery(
-		id,
-		initialCategory,
-	);
-	const statsQuery = useCategoryStatsQuery(
-		id,
-		rangeBounds.from,
-		rangeBounds.to,
-	);
-	const { deleteCategory } = useExpenseMutations();
+	useEffect(() => {
+		dispatch(fetchCategoryDetail(id));
+	}, [dispatch, id]);
 
-	const expensesQueryParams = useMemo(
-		() =>
-			({
-				page,
-				limit: 20,
-				categoryId: id,
-				from: rangeBounds.from,
-				to: rangeBounds.to,
-				sortBy: "paidAt",
-				order: "desc",
-			}) as ExpenseListQuery,
-		[id, page, rangeBounds.from, rangeBounds.to],
-	);
+	useEffect(() => {
+		if (rangeBounds.from && rangeBounds.to) {
+			dispatch(
+				fetchCategoryStats({
+					id,
+					from: rangeBounds.from,
+					to: rangeBounds.to,
+				}),
+			);
+		}
+	}, [dispatch, id, rangeBounds.from, rangeBounds.to]);
 
-	const expensesQuery = useExpensesQuery(
-		expensesQueryParams,
-	);
-
-	const category = categoryQuery.data;
-
-	const expenses = useMemo(
-		() => expensesQuery.data?.items ?? initialExpenses ?? [],
-		[expensesQuery.data?.items, initialExpenses],
-	);
+	useEffect(() => {
+		const params: ExpenseListQuery = {
+			page,
+			limit: 20,
+			categoryId: id,
+			from: rangeBounds.from,
+			to: rangeBounds.to,
+			sortBy: "paidAt",
+			order: "desc",
+		};
+		dispatch(fetchExpenses(params));
+	}, [dispatch, id, page, rangeBounds.from, rangeBounds.to]);
 
 	const chartTrend = useMemo(() => {
-		const raw = statsQuery.data?.trend ?? [];
+		const raw = stats?.trend ?? [];
 		if (raw.length === 0) return [];
 
 		const isDaily = raw[0].name.length === 10;
@@ -111,7 +99,7 @@ export function CategoryDetailView({
 				total: point.total,
 			};
 		});
-	}, [statsQuery.data?.trend]);
+	}, [stats?.trend]);
 
 	const chartStackedSeries = useMemo(
 		() =>
@@ -168,16 +156,49 @@ export function CategoryDetailView({
 	}, [expenses]);
 
 	if (!category) {
-		return <Card>Loading category...</Card>;
+		return (
+			<div className="space-y-4">
+				<Skeleton className="h-10 w-52" />
+				<Card>
+					<div className="flex justify-between mb-4">
+						<Skeleton className="h-6 w-48" />
+						<div className="flex gap-2">
+							<Skeleton className="h-9 w-9 rounded" />
+							<Skeleton className="h-9 w-9 rounded" />
+						</div>
+					</div>
+					<div className="grid grid-cols-2 gap-2">
+						{[...Array(4)].map((_, i) => (
+							<div key={i}>
+								<Skeleton className="h-4 w-16 mb-1" />
+								<Skeleton className="h-5 w-24" />
+							</div>
+						))}
+					</div>
+				</Card>
+				<Card>
+					<Skeleton className="h-4 w-32 mb-3" />
+					<Skeleton className="h-64 w-full" />
+				</Card>
+				<Card>
+					<Skeleton className="h-4 w-32 mb-3" />
+					<div className="space-y-2">
+						{[...Array(3)].map((_, i) => (
+							<Skeleton key={i} className="h-16 w-full" />
+						))}
+					</div>
+				</Card>
+			</div>
+		);
 	}
 
 	return (
 		<div className="space-y-4">
 			<DateRangeBar
 				title={category?.name ?? "Category"}
-				range={range}
+				range={dateRange}
 				onRangeChange={(r) => {
-					setRange(r);
+					dispatch(setDateRange(r));
 					setPage(1);
 				}}
 			/>
@@ -210,7 +231,7 @@ export function CategoryDetailView({
 					</div>
 				</CardTitle>
 
-				{statsQuery.isLoading ? (
+				{expensesLoading ? (
 					<div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 md:grid-cols-4">
 						{[...Array(4)].map((_, i) => (
 							<div key={i}>
@@ -226,7 +247,7 @@ export function CategoryDetailView({
 								Total:
 							</span>{" "}
 							{formatCurrency(
-								statsQuery.data?.total ?? 0,
+								stats?.total ?? 0,
 								currency,
 							)}
 						</p>
@@ -234,19 +255,19 @@ export function CategoryDetailView({
 							<span className="text-[var(--color-muted)]">
 								Highest:
 							</span>{" "}
-							{formatCurrency(statsQuery.data?.max ?? 0, currency)}
+							{formatCurrency(stats?.max ?? 0, currency)}
 						</p>
 						<p>
 							<span className="text-[var(--color-muted)]">
 								Average:
 							</span>{" "}
-							{formatCurrency(statsQuery.data?.avg ?? 0, currency)}
+							{formatCurrency(stats?.avg ?? 0, currency)}
 						</p>
 						<p>
 							<span className="text-[var(--color-muted)]">
 								Transactions:
 							</span>{" "}
-							{statsQuery.data?.count ?? 0}
+							{stats?.count ?? 0}
 						</p>
 					</div>
 				)}
@@ -256,7 +277,7 @@ export function CategoryDetailView({
 				title="Trend"
 				stackedSeries={chartStackedSeries}
 				categoryColorMap={chartColorMap}
-				isLoading={statsQuery.isLoading}
+				isLoading={expensesLoading}
 			/>
 
 			{expenses.length > 0 && (
@@ -266,7 +287,7 @@ export function CategoryDetailView({
 						categoryMap={new Map([[category._id, category]])}
 						emptyMessage="No expenses in this category"
 						page={page}
-						totalPages={expensesQuery.data?.totalPages}
+						totalPages={Math.ceil(expenses.length / 20)}
 						onPageChange={setPage}
 					/>
 
@@ -304,22 +325,20 @@ export function CategoryDetailView({
 				open={deleteOpen}
 				title="Delete category"
 				description="This action cannot be undone."
-				isPending={deleteCategory.isPending}
+				isPending={false}
 				onCancel={() => setDeleteOpen(false)}
-				onConfirm={() => {
-					deleteCategory.mutate(id, {
-						onSuccess: () => {
-							toast.success("Category deleted");
-							router.replace("/categories");
-						},
-						onError: (error) => {
-							toast.error(
-								error instanceof Error
-									? error.message
-									: "Failed to delete category",
-							);
-						},
-					});
+				onConfirm={async () => {
+					try {
+						await dispatch(deleteCategory(id)).unwrap();
+						toast.success("Category deleted");
+						router.replace("/categories");
+					} catch (error) {
+						toast.error(
+							error instanceof Error
+								? error.message
+								: "Failed to delete category",
+						);
+					}
 				}}
 			/>
 		</div>

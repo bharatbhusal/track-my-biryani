@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
 	FiPlus,
 	FiSearch,
@@ -11,9 +11,10 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { useCategoriesQuery } from "@/hooks/api/use-expenses-api";
-import { useDashboardQuery } from "@/hooks/api/use-analytics-api";
-import { usePersistedRange } from "@/hooks/use-persisted-range";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { fetchCategories } from "@/store/slices/categorySlice";
+import { fetchDashboard } from "@/store/slices/dashboardSlice";
+import { setDateRange } from "@/store/slices/uiSlice";
 import { toRangeParams } from "@/lib/date-range";
 import { useDebouncedValue } from "@/hooks/use-debounce";
 import { Input } from "@/components/ui/input";
@@ -22,17 +23,30 @@ import { CategoryCard } from "@/features/categories/components/category-card";
 import { AddCategoryDrawer } from "@/features/categories/components/add-category-drawer";
 
 export function CategoryManager() {
+	const dispatch = useAppDispatch();
 	const [query, setQuery] = useState("");
 	const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
 		"desc",
 	);
 	const [drawerOpen, setDrawerOpen] = useState(false);
-	const [range, setRange] = usePersistedRange();
-	const categoriesQuery = useCategoriesQuery();
-	const rangeParams = toRangeParams(range);
-	const { data: dashboardData } =
-		useDashboardQuery(rangeParams);
+
+	const range = useAppSelector((s) => s.ui.dateRange);
+	const categories = useAppSelector((s) => s.categories.items);
+	const dashboardData = useAppSelector((s) => s.dashboard.data);
+
 	const debouncedQuery = useDebouncedValue(query, 300);
+	const rangeParams = useMemo(
+		() => toRangeParams(range),
+		[range.preset, range.offset],
+	);
+
+	useEffect(() => {
+		dispatch(fetchCategories());
+	}, [dispatch]);
+
+	useEffect(() => {
+		dispatch(fetchDashboard(rangeParams));
+	}, [dispatch, rangeParams.preset, rangeParams.offset]);
 
 	const categorySpendMap = useMemo(() => {
 		const map = new Map<
@@ -52,7 +66,7 @@ export function CategoryManager() {
 
 	const items = useMemo(
 		() =>
-			(categoriesQuery.data ?? [])
+			categories
 				.filter((item) =>
 					item.name
 						.toLowerCase()
@@ -67,7 +81,7 @@ export function CategoryManager() {
 					return bSpend - aSpend;
 				}),
 		[
-			categoriesQuery.data,
+			categories,
 			debouncedQuery,
 			sortOrder,
 			categorySpendMap,
@@ -76,7 +90,10 @@ export function CategoryManager() {
 
 	return (
 		<div className="flex gap-2 flex-col">
-			<DateRangeBar range={range} onRangeChange={setRange} />
+			<DateRangeBar
+				range={range}
+				onRangeChange={(r) => dispatch(setDateRange(r))}
+			/>
 			<Card>
 				<div className="flex items-center justify-between mb-4">
 					<CardTitle>

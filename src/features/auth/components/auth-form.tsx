@@ -9,7 +9,8 @@ import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { useAuthActions } from "@/hooks/api/use-auth-api";
+import { useAppDispatch } from "@/store/hooks";
+import { loginUser, signupUser } from "@/store/slices/authSlice";
 import {
 	Form,
 	FormControl,
@@ -45,7 +46,7 @@ export function AuthForm({
 	nextPath?: string;
 }) {
 	const router = useRouter();
-	const { login, signup } = useAuthActions();
+	const dispatch = useAppDispatch();
 	const schema =
 		mode === "signup" ? signupFormSchema : loginFormSchema;
 
@@ -73,9 +74,9 @@ export function AuthForm({
 	) => {
 		try {
 			if (mode === "signup") {
-				await signup.mutateAsync(values as SignupValues);
+				await dispatch(signupUser(values as SignupValues)).unwrap();
 			} else {
-				await login.mutateAsync(values as LoginValues);
+				await dispatch(loginUser(values as LoginValues)).unwrap();
 			}
 
 			toast.success(

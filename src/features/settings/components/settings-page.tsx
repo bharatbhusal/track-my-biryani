@@ -11,18 +11,22 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-	useAuthActions,
-	useAuthMe,
-} from "@/hooks/api/use-auth-api";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { fetchMe, logoutUser } from "@/store/slices/authSlice";
 
 export function SettingsPage() {
 	const router = useRouter();
+	const dispatch = useAppDispatch();
 	const { resolvedTheme, setTheme } = useTheme();
-	const authQuery = useAuthMe();
-	const { logout } = useAuthActions();
+
+	const authUser = useAppSelector((s) => s.auth.user);
+	const authLoading = useAppSelector((s) => s.auth.loading);
 
 	const [mounted, setMounted] = useState(false);
+
+	useEffect(() => {
+		dispatch(fetchMe());
+	}, [dispatch]);
 
 	useEffect(() => {
 		setMounted(true);
@@ -34,7 +38,7 @@ export function SettingsPage() {
 
 	const handleLogout = async () => {
 		try {
-			await logout.mutateAsync();
+			await dispatch(logoutUser()).unwrap();
 			toast.success("Logged out");
 			router.replace("/auth/login");
 			router.refresh();
@@ -50,16 +54,16 @@ export function SettingsPage() {
 	return (
 		<div className="space-y-4">
 			<Card>
-				{authQuery.isLoading ? (
+				{authLoading ? (
 					<div className="space-y-3">
 						<Skeleton className="h-5 w-32" />
 						<Skeleton className="h-4 w-48" />
 					</div>
-				) : authQuery.data ? (
+				) : authUser ? (
 					<div className="flex items-center justify-between gap-3">
 						<div className="min-w-0">
 							<p className="truncate text-sm font-medium">
-								{authQuery.data.name}
+								{authUser.name}
 							</p>
 							<p className="truncate text-xs text-[var(--color-muted)]">
 								Signed in
