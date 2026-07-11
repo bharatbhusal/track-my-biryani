@@ -11,22 +11,10 @@ export function toUtcIsoString(input: string): string {
 	return new Date(input).toISOString();
 }
 
-export function formatShortDateTime(
-	value: Date | string,
-	locale = "en-IN",
-): string {
-	const date =
-		typeof value === "string" ? new Date(value) : value;
-	const now = new Date();
-
-	const timeParts = new Intl.DateTimeFormat(locale, {
-		hour: "2-digit",
-		minute: "2-digit",
-		hour12: false,
-	}).formatToParts(date);
-	const time =
-		`${timeParts.find((p) => p.type === "hour")?.value ?? "00"}:${timeParts.find((p) => p.type === "minute")?.value ?? "00"}`;
-
+function getRelativePrefix(
+	date: Date,
+	now: Date,
+): string | null {
 	const startOfToday = new Date(
 		now.getFullYear(),
 		now.getMonth(),
@@ -35,27 +23,77 @@ export function formatShortDateTime(
 	const diff = date.getTime() - startOfToday.getTime();
 	const dayMs = 86_400_000;
 
-	if (diff >= 0 && diff < dayMs) return `Today, ${time}`;
-	if (diff >= -dayMs && diff < 0)
-		return `Yesterday, ${time}`;
+	if (diff >= 0 && diff < dayMs) return "Today";
+	if (diff >= -dayMs && diff < 0) return "Yesterday";
+	return null;
+}
 
-	const dayParts = new Intl.DateTimeFormat(locale, {
+function formatDateParts(
+	date: Date,
+	locale: string,
+	includeYear: boolean,
+): string {
+	const parts = new Intl.DateTimeFormat(locale, {
 		day: "numeric",
 		month: "short",
 		weekday: "short",
+		...(includeYear && { year: "numeric" }),
 	}).formatToParts(date);
-	const day = dayParts.find((p) => p.type === "day")?.value ?? "";
+
+	const day =
+		parts.find((p) => p.type === "day")?.value ?? "";
 	const month =
-		dayParts.find((p) => p.type === "month")?.value ?? "";
+		parts.find((p) => p.type === "month")?.value ?? "";
 	const weekday =
-		dayParts.find((p) => p.type === "weekday")?.value ?? "";
+		parts.find((p) => p.type === "weekday")?.value ?? "";
+	const year =
+		parts.find((p) => p.type === "year")?.value ?? "";
+
+	return includeYear &&
+		date.getFullYear() !== new Date().getFullYear()
+		? `${day} ${month} ${year}, ${weekday}`
+		: `${day} ${month}, ${weekday}`;
+}
+
+function formatTime(date: Date, locale: string): string {
+	return new Intl.DateTimeFormat(locale, {
+		hour: "2-digit",
+		minute: "2-digit",
+		hour12: false,
+	}).format(date);
+}
+
+export function formatShortDateTime(
+	value: Date | string,
+	locale = "en-IN",
+): string {
+	const date =
+		typeof value === "string" ? new Date(value) : value;
+	const now = new Date();
+
+	const relative = getRelativePrefix(date, now);
+	if (relative)
+		return `${relative}, ${formatTime(date, locale)}`;
 
 	const isThisYear =
 		date.getFullYear() === now.getFullYear();
+	return `${formatDateParts(date, locale, !isThisYear)}, ${formatTime(date, locale)}`;
+}
 
-	return isThisYear
-		? `${day} ${month}, ${weekday}, ${time}`
-		: `${day} ${month} ${date.getFullYear()}, ${weekday}, ${time}`;
+export function formatShortDate(
+	value: Date | string,
+	locale = "en-IN",
+): string {
+	const date =
+		typeof value === "string" ? new Date(value) : value;
+	const now = new Date();
+
+	const relative = getRelativePrefix(date, now);
+	if (relative) return relative;
+
+	const isThisYear =
+		date.getFullYear() === now.getFullYear();
+	return formatDateParts(date, locale, !isThisYear);
 }
 
 export function formatDateTime(
@@ -77,18 +115,15 @@ export function formatDateTime(
 
 	const parts = formatter.formatToParts(date);
 	const hour =
-		parts.find((part) => part.type === "hour")?.value ?? "00";
+		parts.find((p) => p.type === "hour")?.value ?? "00";
 	const minute =
-		parts.find((part) => part.type === "minute")?.value ??
-		"00";
+		parts.find((p) => p.type === "minute")?.value ?? "00";
 	const day =
-		parts.find((part) => part.type === "day")?.value ?? "01";
+		parts.find((p) => p.type === "day")?.value ?? "01";
 	const month =
-		parts.find((part) => part.type === "month")?.value ??
-		"Jan";
+		parts.find((p) => p.type === "month")?.value ?? "Jan";
 	const year =
-		parts.find((part) => part.type === "year")?.value ??
-		"1970";
+		parts.find((p) => p.type === "year")?.value ?? "1970";
 
 	return `${hour}:${minute} • ${day} ${month} ${year}`;
 }

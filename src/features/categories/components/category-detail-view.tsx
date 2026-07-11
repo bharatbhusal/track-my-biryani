@@ -2,7 +2,6 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -13,36 +12,41 @@ import { DateRangeBar } from "@/components/charts/date-range-bar";
 
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import { AddCategoryDrawer } from "@/features/categories/components/add-category-drawer";
-import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { CategoryCard } from "@/features/categories/components/category-card";
+import {
+	useAppSelector,
+	useAppDispatch,
+} from "@/store/hooks";
 import {
 	fetchCategoryDetail,
 	fetchCategoryStats,
 	deleteCategory,
 } from "@/store/slices/categorySlice";
-import {
-	fetchExpenses,
-} from "@/store/slices/expenseSlice";
+import { fetchExpenses } from "@/store/slices/expenseSlice";
 import { setDateRange } from "@/store/slices/uiSlice";
 import { toIsoBounds } from "@/lib/date-range";
-import { formatCurrency } from "@/lib/format";
 import type { ExpenseListQuery } from "@/types";
-import { EmojiBadge } from "@/components/ui/emoji-badge";
 import { CashFlowChart } from "@/components/cash-flow-chart";
+import type { CategoryWithStats } from "@/types/analytics.types";
 
 export function CategoryDetailView({ id }: { id: string }) {
 	const router = useRouter();
 	const dispatch = useAppDispatch();
 	const [deleteOpen, setDeleteOpen] = useState(false);
-	const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+	const [editDrawerOpen, setEditDrawerOpen] =
+		useState(false);
 	const [page, setPage] = useState(1);
 
-	const currency = useAppSelector((s) => s.ui.currency);
 	const dateRange = useAppSelector((s) => s.ui.dateRange);
 
-	const category = useAppSelector((s) => s.categories.currentCategory);
+	const category = useAppSelector(
+		(s) => s.categories.currentCategory,
+	);
 	const stats = useAppSelector((s) => s.categories.stats);
 	const expenses = useAppSelector((s) => s.expenses.items);
-	const expensesLoading = useAppSelector((s) => s.expenses.loading);
+	const expensesLoading = useAppSelector(
+		(s) => s.expenses.loading,
+	);
 
 	const rangeBounds = useMemo(
 		() => toIsoBounds(dateRange),
@@ -120,6 +124,20 @@ export function CategoryDetailView({ id }: { id: string }) {
 			]),
 		[category?.name, category?.color],
 	);
+
+	const categoryWithStats =
+		useMemo((): CategoryWithStats | null => {
+			if (!category || !stats) return null;
+			return {
+				...category,
+				total: stats.total,
+				count: stats.count,
+				min: stats.min,
+				max: stats.max,
+				avg: stats.avg,
+				pct: stats.pct,
+			};
+		}, [category, stats]);
 
 	const routeUrl = useMemo(() => {
 		if (expenses.length < 1) return null;
@@ -202,114 +220,39 @@ export function CategoryDetailView({ id }: { id: string }) {
 					setPage(1);
 				}}
 			/>
-			<Card className="flex flex-col gap-2">
-				<CardTitle className="flex justify-between">
-					<div className="flex items-center gap-3">
-						<EmojiBadge
-							emoji={category.emoji}
-							color={category.color}
-						/>
-						<p className="text-lg">{category.name}</p>
-					</div>
-					<div className="flex gap-2">
-						<Button
-							variant="outline"
-							className="h-9 w-9 p-0"
-							aria-label="Edit category"
-							onClick={() => setEditDrawerOpen(true)}
-						>
-							<FiEdit2 />
-						</Button>
-						<Button
-							variant="destructive"
-							className="h-9 w-9 p-0"
-							aria-label="Delete category"
-							onClick={() => setDeleteOpen(true)}
-						>
-							<FiTrash2 />
-						</Button>
-					</div>
-				</CardTitle>
-
-				{expensesLoading ? (
-					<div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 md:grid-cols-4">
-						{[...Array(4)].map((_, i) => (
-							<div key={i}>
-								<Skeleton className="h-4 w-16 mb-1" />
-								<Skeleton className="h-5 w-24" />
-							</div>
-						))}
-					</div>
-				) : (
-					<div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 md:grid-cols-4">
-						<p>
-							<span className="text-[var(--color-muted)]">
-								Total:
-							</span>{" "}
-							{formatCurrency(
-								stats?.total ?? 0,
-								currency,
-							)}
-						</p>
-						<p>
-							<span className="text-[var(--color-muted)]">
-								Highest:
-							</span>{" "}
-							{formatCurrency(stats?.max ?? 0, currency)}
-						</p>
-						<p>
-							<span className="text-[var(--color-muted)]">
-								Average:
-							</span>{" "}
-							{formatCurrency(stats?.avg ?? 0, currency)}
-						</p>
-						<p>
-							<span className="text-[var(--color-muted)]">
-								Transactions:
-							</span>{" "}
-							{stats?.count ?? 0}
-						</p>
-					</div>
-				)}
-			</Card>
-
-			<CashFlowChart
-				title="Trend"
-				stackedSeries={chartStackedSeries}
-				categoryColorMap={chartColorMap}
-				isLoading={expensesLoading}
-			/>
-
-			{expenses.length > 0 && (
+			{categoryWithStats && (
+				<CategoryCard
+					category={categoryWithStats}
+					onEdit={() => setEditDrawerOpen(true)}
+					onDelete={() => setDeleteOpen(true)}
+				/>
+			)}
+			{expensesLoading ? (
+				<div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 md:grid-cols-4">
+					{[...Array(4)].map((_, i) => (
+						<div key={i}>
+							<Skeleton className="h-4 w-16 mb-1" />
+							<Skeleton className="h-5 w-24" />
+						</div>
+					))}
+				</div>
+			) : (
 				<>
-					<ExpenseTable
-						items={expenses.slice(0, 10)}
-						emptyMessage="No expenses in this category"
-						page={page}
-						totalPages={Math.ceil(expenses.length / 20)}
-						onPageChange={setPage}
+					<CashFlowChart
+						title="Trend"
+						stackedSeries={chartStackedSeries}
+						categoryColorMap={chartColorMap}
+						isLoading={expensesLoading}
 					/>
 
-					{routeUrl && (
-						<Card>
-							<CardTitle className="mb-2">Expense Route</CardTitle>
-
-							<p className="mb-3 text-sm text-[var(--color-muted)]">
-								Route connecting the first{" "}
-								{Math.min(expenses.length, 5)} expenses in this
-								category.
-							</p>
-
-							<Button
-								onClick={() => {
-									if (routeUrl) {
-										window.open(routeUrl, "_blank");
-									}
-								}}
-							>
-								View Route in Google Maps
-							</Button>
-						</Card>
+					{expenses.length > 0 && (
+						<ExpenseTable
+							items={expenses.slice(0, 10)}
+							emptyMessage="No expenses in this category"
+							page={page}
+							totalPages={Math.ceil(expenses.length / 20)}
+							onPageChange={setPage}
+						/>
 					)}
 				</>
 			)}

@@ -49,6 +49,7 @@ export type CategoryRangeStats = {
 	avg: number;
 	min: number;
 	max: number;
+	pct: number;
 	trend: TrendPoint[];
 };
 

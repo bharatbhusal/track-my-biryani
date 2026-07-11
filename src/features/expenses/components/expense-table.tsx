@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import Link from "next/link";
 import {
 	FiChevronLeft,
@@ -22,6 +23,7 @@ import { useAppSelector } from "@/store/hooks";
 import { ExpenseCard } from "@/features/expenses/components/expense-card";
 import type { ExpenseItem } from "@/types/expense.types";
 import { EmojiBadge } from "@/components/ui/emoji-badge";
+import { formatShortDate } from "@/lib/datetime";
 
 export type SortField = "paidAt" | "amount" | "title";
 
@@ -36,6 +38,20 @@ type ExpenseTableProps = {
 	onPageChange?: (page: number) => void;
 	emptyMessage?: string;
 };
+
+function groupByDate(
+	items: ExpenseItem[],
+): Map<string, ExpenseItem[]> {
+	const map = new Map<string, ExpenseItem[]>();
+	for (const item of items) {
+		const date = new Date(item.paidAt)
+			.toISOString()
+			.split("T")[0];
+		if (!map.has(date)) map.set(date, []);
+		map.get(date)!.push(item);
+	}
+	return map;
+}
 
 export function ExpenseTable({
 	items,
@@ -61,9 +77,14 @@ export function ExpenseTable({
 		);
 	};
 
+	const groupedItems = useMemo(
+		() => groupByDate(items),
+		[items],
+	);
+
 	return (
 		<>
-			{/* Mobile: card layout */}
+			{/* Mobile: card layout grouped by day */}
 			<div className="space-y-2 md:hidden">
 				{isLoading ? (
 					[...Array(5)].map((_, i) => (
@@ -84,16 +105,25 @@ export function ExpenseTable({
 						{emptyMessage}
 					</p>
 				) : (
-					items.map((expense) => (
-						<ExpenseCard
-							key={expense._id}
-							expense={expense}
-							category={{
-								color: expense.categoryColor ?? "",
-								emoji: expense.categoryEmoji,
-							}}
-						/>
-					))
+					Array.from(groupedItems.entries()).map(
+						([date, dayItems]) => (
+							<div key={date} className="space-y-2">
+								<div className="px-2 py-1 text-xs font-medium text-[var(--color-muted)] uppercase tracking-wide">
+									{formatShortDate(date, locale)}
+								</div>
+								{dayItems.map((expense) => (
+									<ExpenseCard
+										key={expense._id}
+										expense={expense}
+										category={{
+											color: expense.categoryColor ?? "",
+											emoji: expense.categoryEmoji,
+										}}
+									/>
+								))}
+							</div>
+						),
+					)
 				)}
 			</div>
 
@@ -172,7 +202,9 @@ export function ExpenseTable({
 									<TableCell>
 										<span className="text-md flex gap-2 items-center">
 											<EmojiBadge
-												color={expense.categoryColor ?? "var(--color-muted)"}
+												color={
+													expense.categoryColor ?? "var(--color-muted)"
+												}
 												emoji={expense.categoryEmoji}
 											/>
 											{expense.categoryEmoji ? "" : "Unknown"}

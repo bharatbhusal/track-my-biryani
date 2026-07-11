@@ -388,9 +388,12 @@ export async function getCategoryRangeStats(
 ) {
 	const match: Record<string, unknown> = {
 		userId: new Types.ObjectId(userId),
-
-		categoryId: new Types.ObjectId(categoryId),
 		paidAt: { $gte: from, $lte: to },
+	};
+
+	const categoryMatch: Record<string, unknown> = {
+		...match,
+		categoryId: new Types.ObjectId(categoryId),
 	};
 
 	const dayDiff = Math.ceil(
@@ -398,9 +401,9 @@ export async function getCategoryRangeStats(
 	);
 	const dateFormat = dayDiff > 60 ? "%Y-%m" : "%Y-%m-%d";
 
-	const [[result], trend] = await Promise.all([
+	const [categoryResult, totalResult, trend] = await Promise.all([
 		ExpenseModel.aggregate<SummaryBucket>([
-			{ $match: match },
+			{ $match: categoryMatch },
 			{
 				$group: {
 					_id: null,
@@ -412,8 +415,17 @@ export async function getCategoryRangeStats(
 				},
 			},
 		]),
-		ExpenseModel.aggregate([
+		ExpenseModel.aggregate<SummaryBucket>([
 			{ $match: match },
+			{
+				$group: {
+					_id: null,
+					total: { $sum: "$amount" },
+				},
+			},
+		]),
+		ExpenseModel.aggregate([
+			{ $match: categoryMatch },
 			{
 				$group: {
 					_id: {
@@ -436,12 +448,16 @@ export async function getCategoryRangeStats(
 		]),
 	]);
 
+	const category = categoryResult[0] ?? { total: 0, count: 0, avg: 0, min: 0, max: 0 };
+	const total = totalResult[0]?.total ?? 0;
+
 	return {
-		total: result?.total ?? 0,
-		count: result?.count ?? 0,
-		avg: result?.avg ?? 0,
-		min: result?.min ?? 0,
-		max: result?.max ?? 0,
+		total: category.total,
+		count: category.count,
+		avg: category.avg,
+		min: category.min,
+		max: category.max,
+		pct: total > 0 ? (category.total / total) * 100 : 0,
 		trend,
 	};
 }
