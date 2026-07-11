@@ -20,6 +20,49 @@ export async function listCategories(userId: string) {
 		.lean();
 }
 
+export async function listCategoriesWithStats(
+	userId: string,
+	from: Date,
+	to: Date,
+) {
+	const match: Record<string, unknown> = {
+		userId: new Types.ObjectId(userId),
+		paidAt: { $gte: from, $lte: to },
+	};
+
+	const categoryStats = await ExpenseModel.aggregate([
+		{ $match: match },
+		{
+			$group: {
+				_id: "$categoryId",
+				total: { $sum: "$amount" },
+				count: { $sum: 1 },
+				min: { $min: "$amount" },
+				max: { $max: "$amount" },
+				avg: { $avg: "$amount" },
+			},
+		},
+	]);
+
+	const categories = await CategoryModel.find({ userId }).lean();
+
+	const statsById = new Map(
+		categoryStats.map((s) => [s._id.toString(), s]),
+	);
+
+	return categories.map((cat) => {
+		const stats = statsById.get(cat._id.toString());
+		return {
+			...cat,
+			total: stats?.total ?? 0,
+			count: stats?.count ?? 0,
+			min: stats?.min ?? 0,
+			max: stats?.max ?? 0,
+			avg: stats?.avg ?? 0,
+		};
+	});
+}
+
 export async function updateCategory(
 	userId: string,
 	categoryId: string,

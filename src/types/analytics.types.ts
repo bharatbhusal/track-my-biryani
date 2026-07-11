@@ -52,6 +52,18 @@ export type CategoryRangeStats = {
 	trend: TrendPoint[];
 };
 
+export type CategoryWithStats = {
+	_id: string;
+	name: string;
+	color: string;
+	emoji?: string;
+	total: number;
+	count: number;
+	min: number;
+	max: number;
+	avg: number;
+};
+
 export type ActivityLogItem = {
 	_id: string;
 	action: string;

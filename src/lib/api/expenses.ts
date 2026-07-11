@@ -12,6 +12,7 @@ import type {
 	CategoryBreakdownPoint,
 	ChartData,
 	DashboardCard,
+	CategoryWithStats,
 } from "@/types/analytics.types";
 
 function buildListQuery(filters: ExpenseListQuery): string {
@@ -65,6 +66,10 @@ export const expensesApi = {
 	getCategoryDistribution: (from: string, to: string) =>
 		apiRequest<CategoryBreakdownPoint[]>(
 			`/categories/distribution?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+		),
+	listCategoriesWithStats: (from: string, to: string) =>
+		apiRequest<CategoryWithStats[]>(
+			`/categories/stats?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
 		),
 	listExpenses: (filters: ExpenseListQuery = {}) => {
 		const query = buildListQuery(filters);

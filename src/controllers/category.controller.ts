@@ -8,12 +8,20 @@ import {
 	getCategoryService,
 	getCategoryStatsService,
 	listCategoriesService,
+	listCategoriesWithStatsService,
 	updateCategoryService,
 } from "@/services/category.service";
 
 export async function listCategories() {
 	const auth = await getAuthPayload();
 	return listCategoriesService(auth.userId);
+}
+
+export async function listCategoriesWithStats(request: NextRequest) {
+	const auth = await getAuthPayload();
+	const from = request.nextUrl.searchParams.get("from") ?? "";
+	const to = request.nextUrl.searchParams.get("to") ?? "";
+	return listCategoriesWithStatsService(auth.userId, from, to);
 }
 
 export async function createCategory(request: NextRequest) {

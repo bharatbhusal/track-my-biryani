@@ -11,15 +11,18 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { fetchCategories } from "@/store/slices/categorySlice";
-import { fetchExpensesInRange } from "@/store/slices/expenseSlice";
+import {
+	useAppSelector,
+	useAppDispatch,
+} from "@/store/hooks";
+import { fetchCategoriesWithStats } from "@/store/slices/categorySlice";
 import { setDateRange } from "@/store/slices/uiSlice";
 import { useDebouncedValue } from "@/hooks/use-debounce";
 import { Input } from "@/components/ui/input";
 import { DateRangeBar } from "@/components/charts/date-range-bar";
 import { CategoryCard } from "@/features/categories/components/category-card";
 import { AddCategoryDrawer } from "@/features/categories/components/add-category-drawer";
+import { toIsoBounds } from "@/lib/date-range";
 
 export function CategoryManager() {
 	const dispatch = useAppDispatch();
@@ -30,69 +33,39 @@ export function CategoryManager() {
 	const [drawerOpen, setDrawerOpen] = useState(false);
 
 	const range = useAppSelector((s) => s.ui.dateRange);
-	const categories = useAppSelector((s) => s.categories.items);
-	const dashboardExpenses = useAppSelector((s) => s.expenses.items);
-	const dashboardCategories = useAppSelector((s) => s.categories.items);
+	const rangeBounds = useMemo(
+		() => toIsoBounds(range),
+		[range.preset, range.offset],
+	);
+	const categoriesWithStats = useAppSelector(
+		(s) => s.categories.itemsWithStats,
+	);
 
 	const debouncedQuery = useDebouncedValue(query, 300);
 
 	useEffect(() => {
-		dispatch(fetchCategories());
-	}, [dispatch]);
-
-	useEffect(() => {
-		dispatch(fetchExpensesInRange(range));
-	}, [dispatch, range.preset, range.offset]);
-
-	const categorySpendMap = useMemo(() => {
-		const map = new Map<
-			string,
-			{ amount: number; pct: number }
-		>();
-		const totals = new Map<string, number>();
-		let total = 0;
-		for (const expense of dashboardExpenses) {
-			totals.set(
-				expense.categoryId,
-				(totals.get(expense.categoryId) ?? 0) + expense.amount,
-			);
-			total += expense.amount;
-		}
-		const categoryNameById = new Map(
-			dashboardCategories.map((c) => [c._id, c.name]),
+		if (!rangeBounds.from || !rangeBounds.to) return;
+		dispatch(
+			fetchCategoriesWithStats({
+				from: rangeBounds.from,
+				to: rangeBounds.to,
+			}),
 		);
-		for (const [catId, amount] of totals) {
-			const name = categoryNameById.get(catId) ?? "Uncategorized";
-			map.set(name, {
-				amount,
-				pct: total > 0 ? (amount / total) * 100 : 0,
-			});
-		}
-		return map;
-	}, [dashboardExpenses, dashboardCategories]);
+	}, [dispatch, rangeBounds.from, rangeBounds.to]);
 
 	const items = useMemo(
 		() =>
-			categories
+			categoriesWithStats
 				.filter((item) =>
 					item.name
 						.toLowerCase()
 						.includes(debouncedQuery.toLowerCase()),
 				)
 				.sort((a, b) => {
-					const aSpend =
-						categorySpendMap.get(a.name)?.amount ?? 0;
-					const bSpend =
-						categorySpendMap.get(b.name)?.amount ?? 0;
-					if (sortOrder === "asc") return aSpend - bSpend;
-					return bSpend - aSpend;
+					if (sortOrder === "asc") return a.total - b.total;
+					return b.total - a.total;
 				}),
-		[
-			categories,
-			debouncedQuery,
-			sortOrder,
-			categorySpendMap,
-		],
+		[categoriesWithStats, debouncedQuery, sortOrder],
 	);
 
 	return (
@@ -143,18 +116,9 @@ export function CategoryManager() {
 
 			<div className="grid grid-cols-1 gap-2">
 				{items.map((category) => {
-					const spend = categorySpendMap.get(category.name);
-					const totalSpend = Array.from(categorySpendMap.values()).reduce(
-						(sum, v) => sum + v.amount,
-						0,
-					);
 					return (
 						<div key={category._id}>
-							<CategoryCard
-								category={category}
-								amount={spend?.amount}
-								totalSpend={totalSpend}
-							/>
+							<CategoryCard category={category} />
 						</div>
 					);
 				})}

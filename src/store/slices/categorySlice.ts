@@ -3,8 +3,17 @@ import { expensesApi } from "@/lib/api/expenses";
 import type { CategoryItem } from "@/types/expense.types";
 import type { CategoryRangeStats, CategoryBreakdownPoint } from "@/types/analytics.types";
 
+type CategoryWithStats = CategoryItem & {
+	total: number;
+	count: number;
+	min: number;
+	max: number;
+	avg: number;
+};
+
 type CategoryState = {
 	items: CategoryItem[];
+	itemsWithStats: CategoryWithStats[];
 	currentCategory: CategoryItem | null;
 	stats: CategoryRangeStats | null;
 	distribution: CategoryBreakdownPoint[];
@@ -14,6 +23,7 @@ type CategoryState = {
 
 const initialState: CategoryState = {
 	items: [],
+	itemsWithStats: [],
 	currentCategory: null,
 	stats: null,
 	distribution: [],
@@ -25,6 +35,13 @@ export const fetchCategories = createAsyncThunk(
 	"categories/fetchList",
 	async () => {
 		return expensesApi.listCategories();
+	},
+);
+
+export const fetchCategoriesWithStats = createAsyncThunk(
+	"categories/fetchListWithStats",
+	async ({ from, to }: { from: string; to: string }) => {
+		return expensesApi.listCategoriesWithStats(from, to);
 	},
 );
 
@@ -111,6 +128,20 @@ const categorySlice = createSlice({
 				state.loading = false;
 				state.error =
 					action.error.message ?? "Failed to fetch categories";
+			})
+			// fetchCategoriesWithStats
+			.addCase(fetchCategoriesWithStats.pending, (state) => {
+				state.loading = true;
+				state.error = null;
+			})
+			.addCase(fetchCategoriesWithStats.fulfilled, (state, action) => {
+				state.loading = false;
+				state.itemsWithStats = action.payload;
+			})
+			.addCase(fetchCategoriesWithStats.rejected, (state, action) => {
+				state.loading = false;
+				state.error =
+					action.error.message ?? "Failed to fetch categories with stats";
 			})
 			// fetchCategoryDetail
 			.addCase(fetchCategoryDetail.pending, (state) => {
