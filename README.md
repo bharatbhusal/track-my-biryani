@@ -100,3 +100,14 @@ npm run start
 - [`docs/UX.md`](docs/UX.md)
 - [`docs/TECH_STACK.md`](docs/TECH_STACK.md)
 - [`docs/DATABASE_SCHEMA.md`](docs/DATABASE_SCHEMA.md)
+- [`docs/screenshots.md`](docs/screenshots.md)
+
+## Screenshots
+
+### Track My Biryani — Landing
+
+![Track My Biryani](/public/assets/dashboard.png)
+
+A full mobile UI walkthrough with every page and in-page interactions
+(chart tooltips, category filtering, date-range switching) is in
+[`docs/screenshots.md`](docs/screenshots.md).
