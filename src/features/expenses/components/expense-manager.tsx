@@ -9,11 +9,10 @@ import { Input } from "@/components/ui/input";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { fetchCategories } from "@/store/slices/categorySlice";
 import { fetchExpenses } from "@/store/slices/expenseSlice";
-import { fetchDashboard } from "@/store/slices/dashboardSlice";
+import { fetchDashboardData } from "@/store/slices/dashboardSlice";
 import { setDateRange } from "@/store/slices/uiSlice";
 import {
 	toIsoBounds,
-	toRangeParams,
 } from "@/lib/date-range";
 import type { GlobalDateRange } from "@/lib/date-range";
 
@@ -35,14 +34,29 @@ export function ExpenseManager() {
 	const items = useAppSelector((s) => s.expenses.items);
 	const isLoading = useAppSelector((s) => s.expenses.loading);
 	const totalPages = useAppSelector((s) => s.expenses.totalPages);
-	const dashboardData = useAppSelector((s) => s.dashboard.data);
+	const dashboardExpenses = useAppSelector((s) => s.dashboard.expenses);
+	const dashboardCategories = useAppSelector((s) => s.dashboard.categories);
 
 	const debouncedQuery = useDebouncedValue(query, 300);
 
-	const rangeParams = useMemo(
-		() => toRangeParams(localRange),
-		[localRange.preset, localRange.offset],
-	);
+	const rankedCategories = useMemo(() => {
+		const totals = new Map<string, number>();
+		for (const expense of dashboardExpenses) {
+			totals.set(
+				expense.categoryId,
+				(totals.get(expense.categoryId) ?? 0) + expense.amount,
+			);
+		}
+		const categoryNameById = new Map(
+			dashboardCategories.map((c) => [c._id, c.name]),
+		);
+		return Array.from(totals.entries())
+			.map(([categoryId, value]) => ({
+				name: categoryNameById.get(categoryId) ?? "Uncategorized",
+				value,
+			}))
+			.sort((a, b) => b.value - a.value);
+	}, [dashboardExpenses, dashboardCategories]);
 
 	const rangeBounds = useMemo(
 		() => toIsoBounds(localRange),
@@ -78,8 +92,8 @@ export function ExpenseManager() {
 	]);
 
 	useEffect(() => {
-		dispatch(fetchDashboard(rangeParams));
-	}, [dispatch, rangeParams.preset, rangeParams.offset]);
+		dispatch(fetchDashboardData(localRange));
+	}, [dispatch, localRange.preset, localRange.offset]);
 
 	const categoryMap = useMemo(
 		() =>
@@ -141,11 +155,11 @@ export function ExpenseManager() {
 
 			<div className="shrink-0">
 				<CategoryDistributionBar
-					distribution={dashboardData?.rankedCategories ?? []}
+					distribution={rankedCategories}
 					categories={categories}
 					selectedCategoryId={categoryId || undefined}
 					onCategorySelect={handleCategorySelect}
-					isLoading={!dashboardData}
+					isLoading={dashboardExpenses.length === 0}
 				/>
 			</div>
 			<div className="min-h-0 flex-1 overflow-auto">

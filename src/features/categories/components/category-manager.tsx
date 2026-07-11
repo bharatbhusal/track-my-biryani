@@ -13,9 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { fetchCategories } from "@/store/slices/categorySlice";
-import { fetchDashboard } from "@/store/slices/dashboardSlice";
+import { fetchDashboardData } from "@/store/slices/dashboardSlice";
 import { setDateRange } from "@/store/slices/uiSlice";
-import { toRangeParams } from "@/lib/date-range";
 import { useDebouncedValue } from "@/hooks/use-debounce";
 import { Input } from "@/components/ui/input";
 import { DateRangeBar } from "@/components/charts/date-range-bar";
@@ -32,37 +31,45 @@ export function CategoryManager() {
 
 	const range = useAppSelector((s) => s.ui.dateRange);
 	const categories = useAppSelector((s) => s.categories.items);
-	const dashboardData = useAppSelector((s) => s.dashboard.data);
+	const dashboardExpenses = useAppSelector((s) => s.dashboard.expenses);
+	const dashboardCategories = useAppSelector((s) => s.dashboard.categories);
 
 	const debouncedQuery = useDebouncedValue(query, 300);
-	const rangeParams = useMemo(
-		() => toRangeParams(range),
-		[range.preset, range.offset],
-	);
 
 	useEffect(() => {
 		dispatch(fetchCategories());
 	}, [dispatch]);
 
 	useEffect(() => {
-		dispatch(fetchDashboard(rangeParams));
-	}, [dispatch, rangeParams.preset, rangeParams.offset]);
+		dispatch(fetchDashboardData(range));
+	}, [dispatch, range.preset, range.offset]);
 
 	const categorySpendMap = useMemo(() => {
 		const map = new Map<
 			string,
 			{ amount: number; pct: number }
 		>();
-		const ranked = dashboardData?.rankedCategories ?? [];
-		const total = dashboardData?.totalSpend ?? 0;
-		for (const cat of ranked) {
-			map.set(cat.name, {
-				amount: cat.value,
-				pct: total > 0 ? (cat.value / total) * 100 : 0,
+		const totals = new Map<string, number>();
+		let total = 0;
+		for (const expense of dashboardExpenses) {
+			totals.set(
+				expense.categoryId,
+				(totals.get(expense.categoryId) ?? 0) + expense.amount,
+			);
+			total += expense.amount;
+		}
+		const categoryNameById = new Map(
+			dashboardCategories.map((c) => [c._id, c.name]),
+		);
+		for (const [catId, amount] of totals) {
+			const name = categoryNameById.get(catId) ?? "Uncategorized";
+			map.set(name, {
+				amount,
+				pct: total > 0 ? (amount / total) * 100 : 0,
 			});
 		}
 		return map;
-	}, [dashboardData]);
+	}, [dashboardExpenses, dashboardCategories]);
 
 	const items = useMemo(
 		() =>
@@ -137,12 +144,16 @@ export function CategoryManager() {
 			<div className="grid grid-cols-1 gap-2">
 				{items.map((category) => {
 					const spend = categorySpendMap.get(category.name);
+					const totalSpend = Array.from(categorySpendMap.values()).reduce(
+						(sum, v) => sum + v.amount,
+						0,
+					);
 					return (
 						<div key={category._id}>
 							<CategoryCard
 								category={category}
 								amount={spend?.amount}
-								totalSpend={dashboardData?.totalSpend}
+								totalSpend={totalSpend}
 							/>
 						</div>
 					);

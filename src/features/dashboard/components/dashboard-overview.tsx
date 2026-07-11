@@ -7,11 +7,18 @@ import { ExpenseOverview } from "@/features/expenses/components/expense-overview
 import { DashboardBarChart } from "@/components/dashboard-bar-chart";
 import { CategoryDistributionBar } from "@/features/expenses/components/category-distribution-bar";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { fetchDashboard } from "@/store/slices/dashboardSlice";
-import { fetchCategories } from "@/store/slices/categorySlice";
+import { fetchDashboardData } from "@/store/slices/dashboardSlice";
 import { setDateRange } from "@/store/slices/uiSlice";
-import { toRangeParams } from "@/lib/date-range";
 import { getChartLabel } from "@/lib/format";
+import {
+	selectTotalSpend,
+	selectRankedCategories,
+	selectStackedSeries,
+	selectPeriodLabel,
+	selectAverageSpend,
+	selectCards,
+	selectDashboardIsLoading,
+} from "@/store/selectors/dashboard.selectors";
 
 export function DashboardOverview() {
 	const dispatch = useAppDispatch();
@@ -19,22 +26,26 @@ export function DashboardOverview() {
 	const [selectedCategoryId, setSelectedCategoryId] =
 		useState<string | undefined>();
 
-	const categories = useAppSelector((s) => s.categories.items);
-	const dashboardData = useAppSelector((s) => s.dashboard.data);
-	const isDashboardLoading = useAppSelector((s) => s.dashboard.loading);
-
-	const rangeParams = useMemo(
-		() => toRangeParams(mainRange),
-		[mainRange.preset, mainRange.offset],
+	const categories = useAppSelector((s) => s.dashboard.categories);
+	const isLoading = useAppSelector(selectDashboardIsLoading);
+	const totalSpend = useAppSelector(selectTotalSpend);
+	const rankedCategories = useAppSelector(selectRankedCategories);
+	const stackedSeries = useAppSelector((s) =>
+		selectStackedSeries(s, mainRange),
+	);
+	const periodLabel = useAppSelector((s) =>
+		selectPeriodLabel(s, mainRange),
+	);
+	const averageSpend = useAppSelector((s) =>
+		selectAverageSpend(s, mainRange),
+	);
+	const cards = useAppSelector((s) =>
+		selectCards(s, mainRange),
 	);
 
 	useEffect(() => {
-		dispatch(fetchCategories());
-	}, [dispatch]);
-
-	useEffect(() => {
-		dispatch(fetchDashboard(rangeParams));
-	}, [dispatch, rangeParams.preset, rangeParams.offset]);
+		dispatch(fetchDashboardData(mainRange));
+	}, [dispatch, mainRange.preset, mainRange.offset]);
 
 	const categoryColorMap = useMemo(() => {
 		const map = new Map<string, string>();
@@ -55,9 +66,8 @@ export function DashboardOverview() {
 	);
 
 	const filteredStackedSeries = useMemo(() => {
-		const series = dashboardData?.stackedSeries ?? [];
-		if (!selectedCategoryName) return series;
-		return series.map((item) => {
+		if (!selectedCategoryName) return stackedSeries;
+		return stackedSeries.map((item) => {
 			const filtered: Record<string, string | number> = {
 				name: item.name as string,
 			};
@@ -67,39 +77,62 @@ export function DashboardOverview() {
 			}
 			return filtered;
 		});
-	}, [dashboardData?.stackedSeries, selectedCategoryName]);
+	}, [stackedSeries, selectedCategoryName]);
 
 	const handleRangeChange = (range: typeof mainRange) => {
 		dispatch(setDateRange(range));
 		setSelectedCategoryId(undefined);
 	};
 
+	const overviewData = useMemo(
+		() =>
+			totalSpend > 0
+				? {
+						totalSpend,
+						averageSpend,
+						cards,
+						chartLabel: "",
+						rankedCategories,
+						stackedSeries,
+						periodLabel,
+					}
+				: undefined,
+		[
+			totalSpend,
+			averageSpend,
+			cards,
+			rankedCategories,
+			stackedSeries,
+			periodLabel,
+		],
+	);
+
 	return (
 		<div className="space-y-2">
 			<DateRangeBar
-				title={dashboardData?.periodLabel ?? "Overview"}
+				title={periodLabel}
 				range={mainRange}
 				onRangeChange={handleRangeChange}
-				loading={isDashboardLoading}
+				loading={isLoading}
 			/>
 			<ExpenseOverview
-				data={dashboardData ?? undefined}
-				isLoading={isDashboardLoading}
+				data={overviewData}
+				isLoading={isLoading}
 			/>
 
 			<CategoryDistributionBar
-				distribution={dashboardData?.rankedCategories ?? []}
+				distribution={rankedCategories}
 				categories={categories}
 				selectedCategoryId={selectedCategoryId}
 				onCategorySelect={setSelectedCategoryId}
-				isLoading={isDashboardLoading}
+				isLoading={isLoading}
 			/>
 			<DashboardBarChart
 				stackedSeries={filteredStackedSeries}
 				chartLabel={getChartLabel(mainRange.preset, "Expense")}
-				averageSpend={dashboardData?.averageSpend}
+				averageSpend={averageSpend}
 				categoryColorMap={categoryColorMap}
-				isLoading={isDashboardLoading}
+				isLoading={isLoading}
 			/>
 		</div>
 	);

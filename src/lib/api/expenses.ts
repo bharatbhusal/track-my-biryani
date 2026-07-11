@@ -101,4 +101,8 @@ export const expensesApi = {
 		apiRequest<{ message: string }>(`/expenses/${id}`, {
 			method: "DELETE",
 		}),
+	allInRange: (from: string, to: string) =>
+		apiRequest<ExpenseItem[]>(
+			`/expenses/all?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+		),
 };

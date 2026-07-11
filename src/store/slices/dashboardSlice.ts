@@ -1,28 +1,35 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { analyticsApi } from "@/lib/api/analytics";
-import type { DashboardAnalytics } from "@/types/analytics.types";
+import { expensesApi } from "@/lib/api/expenses";
+import { toIsoBounds } from "@/lib/date-range";
+import type { ExpenseItem, CategoryItem } from "@/types/expense.types";
+import type { GlobalDateRange } from "@/lib/date-range";
 
 type DashboardState = {
-	data: DashboardAnalytics | null;
+	expenses: ExpenseItem[];
+	categories: CategoryItem[];
 	loading: boolean;
 	error: string | null;
 };
 
 const initialState: DashboardState = {
-	data: null,
+	expenses: [],
+	categories: [],
 	loading: false,
 	error: null,
 };
 
-export const fetchDashboard = createAsyncThunk(
-	"dashboard/fetch",
-	async (params?: {
-		preset?: string;
-		from?: string;
-		to?: string;
-		categoryId?: string;
-	}) => {
-		return analyticsApi.dashboard(params);
+export const fetchDashboardData = createAsyncThunk(
+	"dashboard/fetchData",
+	async (range: GlobalDateRange) => {
+		const { from, to } = toIsoBounds(range);
+		if (!from || !to) {
+			return { expenses: [], categories: [] };
+		}
+		const [expenses, categories] = await Promise.all([
+			expensesApi.allInRange(from, to),
+			expensesApi.listCategories(),
+		]);
+		return { expenses, categories };
 	},
 );
 
@@ -36,15 +43,16 @@ const dashboardSlice = createSlice({
 	},
 	extraReducers: (builder) => {
 		builder
-			.addCase(fetchDashboard.pending, (state) => {
+			.addCase(fetchDashboardData.pending, (state) => {
 				state.loading = true;
 				state.error = null;
 			})
-			.addCase(fetchDashboard.fulfilled, (state, action) => {
+			.addCase(fetchDashboardData.fulfilled, (state, action) => {
 				state.loading = false;
-				state.data = action.payload;
+				state.expenses = action.payload.expenses;
+				state.categories = action.payload.categories;
 			})
-			.addCase(fetchDashboard.rejected, (state, action) => {
+			.addCase(fetchDashboardData.rejected, (state, action) => {
 				state.loading = false;
 				state.error =
 					action.error.message ?? "Failed to fetch dashboard";

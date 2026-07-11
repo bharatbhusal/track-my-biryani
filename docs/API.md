@@ -103,14 +103,12 @@ sequenceDiagram
 
 ## Analytics APIs
 
-### `GET /api/dashboard`
+### `GET /api/expenses/all`
 
 - Auth: Yes
-- Query Parameters:
-   - `preset`: `day` | `week` | `month` | `year` (default: `month`)
-   - `offset`: number (default: `0`) — paginate backwards from current period
-- Response: totals, trends, breakdowns, recent activity scoped to selected time range
-- Notes: Server aggregates expenses within the selected range and computes analytics (KPIs, category breakdown, daily trend, etc.)
+- Query: `from`, `to` (ISO datetime strings)
+- Response: all expenses in the date range (unpaginated)
+- Notes: Used by dashboard and category pages to compute aggregated data client-side
 
 ## Upload APIs
 
@@ -140,6 +138,14 @@ sequenceDiagram
 - Auth: Yes
 - Query: `from?`, `to?`
 - Response: expense contribution analytics (week/month/year totals, category breakdown, monthly trend)
+
+## Audit APIs
+
+### `GET /api/audit`
+
+- Auth: Yes
+- Query: `page`, `limit`, `action`, `from`, `to`
+- Response: paginated audit log list
 
 ## Error Responses
 

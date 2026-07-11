@@ -11,11 +11,24 @@
 
 ## Backend Architecture
 
-- **API**: Route handlers under `src/app/api/*`; dynamic server routes with auth middleware.
+- **API**: Route handlers under `src/app/api/*`; thin wrappers that delegate to controllers.
+- **Controllers**: Request/response handling, auth checks, delegate to services.
+- **Services**: Business logic, validation, audit logging.
+- **Repositories**: Database queries over Mongoose models.
 - **Validation**: Zod validators in `src/lib/validators.ts`; centralized error schema.
-- **Business Logic**: Controllers in `src/controllers`, services in `src/services`.
-- **Persistence**: Repositories over Mongoose models.
 - **Database**: MongoDB with indexed queries on userId, paidAt, categoryId, and text search.
+
+### Request Flow
+
+```
+Route → Controller → Service → Repository → MongoDB
+```
+
+All API routes follow this pattern:
+- Route: DB connect + controller call + response formatting
+- Controller: Auth check + request parsing + service call
+- Service: Business logic + validation + audit logging
+- Repository: Database queries
 
 ## Auth Flow
 
@@ -70,14 +83,15 @@ sequenceDiagram
 flowchart LR
   subgraph Client
     DR[DateRangeBar\nuser-selectable preset]
-    RQ[useDashboardQuery]
+    RQ[Redux Thunk\nfetchDashboardData]
+    S[Selectors\ntotalSpend, rankedCategories,\nstackedSeries, periodLabel]
     D[DashboardOverview]
     GC[GSAP animation\non mount]
   end
 
   subgraph Server
-    API["GET /api/dashboard"]
-    AGG[Aggregate:\ncards, categories,\nstacked series]
+    API1["GET /api/expenses/all"]
+    API2["GET /api/categories"]
   end
 
   subgraph DB["MongoDB"]
@@ -86,14 +100,25 @@ flowchart LR
   end
 
   DR -->|preset + offset| RQ
-  RQ -->|range params| API
-  API --> AGG
-  AGG -->|fetch & compute| DB
-  DB -->|filtered data| AGG
-  AGG -->|JSON response| RQ
-  RQ -->|data| D
+  RQ -->|Promise.all| API1
+  RQ -->|Promise.all| API2
+  API1 -->|fetch range| DB
+  API2 -->|fetch all| DB
+  DB -->|filtered data| RQ
+  RQ -->|raw data| S
+  S -->|computed| D
   GC -->|animate| D
 ```
+
+### Dashboard Computation
+
+Dashboard data is computed client-side using Redux selectors:
+- `selectTotalSpend` — sum of all expense amounts
+- `selectRankedCategories` — category totals sorted by value
+- `selectStackedSeries` — period × category matrix
+- `selectPeriodLabel` — human-readable date range
+- `selectAverageSpend` — totalSpend / period count
+- `selectCards` — summary card values
 
 ## DateTime & Timezone Safety
 
@@ -135,9 +160,10 @@ flowchart LR
 - `components/providers`: React context providers (theme, query client, app-level providers).
 - `hooks/api`: react-query hooks for each domain; centralize fetching logic and invalidation.
 - `repositories`: Mongoose repository pattern; queries and mutations on collections.
-- `services`: business logic (auth, audit); stateless and reusable.
-- `controllers`: route handler helpers (auth controller only).
-- `app/api`: route handlers; endpoints grouped by domain.
+- `services`: business logic (auth, audit, expense, category, user); stateless and reusable.
+- `store/selectors`: memoized Redux selectors for computed/derived data.
+- `controllers`: request/response handling (expense, category, user, audit controllers).
+- `app/api`: route handlers; thin wrappers that delegate to controllers.
 - `app/[domain]`: pages for each feature (expenses, categories, dashboard, settings).
 
 ## Theme-Aware UI
