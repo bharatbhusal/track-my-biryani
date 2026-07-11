@@ -112,14 +112,7 @@ export function ExpenseTable({
 									{formatShortDate(date, locale)}
 								</div>
 								{dayItems.map((expense) => (
-									<ExpenseCard
-										key={expense._id}
-										expense={expense}
-										category={{
-											color: expense.categoryColor ?? "",
-											emoji: expense.categoryEmoji,
-										}}
-									/>
+									<ExpenseCard key={expense._id} expense={expense} />
 								))}
 							</div>
 						),
