@@ -11,6 +11,53 @@ export function toUtcIsoString(input: string): string {
 	return new Date(input).toISOString();
 }
 
+export function formatShortDateTime(
+	value: Date | string,
+	locale = "en-IN",
+): string {
+	const date =
+		typeof value === "string" ? new Date(value) : value;
+	const now = new Date();
+
+	const timeParts = new Intl.DateTimeFormat(locale, {
+		hour: "2-digit",
+		minute: "2-digit",
+		hour12: false,
+	}).formatToParts(date);
+	const time =
+		`${timeParts.find((p) => p.type === "hour")?.value ?? "00"}:${timeParts.find((p) => p.type === "minute")?.value ?? "00"}`;
+
+	const startOfToday = new Date(
+		now.getFullYear(),
+		now.getMonth(),
+		now.getDate(),
+	);
+	const diff = date.getTime() - startOfToday.getTime();
+	const dayMs = 86_400_000;
+
+	if (diff >= 0 && diff < dayMs) return `Today, ${time}`;
+	if (diff >= -dayMs && diff < 0)
+		return `Yesterday, ${time}`;
+
+	const dayParts = new Intl.DateTimeFormat(locale, {
+		day: "numeric",
+		month: "short",
+		weekday: "short",
+	}).formatToParts(date);
+	const day = dayParts.find((p) => p.type === "day")?.value ?? "";
+	const month =
+		dayParts.find((p) => p.type === "month")?.value ?? "";
+	const weekday =
+		dayParts.find((p) => p.type === "weekday")?.value ?? "";
+
+	const isThisYear =
+		date.getFullYear() === now.getFullYear();
+
+	return isThisYear
+		? `${day} ${month}, ${weekday}, ${time}`
+		: `${day} ${month} ${date.getFullYear()}, ${weekday}, ${time}`;
+}
+
 export function formatDateTime(
 	value: Date | string,
 	locale = "en-IN",
