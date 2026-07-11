@@ -62,6 +62,7 @@ export type CategoryWithStats = {
 	min: number;
 	max: number;
 	avg: number;
+	pct: number;
 };
 
 export type ActivityLogItem = {

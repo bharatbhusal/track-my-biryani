@@ -5,18 +5,7 @@ import { formatCurrency } from "@/lib/format";
 import { useAppSelector } from "@/store/hooks";
 import { EmojiBadge } from "@/components/ui/emoji-badge";
 import { Card } from "@/components/ui/card";
-
-type CategoryWithStats = {
-	_id: string;
-	name: string;
-	color: string;
-	emoji?: string;
-	total: number;
-	count: number;
-	min: number;
-	max: number;
-	avg: number;
-};
+import type { CategoryWithStats } from "@/types/analytics.types";
 
 export function CategoryCard({
 	category,
@@ -49,6 +38,22 @@ export function CategoryCard({
 						</p>
 					</div>
 				</div>
+				{category?.pct > 0 && (
+					<div className="mt-2 flex items-center gap-2">
+						<div className="flex-1 h-1.5 rounded-full bg-[var(--color-surface-muted)] overflow-hidden">
+							<div
+								className="h-full rounded-full transition-all"
+								style={{
+									width: `${Math.min(category.pct, 100)}%`,
+									backgroundColor: category.color,
+								}}
+							/>
+						</div>
+						<span className="text-xs text-[var(--color-muted)] tabular-nums w-10 text-right">
+							{category.pct.toFixed(1)}%
+						</span>
+					</div>
+				)}
 				{category.count >= 2 && (
 					<div className="mt-2 flex justify-between gap-2 text-xs text-[var(--color-muted)]">
 						<div className="flex gap-1 items-center">

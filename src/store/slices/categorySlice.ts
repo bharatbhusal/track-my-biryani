@@ -1,15 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { expensesApi } from "@/lib/api/expenses";
 import type { CategoryItem } from "@/types/expense.types";
-import type { CategoryRangeStats, CategoryBreakdownPoint } from "@/types/analytics.types";
-
-type CategoryWithStats = CategoryItem & {
-	total: number;
-	count: number;
-	min: number;
-	max: number;
-	avg: number;
-};
+import type { CategoryRangeStats, CategoryBreakdownPoint, CategoryWithStats } from "@/types/analytics.types";
 
 type CategoryState = {
 	items: CategoryItem[];

@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FiGrid, FiList, FiSettings, FiTag } from "react-icons/fi";
+import {
+	FiGrid,
+	FiList,
+	FiSettings,
+	FiTag,
+} from "react-icons/fi";
 
 import { cn } from "@/lib/utils";
 
@@ -17,12 +22,13 @@ export function BottomNav() {
 	const pathname = usePathname();
 
 	return (
-		<nav className="safe-area-pb pt-2 border-t border-[var(--color-border)] bg-[var(--color-bg)]">
+		<nav className="safe-area-pb pt-2 mt-4 border-t border-[var(--color-border)] bg-[var(--color-bg)]">
 			<ul className="mx-auto flex max-w-md items-center justify-around py-1">
 				{items.map((item) => {
 					const Icon = item.icon;
 					const active =
-						item.href === "/dashboard" || item.href === "/settings"
+						item.href === "/dashboard" ||
+						item.href === "/settings"
 							? pathname === item.href
 							: pathname.startsWith(item.href);
 					return (

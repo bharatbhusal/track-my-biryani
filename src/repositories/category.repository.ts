@@ -44,21 +44,31 @@ export async function listCategoriesWithStats(
 		},
 	]);
 
-	const categories = await CategoryModel.find({ userId }).lean();
+	const categories = await CategoryModel.find({
+		userId,
+	}).lean();
 
 	const statsById = new Map(
 		categoryStats.map((s) => [s._id.toString(), s]),
 	);
 
+	const totalSum = categoryStats.reduce(
+		(acc, s) => acc + s.total,
+		0,
+	);
+
 	return categories.map((cat) => {
 		const stats = statsById.get(cat._id.toString());
+		const total = stats?.total ?? 0;
 		return {
 			...cat,
-			total: stats?.total ?? 0,
+			total,
 			count: stats?.count ?? 0,
 			min: stats?.min ?? 0,
 			max: stats?.max ?? 0,
 			avg: stats?.avg ?? 0,
+			pct:
+				totalSum > 0 ? Math.round((total / totalSum) * 100) : 0,
 		};
 	});
 }
