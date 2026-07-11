@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
 	FiGrid,
 	FiList,
+	FiPlus,
 	FiSettings,
 	FiTag,
 } from "react-icons/fi";
@@ -14,6 +15,11 @@ import { cn } from "@/lib/utils";
 const items = [
 	{ href: "/dashboard", label: "Dashboard", icon: FiGrid },
 	{ href: "/expenses", label: "Expenses", icon: FiList },
+	{
+		href: "/expenses/new",
+		label: "New",
+		icon: FiPlus,
+	},
 	{ href: "/categories", label: "Categories", icon: FiTag },
 	{ href: "/settings", label: "Settings", icon: FiSettings },
 ];
@@ -26,11 +32,18 @@ export function BottomNav() {
 			<ul className="mx-auto flex max-w-md items-center justify-around py-1">
 				{items.map((item) => {
 					const Icon = item.icon;
-					const active =
-						item.href === "/dashboard" ||
-						item.href === "/settings"
-							? pathname === item.href
-							: pathname.startsWith(item.href);
+					let active = false;
+					if (item.href === "/expenses/new") {
+						active = pathname === "/expenses/new";
+					} else if (item.href === "/expenses") {
+						// Match /expenses exactly, or /expenses/... but NOT /expenses/new
+						active =
+							pathname === "/expenses" ||
+							(pathname.startsWith("/expenses/") &&
+								!pathname.startsWith("/expenses/new"));
+					} else {
+						active = pathname === item.href;
+					}
 					return (
 						<Link
 							key={item.href}
