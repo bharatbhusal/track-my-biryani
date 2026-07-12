@@ -47,7 +47,10 @@ import {
 	createExpense,
 	updateExpense,
 } from "@/store/slices/expenseSlice";
-import { setDraftExpense, clearDraftExpense } from "@/store/slices/uiSlice";
+import {
+	setDraftExpense,
+	clearDraftExpense,
+} from "@/store/slices/uiSlice";
 import type { CreateExpensePayload } from "@/types/expense.types";
 
 const schema = z.object({
@@ -75,19 +78,31 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 	const locale = useAppSelector((s) => s.ui.locale);
 	const isEditing = Boolean(id);
 
-	const categories = useAppSelector((s) => s.categories.items);
-	const currentExpense = useAppSelector((s) => s.expenses.currentExpense);
-	const expensesLoading = useAppSelector((s) => s.expenses.loading);
-	const draftExpense = useAppSelector((s) => s.ui.draftExpense);
+	const categories = useAppSelector(
+		(s) => s.categories.items,
+	);
+	const currentExpense = useAppSelector(
+		(s) => s.expenses.currentExpense,
+	);
+	const expensesLoading = useAppSelector(
+		(s) => s.expenses.loading,
+	);
+	const draftExpense = useAppSelector(
+		(s) => s.ui.draftExpense,
+	);
 
-	const { getCurrentLocation, isLoading: isDetectingLocation } = useGeolocation();
+	const {
+		getCurrentLocation,
+		isLoading: isDetectingLocation,
+	} = useGeolocation();
 	const [location, setLocation] = useState<Location>({
 		latitude: 0,
 		longitude: 0,
 	});
 	const [hasLocation, setHasLocation] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [isRequestingLocation, setIsRequestingLocation] = useState(false);
+	const [isRequestingLocation, setIsRequestingLocation] =
+		useState(false);
 	const dateInputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
@@ -108,12 +123,17 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				categoryId: "",
 				paidAt: "",
 			};
-		if (draftExpense && draftExpense.title && draftExpense.categoryId) {
+		if (
+			draftExpense &&
+			draftExpense.title &&
+			draftExpense.categoryId
+		) {
 			return {
 				title: draftExpense.title ?? "",
 				amount: draftExpense.amount ?? undefined,
 				categoryId: draftExpense.categoryId ?? "",
-				paidAt: draftExpense.paidAt ?? getLocalDateTimeInputValue(),
+				paidAt:
+					draftExpense.paidAt ?? getLocalDateTimeInputValue(),
 			};
 		}
 		return {
@@ -156,7 +176,12 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 			latitude: currentExpense.location?.latitude ?? 0,
 			longitude: currentExpense.location?.longitude ?? 0,
 		});
-		setHasLocation(!!(currentExpense.location?.latitude || currentExpense.location?.longitude));
+		setHasLocation(
+			!!(
+				currentExpense.location?.latitude ||
+				currentExpense.location?.longitude
+			),
+		);
 	}, [currentExpense, reset, isEditing]);
 
 	const handleRequestLocation = async () => {
@@ -168,8 +193,12 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				longitude: result.data.longitude,
 			});
 			setHasLocation(true);
-		} else if (result.error.code === result.error.PERMISSION_DENIED) {
-			toast.error("Location blocked. Enable it in browser settings to use this feature.");
+		} else if (
+			result.error.code === result.error.PERMISSION_DENIED
+		) {
+			toast.error(
+				"Location blocked. Enable it in browser settings to use this feature.",
+			);
 		}
 		setIsRequestingLocation(false);
 	};
@@ -177,7 +206,9 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 	const onSubmit = async (values: FormValues) => {
 		setIsSubmitting(true);
 		try {
-			const shouldIncludeLocation = hasLocation && (location.latitude || location.longitude);
+			const shouldIncludeLocation =
+				hasLocation &&
+				(location.latitude || location.longitude);
 
 			const payload: CreateExpensePayload = {
 				title: values.title,
@@ -187,7 +218,10 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				currency,
 				images: [],
 				location: shouldIncludeLocation
-					? { latitude: location.latitude, longitude: location.longitude }
+					? {
+							latitude: location.latitude,
+							longitude: location.longitude,
+						}
 					: { latitude: 0, longitude: 0 },
 			};
 
@@ -196,7 +230,9 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				toast.success("Expense updated");
 				router.replace(`/expenses/${id}`);
 			} else {
-				const newExpense = await dispatch(createExpense(payload)).unwrap();
+				const newExpense = await dispatch(
+					createExpense(payload),
+				).unwrap();
 				dispatch(clearDraftExpense());
 				toast.success("Expense created");
 				router.replace(`/expenses/${newExpense._id}`);
@@ -235,7 +271,8 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 		);
 	}
 
-	const backLink = isEditing && id ? `/expenses/${id}` : "/expenses";
+	const backLink =
+		isEditing && id ? `/expenses/${id}` : "/expenses";
 
 	const displayDate = allValues?.paidAt
 		? formatShortDateTime(allValues.paidAt)
@@ -350,9 +387,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 										<FormControl>
 											<Select
 												value={field.value}
-												onChange={(e) =>
-													field.onChange(e.target.value)
-												}
+												onChange={(e) => field.onChange(e.target.value)}
 											>
 												<option value="">Category</option>
 												{categories.map((category) => (
@@ -371,13 +406,15 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 						</div>
 
 						{!hasLocation && (
-							<div className="flex gap-2">
+							<div className="flex">
 								<Button
 									type="button"
 									variant="outline"
-									className="flex-1 flex items-center justify-center gap-2"
+									className="w-full flex items-center justify-center gap-2"
 									onClick={handleRequestLocation}
-									disabled={isRequestingLocation || isDetectingLocation}
+									disabled={
+										isRequestingLocation || isDetectingLocation
+									}
 								>
 									{isRequestingLocation || isDetectingLocation ? (
 										<>
@@ -394,12 +431,13 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 							</div>
 						)}
 
-						{hasLocation && (location.latitude || location.longitude) && (
-							<div className="flex items-center gap-2 text-sm text-[var(--color-primary)] bg-[var(--color-primary-muted)] px-3 py-2 rounded-xl">
-								<FiMapPin className="h-4 w-4" />
-								<span>Location will be sent with expense</span>
-							</div>
-						)}
+						{hasLocation &&
+							(location.latitude || location.longitude) && (
+								<div className="flex items-center gap-2 text-sm text-[var(--color-primary)] bg-[var(--color-primary-muted)] px-3 py-2 rounded-xl">
+									<FiMapPin className="h-4 w-4" />
+									<span>Location will be sent with expense</span>
+								</div>
+							)}
 
 						<div className="flex gap-2">
 							<Button
