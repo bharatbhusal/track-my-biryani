@@ -161,13 +161,15 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 
 	const handleRequestLocation = async () => {
 		setIsRequestingLocation(true);
-		const pos = await getCurrentLocation();
-		if (pos) {
+		const result = await getCurrentLocation();
+		if (result.success) {
 			setLocation({
-				latitude: pos.latitude,
-				longitude: pos.longitude,
+				latitude: result.data.latitude,
+				longitude: result.data.longitude,
 			});
 			setHasLocation(true);
+		} else if (result.error.code === result.error.PERMISSION_DENIED) {
+			toast.error("Location blocked. Enable it in browser settings to use this feature.");
 		}
 		setIsRequestingLocation(false);
 	};

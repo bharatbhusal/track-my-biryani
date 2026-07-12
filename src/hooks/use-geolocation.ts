@@ -9,11 +9,17 @@ type GeoPoint = {
 	longitude: number;
 };
 
+type GeolocationResult =
+	| { success: true; data: GeoPoint }
+	| { success: false; error: GeolocationPositionError };
+
 export function useGeolocation() {
 	const [isLoading, setIsLoading] = useState(false);
 
-	const getCurrentLocation = useCallback(async (): Promise<GeoPoint | null> => {
-		if (!navigator.geolocation) return null;
+	const getCurrentLocation = useCallback(async (): Promise<GeolocationResult> => {
+		if (!navigator.geolocation) {
+			return { success: false, error: { code: 0, message: "Geolocation not supported", PERMISSION_DENIED: 1 } as GeolocationPositionError };
+		}
 
 		setIsLoading(true);
 
@@ -26,11 +32,15 @@ export function useGeolocation() {
 			});
 
 			return {
-				latitude: position.coords.latitude,
-				longitude: position.coords.longitude,
+				success: true,
+				data: {
+					latitude: position.coords.latitude,
+					longitude: position.coords.longitude,
+				},
 			};
-		} catch {
-			return null;
+		} catch (err) {
+			const error = err as GeolocationPositionError;
+			return { success: false, error };
 		} finally {
 			setIsLoading(false);
 		}
