@@ -9,6 +9,7 @@ import { EmojiBadge } from "@/components/ui/emoji-badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatShortDateTime } from "@/lib/datetime";
+import { useRouter } from "next/navigation";
 
 type Props = {
 	expense: ExpenseItem;
@@ -23,10 +24,20 @@ export function ExpenseCard({
 }: Props) {
 	const currency = useAppSelector((s) => s.ui.currency);
 	const hasActions = onEdit || onDelete;
+	const router = useRouter();
 
 	return (
-		<Card className="block rounded-md border border-[var(--color-border)] p-3 hover:bg-[color-mix(in_oklab,var(--color-bg)_96%,transparent)]">
-			<Link href={`/expenses/${expense._id}`}>
+		<Card
+			className={`block rounded-md border border-[var(--color-border)] p-3 ${!hasActions ? "hover:bg-[color-mix(in_oklab,var(--color-bg)_96%,transparent)]" : ""}`}
+		>
+			<div
+				onClick={
+					!hasActions
+						? () => router.replace(`expenses/${expense._id}`)
+						: undefined
+				}
+				className={!hasActions ? "cursor-pointer" : ""}
+			>
 				<div className="flex gap-2 items-center justify-between">
 					<div className="flex gap-2 items-center text-medium">
 						<EmojiBadge
@@ -56,7 +67,7 @@ export function ExpenseCard({
 									<Button
 										variant="outline"
 										size="icon"
-										className="h-8 w-8"
+										className="h-8 w-8  cursor-pointer"
 										aria-label="Edit category"
 										onClick={onEdit}
 									>
@@ -67,7 +78,7 @@ export function ExpenseCard({
 									<Button
 										variant="destructive"
 										size="icon"
-										className="h-8 w-8"
+										className="h-8 w-8  cursor-pointer"
 										aria-label="Delete category"
 										onClick={onDelete}
 									>
@@ -83,7 +94,7 @@ export function ExpenseCard({
 						{expense.notes}
 					</p>
 				)}
-			</Link>
+			</div>
 		</Card>
 	);
 }

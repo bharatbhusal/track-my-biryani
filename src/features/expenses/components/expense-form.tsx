@@ -14,6 +14,8 @@ import {
 	FiArrowLeft,
 	FiSave,
 	FiPlus,
+	FiMapPin,
+	FiCompass,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -45,7 +47,8 @@ import {
 	createExpense,
 	updateExpense,
 } from "@/store/slices/expenseSlice";
-const DRAFT_KEY = "expense-tracker-draft";
+import { setDraftExpense, clearDraftExpense } from "@/store/slices/uiSlice";
+import type { CreateExpensePayload } from "@/types/expense.types";
 
 const schema = z.object({
 	title: z.string().min(1),
@@ -65,32 +68,6 @@ type ExpenseFormProps = {
 	id?: string;
 };
 
-function loadDraft(): Partial<FormValues> | null {
-	try {
-		const raw = localStorage.getItem(DRAFT_KEY);
-		if (!raw) return null;
-		return JSON.parse(raw);
-	} catch {
-		return null;
-	}
-}
-
-function saveDraft(values: Partial<FormValues>) {
-	try {
-		localStorage.setItem(DRAFT_KEY, JSON.stringify(values));
-	} catch {
-		/* quota exceeded — silently ignore */
-	}
-}
-
-function clearDraft() {
-	try {
-		localStorage.removeItem(DRAFT_KEY);
-	} catch {
-		/* noop */
-	}
-}
-
 export function ExpenseForm({ id }: ExpenseFormProps) {
 	const router = useRouter();
 	const dispatch = useAppDispatch();
@@ -98,24 +75,19 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 	const locale = useAppSelector((s) => s.ui.locale);
 	const isEditing = Boolean(id);
 
-	const categories = useAppSelector(
-		(s) => s.categories.items,
-	);
-	const currentExpense = useAppSelector(
-		(s) => s.expenses.currentExpense,
-	);
-	const expensesLoading = useAppSelector(
-		(s) => s.expenses.loading,
-	);
+	const categories = useAppSelector((s) => s.categories.items);
+	const currentExpense = useAppSelector((s) => s.expenses.currentExpense);
+	const expensesLoading = useAppSelector((s) => s.expenses.loading);
+	const draftExpense = useAppSelector((s) => s.ui.draftExpense);
 
-	const { detect, isLoading: isDetectingLocation } =
-		useGeolocation();
+	const { getCurrentLocation, isLoading: isDetectingLocation } = useGeolocation();
 	const [location, setLocation] = useState<Location>({
 		latitude: 0,
 		longitude: 0,
 	});
-	const hasDetected = useRef(false);
+	const [hasLocation, setHasLocation] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [isRequestingLocation, setIsRequestingLocation] = useState(false);
 	const dateInputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
@@ -136,13 +108,12 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				categoryId: "",
 				paidAt: "",
 			};
-		const draft = loadDraft();
-		if (draft && draft.title && draft.categoryId) {
+		if (draftExpense && draftExpense.title && draftExpense.categoryId) {
 			return {
-				title: draft.title ?? "",
-				amount: draft.amount ?? undefined,
-				categoryId: draft.categoryId ?? "",
-				paidAt: draft.paidAt ?? getLocalDateTimeInputValue(),
+				title: draftExpense.title ?? "",
+				amount: draftExpense.amount ?? undefined,
+				categoryId: draftExpense.categoryId ?? "",
+				paidAt: draftExpense.paidAt ?? getLocalDateTimeInputValue(),
 			};
 		}
 		return {
@@ -151,7 +122,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 			categoryId: "",
 			paidAt: getLocalDateTimeInputValue(),
 		};
-	}, [isEditing]);
+	}, [isEditing, draftExpense]);
 
 	const form = useForm<FormValues>({
 		resolver: zodResolver(schema),
@@ -165,9 +136,9 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 
 	useEffect(() => {
 		if (!isEditing && allValues?.title) {
-			saveDraft(allValues);
+			dispatch(setDraftExpense(allValues));
 		}
-	}, [allValues, isEditing]);
+	}, [allValues, isEditing, dispatch]);
 
 	useEffect(() => {
 		if (!isEditing) return;
@@ -185,34 +156,39 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 			latitude: currentExpense.location?.latitude ?? 0,
 			longitude: currentExpense.location?.longitude ?? 0,
 		});
+		setHasLocation(!!(currentExpense.location?.latitude || currentExpense.location?.longitude));
 	}, [currentExpense, reset, isEditing]);
 
-	useEffect(() => {
-		if (isEditing) return;
-		if (hasDetected.current) return;
-
-		hasDetected.current = true;
-		detect().then((pos) => {
-			if (pos) {
-				setLocation({
-					latitude: pos.latitude,
-					longitude: pos.longitude,
-				});
-			}
-		});
-	}, [isEditing, detect]);
+	const handleRequestLocation = async () => {
+		setIsRequestingLocation(true);
+		const result = await getCurrentLocation();
+		if (result.success) {
+			setLocation({
+				latitude: result.data.latitude,
+				longitude: result.data.longitude,
+			});
+			setHasLocation(true);
+		} else if (result.error.code === result.error.PERMISSION_DENIED) {
+			toast.error("Location blocked. Enable it in browser settings to use this feature.");
+		}
+		setIsRequestingLocation(false);
+	};
 
 	const onSubmit = async (values: FormValues) => {
 		setIsSubmitting(true);
 		try {
-			const payload = {
+			const shouldIncludeLocation = hasLocation && (location.latitude || location.longitude);
+
+			const payload: CreateExpensePayload = {
 				title: values.title,
 				amount: values.amount,
 				categoryId: values.categoryId,
 				paidAt: toUtcIsoString(values.paidAt),
 				currency,
-				location,
 				images: [],
+				location: shouldIncludeLocation
+					? { latitude: location.latitude, longitude: location.longitude }
+					: { latitude: 0, longitude: 0 },
 			};
 
 			if (isEditing && id) {
@@ -220,10 +196,8 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				toast.success("Expense updated");
 				router.replace(`/expenses/${id}`);
 			} else {
-				const newExpense = await dispatch(
-					createExpense(payload),
-				).unwrap();
-				clearDraft();
+				const newExpense = await dispatch(createExpense(payload)).unwrap();
+				dispatch(clearDraftExpense());
 				toast.success("Expense created");
 				router.replace(`/expenses/${newExpense._id}`);
 			}
@@ -261,8 +235,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 		);
 	}
 
-	const backLink =
-		isEditing && id ? `/expenses/${id}` : "/expenses";
+	const backLink = isEditing && id ? `/expenses/${id}` : "/expenses";
 
 	const displayDate = allValues?.paidAt
 		? formatShortDateTime(allValues.paidAt)
@@ -377,7 +350,9 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 										<FormControl>
 											<Select
 												value={field.value}
-												onChange={(e) => field.onChange(e.target.value)}
+												onChange={(e) =>
+													field.onChange(e.target.value)
+												}
 											>
 												<option value="">Category</option>
 												{categories.map((category) => (
@@ -394,6 +369,37 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 								)}
 							/>
 						</div>
+
+						{!hasLocation && (
+							<div className="flex gap-2">
+								<Button
+									type="button"
+									variant="outline"
+									className="flex-1 flex items-center justify-center gap-2"
+									onClick={handleRequestLocation}
+									disabled={isRequestingLocation || isDetectingLocation}
+								>
+									{isRequestingLocation || isDetectingLocation ? (
+										<>
+											<Spinner className="mr-1" />
+											Requesting...
+										</>
+									) : (
+										<>
+											<FiCompass className="h-4 w-4" />
+											Use location
+										</>
+									)}
+								</Button>
+							</div>
+						)}
+
+						{hasLocation && (location.latitude || location.longitude) && (
+							<div className="flex items-center gap-2 text-sm text-[var(--color-primary)] bg-[var(--color-primary-muted)] px-3 py-2 rounded-xl">
+								<FiMapPin className="h-4 w-4" />
+								<span>Location will be sent with expense</span>
+							</div>
+						)}
 
 						<div className="flex gap-2">
 							<Button

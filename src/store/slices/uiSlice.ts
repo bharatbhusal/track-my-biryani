@@ -9,6 +9,12 @@ type UIState = {
 	timezone: string;
 	detectionCompleted: boolean;
 	dateRange: GlobalDateRange;
+	draftExpense: Partial<{
+		title: string;
+		amount: number;
+		categoryId: string;
+		paidAt: string;
+	}> | null;
 };
 
 const initialState: UIState = {
@@ -18,6 +24,7 @@ const initialState: UIState = {
 	timezone: "Asia/Kolkata",
 	detectionCompleted: false,
 	dateRange: DEFAULT_GLOBAL_RANGE,
+	draftExpense: null,
 };
 
 const uiSlice = createSlice({
@@ -39,15 +46,35 @@ const uiSlice = createSlice({
 			state.locale = action.payload.locale;
 			state.currency = action.payload.currency;
 			state.timezone = action.payload.timezone;
-			state.detectionCompleted =
-				action.payload.detectionCompleted ?? true;
+			state.detectionCompleted = action.payload.detectionCompleted ?? true;
 		},
 		setDateRange(state, action: PayloadAction<GlobalDateRange>) {
 			state.dateRange = action.payload;
 		},
+		setDraftExpense(
+			state,
+			action: PayloadAction<
+				Partial<{
+					title: string;
+					amount: number;
+					categoryId: string;
+					paidAt: string;
+				}> | null
+			>,
+		) {
+			state.draftExpense = action.payload;
+		},
+		clearDraftExpense(state) {
+			state.draftExpense = null;
+		},
 	},
 });
 
-export const { setQuickAddOpen, setPreferences, setDateRange } =
-	uiSlice.actions;
+export const {
+	setQuickAddOpen,
+	setPreferences,
+	setDateRange,
+	setDraftExpense,
+	clearDraftExpense,
+} = uiSlice.actions;
 export default uiSlice.reducer;
