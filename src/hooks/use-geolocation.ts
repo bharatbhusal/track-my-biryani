@@ -1,45 +1,68 @@
-'use client';
+"use client";
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState } from "react";
+import { useAppSelector } from "@/store/hooks";
 
-const GEOLOCATION_TIMEOUT_MS = 7000;
+const GEOLOCATION_TIMEOUT_MS = 10000;
 
 type GeoPoint = {
-  latitude: number;
-  longitude: number;
+	latitude: number;
+	longitude: number;
 };
 
 export function useGeolocation() {
-  const [isLoading, setIsLoading] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
+	const permission = useAppSelector((s) => s.ui.locationPermission);
 
-  const detect = useCallback(async (): Promise<GeoPoint | null> => {
-    if (!navigator.geolocation) {
-      return null;
-    }
+	const getCurrentLocation = useCallback(async (): Promise<GeoPoint | null> => {
+		if (!navigator.geolocation) return null;
 
-    setIsLoading(true);
+		if (permission === "denied") return null;
 
-    const result = await new Promise<GeoPoint | null>((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-        },
-        () => {
-          resolve(null);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: GEOLOCATION_TIMEOUT_MS,
-        },
-      );
-    });
+		setIsLoading(true);
 
-    setIsLoading(false);
-    return result;
-  }, []);
+		try {
+			const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+				navigator.geolocation.getCurrentPosition(resolve, reject, {
+					enableHighAccuracy: true,
+					timeout: GEOLOCATION_TIMEOUT_MS,
+				});
+			});
 
-  return { detect, isLoading };
+			return {
+				latitude: position.coords.latitude,
+				longitude: position.coords.longitude,
+			};
+		} catch {
+			return null;
+		} finally {
+			setIsLoading(false);
+		}
+	}, [permission]);
+
+	const requestPermission = useCallback(async (): Promise<GeoPoint | null> => {
+		if (!navigator.geolocation) return null;
+
+		setIsLoading(true);
+
+		try {
+			const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+				navigator.geolocation.getCurrentPosition(resolve, reject, {
+					enableHighAccuracy: true,
+					timeout: GEOLOCATION_TIMEOUT_MS,
+				});
+			});
+
+			return {
+				latitude: position.coords.latitude,
+				longitude: position.coords.longitude,
+			};
+		} catch {
+			return null;
+		} finally {
+			setIsLoading(false);
+		}
+	}, []);
+
+	return { getCurrentLocation, requestPermission, isLoading, permission };
 }
