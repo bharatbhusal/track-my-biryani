@@ -8,7 +8,6 @@ import { persistStore } from "redux-persist";
 import { ToastProvider } from "@/components/ui/toast-provider";
 import { PwaProvider } from "@/components/providers/pwa-provider";
 import { AppThemeProvider } from "@/components/providers/theme-provider";
-import { LocationPermissionProvider } from "@/components/providers/location-permission-provider";
 import { makeStore } from "@/store";
 
 export function AppProvider({
@@ -27,7 +26,7 @@ export function AppProvider({
 			<Provider store={store}>
 				<PersistGate loading={null} persistor={persistor}>
 					<PwaProvider />
-					<LocationPermissionProvider>{children}</LocationPermissionProvider>
+					{children}
 					<ToastProvider />
 				</PersistGate>
 			</Provider>

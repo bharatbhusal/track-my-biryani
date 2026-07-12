@@ -47,7 +47,7 @@ import {
 	createExpense,
 	updateExpense,
 } from "@/store/slices/expenseSlice";
-import { setDraftExpense, clearDraftExpense, setLocationPermission } from "@/store/slices/uiSlice";
+import { setDraftExpense, clearDraftExpense } from "@/store/slices/uiSlice";
 import type { CreateExpensePayload } from "@/types/expense.types";
 
 const schema = z.object({
@@ -79,16 +79,15 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 	const currentExpense = useAppSelector((s) => s.expenses.currentExpense);
 	const expensesLoading = useAppSelector((s) => s.expenses.loading);
 	const draftExpense = useAppSelector((s) => s.ui.draftExpense);
-	const locationPermission = useAppSelector((s) => s.ui.locationPermission);
 
-	const { getCurrentLocation, requestPermission, isLoading: isDetectingLocation } =
-		useGeolocation();
+	const { getCurrentLocation, isLoading: isDetectingLocation } = useGeolocation();
 	const [location, setLocation] = useState<Location>({
 		latitude: 0,
 		longitude: 0,
 	});
+	const [hasLocation, setHasLocation] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [isRequestingPermission, setIsRequestingPermission] = useState(false);
+	const [isRequestingLocation, setIsRequestingLocation] = useState(false);
 	const dateInputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
@@ -149,12 +148,15 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 			title: currentExpense.title,
 			amount: currentExpense.amount,
 			categoryId: currentExpense.categoryId,
-			paidAt: getLocalDateTimeInputValue(new Date(currentExpense.paidAt)),
+			paidAt: getLocalDateTimeInputValue(
+				new Date(currentExpense.paidAt),
+			),
 		});
 		setLocation({
 			latitude: currentExpense.location?.latitude ?? 0,
 			longitude: currentExpense.location?.longitude ?? 0,
 		});
+		setHasLocation(!!(currentExpense.location?.latitude || currentExpense.location?.longitude));
 	}, [currentExpense, reset, isEditing]);
 
 	useEffect(() => {
@@ -165,28 +167,28 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 					latitude: pos.latitude,
 					longitude: pos.longitude,
 				});
+				setHasLocation(true);
 			}
 		});
 	}, [isEditing, getCurrentLocation]);
 
-	const handleRequestPermission = async () => {
-		setIsRequestingPermission(true);
-		const pos = await requestPermission();
+	const handleRequestLocation = async () => {
+		setIsRequestingLocation(true);
+		const pos = await getCurrentLocation();
 		if (pos) {
 			setLocation({
 				latitude: pos.latitude,
 				longitude: pos.longitude,
 			});
-			dispatch(setLocationPermission("granted"));
+			setHasLocation(true);
 		}
-		setIsRequestingPermission(false);
+		setIsRequestingLocation(false);
 	};
 
 	const onSubmit = async (values: FormValues) => {
 		setIsSubmitting(true);
 		try {
-			const shouldIncludeLocation =
-				locationPermission === "granted" && (location.latitude || location.longitude);
+			const shouldIncludeLocation = hasLocation && (location.latitude || location.longitude);
 
 			const payload: CreateExpensePayload = {
 				title: values.title,
@@ -379,35 +381,31 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 							/>
 						</div>
 
-						{(locationPermission !== "granted" || isRequestingPermission) && (
+						{!hasLocation && (
 							<div className="flex gap-2">
 								<Button
 									type="button"
 									variant="outline"
 									className="flex-1 flex items-center justify-center gap-2"
-									onClick={handleRequestPermission}
-									disabled={isRequestingPermission || isDetectingLocation}
+									onClick={handleRequestLocation}
+									disabled={isRequestingLocation || isDetectingLocation}
 								>
-									{locationPermission === "prompt" ? (
-										<FiCompass className="h-4 w-4" />
-									) : (
-										<FiMapPin className="h-4 w-4" />
-									)}
-									{isRequestingPermission ? (
+									{isRequestingLocation || isDetectingLocation ? (
 										<>
 											<Spinner className="mr-1" />
 											Requesting...
 										</>
-									) : locationPermission === "prompt" ? (
-										"Use location"
 									) : (
-										"Enable location"
+										<>
+											<FiCompass className="h-4 w-4" />
+											Use location
+										</>
 									)}
 								</Button>
 							</div>
 						)}
 
-						{locationPermission === "granted" && (location.latitude || location.longitude) && (
+						{hasLocation && (location.latitude || location.longitude) && (
 							<div className="flex items-center gap-2 text-sm text-[var(--color-primary)] bg-[var(--color-primary-muted)] px-3 py-2 rounded-xl">
 								<FiMapPin className="h-4 w-4" />
 								<span>Location will be sent with expense</span>
