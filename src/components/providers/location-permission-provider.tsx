@@ -14,6 +14,8 @@ export function LocationPermissionProvider({
 	const permission = useAppSelector((s) => s.ui.locationPermission);
 
 	useEffect(() => {
+		// Only sync with browser if Redux is still "prompt" (user hasn't made a choice yet)
+		if (permission !== "prompt") return;
 		if (!navigator.permissions) return;
 
 		const checkPermission = async () => {
@@ -26,13 +28,13 @@ export function LocationPermissionProvider({
 				};
 
 				const currentPerm = mapPermission(perm.state);
-				if (currentPerm !== permission) {
+				if (currentPerm !== "prompt") {
 					dispatch(setLocationPermission(currentPerm));
 				}
 
 				const handleChange = () => {
 					const newPerm = mapPermission(perm.state);
-					if (newPerm !== permission) {
+					if (newPerm !== "prompt") {
 						dispatch(setLocationPermission(newPerm));
 					}
 				};
@@ -40,7 +42,7 @@ export function LocationPermissionProvider({
 				perm.addEventListener("change", handleChange);
 				return () => perm.removeEventListener("change", handleChange);
 			} catch {
-				dispatch(setLocationPermission("prompt"));
+				// Keep as "prompt" if query fails
 			}
 		};
 

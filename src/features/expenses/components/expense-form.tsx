@@ -47,7 +47,7 @@ import {
 	createExpense,
 	updateExpense,
 } from "@/store/slices/expenseSlice";
-import { setDraftExpense, clearDraftExpense } from "@/store/slices/uiSlice";
+import { setDraftExpense, clearDraftExpense, setLocationPermission } from "@/store/slices/uiSlice";
 import type { CreateExpensePayload } from "@/types/expense.types";
 
 const schema = z.object({
@@ -177,6 +177,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				latitude: pos.latitude,
 				longitude: pos.longitude,
 			});
+			dispatch(setLocationPermission("granted"));
 		}
 		setIsRequestingPermission(false);
 	};
