@@ -271,8 +271,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 		);
 	}
 
-	const backLink =
-		isEditing && id ? `/expenses/${id}` : "/expenses";
+	const backLink = isEditing && id ? `/expenses/${id}` : "/expenses";
 
 	const displayDate = allValues?.paidAt
 		? formatShortDateTime(allValues.paidAt)
@@ -387,7 +386,9 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 										<FormControl>
 											<Select
 												value={field.value}
-												onChange={(e) => field.onChange(e.target.value)}
+												onChange={(e) =>
+													field.onChange(e.target.value)
+												}
 											>
 												<option value="">Category</option>
 												{categories.map((category) => (
