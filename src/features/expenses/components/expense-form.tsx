@@ -159,19 +159,6 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 		setHasLocation(!!(currentExpense.location?.latitude || currentExpense.location?.longitude));
 	}, [currentExpense, reset, isEditing]);
 
-	useEffect(() => {
-		if (isEditing) return;
-		getCurrentLocation().then((pos) => {
-			if (pos) {
-				setLocation({
-					latitude: pos.latitude,
-					longitude: pos.longitude,
-				});
-				setHasLocation(true);
-			}
-		});
-	}, [isEditing, getCurrentLocation]);
-
 	const handleRequestLocation = async () => {
 		setIsRequestingLocation(true);
 		const pos = await getCurrentLocation();
