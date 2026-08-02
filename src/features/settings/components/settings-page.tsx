@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FiLogOut, FiMoon, FiSun } from "react-icons/fi";
+import { FiFileText, FiLogOut, FiMoon, FiSun } from "react-icons/fi";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -120,6 +120,27 @@ export function SettingsPage() {
 						<FiSun className="hidden dark:block" />
 					</Button>
 				</div>
+			</Card>
+			<Card>
+				<Link
+					href="/logs"
+					className="flex items-center justify-between gap-3"
+				>
+					<div className="min-w-0">
+						<p className="text-sm font-medium">Logs</p>
+						<p className="truncate text-xs text-[var(--color-muted)]">
+							View all logged activity
+						</p>
+					</div>
+
+					<Button
+						variant="ghost"
+						size="icon"
+						aria-label="View logs"
+					>
+						<FiFileText className="h-4 w-4" />
+					</Button>
+				</Link>
 			</Card>
 		</div>
 	);

@@ -4,4 +4,5 @@ export const PROTECTED_ROUTES = [
 	"/dashboard",
 	"/expenses",
 	"/categories",
+	"/logs",
 ];

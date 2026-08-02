@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
 	FiGrid,
-	FiList,
 	FiPlus,
 	FiSettings,
 	FiTag,
@@ -14,7 +13,6 @@ import { cn } from "@/lib/utils";
 
 const items = [
 	{ href: "/dashboard", label: "Dashboard", icon: FiGrid },
-	{ href: "/expenses", label: "Expenses", icon: FiList },
 	{
 		href: "/expenses/new",
 		label: "New",
@@ -32,18 +30,7 @@ export function BottomNav() {
 			<ul className="mx-auto flex max-w-md items-center justify-around py-1">
 				{items.map((item) => {
 					const Icon = item.icon;
-					let active = false;
-					if (item.href === "/expenses/new") {
-						active = pathname === "/expenses/new";
-					} else if (item.href === "/expenses") {
-						// Match /expenses exactly, or /expenses/... but NOT /expenses/new
-						active =
-							pathname === "/expenses" ||
-							(pathname.startsWith("/expenses/") &&
-								!pathname.startsWith("/expenses/new"));
-					} else {
-						active = pathname === item.href;
-					}
+					const active = pathname === item.href;
 					return (
 						<Link
 							key={item.href}

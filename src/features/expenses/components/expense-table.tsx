@@ -106,16 +106,30 @@ export function ExpenseTable({
 					</p>
 				) : (
 					Array.from(groupedItems.entries()).map(
-						([date, dayItems]) => (
-							<div key={date} className="space-y-2">
-								<div className="px-2 py-1 text-xs font-medium text-[var(--color-muted)] uppercase tracking-wide">
-									{formatShortDate(date, locale)}
+						([date, dayItems]) => {
+							const dayTotal = dayItems.reduce(
+								(sum, expense) => sum + expense.amount,
+								0,
+							);
+							return (
+								<div key={date} className="space-y-2">
+									<div className="flex items-center justify-between px-2 py-1">
+										<span className="text-xs font-medium text-[var(--color-muted)] uppercase tracking-wide">
+											{formatShortDate(date, locale)}
+										</span>
+										<span className="text-xs font-semibold text-[var(--color-muted)]">
+											{formatCurrency(dayTotal, currency)}
+										</span>
+									</div>
+									{dayItems.map((expense) => (
+										<ExpenseCard
+											key={expense._id}
+											expense={expense}
+										/>
+									))}
 								</div>
-								{dayItems.map((expense) => (
-									<ExpenseCard key={expense._id} expense={expense} />
-								))}
-							</div>
-						),
+							);
+						},
 					)
 				)}
 			</div>

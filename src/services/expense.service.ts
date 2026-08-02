@@ -192,10 +192,7 @@ export async function getExpenseOverviewStatsService(
 		},
 		{
 			key: perPeriodLabel,
-			title:
-				perPeriodLabel === "spend_per_month"
-					? "Spend per Month"
-					: "Spend per Day",
+			title: "Average",
 			value: averageSpend,
 		},
 	];

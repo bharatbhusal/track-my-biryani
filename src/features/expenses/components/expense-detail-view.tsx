@@ -168,7 +168,7 @@ export function ExpenseDetailView({
 					try {
 						await dispatch(deleteExpense(id)).unwrap();
 						toast.success("Expense deleted");
-						router.replace("/expenses");
+						router.replace("/dashboard");
 					} catch (error) {
 						console.error(error);
 						toast.error(
