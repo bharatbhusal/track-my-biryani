@@ -255,6 +255,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 												step="0.01"
 												placeholder="0"
 												ref={amountRef}
+												autoFocus
 												className="h-14 pl-10 text-center text-2xl font-semibold tracking-tight"
 												value={field.value ?? ""}
 												onChange={(event) =>
@@ -314,16 +315,21 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 													type="button"
 													variant="outline"
 													className="w-full flex items-center justify-center gap-2"
-													onClick={() =>
-														dateInputRef.current?.showPicker()
-													}
+													onClick={() => {
+														const input = dateInputRef.current;
+														if (!input) return;
+														if (typeof input.showPicker === "function") {
+															input.showPicker();
+														} else {
+															// ponytail: iOS Safari lacks showPicker();
+															// focus() within the tap gesture opens the native picker.
+															input.focus();
+														}
+													}}
 												>
 													<FiCalendar className="h-4 w-4" />
 													{field.value
-														? formatShortDateTime(
-																field.value,
-																locale,
-															)
+														? formatShortDateTime(field.value, locale)
 														: "Select date & time"}
 												</Button>
 											</div>

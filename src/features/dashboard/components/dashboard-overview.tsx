@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { FiList, FiSearch } from "react-icons/fi";
+import { FiSearch, FiX } from "react-icons/fi";
 
 import { DateRangeBar } from "@/components/charts/date-range-bar";
 import { ExpenseOverview } from "@/features/expenses/components/expense-overview";
@@ -9,8 +9,8 @@ import { DashboardBarChart } from "@/components/dashboard-bar-chart";
 import { CategoryDistributionBar } from "@/features/expenses/components/category-distribution-bar";
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import type { SortField } from "@/features/expenses/components/expense-table";
-import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import {
 	useAppSelector,
 	useAppDispatch,
@@ -184,27 +184,31 @@ export function DashboardOverview() {
 				isLoading={isLoading}
 			/>
 
-			<Card className="shrink-0">
-				<div className="mb-3 flex items-center justify-between gap-2">
-					<CardTitle>
-						<FiList className="mr-1.5 inline h-4 w-4" />
-						Expenses
-					</CardTitle>
-				</div>
-
-				<div className="relative min-w-48 flex-1">
-					<FiSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted)]" />
-					<Input
-						placeholder="Search title, notes, ..."
-						value={query}
-						className="pl-9"
-						onChange={(e) => {
-							setQuery(e.target.value);
+			<div className="relative min-w-48 flex-1">
+				<FiSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted)]" />
+				<Input
+					placeholder="Search title, notes, ..."
+					value={query}
+					className={cn("pl-9", query && "pr-9")}
+					onChange={(e) => {
+						setQuery(e.target.value);
+						setPage(1);
+					}}
+				/>
+				{query ? (
+					<button
+						type="button"
+						aria-label="Clear search"
+						onClick={() => {
+							setQuery("");
 							setPage(1);
 						}}
-					/>
-				</div>
-			</Card>
+						className="absolute right-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-[var(--color-muted)] transition-colors hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text)]"
+					>
+						<FiX className="h-4 w-4" />
+					</button>
+				) : null}
+			</div>
 
 			<ExpenseTable
 				items={items}
