@@ -93,7 +93,7 @@ export function CategoryDistributionBar({
 							No Data
 						</div>
 					)}
-					<div className="flex flex-wrap gap-x-4 gap-y-2">
+					<div className="flex items-center gap-4 overflow-x-auto py-1">
 						{distribution.map((item) => {
 							const isSelected =
 								selectedCategoryId !== undefined &&
@@ -104,7 +104,7 @@ export function CategoryDistributionBar({
 									key={item.name}
 									type="button"
 									onClick={() => toggle(item.categoryId)}
-									className={`flex items-center gap-2 text-sm transition-all hover:opacity-80 ${
+									className={`flex shrink-0 items-center gap-2 whitespace-nowrap text-sm transition-all hover:opacity-80 ${
 										selectedCategoryId && !isSelected
 											? "opacity-30"
 											: ""

@@ -9,8 +9,8 @@ export function formatCurrency(
 		currency,
 		notation: "compact",
 		compactDisplay: "short",
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 1,
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
 	}).format(value);
 }
 

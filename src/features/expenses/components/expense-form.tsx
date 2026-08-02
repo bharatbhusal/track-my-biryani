@@ -14,8 +14,7 @@ import {
 	FiArrowLeft,
 	FiSave,
 	FiPlus,
-	FiMapPin,
-	FiCompass,
+	FiCalendar,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -32,11 +31,10 @@ import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import {
+	formatShortDateTime,
 	getLocalDateTimeInputValue,
 	toUtcIsoString,
-	formatShortDateTime,
 } from "@/lib/datetime";
-import { useGeolocation } from "@/hooks/use-geolocation";
 import {
 	useAppSelector,
 	useAppDispatch,
@@ -47,7 +45,10 @@ import {
 	createExpense,
 	updateExpense,
 } from "@/store/slices/expenseSlice";
-import { setDraftExpense, clearDraftExpense } from "@/store/slices/uiSlice";
+import {
+	setDraftExpense,
+	clearDraftExpense,
+} from "@/store/slices/uiSlice";
 import type { CreateExpensePayload } from "@/types/expense.types";
 
 const schema = z.object({
@@ -58,11 +59,6 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
-
-type Location = {
-	latitude: number;
-	longitude: number;
-};
 
 type ExpenseFormProps = {
 	id?: string;
@@ -75,20 +71,26 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 	const locale = useAppSelector((s) => s.ui.locale);
 	const isEditing = Boolean(id);
 
-	const categories = useAppSelector((s) => s.categories.items);
-	const currentExpense = useAppSelector((s) => s.expenses.currentExpense);
-	const expensesLoading = useAppSelector((s) => s.expenses.loading);
-	const draftExpense = useAppSelector((s) => s.ui.draftExpense);
+	const categories = useAppSelector(
+		(s) => s.categories.items,
+	);
+	const currentExpense = useAppSelector(
+		(s) => s.expenses.currentExpense,
+	);
+	const expensesLoading = useAppSelector(
+		(s) => s.expenses.loading,
+	);
+	const draftExpense = useAppSelector(
+		(s) => s.ui.draftExpense,
+	);
 
-	const { getCurrentLocation, isLoading: isDetectingLocation } = useGeolocation();
-	const [location, setLocation] = useState<Location>({
-		latitude: 0,
-		longitude: 0,
-	});
-	const [hasLocation, setHasLocation] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [isRequestingLocation, setIsRequestingLocation] = useState(false);
+	const amountRef = useRef<HTMLInputElement>(null);
 	const dateInputRef = useRef<HTMLInputElement>(null);
+
+	useEffect(() => {
+		amountRef.current?.focus();
+	}, []);
 
 	useEffect(() => {
 		dispatch(fetchCategories());
@@ -108,12 +110,17 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				categoryId: "",
 				paidAt: "",
 			};
-		if (draftExpense && draftExpense.title && draftExpense.categoryId) {
+		if (
+			draftExpense &&
+			draftExpense.title &&
+			draftExpense.categoryId
+		) {
 			return {
 				title: draftExpense.title ?? "",
 				amount: draftExpense.amount ?? undefined,
 				categoryId: draftExpense.categoryId ?? "",
-				paidAt: draftExpense.paidAt ?? getLocalDateTimeInputValue(),
+				paidAt:
+					draftExpense.paidAt ?? getLocalDateTimeInputValue(),
 			};
 		}
 		return {
@@ -152,33 +159,11 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				new Date(currentExpense.paidAt),
 			),
 		});
-		setLocation({
-			latitude: currentExpense.location?.latitude ?? 0,
-			longitude: currentExpense.location?.longitude ?? 0,
-		});
-		setHasLocation(!!(currentExpense.location?.latitude || currentExpense.location?.longitude));
 	}, [currentExpense, reset, isEditing]);
-
-	const handleRequestLocation = async () => {
-		setIsRequestingLocation(true);
-		const result = await getCurrentLocation();
-		if (result.success) {
-			setLocation({
-				latitude: result.data.latitude,
-				longitude: result.data.longitude,
-			});
-			setHasLocation(true);
-		} else if (result.error.code === result.error.PERMISSION_DENIED) {
-			toast.error("Location blocked. Enable it in browser settings to use this feature.");
-		}
-		setIsRequestingLocation(false);
-	};
 
 	const onSubmit = async (values: FormValues) => {
 		setIsSubmitting(true);
 		try {
-			const shouldIncludeLocation = hasLocation && (location.latitude || location.longitude);
-
 			const payload: CreateExpensePayload = {
 				title: values.title,
 				amount: values.amount,
@@ -186,9 +171,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				paidAt: toUtcIsoString(values.paidAt),
 				currency,
 				images: [],
-				location: shouldIncludeLocation
-					? { latitude: location.latitude, longitude: location.longitude }
-					: { latitude: 0, longitude: 0 },
+				location: { latitude: 0, longitude: 0 },
 			};
 
 			if (isEditing && id) {
@@ -196,7 +179,9 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				toast.success("Expense updated");
 				router.replace(`/expenses/${id}`);
 			} else {
-				const newExpense = await dispatch(createExpense(payload)).unwrap();
+				const newExpense = await dispatch(
+					createExpense(payload),
+				).unwrap();
 				dispatch(clearDraftExpense());
 				toast.success("Expense created");
 				router.replace(`/expenses/${newExpense._id}`);
@@ -235,11 +220,8 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 		);
 	}
 
-	const backLink = isEditing && id ? `/expenses/${id}` : "/expenses";
-
-	const displayDate = allValues?.paidAt
-		? formatShortDateTime(allValues.paidAt)
-		: "";
+	const backLink =
+		isEditing && id ? `/expenses/${id}` : "/dashboard";
 
 	return (
 		<div className="h-full flex flex-col">
@@ -272,9 +254,9 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 												inputMode="decimal"
 												step="0.01"
 												placeholder="0"
+												ref={amountRef}
 												className="h-14 pl-10 text-center text-2xl font-semibold tracking-tight"
 												value={field.value ?? ""}
-												autoFocus
 												onChange={(event) =>
 													field.onChange(
 														event.target.value
@@ -313,13 +295,13 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 								render={({ field }) => (
 									<FormItem>
 										<FormControl>
-											<>
-												<input
-													type="datetime-local"
+											<div className="relative">
+												<Input
 													ref={dateInputRef}
-													hidden
+													type="datetime-local"
 													tabIndex={-1}
 													aria-hidden="true"
+													className="pointer-events-none absolute inset-0 h-full w-full opacity-0"
 													value={field.value?.slice(0, 16) ?? ""}
 													onChange={(e) => {
 														field.onChange(e.target.value);
@@ -328,16 +310,23 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 														});
 													}}
 												/>
-												<button
+												<Button
 													type="button"
-													className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-left text-sm text-[var(--color-text)] outline-none transition-all duration-200 hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+													variant="outline"
+													className="w-full flex items-center justify-center gap-2"
 													onClick={() =>
 														dateInputRef.current?.showPicker()
 													}
 												>
-													{displayDate || "Pick date & time"}
-												</button>
-											</>
+													<FiCalendar className="h-4 w-4" />
+													{field.value
+														? formatShortDateTime(
+																field.value,
+																locale,
+															)
+														: "Select date & time"}
+												</Button>
+											</div>
 										</FormControl>
 									</FormItem>
 								)}
@@ -350,9 +339,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 										<FormControl>
 											<Select
 												value={field.value}
-												onChange={(e) =>
-													field.onChange(e.target.value)
-												}
+												onChange={(e) => field.onChange(e.target.value)}
 											>
 												<option value="">Category</option>
 												{categories.map((category) => (
@@ -370,37 +357,6 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 							/>
 						</div>
 
-						{!hasLocation && (
-							<div className="flex gap-2">
-								<Button
-									type="button"
-									variant="outline"
-									className="flex-1 flex items-center justify-center gap-2"
-									onClick={handleRequestLocation}
-									disabled={isRequestingLocation || isDetectingLocation}
-								>
-									{isRequestingLocation || isDetectingLocation ? (
-										<>
-											<Spinner className="mr-1" />
-											Requesting...
-										</>
-									) : (
-										<>
-											<FiCompass className="h-4 w-4" />
-											Use location
-										</>
-									)}
-								</Button>
-							</div>
-						)}
-
-						{hasLocation && (location.latitude || location.longitude) && (
-							<div className="flex items-center gap-2 text-sm text-[var(--color-primary)] bg-[var(--color-primary-muted)] px-3 py-2 rounded-xl">
-								<FiMapPin className="h-4 w-4" />
-								<span>Location will be sent with expense</span>
-							</div>
-						)}
-
 						<div className="flex gap-2">
 							<Button
 								type="button"
@@ -414,9 +370,9 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 							<Button
 								type="submit"
 								className="flex-1"
-								disabled={isSubmitting || isDetectingLocation}
+								disabled={isSubmitting}
 							>
-								{isSubmitting || isDetectingLocation ? (
+								{isSubmitting ? (
 									<>
 										<Spinner className="mr-2" />
 										Saving...

@@ -20,8 +20,6 @@ type Props = {
 	stackedSeries: Array<Record<string, string | number>>;
 	chartLabel?: string;
 	averageSpend?: number;
-	minSpend?: number;
-	maxSpend?: number;
 	categoryColorMap: Record<string, string>;
 	isLoading: boolean;
 };
@@ -30,8 +28,6 @@ export function DashboardBarChart({
 	stackedSeries,
 	chartLabel,
 	averageSpend,
-	minSpend,
-	maxSpend,
 	categoryColorMap,
 	isLoading,
 }: Props) {
@@ -121,38 +117,6 @@ export function DashboardBarChart({
 									}}
 								/>
 							)}
-							{(minSpend ?? 0) > 0 &&
-								minSpend !== averageSpend && (
-									<ReferenceLine
-										y={minSpend}
-										stroke="var(--chart-3)"
-										strokeDasharray="3 3"
-										strokeWidth={1.5}
-										label={{
-											value: `Min: ${(minSpend ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
-											position: "left",
-											fill: "var(--chart-3)",
-											fontSize: 11,
-											fontWeight: 600,
-										}}
-									/>
-								)}
-							{(maxSpend ?? 0) > 0 &&
-								maxSpend !== averageSpend && (
-									<ReferenceLine
-										y={maxSpend}
-										stroke="var(--chart-4)"
-										strokeDasharray="3 3"
-										strokeWidth={1.5}
-										label={{
-											value: `Max: ${(maxSpend ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
-											position: "left",
-											fill: "var(--chart-4)",
-											fontSize: 11,
-											fontWeight: 600,
-										}}
-									/>
-								)}
 						</BarChart>
 					</ResponsiveContainer>
 				)}

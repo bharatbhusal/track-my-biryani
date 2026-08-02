@@ -33,7 +33,7 @@ export function ExpenseCard({
 			<div
 				onClick={
 					!hasActions
-						? () => router.replace(`expenses/${expense._id}`)
+						? () => router.replace(`/expenses/${expense._id}`)
 						: undefined
 				}
 				className={!hasActions ? "cursor-pointer" : ""}
