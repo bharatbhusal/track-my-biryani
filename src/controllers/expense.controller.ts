@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 
 import { getAuthPayload } from "@/lib/auth";
+import { getBucketId } from "@/lib/bucket";
 import {
 	createExpenseService,
 	deleteExpenseService,
@@ -14,8 +15,7 @@ import {
 
 export async function listExpenses(request: NextRequest) {
 	const auth = await getAuthPayload();
-	const bucketId =
-		request.nextUrl.searchParams.get("bucketId") ?? undefined;
+	const bucketId = getBucketId(request);
 	const queryParams = Object.fromEntries(
 		request.nextUrl.searchParams.entries(),
 	);
@@ -25,9 +25,7 @@ export async function listExpenses(request: NextRequest) {
 export async function createExpense(request: NextRequest) {
 	const auth = await getAuthPayload();
 	const body = await request.json();
-	const bucketId =
-		request.nextUrl.searchParams.get("bucketId") ??
-		(body?.bucketId ?? undefined);
+	const bucketId = getBucketId(request) ?? (body?.bucketId ?? undefined);
 	return createExpenseService(auth.userId, bucketId, body);
 }
 
@@ -36,8 +34,7 @@ export async function getExpense(
 	context: { params: Promise<{ id: string }> },
 ) {
 	const auth = await getAuthPayload();
-	const bucketId =
-		request.nextUrl.searchParams.get("bucketId") ?? undefined;
+	const bucketId = getBucketId(request);
 	const { id } = await context.params;
 	return getExpenseService(auth.userId, id, bucketId);
 }
@@ -49,9 +46,7 @@ export async function updateExpense(
 	const auth = await getAuthPayload();
 	const { id } = await context.params;
 	const body = await request.json();
-	const bucketId =
-		request.nextUrl.searchParams.get("bucketId") ??
-		(body?.bucketId ?? undefined);
+	const bucketId = getBucketId(request) ?? (body?.bucketId ?? undefined);
 	return updateExpenseService(auth.userId, bucketId, id, body);
 }
 
@@ -60,8 +55,7 @@ export async function deleteExpense(
 	context: { params: Promise<{ id: string }> },
 ) {
 	const auth = await getAuthPayload();
-	const bucketId =
-		request.nextUrl.searchParams.get("bucketId") ?? undefined;
+	const bucketId = getBucketId(request);
 	const { id } = await context.params;
 	return deleteExpenseService(auth.userId, id, bucketId);
 }
@@ -71,8 +65,7 @@ export async function getContribution(
 	context: { params: Promise<{ id: string }> },
 ) {
 	const auth = await getAuthPayload();
-	const bucketId =
-		request.nextUrl.searchParams.get("bucketId") ?? undefined;
+	const bucketId = getBucketId(request);
 	const { id } = await context.params;
 	const from =
 		request.nextUrl.searchParams.get("from") ?? undefined;
@@ -94,8 +87,7 @@ export async function getExpenseOverviewStats(
 	const from =
 		request.nextUrl.searchParams.get("from") ?? "";
 	const to = request.nextUrl.searchParams.get("to") ?? "";
-	const bucketId =
-		request.nextUrl.searchParams.get("bucketId") ?? undefined;
+	const bucketId = getBucketId(request);
 	return getExpenseOverviewStatsService(
 		auth.userId,
 		from,
@@ -112,8 +104,7 @@ export async function getChartData(request: NextRequest) {
 	const categoryId =
 		request.nextUrl.searchParams.get("categoryId") ??
 		undefined;
-	const bucketId =
-		request.nextUrl.searchParams.get("bucketId") ?? undefined;
+	const bucketId = getBucketId(request);
 	return getChartDataService(
 		auth.userId,
 		from,

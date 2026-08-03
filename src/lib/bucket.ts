@@ -1,5 +1,7 @@
 import { Types } from "mongoose";
+import type { NextRequest } from "next/server";
 
+import { BUCKET_ID_HEADER } from "@/lib/constants";
 import { AppError } from "@/lib/errors";
 import { BucketModel } from "@/models/Bucket";
 
@@ -13,6 +15,25 @@ type BucketMemberDoc = {
 	invitedAt?: Date;
 	joinedAt?: Date;
 };
+
+export function getBucketId(
+	request: NextRequest,
+): string | undefined {
+	const bucketId = request.headers.get(BUCKET_ID_HEADER);
+	if (!bucketId || bucketId === PERSONAL_BUCKET) {
+		return undefined;
+	}
+
+	if (!Types.ObjectId.isValid(bucketId)) {
+		throw new AppError(
+			"Invalid bucket id",
+			400,
+			"INVALID_BUCKET_ID",
+		);
+	}
+
+	return bucketId;
+}
 
 export async function resolveBucketContext(
 	userId: string,

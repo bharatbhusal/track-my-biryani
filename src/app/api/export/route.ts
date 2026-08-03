@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 
 import { getAuthPayload } from "@/lib/auth";
-import { resolveBucketContext } from "@/lib/bucket";
+import { getBucketId, resolveBucketContext } from "@/lib/bucket";
 import {
 	errorResponse,
 	successResponse,
@@ -46,9 +46,7 @@ export async function GET(request: NextRequest) {
 	try {
 		await connectToDatabase();
 		const auth = await getAuthPayload();
-		const bucketId =
-			request.nextUrl.searchParams.get("bucketId") ??
-			undefined;
+		const bucketId = getBucketId(request);
 		const ctx = await resolveBucketContext(
 			auth.userId,
 			bucketId,
