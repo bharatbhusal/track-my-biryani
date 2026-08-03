@@ -94,7 +94,6 @@ export async function getExpenseService(
 ) {
 	const ctx = await resolveBucketContext(userId, bucketId);
 	const expense = await getExpenseById(
-		userId,
 		expenseId,
 		ctx.bucketId,
 	);
@@ -114,7 +113,6 @@ export async function updateExpenseService(
 	const sourceCtx = await resolveBucketContext(userId, bucketId);
 
 	const current = await getExpenseById(
-		userId,
 		expenseId,
 		sourceCtx.bucketId,
 	);

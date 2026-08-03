@@ -27,7 +27,10 @@ export const fetchBuckets = createAsyncThunk(
 	async (_, { dispatch, getState }) => {
 		const data = await bucketsApi.fetchBuckets();
 		const { activeBucketId } = (getState() as RootState).ui;
-		if (!activeBucketId && data.items.length > 0) {
+		const stale =
+			activeBucketId !== null &&
+			!data.items.some((b) => b._id === activeBucketId);
+		if ((!activeBucketId || stale) && data.items.length > 0) {
 			const personal =
 				data.items.find((b) => b.isPersonal) ??
 				data.items[0];

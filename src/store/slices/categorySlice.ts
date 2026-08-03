@@ -51,8 +51,14 @@ export const fetchCategoriesWithStats = createAsyncThunk(
 
 export const fetchCategoryDetail = createAsyncThunk(
 	"categories/fetchDetail",
-	async (id: string) => {
-		return expensesApi.getCategoryById(id);
+	async ({
+		id,
+		bucketId,
+	}: {
+		id: string;
+		bucketId?: string | null;
+	}) => {
+		return expensesApi.getCategoryById(id, bucketId);
 	},
 );
 

@@ -37,6 +37,10 @@ const persistConfig: PersistConfig<RootReducerState> = {
 	storage,
 	stateReconciler: autoMergeLevel2 as PersistConfig<RootReducerState>["stateReconciler"],
 	whitelist: ["auth", "ui", "expenses", "categories"],
+	// ponytail: activeBucketId is runtime selection state, not a preference —
+	// persisting it lets a stale id (wiped DB, deleted bucket, account switch)
+	// survive reloads and 403 every bucket-scoped request.
+	blacklist: ["ui.activeBucketId"],
 };
 
 const persistedReducer = persistReducer<

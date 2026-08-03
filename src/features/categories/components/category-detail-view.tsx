@@ -38,6 +38,9 @@ export function CategoryDetailView({ id }: { id: string }) {
 	const [page, setPage] = useState(1);
 
 	const dateRange = useAppSelector((s) => s.ui.dateRange);
+	const activeBucketId = useAppSelector(
+		(s) => s.ui.activeBucketId,
+	);
 
 	const category = useAppSelector(
 		(s) => s.categories.currentCategory,
@@ -54,8 +57,13 @@ export function CategoryDetailView({ id }: { id: string }) {
 	);
 
 	useEffect(() => {
-		dispatch(fetchCategoryDetail(id));
-	}, [dispatch, id]);
+		dispatch(
+			fetchCategoryDetail({
+				id,
+				bucketId: activeBucketId ?? undefined,
+			}),
+		);
+	}, [dispatch, id, activeBucketId]);
 
 	useEffect(() => {
 		if (rangeBounds.from && rangeBounds.to) {
@@ -64,10 +72,17 @@ export function CategoryDetailView({ id }: { id: string }) {
 					id,
 					from: rangeBounds.from,
 					to: rangeBounds.to,
+					bucketId: activeBucketId ?? undefined,
 				}),
 			);
 		}
-	}, [dispatch, id, rangeBounds.from, rangeBounds.to]);
+	}, [
+		dispatch,
+		id,
+		rangeBounds.from,
+		rangeBounds.to,
+		activeBucketId,
+	]);
 
 	useEffect(() => {
 		const params: ExpenseListQuery = {
@@ -78,9 +93,17 @@ export function CategoryDetailView({ id }: { id: string }) {
 			to: rangeBounds.to,
 			sortBy: "paidAt",
 			order: "desc",
+			bucketId: activeBucketId ?? undefined,
 		};
 		dispatch(fetchExpenses(params));
-	}, [dispatch, id, page, rangeBounds.from, rangeBounds.to]);
+	}, [
+		dispatch,
+		id,
+		page,
+		rangeBounds.from,
+		rangeBounds.to,
+		activeBucketId,
+	]);
 
 	const chartTrend = useMemo(() => {
 		const raw = stats?.trend ?? [];

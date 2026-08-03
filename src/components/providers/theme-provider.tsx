@@ -13,7 +13,7 @@ export function AppThemeProvider({
 			attribute="class"
 			defaultTheme="system"
 			enableSystem
-			storageKey="expense-tracker-theme"
+			storageKey="tmb_theme"
 			enableColorScheme
 			disableTransitionOnChange
 		>

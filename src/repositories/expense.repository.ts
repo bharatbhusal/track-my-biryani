@@ -161,6 +161,9 @@ export async function listExpenses(
 		return {
 			...item,
 			...(posterName !== "" ? { posterName } : {}),
+			userId:
+				(item.userId as { _id?: Types.ObjectId } | undefined)
+					?._id?.toString() ?? "",
 			categoryColor: item.categoryId?.color ?? "",
 			categoryEmoji: item.categoryId?.emoji ?? "",
 			categoryId:
@@ -210,7 +213,6 @@ export async function deleteExpense(
 	}).lean();
 }
 export async function getExpenseById(
-	userId: string,
 	expenseId: string,
 	bucketId: string,
 ) {
@@ -220,7 +222,6 @@ export async function getExpenseById(
 
 	const expense = await ExpenseModel.findOne({
 		_id: expenseId,
-		userId,
 		bucketId,
 	})
 		.populate("categoryId", "emoji color")

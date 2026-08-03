@@ -19,6 +19,7 @@ export type ExpenseItem = {
 	images: string[];
 	location: ExpenseLocation;
 	bucketId?: string;
+	userId?: string;
 	posterName?: string;
 	createdAt?: string;
 	updatedAt?: string;

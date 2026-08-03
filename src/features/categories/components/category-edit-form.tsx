@@ -15,10 +15,18 @@ export function CategoryEditForm({ id }: { id: string }) {
 	const [ready, setReady] = useState(false);
 
 	const category = useAppSelector((s) => s.categories.currentCategory);
+	const activeBucketId = useAppSelector(
+		(s) => s.ui.activeBucketId,
+	);
 
 	useEffect(() => {
-		dispatch(fetchCategoryDetail(id));
-	}, [dispatch, id]);
+		dispatch(
+			fetchCategoryDetail({
+				id,
+				bucketId: activeBucketId ?? undefined,
+			}),
+		);
+	}, [dispatch, id, activeBucketId]);
 
 	useEffect(() => {
 		if (category) {
