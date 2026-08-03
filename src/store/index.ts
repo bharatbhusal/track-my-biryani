@@ -20,12 +20,14 @@ import authReducer from "./slices/authSlice";
 import uiReducer from "./slices/uiSlice";
 import expenseReducer from "./slices/expenseSlice";
 import categoryReducer from "./slices/categorySlice";
+import bucketReducer from "./slices/bucketSlice";
 
 const rootReducer = combineReducers({
 	auth: authReducer,
 	ui: uiReducer,
 	expenses: expenseReducer,
 	categories: categoryReducer,
+	buckets: bucketReducer,
 });
 
 type RootReducerState = ReturnType<typeof rootReducer>;
