@@ -5,11 +5,6 @@ import type {
 	BucketSummary,
 } from "@/types/bucket.types";
 
-export type MigrationResult = {
-	migratedCategories: number;
-	migratedExpenses: number;
-};
-
 export const bucketsApi = {
 	fetchBuckets: () =>
 		apiRequest<BucketsListPayload>("/buckets"),
@@ -58,8 +53,4 @@ export const bucketsApi = {
 			`/buckets/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}`,
 			{ method: "DELETE" },
 		),
-	runMigration: () =>
-		apiRequest<MigrationResult>("/settings/migrate", {
-			method: "POST",
-		}),
 };
