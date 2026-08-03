@@ -1,4 +1,5 @@
 import { AppError } from "@/lib/errors";
+import { resolveBucketContext } from "@/lib/bucket";
 import { categorySchema } from "@/lib/validators";
 import {
 	createCategory,
@@ -13,15 +14,32 @@ import {
 	getCategoryDistribution,
 } from "@/repositories/expense.repository";
 import { findUserById } from "@/repositories/user.repository";
+import { BucketModel } from "@/models/Bucket";
 import { logAuditEvent } from "@/services/audit.service";
 import { randomHexColor } from "@/lib/utils";
 
-export async function listCategoriesService(userId: string) {
-	return listCategories(userId);
+async function assertBucketOwner(userId: string, bucketId: string) {
+	const bucket = await BucketModel.findById(bucketId).lean();
+	if (!bucket || bucket.ownerId.toString() !== userId) {
+		throw new AppError(
+			"Only the bucket owner can manage categories",
+			403,
+			"NOT_OWNER",
+		);
+	}
+}
+
+export async function listCategoriesService(
+	userId: string,
+	bucketId?: string | null,
+) {
+	const ctx = await resolveBucketContext(userId, bucketId);
+	return listCategories(userId, ctx.bucketId);
 }
 
 export async function listCategoriesWithStatsService(
 	userId: string,
+	bucketId: string | null | undefined,
 	from: string,
 	to: string,
 ) {
@@ -31,14 +49,25 @@ export async function listCategoriesWithStatsService(
 			400,
 		);
 	}
-	return listCategoriesWithStats(userId, new Date(from), new Date(to));
+	const ctx = await resolveBucketContext(userId, bucketId);
+	return listCategoriesWithStats(
+		userId,
+		ctx.bucketId,
+		new Date(from),
+		new Date(to),
+	);
 }
 
 export async function createCategoryService(
 	userId: string,
+	bucketId: string | null | undefined,
 	body: unknown,
 ) {
 	const payload = categorySchema.parse(body);
+	const ctx = await resolveBucketContext(userId, bucketId);
+	if (ctx.bucketId) {
+		await assertBucketOwner(userId, ctx.bucketId);
+	}
 
 	const existing = await findUserById(userId);
 	if (!existing) {
@@ -51,6 +80,7 @@ export async function createCategoryService(
 
 	const category = await createCategory({
 		userId,
+		bucketId: ctx.bucketId,
 		name: payload.name,
 		color: payload.color ?? randomHexColor(),
 		emoji: payload.emoji,
@@ -70,8 +100,14 @@ export async function createCategoryService(
 export async function getCategoryService(
 	userId: string,
 	categoryId: string,
+	bucketId?: string | null,
 ) {
-	const category = await getCategoryById(userId, categoryId);
+	const ctx = await resolveBucketContext(userId, bucketId);
+	const category = await getCategoryById(
+		userId,
+		categoryId,
+		ctx.bucketId,
+	);
 	if (!category) {
 		throw new AppError(
 			"Category not found",
@@ -84,15 +120,26 @@ export async function getCategoryService(
 
 export async function updateCategoryService(
 	userId: string,
+	bucketId: string | null | undefined,
 	categoryId: string,
 	body: unknown,
 ) {
 	const payload = categorySchema.parse(body);
-	const category = await updateCategory(userId, categoryId, {
-		name: payload.name,
-		color: payload.color ?? randomHexColor(),
-		emoji: payload.emoji,
-	});
+	const ctx = await resolveBucketContext(userId, bucketId);
+	if (ctx.bucketId) {
+		await assertBucketOwner(userId, ctx.bucketId);
+	}
+
+	const category = await updateCategory(
+		userId,
+		categoryId,
+		ctx.bucketId,
+		{
+			name: payload.name,
+			color: payload.color ?? randomHexColor(),
+			emoji: payload.emoji,
+		},
+	);
 
 	if (!category) {
 		throw new AppError(
@@ -114,9 +161,19 @@ export async function updateCategoryService(
 
 export async function deleteCategoryService(
 	userId: string,
+	bucketId: string | null | undefined,
 	categoryId: string,
 ) {
-	const deleted = await deleteCategory(userId, categoryId);
+	const ctx = await resolveBucketContext(userId, bucketId);
+	if (ctx.bucketId) {
+		await assertBucketOwner(userId, ctx.bucketId);
+	}
+
+	const deleted = await deleteCategory(
+		userId,
+		categoryId,
+		ctx.bucketId,
+	);
 	if (!deleted) {
 		throw new AppError(
 			"Category not found",
@@ -140,6 +197,7 @@ export async function getCategoryStatsService(
 	categoryId: string,
 	from: string,
 	to: string,
+	bucketId?: string | null,
 ) {
 	if (!from || !to) {
 		throw new AppError(
@@ -147,11 +205,13 @@ export async function getCategoryStatsService(
 			400,
 		);
 	}
+	const ctx = await resolveBucketContext(userId, bucketId);
 	return getCategoryRangeStats(
 		userId,
 		categoryId,
 		new Date(from),
 		new Date(to),
+		ctx.bucketId,
 	);
 }
 
@@ -159,6 +219,7 @@ export async function getCategoryDistributionService(
 	userId: string,
 	from: string,
 	to: string,
+	bucketId?: string | null,
 ) {
 	if (!from || !to) {
 		throw new AppError(
@@ -166,5 +227,11 @@ export async function getCategoryDistributionService(
 			400,
 		);
 	}
-	return getCategoryDistribution(userId, new Date(from), new Date(to));
+	const ctx = await resolveBucketContext(userId, bucketId);
+	return getCategoryDistribution(
+		userId,
+		new Date(from),
+		new Date(to),
+		ctx.bucketId,
+	);
 }

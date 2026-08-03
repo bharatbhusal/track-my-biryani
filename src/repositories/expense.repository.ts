@@ -62,6 +62,7 @@ const WEEKDAY_LABELS = [
 
 export async function createExpense(data: {
 	userId: string;
+	bucketId: string | null;
 	title: string;
 	amount: number;
 	categoryId: string;
@@ -82,10 +83,11 @@ export async function createExpense(data: {
 export async function listExpenses(
 	userId: string,
 	filters: ExpenseFilters,
+	bucketId: string | null,
 ) {
-	const query: Record<string, unknown> = {
-		userId,
-	};
+	const query: Record<string, unknown> = bucketId
+		? { bucketId }
+		: { userId, bucketId: null };
 
 	if (filters.q) {
 		// Use case-insensitive substring search across title and notes
@@ -136,8 +138,14 @@ export async function listExpenses(
 	const limit = filters.limit ?? 50;
 	const skip = (page - 1) * limit;
 
+	const isShared = Boolean(bucketId);
+	const expensesQuery = ExpenseModel.find(query);
+	if (isShared) {
+		expensesQuery.populate("userId", "name");
+	}
+
 	const [items, total] = await Promise.all([
-		ExpenseModel.find(query)
+		expensesQuery
 			.populate("categoryId", "emoji color")
 			.select("title amount paidAt currency")
 			.sort({
@@ -149,15 +157,21 @@ export async function listExpenses(
 		ExpenseModel.countDocuments(query),
 	]);
 
-	const transformedItems = items.map((item) => ({
-		...item,
-		categoryColor: item.categoryId?.color ?? "",
-		categoryEmoji: item.categoryId?.emoji ?? "",
-		categoryId:
-			item.categoryId?._id?.toString() ??
-			item.categoryId?.toString() ??
-			"",
-	}));
+	const transformedItems = items.map((item) => {
+		const posterName = isShared
+			? (item.userId as unknown as { name?: string })?.name ?? ""
+			: undefined;
+		return {
+			...item,
+			...(posterName !== undefined ? { posterName } : {}),
+			categoryColor: item.categoryId?.color ?? "",
+			categoryEmoji: item.categoryId?.emoji ?? "",
+			categoryId:
+				item.categoryId?._id?.toString() ??
+				item.categoryId?.toString() ??
+				"",
+		};
+	});
 
 	return {
 		items: transformedItems,
@@ -186,6 +200,7 @@ export async function updateExpense(
 export async function deleteExpense(
 	userId: string,
 	expenseId: string,
+	bucketId: string | null,
 ) {
 	if (!Types.ObjectId.isValid(expenseId)) {
 		return null;
@@ -194,11 +209,13 @@ export async function deleteExpense(
 	return ExpenseModel.findOneAndDelete({
 		_id: expenseId,
 		userId,
+		bucketId,
 	}).lean();
 }
 export async function getExpenseById(
 	userId: string,
 	expenseId: string,
+	bucketId: string | null,
 ) {
 	if (!Types.ObjectId.isValid(expenseId)) {
 		return null;
@@ -207,6 +224,7 @@ export async function getExpenseById(
 	const expense = await ExpenseModel.findOne({
 		_id: expenseId,
 		userId,
+		bucketId,
 	})
 		.populate("categoryId", "emoji color")
 		.lean();
@@ -240,13 +258,12 @@ export async function listExpensesForRange(
 	userId: string,
 	from: Date,
 	to: Date,
+	bucketId: string | null,
 	categoryId?: string,
 ) {
-	const filter: Record<string, unknown> = {
-		userId,
-
-		paidAt: { $gte: from, $lte: to },
-	};
+	const filter: Record<string, unknown> = bucketId
+		? { bucketId, paidAt: { $gte: from, $lte: to } }
+		: { userId, bucketId: null, paidAt: { $gte: from, $lte: to } };
 	if (categoryId) {
 		filter.categoryId = categoryId;
 	}
@@ -378,11 +395,18 @@ export async function getCategoryRangeStats(
 	categoryId: string,
 	from: Date,
 	to: Date,
+	bucketId: string | null,
 ) {
-	const match: Record<string, unknown> = {
-		userId: new Types.ObjectId(userId),
-		paidAt: { $gte: from, $lte: to },
-	};
+	const match: Record<string, unknown> = bucketId
+		? {
+				bucketId: new Types.ObjectId(bucketId),
+				paidAt: { $gte: from, $lte: to },
+			}
+		: {
+				userId: new Types.ObjectId(userId),
+				bucketId: null,
+				paidAt: { $gte: from, $lte: to },
+			};
 
 	const categoryMatch: Record<string, unknown> = {
 		...match,
@@ -465,6 +489,7 @@ export async function getCategoryRangeStats(
 export async function getExpenseContribution(
 	userId: string,
 	expenseId: string,
+	bucketId: string | null,
 	from?: Date,
 	to?: Date,
 ) {
@@ -472,8 +497,15 @@ export async function getExpenseContribution(
 	const expense = await ExpenseModel.findOne({
 		_id: new Types.ObjectId(expenseId),
 		userId: new Types.ObjectId(userId),
+		bucketId: bucketId
+			? new Types.ObjectId(bucketId)
+			: null,
 	}).lean();
 	if (!expense) return null;
+
+	const scopeFilter: Record<string, unknown> = bucketId
+		? { bucketId: new Types.ObjectId(bucketId) }
+		: { userId: new Types.ObjectId(userId), bucketId: null };
 
 	const amount = expense.amount;
 	const date = new Date(expense.paidAt);
@@ -493,7 +525,7 @@ export async function getExpenseContribution(
 	trendStart.setHours(0, 0, 0, 0);
 
 	const categoryMatch: Record<string, unknown> = {
-		userId: new Types.ObjectId(userId),
+		...scopeFilter,
 		categoryId: expense.categoryId,
 	};
 	if (from || to) {
@@ -514,8 +546,7 @@ export async function getExpenseContribution(
 		ExpenseModel.aggregate([
 			{
 				$match: {
-					userId: new Types.ObjectId(userId),
-
+					...scopeFilter,
 					paidAt: { $gte: weekStart, $lte: date },
 				},
 			},
@@ -524,8 +555,7 @@ export async function getExpenseContribution(
 		ExpenseModel.aggregate([
 			{
 				$match: {
-					userId: new Types.ObjectId(userId),
-
+					...scopeFilter,
 					paidAt: { $gte: monthStart, $lte: date },
 				},
 			},
@@ -534,8 +564,7 @@ export async function getExpenseContribution(
 		ExpenseModel.aggregate([
 			{
 				$match: {
-					userId: new Types.ObjectId(userId),
-
+					...scopeFilter,
 					paidAt: { $gte: yearStart, $lte: date },
 				},
 			},
@@ -548,8 +577,7 @@ export async function getExpenseContribution(
 		ExpenseModel.aggregate([
 			{
 				$match: {
-					userId: new Types.ObjectId(userId),
-
+					...scopeFilter,
 					categoryId: expense.categoryId,
 					paidAt: { $gte: trendStart, $lte: date },
 				},
@@ -617,11 +645,18 @@ export async function getCategoryDistribution(
 	userId: string,
 	from: Date,
 	to: Date,
+	bucketId: string | null,
 ): Promise<CategoryBreakdownPoint[]> {
-	const match: Record<string, unknown> = {
-		userId: new Types.ObjectId(userId),
-		paidAt: { $gte: from, $lte: to },
-	};
+	const match: Record<string, unknown> = bucketId
+		? {
+				bucketId: new Types.ObjectId(bucketId),
+				paidAt: { $gte: from, $lte: to },
+			}
+		: {
+				userId: new Types.ObjectId(userId),
+				bucketId: null,
+				paidAt: { $gte: from, $lte: to },
+			};
 
 	const [categoryTotals, categories] = await Promise.all([
 		ExpenseModel.aggregate([
@@ -633,7 +668,9 @@ export async function getCategoryDistribution(
 				},
 			},
 		]),
-		CategoryModel.find({ userId }).lean(),
+		CategoryModel.find(
+			bucketId ? { bucketId } : { userId, bucketId: null },
+		).lean(),
 	]);
 
 	const nameById = new Map(
@@ -658,11 +695,18 @@ export async function getExpenseOverviewStats(
 	userId: string,
 	from: Date,
 	to: Date,
+	bucketId: string | null,
 ) {
-	const match: Record<string, unknown> = {
-		userId: new Types.ObjectId(userId),
-		paidAt: { $gte: from, $lte: to },
-	};
+	const match: Record<string, unknown> = bucketId
+		? {
+				bucketId: new Types.ObjectId(bucketId),
+				paidAt: { $gte: from, $lte: to },
+			}
+		: {
+				userId: new Types.ObjectId(userId),
+				bucketId: null,
+				paidAt: { $gte: from, $lte: to },
+			};
 
 	const [result] = await ExpenseModel.aggregate([
 		{ $match: match },
@@ -686,11 +730,18 @@ export async function getChartData(
 	from: Date,
 	to: Date,
 	categoryId?: string,
+	bucketId?: string | null,
 ) {
-	const match: Record<string, unknown> = {
-		userId: new Types.ObjectId(userId),
-		paidAt: { $gte: from, $lte: to },
-	};
+	const match: Record<string, unknown> = bucketId
+		? {
+				bucketId: new Types.ObjectId(bucketId),
+				paidAt: { $gte: from, $lte: to },
+			}
+		: {
+				userId: new Types.ObjectId(userId),
+				bucketId: null,
+				paidAt: { $gte: from, $lte: to },
+			};
 	if (categoryId) {
 		match.categoryId = new Types.ObjectId(categoryId);
 	}
@@ -728,7 +779,9 @@ export async function getChartData(
 			},
 			{ $sort: { "_id.period": 1 } },
 		]),
-		CategoryModel.find({ userId }).lean(),
+		CategoryModel.find(
+			bucketId ? { bucketId } : { userId, bucketId: null },
+		).lean(),
 	]);
 
 	const nameById = new Map(
