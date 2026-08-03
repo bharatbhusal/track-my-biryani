@@ -16,6 +16,7 @@ export type BucketMemberDoc = {
 export type BucketDoc = {
 	_id: Types.ObjectId;
 	name: string;
+	icon?: string;
 	ownerId: Types.ObjectId;
 	members: BucketMemberDoc[];
 	createdAt?: Date;
@@ -65,6 +66,7 @@ export async function findBucketById(id: string) {
 
 export async function createBucket(data: {
 	name: string;
+	icon?: string;
 	ownerId: string;
 	members: BucketMemberInput[];
 }) {
@@ -72,13 +74,21 @@ export async function createBucket(data: {
 	return bucket.toObject() as unknown as BucketDoc;
 }
 
-export async function updateBucketName(id: string, name: string) {
+export async function updateBucketName(
+	id: string,
+	data: { name: string; icon?: string },
+) {
 	if (!Types.ObjectId.isValid(id)) {
 		return null;
 	}
 	const bucket = await BucketModel.findByIdAndUpdate(
 		id,
-		{ name },
+		{
+			$set: {
+				name: data.name,
+				...(data.icon !== undefined ? { icon: data.icon } : {}),
+			},
+		},
 		{ new: true, lean: true },
 	);
 	return (bucket as unknown as BucketDoc | null) ?? null;

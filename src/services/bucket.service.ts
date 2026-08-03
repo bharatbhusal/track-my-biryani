@@ -37,6 +37,7 @@ export async function listBucketsService(
 		{
 			_id: null,
 			name: "Personal",
+			icon: "📁",
 			ownerId: userId,
 			memberCount: 1,
 			role: "owner",
@@ -61,6 +62,7 @@ export async function createBucketService(
 
 	const bucket = await createBucket({
 		name: payload.name,
+		icon: payload.icon,
 		ownerId: userId,
 		members: [
 			{
@@ -119,7 +121,10 @@ export async function updateBucketService(
 ): Promise<BucketDetail> {
 	const payload = bucketSchema.parse(body);
 	await requireOwner(userId, bucketId);
-	const bucket = await updateBucketName(bucketId, payload.name);
+	const bucket = await updateBucketName(bucketId, {
+		name: payload.name,
+		icon: payload.icon,
+	});
 
 	await logAuditEvent({
 		userId,
@@ -236,6 +241,7 @@ export async function declineInviteService(
 	return {
 		_id: bucket._id.toString(),
 		name: bucket.name,
+		icon: bucket.icon,
 		ownerId: bucket.ownerId.toString(),
 		memberCount: bucket.members.length,
 		role: "member",
@@ -370,6 +376,7 @@ function toSummary(bucket: BucketDoc, userId: string): BucketSummary {
 	return {
 		_id: bucket._id.toString(),
 		name: bucket.name,
+		icon: bucket.icon,
 		ownerId: bucket.ownerId.toString(),
 		memberCount: bucket.members.length,
 		role: member?.role ?? "member",
@@ -388,6 +395,7 @@ async function toDetail(bucket: BucketDoc): Promise<BucketDetail> {
 	return {
 		_id: bucket._id.toString(),
 		name: bucket.name,
+		icon: bucket.icon,
 		ownerId: bucket.ownerId.toString(),
 		memberCount: bucket.members.length,
 		members: bucket.members.map((m) => {

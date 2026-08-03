@@ -30,6 +30,7 @@ const bucketMemberSchema = new Schema(
 const bucketSchema = new Schema(
 	{
 		name: { type: String, required: true, trim: true },
+		icon: { type: String, default: "📁", trim: true },
 		ownerId: {
 			type: Types.ObjectId,
 			ref: "User",
