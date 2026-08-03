@@ -108,14 +108,21 @@ export function ExpenseDetailView({
 			await dispatch(
 				updateExpense({
 					id,
-					payload: { bucketId: moveTarget },
+					payload: {
+						bucketId:
+							moveTarget === "personal" ? null : moveTarget,
+					},
 				}),
 			).unwrap();
 			toast.success("Expense moved");
 			setMoveOpen(false);
 			setMoveTarget(null);
 			dispatch(
-				fetchExpenseDetail({ id, bucketId: moveTarget }),
+				fetchExpenseDetail({
+					id,
+					bucketId:
+						moveTarget === "personal" ? null : moveTarget,
+				}),
 			);
 		} catch (error) {
 			toast.error(
@@ -255,11 +262,11 @@ export function ExpenseDetailView({
 						value={moveTarget ?? ""}
 						aria-label="Destination bucket"
 						onChange={(e) =>
-							setMoveTarget(e.target.value || null)
+							setMoveTarget(e.target.value)
 						}
 					>
 						{expense.bucketId && (
-							<option value="">Personal</option>
+							<option value="personal">Personal</option>
 						)}
 						{moveOptions.map((b) => (
 							<option

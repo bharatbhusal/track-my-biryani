@@ -177,11 +177,6 @@ export function DashboardOverview() {
 
 	return (
 		<div className="space-y-2">
-			<div className="flex items-center justify-between gap-2 px-2">
-				<h2 className="text-lg font-semibold tracking-tight">
-					Dashboard
-				</h2>
-			</div>
 			<DateRangeBar
 				title={periodLabel}
 				range={mainRange}
