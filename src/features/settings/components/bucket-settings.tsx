@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { bucketsApi } from "@/lib/api/buckets";
+import { cn } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
 	createBucket,
@@ -34,6 +35,8 @@ import type {
 	BucketMemberWithName,
 	BucketSummary,
 } from "@/types/bucket.types";
+
+const BUCKET_ICONS = ["📁", "🏠", "✈️", "🍜", "🎉", "💼", "🏖️", "⚽"];
 
 export function bucketErrorMessage(
 	err: unknown,
@@ -65,6 +68,7 @@ export function BucketSettings() {
 
 	const [createOpen, setCreateOpen] = useState(false);
 	const [newName, setNewName] = useState("");
+	const [newIcon, setNewIcon] = useState("📁");
 	const [renaming, setRenaming] = useState<BucketSummary | null>(
 		null,
 	);
@@ -74,6 +78,9 @@ export function BucketSettings() {
 	);
 	const [inviteUsername, setInviteUsername] = useState("");
 	const [deleting, setDeleting] = useState<BucketSummary | null>(
+		null,
+	);
+	const [leaving, setLeaving] = useState<BucketSummary | null>(
 		null,
 	);
 	const [managing, setManaging] = useState<BucketSummary | null>(
@@ -100,10 +107,13 @@ export function BucketSettings() {
 		if (!name) return;
 		setPending(true);
 		try {
-			await dispatch(createBucket({ name })).unwrap();
+			await dispatch(
+				createBucket({ name, icon: newIcon }),
+			).unwrap();
 			toast.success(`Bucket "${name}" created`);
 			setCreateOpen(false);
 			setNewName("");
+			setNewIcon("📁");
 		} catch (err) {
 			toast.error(
 				bucketErrorMessage(err, "Failed to create bucket"),
@@ -266,6 +276,9 @@ export function BucketSettings() {
 						>
 							<div className="min-w-0">
 								<p className="truncate text-sm font-medium">
+									<span className="mr-1.5">
+										{bucket.icon ?? "📁"}
+									</span>
 									{bucket.name}
 								</p>
 								<p className="truncate text-xs text-[var(--color-muted)]">
@@ -320,7 +333,7 @@ export function BucketSettings() {
 										variant="ghost"
 										size="sm"
 										disabled={pending}
-										onClick={() => handleLeave(bucket)}
+										onClick={() => setLeaving(bucket)}
 									>
 										<FiLogOut className="mr-1.5" />
 										Leave
@@ -355,6 +368,30 @@ export function BucketSettings() {
 							placeholder="Weekend trip"
 							autoFocus
 						/>
+					</div>
+					<div className="space-y-1.5">
+						<label className="text-sm font-medium text-[var(--color-foreground)]">
+							Icon
+						</label>
+						<div className="flex flex-wrap gap-1.5">
+							{BUCKET_ICONS.map((icon) => (
+								<button
+									key={icon}
+									type="button"
+									aria-label={`Icon ${icon}`}
+									aria-pressed={newIcon === icon}
+									onClick={() => setNewIcon(icon)}
+									className={cn(
+										"flex h-9 w-9 items-center justify-center rounded-xl border text-lg transition-colors",
+										newIcon === icon
+											? "border-[var(--color-primary)] bg-[var(--color-primary-muted)] ring-1 ring-[var(--color-primary)]"
+											: "border-[var(--color-border)] hover:bg-[var(--color-surface-muted)]",
+									)}
+								>
+									{icon}
+								</button>
+							))}
+						</div>
 					</div>
 					<div className="flex justify-end gap-2">
 						<Button
@@ -520,6 +557,16 @@ export function BucketSettings() {
 				description={`Delete "${deleting?.name ?? ""}"? All shared data will be lost. This cannot be undone.`}
 				onConfirm={handleDelete}
 				onCancel={() => setDeleting(null)}
+			/>
+
+			<ConfirmDialog
+				open={leaving !== null}
+				title="Leave bucket"
+				description={`Leave "${leaving?.name ?? ""}"? You will lose access to its expenses.`}
+				onConfirm={() => {
+					if (leaving) handleLeave(leaving);
+				}}
+				onCancel={() => setLeaving(null)}
 			/>
 		</section>
 	);

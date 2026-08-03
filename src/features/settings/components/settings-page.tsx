@@ -5,17 +5,15 @@ import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FiFileText, FiLogOut, FiMoon, FiSun } from "react-icons/fi";
+import { FiFileText, FiLogOut, FiMoon, FiSun, FiUsers } from "react-icons/fi";
 import { toast } from "sonner";
 
+import { BucketSwitcher } from "@/components/layout/bucket-switcher";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { fetchMe, logoutUser } from "@/store/slices/authSlice";
-import { BucketSettings } from "@/features/settings/components/bucket-settings";
-import { InvitationsSection } from "@/features/settings/components/invitations-section";
-import { MigrationCard } from "@/features/settings/components/migration-card";
 
 export function SettingsPage() {
 	const router = useRouter();
@@ -97,6 +95,21 @@ export function SettingsPage() {
 			</Card>
 
 			<Card>
+				<div className="space-y-2">
+					<div>
+						<p className="text-sm font-medium">
+							Active bucket
+						</p>
+						<p className="text-xs text-[var(--color-muted)]">
+							Choose which bucket expenses are shown
+							for. Management happens on the Buckets
+							page.
+						</p>
+					</div>
+					<BucketSwitcher />
+				</div>
+			</Card>
+			<Card>
 				<div className="flex items-center justify-between gap-3">
 					<div className="min-w-0">
 						<p className="text-sm font-medium">Theme</p>
@@ -124,9 +137,28 @@ export function SettingsPage() {
 					</Button>
 				</div>
 			</Card>
-			<BucketSettings />
-			<InvitationsSection />
-			<MigrationCard />
+			<Card>
+				<Link
+					href="/buckets"
+					className="flex items-center justify-between gap-3"
+				>
+					<div className="min-w-0">
+						<p className="text-sm font-medium">Buckets</p>
+						<p className="truncate text-xs text-[var(--color-muted)]">
+							Invitations and the buckets you&apos;re
+							part of
+						</p>
+					</div>
+
+					<Button
+						variant="ghost"
+						size="icon"
+						aria-label="View buckets"
+					>
+						<FiUsers className="h-4 w-4" />
+					</Button>
+				</Link>
+			</Card>
 			<Card>
 				<Link
 					href="/logs"

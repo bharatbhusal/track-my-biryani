@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
@@ -22,6 +23,13 @@ export function InvitationsSection() {
 	);
 	const [pendingId, setPendingId] = useState<string | null>(
 		null,
+	);
+	const [accepting, setAccepting] = useState<string | null>(
+		null,
+	);
+
+	const acceptingInvite = invitations.find(
+		(i) => i._id === accepting,
 	);
 
 	const handleAccept = async (id: string) => {
@@ -90,7 +98,9 @@ export function InvitationsSection() {
 							<Button
 								size="sm"
 								disabled={pendingId !== null}
-								onClick={() => handleAccept(invitation._id!)}
+								onClick={() =>
+									setAccepting(invitation._id!)
+								}
 							>
 								<FiCheck className="mr-1" />
 								Accept
@@ -108,6 +118,16 @@ export function InvitationsSection() {
 					</Card>
 				))
 			)}
+
+			<ConfirmDialog
+				open={accepting !== null}
+				title="Join bucket"
+				description={`Join "${acceptingInvite?.name ?? ""}"?`}
+				onConfirm={() => {
+					if (accepting) handleAccept(accepting);
+				}}
+				onCancel={() => setAccepting(null)}
+			/>
 		</section>
 	);
 }
