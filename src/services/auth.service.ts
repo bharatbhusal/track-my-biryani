@@ -9,18 +9,11 @@ import {
 	findUserByUsername,
 } from "@/repositories/user.repository";
 import { createCategory } from "@/repositories/category.repository";
+import { DEFAULT_CATEGORIES } from "@/lib/constants";
 import type {
 	LoginInput,
 	SignupInput,
 } from "@/lib/validators";
-
-const DEFAULT_CATEGORIES = [
-	{ name: "Food & Dining", emoji: "🍔", color: "#FF6B6B" },
-	{ name: "Transportation", emoji: "🚗", color: "#4ECDC4" },
-	{ name: "Shopping", emoji: "🛍️", color: "#FFE66D" },
-	{ name: "Bills & Utilities", emoji: "📄", color: "#F38181" },
-	{ name: "Entertainment", emoji: "🎬", color: "#95E1D3" },
-];
 
 export async function registerUser(
 	input: SignupInput,

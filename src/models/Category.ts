@@ -8,6 +8,11 @@ const categorySchema = new Schema(
 			required: true,
 			index: true,
 		},
+		bucketId: {
+			type: Types.ObjectId,
+			ref: "Bucket",
+			index: true,
+		},
 		name: { type: String, required: true, trim: true },
 		color: { type: String, required: true },
 		emoji: { type: String, default: "🏷️" },
@@ -16,8 +21,13 @@ const categorySchema = new Schema(
 );
 
 categorySchema.index(
-	{ userId: 1, name: 1 },
-	{ unique: true },
+	{ bucketId: 1, name: 1 },
+	{
+		unique: true,
+		partialFilterExpression: {
+			bucketId: { $type: "objectId" },
+		},
+	},
 );
 
 export const CategoryModel =

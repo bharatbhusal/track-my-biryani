@@ -14,6 +14,48 @@ export async function createCategory(data: {
 	return category.toObject();
 }
 
+export async function ensureCategoryInBucket(
+	userId: string,
+	bucketId: string | Types.ObjectId | null,
+	data: { name: string; color: string; emoji?: string },
+) {
+	const isShared =
+		Boolean(bucketId) &&
+		(bucketId instanceof Types.ObjectId ||
+			Types.ObjectId.isValid(bucketId as string));
+	const filter = isShared
+		? {
+				bucketId: new Types.ObjectId(bucketId as string),
+				name: data.name,
+			}
+		: { userId, bucketId: null, name: data.name };
+
+	const existing = await CategoryModel.findOne(filter).lean();
+	if (existing) {
+		return existing;
+	}
+
+	try {
+		const category = await CategoryModel.create({
+			userId,
+			bucketId: isShared
+				? new Types.ObjectId(bucketId as string)
+				: null,
+			name: data.name,
+			color: data.color,
+			emoji: data.emoji,
+		});
+		return category.toObject();
+	} catch (error) {
+		// ponytail: concurrent create loses the race → re-find the winner
+		const refound = await CategoryModel.findOne(filter).lean();
+		if (refound) {
+			return refound;
+		}
+		throw error;
+	}
+}
+
 export async function listCategories(userId: string) {
 	return CategoryModel.find({ userId })
 		.sort({ createdAt: -1 })
