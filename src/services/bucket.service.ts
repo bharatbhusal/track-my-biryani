@@ -18,7 +18,6 @@ import {
 import { ensureCategoryInBucket } from "@/repositories/category.repository";
 import { findUserByUsername } from "@/repositories/user.repository";
 import { logAuditEvent } from "@/services/audit.service";
-import { runBucketMigration } from "@/services/migration.service";
 import type {
 	BucketDetail,
 	BucketsListPayload,
@@ -312,19 +311,6 @@ export async function revokeInviteService(
 	});
 
 	return toDetail(updated!);
-}
-
-export async function runMigrationService(userId: string) {
-	const result = await runBucketMigration(userId);
-
-	await logAuditEvent({
-		userId,
-		action: "migrate",
-		entityType: "bucket",
-		metadata: result,
-	});
-
-	return result;
 }
 
 async function requireOwner(

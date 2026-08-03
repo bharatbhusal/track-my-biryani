@@ -11,7 +11,6 @@ import {
 	leaveBucketService,
 	listBucketsService,
 	revokeInviteService,
-	runMigrationService,
 	updateBucketService,
 } from "@/services/bucket.service";
 
@@ -98,9 +97,4 @@ export async function revokeInvite(
 	const auth = await getAuthPayload();
 	const { id, userId } = await context.params;
 	return revokeInviteService(auth.userId, id, userId);
-}
-
-export async function runMigration() {
-	const auth = await getAuthPayload();
-	return runMigrationService(auth.userId);
 }
