@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { useCallback, useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { useTheme } from "next-themes";
+import { Theme } from "emoji-picker-react";
 import {
 	FiEdit2,
 	FiLogOut,
@@ -16,10 +20,14 @@ import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Drawer } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { bucketsApi } from "@/lib/api/buckets";
-import { cn } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
 	createBucket,
@@ -36,7 +44,12 @@ import type {
 	BucketSummary,
 } from "@/types/bucket.types";
 
-const BUCKET_ICONS = ["📁", "🏠", "✈️", "🍜", "🎉", "💼", "🏖️", "⚽"];
+const EmojiPicker = dynamic(
+	() => import("emoji-picker-react"),
+	{
+		ssr: false,
+	},
+);
 
 export function bucketErrorMessage(
 	err: unknown,
@@ -57,6 +70,168 @@ export function bucketErrorMessage(
 	return fallback;
 }
 
+type FormValues = {
+	name: string;
+	icon: string;
+};
+
+type BucketFormProps = {
+	bucket?: BucketSummary | null;
+	onSuccess?: () => void;
+	onCancel?: () => void;
+};
+
+function BucketForm({
+	bucket,
+	onSuccess,
+	onCancel,
+}: BucketFormProps) {
+	const dispatch = useAppDispatch();
+	const { resolvedTheme } = useTheme();
+	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	const isEditing = Boolean(bucket);
+
+	const emojiPickerTheme =
+		resolvedTheme === "dark" ? Theme.DARK : Theme.LIGHT;
+
+	const { register, handleSubmit, setValue, watch } =
+		useForm<FormValues>({
+			defaultValues: {
+				name: bucket?.name ?? "",
+				icon: bucket?.icon ?? "📁",
+			},
+		});
+
+	const iconValue = watch("icon");
+
+	const handleEmojiClick = useCallback(
+		(emojiObject: { emoji: string }) => {
+			setValue("icon", emojiObject.emoji);
+		},
+		[setValue],
+	);
+
+	const onSubmit = async (values: FormValues) => {
+		setIsSubmitting(true);
+		try {
+			if (isEditing && bucket?._id) {
+				await dispatch(
+					updateBucket({
+						id: bucket._id,
+						name: values.name.trim(),
+						icon: values.icon || "📁",
+					}),
+				).unwrap();
+				toast.success("Bucket renamed");
+			} else {
+				await dispatch(
+					createBucket({
+						name: values.name.trim(),
+						icon: values.icon || "📁",
+					}),
+				).unwrap();
+				toast.success(
+					`Bucket "${values.name.trim()}" created`,
+				);
+			}
+			onSuccess?.();
+		} catch (err) {
+			toast.error(
+				bucketErrorMessage(
+					err,
+					isEditing
+						? "Failed to rename bucket"
+						: "Failed to create bucket",
+				),
+			);
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
+	return (
+		<form
+			onSubmit={handleSubmit(onSubmit)}
+			className="space-y-4"
+		>
+			<div className="space-y-1.5">
+				<label className="text-sm font-medium text-[var(--color-foreground)]">
+					Name
+				</label>
+				<Input
+					{...register("name")}
+					placeholder="Weekend trip"
+					autoFocus={!isEditing}
+				/>
+			</div>
+
+			<div className="space-y-1.5">
+				<label className="text-sm font-medium text-[var(--color-foreground)]">
+					Icon
+				</label>
+				<Popover>
+					<PopoverTrigger asChild>
+						<button
+							type="button"
+							className="flex h-10 w-10 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-lg hover:bg-[var(--color-surface-muted)] transition-colors"
+							aria-label="Pick emoji"
+						>
+							{iconValue || "📁"}
+						</button>
+					</PopoverTrigger>
+					<PopoverContent
+						className="w-auto p-0"
+						align="start"
+					>
+						<div className="max-h-[40vh] overflow-y-auto">
+							<EmojiPicker
+								theme={emojiPickerTheme}
+								onEmojiClick={handleEmojiClick}
+							/>
+						</div>
+					</PopoverContent>
+				</Popover>
+			</div>
+
+			<div className="flex gap-2 pt-2">
+				{onCancel && (
+					<Button
+						type="button"
+						variant="outline"
+						className="flex-1"
+						onClick={onCancel}
+					>
+						Cancel
+					</Button>
+				)}
+				<Button
+					type="submit"
+					className={onCancel ? "flex-1" : "w-full"}
+					disabled={isSubmitting}
+				>
+					{isSubmitting ? (
+						<>
+							<Spinner className="mr-2" />
+							{isEditing ? "Saving..." : "Creating..."}
+						</>
+					) : isEditing ? (
+						<>
+							<FiEdit2 className="mr-1.5 h-4 w-4" />
+							Save
+						</>
+					) : (
+						<>
+							<FiPlus className="mr-1.5 h-4 w-4" />
+							Create
+						</>
+					)}
+				</Button>
+			</div>
+		</form>
+	);
+}
+
 export function BucketSettings() {
 	const dispatch = useAppDispatch();
 	const { buckets, loading } = useAppSelector(
@@ -67,12 +242,9 @@ export function BucketSettings() {
 	);
 
 	const [createOpen, setCreateOpen] = useState(false);
-	const [newName, setNewName] = useState("");
-	const [newIcon, setNewIcon] = useState("📁");
 	const [renaming, setRenaming] = useState<BucketSummary | null>(
 		null,
 	);
-	const [renameName, setRenameName] = useState("");
 	const [inviting, setInviting] = useState<BucketSummary | null>(
 		null,
 	);
@@ -99,47 +271,6 @@ export function BucketSettings() {
 	const resetActiveIfDeleted = (id: string) => {
 		if (activeBucketId === id) {
 			dispatch(setActiveBucketId(null));
-		}
-	};
-
-	const handleCreate = async () => {
-		const name = newName.trim();
-		if (!name) return;
-		setPending(true);
-		try {
-			await dispatch(
-				createBucket({ name, icon: newIcon }),
-			).unwrap();
-			toast.success(`Bucket "${name}" created`);
-			setCreateOpen(false);
-			setNewName("");
-			setNewIcon("📁");
-		} catch (err) {
-			toast.error(
-				bucketErrorMessage(err, "Failed to create bucket"),
-			);
-		} finally {
-			setPending(false);
-		}
-	};
-
-	const handleRename = async () => {
-		if (!renaming?._id) return;
-		const name = renameName.trim();
-		if (!name) return;
-		setPending(true);
-		try {
-			await dispatch(
-				updateBucket({ id: renaming._id, name }),
-			).unwrap();
-			toast.success("Bucket renamed");
-			setRenaming(null);
-		} catch (err) {
-			toast.error(
-				bucketErrorMessage(err, "Failed to rename bucket"),
-			);
-		} finally {
-			setPending(false);
 		}
 	};
 
@@ -296,10 +427,7 @@ export function BucketSettings() {
 											variant="ghost"
 											size="icon"
 											aria-label={`Rename ${bucket.name}`}
-											onClick={() => {
-												setRenaming(bucket);
-												setRenameName(bucket.name);
-											}}
+											onClick={() => setRenaming(bucket)}
 										>
 											<FiEdit2 className="h-4 w-4" />
 										</Button>
@@ -348,111 +476,26 @@ export function BucketSettings() {
 			<Drawer
 				open={createOpen}
 				onClose={() => setCreateOpen(false)}
-				title="Create bucket"
+				title="Create Bucket"
 				description="A shared space to track expenses with others."
 			>
-				<form
-					className="space-y-4"
-					onSubmit={(e) => {
-						e.preventDefault();
-						handleCreate();
-					}}
-				>
-					<div className="space-y-1.5">
-						<label className="text-sm font-medium text-[var(--color-foreground)]">
-							Name
-						</label>
-						<Input
-							value={newName}
-							onChange={(e) => setNewName(e.target.value)}
-							placeholder="Weekend trip"
-							autoFocus
-						/>
-					</div>
-					<div className="space-y-1.5">
-						<label className="text-sm font-medium text-[var(--color-foreground)]">
-							Icon
-						</label>
-						<div className="flex flex-wrap gap-1.5">
-							{BUCKET_ICONS.map((icon) => (
-								<button
-									key={icon}
-									type="button"
-									aria-label={`Icon ${icon}`}
-									aria-pressed={newIcon === icon}
-									onClick={() => setNewIcon(icon)}
-									className={cn(
-										"flex h-9 w-9 items-center justify-center rounded-xl border text-lg transition-colors",
-										newIcon === icon
-											? "border-[var(--color-primary)] bg-[var(--color-primary-muted)] ring-1 ring-[var(--color-primary)]"
-											: "border-[var(--color-border)] hover:bg-[var(--color-surface-muted)]",
-									)}
-								>
-									{icon}
-								</button>
-							))}
-						</div>
-					</div>
-					<div className="flex justify-end gap-2">
-						<Button
-							type="button"
-							variant="ghost"
-							onClick={() => setCreateOpen(false)}
-						>
-							Cancel
-						</Button>
-						<Button
-							type="submit"
-							disabled={pending || !newName.trim()}
-						>
-							{pending ? <Spinner className="mr-2" /> : null}
-							Create
-						</Button>
-					</div>
-				</form>
+				<BucketForm
+					onSuccess={() => setCreateOpen(false)}
+					onCancel={() => setCreateOpen(false)}
+				/>
 			</Drawer>
 
 			<Drawer
 				open={renaming !== null}
 				onClose={() => setRenaming(null)}
-				title={`Rename ${renaming?.name ?? ""}`}
-				description="Update this bucket's name."
+				title="Rename Bucket"
+				description="Update this bucket's name and icon."
 			>
-				<form
-					className="space-y-4"
-					onSubmit={(e) => {
-						e.preventDefault();
-						handleRename();
-					}}
-				>
-					<div className="space-y-1.5">
-						<label className="text-sm font-medium text-[var(--color-foreground)]">
-							Name
-						</label>
-						<Input
-							value={renameName}
-							onChange={(e) => setRenameName(e.target.value)}
-							placeholder="Bucket name"
-							autoFocus
-						/>
-					</div>
-					<div className="flex justify-end gap-2">
-						<Button
-							type="button"
-							variant="ghost"
-							onClick={() => setRenaming(null)}
-						>
-							Cancel
-						</Button>
-						<Button
-							type="submit"
-							disabled={pending || !renameName.trim()}
-						>
-							{pending ? <Spinner className="mr-2" /> : null}
-							Save
-						</Button>
-					</div>
-				</form>
+				<BucketForm
+					bucket={renaming}
+					onSuccess={() => setRenaming(null)}
+					onCancel={() => setRenaming(null)}
+				/>
 			</Drawer>
 
 			<Drawer

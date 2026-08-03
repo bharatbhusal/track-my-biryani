@@ -7,14 +7,6 @@ import { MigrationCard } from "@/features/settings/components/migration-card";
 export function BucketsPage() {
 	return (
 		<div className="space-y-4">
-			<div>
-				<h1 className="text-lg font-semibold tracking-tight">
-					Buckets
-				</h1>
-				<p className="text-xs text-[var(--color-muted)]">
-					Shared expense groups and invitations.
-				</p>
-			</div>
 			<InvitationsSection />
 			<BucketSettings />
 			<MigrationCard />

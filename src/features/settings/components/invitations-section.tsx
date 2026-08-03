@@ -27,9 +27,16 @@ export function InvitationsSection() {
 	const [accepting, setAccepting] = useState<string | null>(
 		null,
 	);
+	const [declining, setDeclining] = useState<string | null>(
+		null,
+	);
 
 	const acceptingInvite = invitations.find(
 		(i) => i._id === accepting,
+	);
+
+	const decliningInvite = invitations.find(
+		(i) => i._id === declining,
 	);
 
 	const handleAccept = async (id: string) => {
@@ -109,7 +116,9 @@ export function InvitationsSection() {
 								variant="ghost"
 								size="sm"
 								disabled={pendingId !== null}
-								onClick={() => handleDecline(invitation._id!)}
+								onClick={() =>
+									setDeclining(invitation._id!)
+								}
 							>
 								<FiX className="mr-1" />
 								Decline
@@ -127,6 +136,16 @@ export function InvitationsSection() {
 					if (accepting) handleAccept(accepting);
 				}}
 				onCancel={() => setAccepting(null)}
+			/>
+
+			<ConfirmDialog
+				open={declining !== null}
+				title="Decline invitation"
+				description={`Decline "${decliningInvite?.name ?? ""}"?`}
+				onConfirm={() => {
+					if (declining) handleDecline(declining);
+				}}
+				onCancel={() => setDeclining(null)}
 			/>
 		</section>
 	);
