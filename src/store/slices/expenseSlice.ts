@@ -52,7 +52,13 @@ export const fetchExpenses = createAsyncThunk(
 
 export const fetchExpensesInRange = createAsyncThunk(
 	"expenses/fetchInRange",
-	async (range: GlobalDateRange) => {
+	async ({
+		range,
+		bucketId,
+	}: {
+		range: GlobalDateRange;
+		bucketId?: string | null;
+	}) => {
 		const { from, to } = toIsoBounds(range);
 		if (!from || !to) {
 			return {
@@ -62,14 +68,24 @@ export const fetchExpensesInRange = createAsyncThunk(
 				totalPages: null,
 			};
 		}
-		return expensesApi.listExpenses({ from, to });
+		return expensesApi.listExpenses({
+			from,
+			to,
+			bucketId: bucketId ?? undefined,
+		});
 	},
 );
 
 export const fetchExpenseDetail = createAsyncThunk(
 	"expenses/fetchDetail",
-	async (id: string) => {
-		return expensesApi.getExpenseById(id);
+	async ({
+		id,
+		bucketId,
+	}: {
+		id: string;
+		bucketId?: string | null;
+	}) => {
+		return expensesApi.getExpenseById(id, bucketId);
 	},
 );
 
@@ -79,12 +95,19 @@ export const fetchExpenseContribution = createAsyncThunk(
 		id,
 		from,
 		to,
+		bucketId,
 	}: {
 		id: string;
 		from?: string;
 		to?: string;
+		bucketId?: string | null;
 	}) => {
-		return expensesApi.getExpenseContribution(id, from, to);
+		return expensesApi.getExpenseContribution(
+			id,
+			from,
+			to,
+			bucketId,
+		);
 	},
 );
 
@@ -117,8 +140,16 @@ export const deleteExpense = createAsyncThunk(
 
 export const fetchOverviewStats = createAsyncThunk(
 	"expenses/fetchOverviewStats",
-	async ({ from, to }: { from: string; to: string }) => {
-		return expensesApi.getOverviewStats(from, to);
+	async ({
+		from,
+		to,
+		bucketId,
+	}: {
+		from: string;
+		to: string;
+		bucketId?: string | null;
+	}) => {
+		return expensesApi.getOverviewStats(from, to, bucketId);
 	},
 );
 
@@ -128,12 +159,19 @@ export const fetchChartData = createAsyncThunk(
 		from,
 		to,
 		categoryId,
+		bucketId,
 	}: {
 		from: string;
 		to: string;
 		categoryId?: string;
+		bucketId?: string | null;
 	}) => {
-		return expensesApi.getChartData(from, to, categoryId);
+		return expensesApi.getChartData(
+			from,
+			to,
+			categoryId,
+			bucketId,
+		);
 	},
 );
 

@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { FiSearch, FiX } from "react-icons/fi";
 
 import { DateRangeBar } from "@/components/charts/date-range-bar";
+import { BucketSwitcher } from "@/components/layout/bucket-switcher";
 import { ExpenseOverview } from "@/features/expenses/components/expense-overview";
 import { DashboardBarChart } from "@/components/dashboard-bar-chart";
 import { CategoryDistributionBar } from "@/features/expenses/components/category-distribution-bar";
@@ -33,6 +34,9 @@ import {
 export function DashboardOverview() {
 	const dispatch = useAppDispatch();
 	const mainRange = useAppSelector((s) => s.ui.dateRange);
+	const activeBucketId = useAppSelector(
+		(s) => s.ui.activeBucketId,
+	);
 	const [selectedCategoryId, setSelectedCategoryId] =
 		useState<string | undefined>();
 	const [query, setQuery] = useState("");
@@ -59,6 +63,13 @@ export function DashboardOverview() {
 		(s) => s.expenses.loading,
 	);
 
+	const [prevBucketId, setPrevBucketId] = useState(activeBucketId);
+	if (prevBucketId !== activeBucketId) {
+		setPrevBucketId(activeBucketId);
+		setPage(1);
+		setSelectedCategoryId(undefined);
+	}
+
 	const { from, to } = useMemo(
 		() => toRangeDates(mainRange),
 		[mainRange.preset, mainRange.offset],
@@ -75,15 +86,22 @@ export function DashboardOverview() {
 			fetchOverviewStats({
 				from: isoBounds.from,
 				to: isoBounds.to,
+				bucketId: activeBucketId ?? undefined,
 			}),
 		);
 		dispatch(
 			fetchCategoryDistribution({
 				from: isoBounds.from,
 				to: isoBounds.to,
+				bucketId: activeBucketId ?? undefined,
 			}),
 		);
-	}, [dispatch, isoBounds.from, isoBounds.to]);
+	}, [
+		dispatch,
+		isoBounds.from,
+		isoBounds.to,
+		activeBucketId,
+	]);
 
 	useEffect(() => {
 		if (!isoBounds.from || !isoBounds.to) return;
@@ -92,6 +110,7 @@ export function DashboardOverview() {
 				from: isoBounds.from,
 				to: isoBounds.to,
 				categoryId: selectedCategoryId,
+				bucketId: activeBucketId ?? undefined,
 			}),
 		);
 	}, [
@@ -99,6 +118,7 @@ export function DashboardOverview() {
 		isoBounds.from,
 		isoBounds.to,
 		selectedCategoryId,
+		activeBucketId,
 	]);
 
 	useEffect(() => {
@@ -113,6 +133,7 @@ export function DashboardOverview() {
 				to: isoBounds.to,
 				sortBy,
 				order,
+				bucketId: activeBucketId ?? undefined,
 			}),
 		);
 	}, [
@@ -124,6 +145,7 @@ export function DashboardOverview() {
 		isoBounds.to,
 		sortBy,
 		order,
+		activeBucketId,
 	]);
 
 	const periodLabel = useMemo(
@@ -156,6 +178,14 @@ export function DashboardOverview() {
 
 	return (
 		<div className="space-y-2">
+			<div className="flex items-center justify-between gap-2 px-2">
+				<h2 className="text-lg font-semibold tracking-tight">
+					Dashboard
+				</h2>
+				<div className="w-40 shrink-0">
+					<BucketSwitcher />
+				</div>
+			</div>
 			<DateRangeBar
 				title={periodLabel}
 				range={mainRange}
@@ -219,6 +249,7 @@ export function DashboardOverview() {
 				page={page}
 				totalPages={totalPages}
 				onPageChange={setPage}
+				showPoster={Boolean(activeBucketId)}
 			/>
 		</div>
 	);
