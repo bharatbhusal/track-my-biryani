@@ -122,8 +122,10 @@ export async function updateExpenseService(
 		throw new AppError("Expense not found", 404, "NOT_FOUND");
 	}
 
-	const payloadBucketId = payload.bucketId ?? null;
-	const moving = payloadBucketId !== sourceCtx.bucketId;
+	const payloadBucketId = payload.bucketId;
+	const moving =
+		payloadBucketId !== undefined &&
+		payloadBucketId !== sourceCtx.bucketId;
 
 	let data: Record<string, unknown>;
 	if (moving) {
@@ -317,11 +319,12 @@ export async function getChartDataService(
 			400,
 		);
 	}
+	const ctx = await resolveBucketContext(userId, bucketId);
 	return getChartData(
 		userId,
 		new Date(from),
 		new Date(to),
+		ctx.bucketId,
 		categoryId || undefined,
-		bucketId,
 	);
 }

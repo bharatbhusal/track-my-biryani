@@ -62,7 +62,7 @@ const WEEKDAY_LABELS = [
 
 export async function createExpense(data: {
 	userId: string;
-	bucketId: string | null;
+	bucketId: string;
 	title: string;
 	amount: number;
 	categoryId: string;
@@ -83,11 +83,9 @@ export async function createExpense(data: {
 export async function listExpenses(
 	userId: string,
 	filters: ExpenseFilters,
-	bucketId: string | null,
+	bucketId: string,
 ) {
-	const query: Record<string, unknown> = bucketId
-		? { bucketId }
-		: { userId, bucketId: null };
+	const query: Record<string, unknown> = { bucketId };
 
 	if (filters.q) {
 		// Use case-insensitive substring search across title and notes
@@ -199,7 +197,7 @@ export async function updateExpense(
 export async function deleteExpense(
 	userId: string,
 	expenseId: string,
-	bucketId: string | null,
+	bucketId: string,
 ) {
 	if (!Types.ObjectId.isValid(expenseId)) {
 		return null;
@@ -214,7 +212,7 @@ export async function deleteExpense(
 export async function getExpenseById(
 	userId: string,
 	expenseId: string,
-	bucketId: string | null,
+	bucketId: string,
 ) {
 	if (!Types.ObjectId.isValid(expenseId)) {
 		return null;
@@ -257,12 +255,13 @@ export async function listExpensesForRange(
 	userId: string,
 	from: Date,
 	to: Date,
-	bucketId: string | null,
+	bucketId: string,
 	categoryId?: string,
 ) {
-	const filter: Record<string, unknown> = bucketId
-		? { bucketId, paidAt: { $gte: from, $lte: to } }
-		: { userId, bucketId: null, paidAt: { $gte: from, $lte: to } };
+	const filter: Record<string, unknown> = {
+		bucketId,
+		paidAt: { $gte: from, $lte: to },
+	};
 	if (categoryId) {
 		filter.categoryId = categoryId;
 	}
@@ -394,18 +393,12 @@ export async function getCategoryRangeStats(
 	categoryId: string,
 	from: Date,
 	to: Date,
-	bucketId: string | null,
+	bucketId: string,
 ) {
-	const match: Record<string, unknown> = bucketId
-		? {
-				bucketId: new Types.ObjectId(bucketId),
-				paidAt: { $gte: from, $lte: to },
-			}
-		: {
-				userId: new Types.ObjectId(userId),
-				bucketId: null,
-				paidAt: { $gte: from, $lte: to },
-			};
+	const match: Record<string, unknown> = {
+		bucketId: new Types.ObjectId(bucketId),
+		paidAt: { $gte: from, $lte: to },
+	};
 
 	const categoryMatch: Record<string, unknown> = {
 		...match,
@@ -488,7 +481,7 @@ export async function getCategoryRangeStats(
 export async function getExpenseContribution(
 	userId: string,
 	expenseId: string,
-	bucketId: string | null,
+	bucketId: string,
 	from?: Date,
 	to?: Date,
 ) {
@@ -496,15 +489,13 @@ export async function getExpenseContribution(
 	const expense = await ExpenseModel.findOne({
 		_id: new Types.ObjectId(expenseId),
 		userId: new Types.ObjectId(userId),
-		bucketId: bucketId
-			? new Types.ObjectId(bucketId)
-			: null,
+		bucketId: new Types.ObjectId(bucketId),
 	}).lean();
 	if (!expense) return null;
 
-	const scopeFilter: Record<string, unknown> = bucketId
-		? { bucketId: new Types.ObjectId(bucketId) }
-		: { userId: new Types.ObjectId(userId), bucketId: null };
+	const scopeFilter: Record<string, unknown> = {
+		bucketId: new Types.ObjectId(bucketId),
+	};
 
 	const amount = expense.amount;
 	const date = new Date(expense.paidAt);
@@ -644,18 +635,12 @@ export async function getCategoryDistribution(
 	userId: string,
 	from: Date,
 	to: Date,
-	bucketId: string | null,
+	bucketId: string,
 ): Promise<CategoryBreakdownPoint[]> {
-	const match: Record<string, unknown> = bucketId
-		? {
-				bucketId: new Types.ObjectId(bucketId),
-				paidAt: { $gte: from, $lte: to },
-			}
-		: {
-				userId: new Types.ObjectId(userId),
-				bucketId: null,
-				paidAt: { $gte: from, $lte: to },
-			};
+	const match: Record<string, unknown> = {
+		bucketId: new Types.ObjectId(bucketId),
+		paidAt: { $gte: from, $lte: to },
+	};
 
 	const [categoryTotals, categories] = await Promise.all([
 		ExpenseModel.aggregate([
@@ -667,9 +652,7 @@ export async function getCategoryDistribution(
 				},
 			},
 		]),
-		CategoryModel.find(
-			bucketId ? { bucketId } : { userId, bucketId: null },
-		).lean(),
+		CategoryModel.find({ bucketId }).lean(),
 	]);
 
 	const nameById = new Map(
@@ -694,18 +677,12 @@ export async function getExpenseOverviewStats(
 	userId: string,
 	from: Date,
 	to: Date,
-	bucketId: string | null,
+	bucketId: string,
 ) {
-	const match: Record<string, unknown> = bucketId
-		? {
-				bucketId: new Types.ObjectId(bucketId),
-				paidAt: { $gte: from, $lte: to },
-			}
-		: {
-				userId: new Types.ObjectId(userId),
-				bucketId: null,
-				paidAt: { $gte: from, $lte: to },
-			};
+	const match: Record<string, unknown> = {
+		bucketId: new Types.ObjectId(bucketId),
+		paidAt: { $gte: from, $lte: to },
+	};
 
 	const [result] = await ExpenseModel.aggregate([
 		{ $match: match },
@@ -728,19 +705,13 @@ export async function getChartData(
 	userId: string,
 	from: Date,
 	to: Date,
+	bucketId: string,
 	categoryId?: string,
-	bucketId?: string | null,
 ) {
-	const match: Record<string, unknown> = bucketId
-		? {
-				bucketId: new Types.ObjectId(bucketId),
-				paidAt: { $gte: from, $lte: to },
-			}
-		: {
-				userId: new Types.ObjectId(userId),
-				bucketId: null,
-				paidAt: { $gte: from, $lte: to },
-			};
+	const match: Record<string, unknown> = {
+		bucketId: new Types.ObjectId(bucketId),
+		paidAt: { $gte: from, $lte: to },
+	};
 	if (categoryId) {
 		match.categoryId = new Types.ObjectId(categoryId);
 	}

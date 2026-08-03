@@ -102,9 +102,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 	}, []);
 
 	const sharedBuckets = buckets.filter(
-		(b) =>
-			b._id !== null &&
-			b.status === "accepted",
+		(b) => b.status === "accepted",
 	);
 
 	const targetBucketId = isEditing

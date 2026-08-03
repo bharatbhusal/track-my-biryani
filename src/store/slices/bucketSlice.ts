@@ -4,6 +4,8 @@ import {
 	isAnyOf,
 } from "@reduxjs/toolkit";
 import { bucketsApi } from "@/lib/api/buckets";
+import { setActiveBucketId } from "@/store/slices/uiSlice";
+import type { RootState } from "@/store";
 import type { BucketSummary } from "@/types/bucket.types";
 
 type BucketState = {
@@ -22,8 +24,18 @@ const initialState: BucketState = {
 
 export const fetchBuckets = createAsyncThunk(
 	"buckets/fetchList",
-	async () => {
-		return bucketsApi.fetchBuckets();
+	async (_, { dispatch, getState }) => {
+		const data = await bucketsApi.fetchBuckets();
+		const { activeBucketId } = (getState() as RootState).ui;
+		if (!activeBucketId && data.items.length > 0) {
+			const personal =
+				data.items.find((b) => b.isPersonal) ??
+				data.items[0];
+			if (personal) {
+				dispatch(setActiveBucketId(personal._id));
+			}
+		}
+		return data;
 	},
 );
 

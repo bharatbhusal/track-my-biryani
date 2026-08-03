@@ -65,9 +65,7 @@ export async function createCategoryService(
 ) {
 	const payload = categorySchema.parse(body);
 	const ctx = await resolveBucketContext(userId, bucketId);
-	if (ctx.bucketId) {
-		await assertBucketOwner(userId, ctx.bucketId);
-	}
+	await assertBucketOwner(userId, ctx.bucketId);
 
 	const existing = await findUserById(userId);
 	if (!existing) {
@@ -126,9 +124,7 @@ export async function updateCategoryService(
 ) {
 	const payload = categorySchema.parse(body);
 	const ctx = await resolveBucketContext(userId, bucketId);
-	if (ctx.bucketId) {
-		await assertBucketOwner(userId, ctx.bucketId);
-	}
+	await assertBucketOwner(userId, ctx.bucketId);
 
 	const category = await updateCategory(
 		userId,
@@ -165,9 +161,7 @@ export async function deleteCategoryService(
 	categoryId: string,
 ) {
 	const ctx = await resolveBucketContext(userId, bucketId);
-	if (ctx.bucketId) {
-		await assertBucketOwner(userId, ctx.bucketId);
-	}
+	await assertBucketOwner(userId, ctx.bucketId);
 
 	const deleted = await deleteCategory(
 		userId,

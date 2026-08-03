@@ -18,6 +18,7 @@ export type BucketDoc = {
 	name: string;
 	icon?: string;
 	ownerId: Types.ObjectId;
+	isPersonal?: boolean;
 	members: BucketMemberDoc[];
 	createdAt?: Date;
 	updatedAt?: Date;
@@ -68,6 +69,7 @@ export async function createBucket(data: {
 	name: string;
 	icon?: string;
 	ownerId: string;
+	isPersonal?: boolean;
 	members: BucketMemberInput[];
 }) {
 	const bucket = await BucketModel.create(data);

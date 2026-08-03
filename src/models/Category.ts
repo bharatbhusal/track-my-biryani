@@ -11,6 +11,7 @@ const categorySchema = new Schema(
 		bucketId: {
 			type: Types.ObjectId,
 			ref: "Bucket",
+			required: true,
 			index: true,
 		},
 		name: { type: String, required: true, trim: true },
@@ -20,15 +21,7 @@ const categorySchema = new Schema(
 	{ timestamps: true },
 );
 
-categorySchema.index(
-	{ bucketId: 1, name: 1 },
-	{
-		unique: true,
-		partialFilterExpression: {
-			bucketId: { $type: "objectId" },
-		},
-	},
-);
+categorySchema.index({ bucketId: 1, name: 1 }, { unique: true });
 
 export const CategoryModel =
 	models.Category || model("Category", categorySchema);

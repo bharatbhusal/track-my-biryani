@@ -32,18 +32,9 @@ export async function listBucketsService(
 		listBucketsForPendingMember(userId),
 	]);
 
-	const items: BucketSummary[] = [
-		{
-			_id: null,
-			name: "Personal",
-			icon: "📁",
-			ownerId: userId,
-			memberCount: 1,
-			role: "owner",
-			status: "accepted",
-		},
-		...accepted.map((bucket) => toSummary(bucket, userId)),
-	];
+	const items: BucketSummary[] = accepted.map((bucket) =>
+		toSummary(bucket, userId),
+	);
 
 	return {
 		items,
@@ -242,6 +233,7 @@ export async function declineInviteService(
 		name: bucket.name,
 		icon: bucket.icon,
 		ownerId: bucket.ownerId.toString(),
+		isPersonal: bucket.isPersonal,
 		memberCount: bucket.members.length,
 		role: "member",
 		status: "pending",
@@ -331,6 +323,13 @@ async function requireOwner(
 			"OWNER_ONLY",
 		);
 	}
+	if (bucket.isPersonal) {
+		throw new AppError(
+			"This action is not allowed on the personal bucket",
+			400,
+			"BUCKET_IS_PERSONAL",
+		);
+	}
 	return bucket;
 }
 
@@ -364,6 +363,7 @@ function toSummary(bucket: BucketDoc, userId: string): BucketSummary {
 		name: bucket.name,
 		icon: bucket.icon,
 		ownerId: bucket.ownerId.toString(),
+		isPersonal: bucket.isPersonal,
 		memberCount: bucket.members.length,
 		role: member?.role ?? "member",
 		status: member?.status ?? "pending",
@@ -383,6 +383,7 @@ async function toDetail(bucket: BucketDoc): Promise<BucketDetail> {
 		name: bucket.name,
 		icon: bucket.icon,
 		ownerId: bucket.ownerId.toString(),
+		isPersonal: bucket.isPersonal,
 		memberCount: bucket.members.length,
 		members: bucket.members.map((m) => {
 			const user = userById.get(m.userId.toString());

@@ -92,7 +92,7 @@ export function ExpenseDetailView({
 	}, [expense?.categoryId, expense?.bucketId]);
 
 	const sharedBuckets = buckets.filter(
-		(b) => b._id !== null && b.status === "accepted",
+		(b) => b.status === "accepted",
 	);
 
 	const moveOptions = expense
@@ -109,8 +109,7 @@ export function ExpenseDetailView({
 				updateExpense({
 					id,
 					payload: {
-						bucketId:
-							moveTarget === "personal" ? null : moveTarget,
+						bucketId: moveTarget,
 					},
 				}),
 			).unwrap();
@@ -120,8 +119,7 @@ export function ExpenseDetailView({
 			dispatch(
 				fetchExpenseDetail({
 					id,
-					bucketId:
-						moveTarget === "personal" ? null : moveTarget,
+					bucketId: moveTarget,
 				}),
 			);
 		} catch (error) {
@@ -265,13 +263,10 @@ export function ExpenseDetailView({
 							setMoveTarget(e.target.value)
 						}
 					>
-						{expense.bucketId && (
-							<option value="personal">Personal</option>
-						)}
 						{moveOptions.map((b) => (
 							<option
-								key={b._id as string}
-								value={b._id as string}
+								key={b._id}
+								value={b._id}
 							>
 								{b.name}
 							</option>
