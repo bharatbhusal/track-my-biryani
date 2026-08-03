@@ -63,6 +63,13 @@ export function DashboardOverview() {
 		(s) => s.expenses.loading,
 	);
 
+	const [prevBucketId, setPrevBucketId] = useState(activeBucketId);
+	if (prevBucketId !== activeBucketId) {
+		setPrevBucketId(activeBucketId);
+		setPage(1);
+		setSelectedCategoryId(undefined);
+	}
+
 	const { from, to } = useMemo(
 		() => toRangeDates(mainRange),
 		[mainRange.preset, mainRange.offset],
@@ -176,12 +183,7 @@ export function DashboardOverview() {
 					Dashboard
 				</h2>
 				<div className="w-40 shrink-0">
-					<BucketSwitcher
-						onChange={() => {
-							setPage(1);
-							setSelectedCategoryId(undefined);
-						}}
-					/>
+					<BucketSwitcher />
 				</div>
 			</div>
 			<DateRangeBar

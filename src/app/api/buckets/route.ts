@@ -6,21 +6,14 @@ import {
 } from "@/lib/api-response";
 import { connectToDatabase } from "@/lib/db";
 import {
-	createCategory,
-	listCategories,
-	listCategoriesWithStats,
-} from "@/controllers/category.controller";
+	createBucket,
+	listBuckets,
+} from "@/controllers/bucket.controller";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
 	try {
 		await connectToDatabase();
-		const from = request.nextUrl.searchParams.get("from");
-		const to = request.nextUrl.searchParams.get("to");
-		if (from && to) {
-			const data = await listCategoriesWithStats(request);
-			return successResponse(data);
-		}
-		const data = await listCategories(request);
+		const data = await listBuckets();
 		return successResponse(data);
 	} catch (error) {
 		return errorResponse(error);
@@ -30,7 +23,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
 	try {
 		await connectToDatabase();
-		const data = await createCategory(request);
+		const data = await createBucket(request);
 		return successResponse(data, 201);
 	} catch (error) {
 		return errorResponse(error);

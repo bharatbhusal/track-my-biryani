@@ -1,21 +1,23 @@
 "use client";
 
 import { useEffect } from "react";
+import { FiFolder } from "react-icons/fi";
+
 import { Select } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchBuckets } from "@/store/slices/bucketSlice";
 import { setActiveBucketId } from "@/store/slices/uiSlice";
-import type { BucketSummary } from "@/types/bucket.types";
 
-// ponytail: minimal drop-in; Tyrion's settings branch ships the full switcher —
-// replace with his once merged.
 export function BucketSwitcher({
-	onChange,
+	className,
 }: {
-	onChange?: (bucketId: string | null) => void;
+	className?: string;
 }) {
 	const dispatch = useAppDispatch();
-	const buckets = useAppSelector((s) => s.buckets.buckets);
+	const { buckets, loading } = useAppSelector(
+		(s) => s.buckets,
+	);
 	const activeBucketId = useAppSelector(
 		(s) => s.ui.activeBucketId,
 	);
@@ -24,28 +26,38 @@ export function BucketSwitcher({
 		dispatch(fetchBuckets());
 	}, [dispatch]);
 
-	const sharedBuckets = buckets.filter(
-		(b): b is BucketSummary & { _id: string } =>
-			b._id !== null && b.status === "accepted",
-	);
-
 	return (
-		<Select
-			className="w-full"
-			value={activeBucketId ?? ""}
-			aria-label="Active bucket"
-			onChange={(e) => {
-				const bucketId = e.target.value || null;
-				onChange?.(bucketId);
-				dispatch(setActiveBucketId(bucketId));
-			}}
-		>
-			<option value="">Personal</option>
-			{sharedBuckets.map((b) => (
-				<option key={b._id} value={b._id}>
-					{b.name}
-				</option>
-			))}
-		</Select>
+		<div className={cn("relative inline-block", className)}>
+			<FiFolder
+				className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted)]"
+				aria-hidden="true"
+			/>
+			<Select
+				aria-label="Active bucket"
+				value={activeBucketId ?? ""}
+				onChange={(e) =>
+					dispatch(
+						setActiveBucketId(
+							e.target.value === "" ? null : e.target.value,
+						),
+					)
+				}
+				disabled={loading && buckets.length === 0}
+				className="h-9 w-auto min-w-[130px] max-w-[190px] py-1.5 pl-8 pr-2"
+			>
+				{loading && buckets.length === 0 ? (
+					<option value="">Loading…</option>
+				) : (
+					buckets.map((bucket) => (
+						<option
+							key={bucket._id ?? "personal"}
+							value={bucket._id ?? ""}
+						>
+							{bucket.name}
+						</option>
+					))
+				)}
+			</Select>
+		</div>
 	);
 }

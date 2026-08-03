@@ -9,8 +9,12 @@ export async function createCategory(data: {
 	name: string;
 	color: string;
 	emoji?: string;
+	bucketId?: string | null;
 }) {
-	const category = await CategoryModel.create(data);
+	const category = await CategoryModel.create({
+		...data,
+		bucketId: data.bucketId ?? null,
+	});
 	return category.toObject();
 }
 
@@ -56,21 +60,33 @@ export async function ensureCategoryInBucket(
 	}
 }
 
-export async function listCategories(userId: string) {
-	return CategoryModel.find({ userId })
+export async function listCategories(
+	userId: string,
+	bucketId: string | null,
+) {
+	return CategoryModel.find(
+		bucketId ? { bucketId } : { userId, bucketId: null },
+	)
 		.sort({ createdAt: -1 })
 		.lean();
 }
 
 export async function listCategoriesWithStats(
 	userId: string,
+	bucketId: string | null,
 	from: Date,
 	to: Date,
 ) {
-	const match: Record<string, unknown> = {
-		userId: new Types.ObjectId(userId),
-		paidAt: { $gte: from, $lte: to },
-	};
+	const match: Record<string, unknown> = bucketId
+		? {
+				bucketId: new Types.ObjectId(bucketId),
+				paidAt: { $gte: from, $lte: to },
+			}
+		: {
+				userId: new Types.ObjectId(userId),
+				bucketId: null,
+				paidAt: { $gte: from, $lte: to },
+			};
 
 	const categoryStats = await ExpenseModel.aggregate([
 		{ $match: match },
@@ -86,9 +102,9 @@ export async function listCategoriesWithStats(
 		},
 	]);
 
-	const categories = await CategoryModel.find({
-		userId,
-	}).lean();
+	const categories = await CategoryModel.find(
+		bucketId ? { bucketId } : { userId, bucketId: null },
+	).lean();
 
 	const statsById = new Map(
 		categoryStats.map((s) => [s._id.toString(), s]),
@@ -118,6 +134,7 @@ export async function listCategoriesWithStats(
 export async function updateCategory(
 	userId: string,
 	categoryId: string,
+	bucketId: string | null,
 	data: { name: string; color: string; emoji?: string },
 ) {
 	if (!Types.ObjectId.isValid(categoryId)) {
@@ -125,7 +142,9 @@ export async function updateCategory(
 	}
 
 	return CategoryModel.findOneAndUpdate(
-		{ _id: categoryId, userId },
+		bucketId
+			? { _id: categoryId, bucketId }
+			: { _id: categoryId, userId, bucketId: null },
 		data,
 		{ new: true, lean: true },
 	);
@@ -134,28 +153,32 @@ export async function updateCategory(
 export async function getCategoryById(
 	userId: string,
 	categoryId: string,
+	bucketId: string | null,
 ) {
 	if (!Types.ObjectId.isValid(categoryId)) {
 		return null;
 	}
 
-	return CategoryModel.findOne({
-		_id: categoryId,
-		userId,
-	}).lean();
+	return CategoryModel.findOne(
+		bucketId
+			? { _id: categoryId, bucketId }
+			: { _id: categoryId, userId, bucketId: null },
+	).lean();
 }
 
 export async function deleteCategory(
 	userId: string,
 	categoryId: string,
+	bucketId: string | null,
 ) {
 	if (!Types.ObjectId.isValid(categoryId)) {
 		return null;
 	}
-	const hasExpenses = await ExpenseModel.exists({
-		userId,
-		categoryId,
-	});
+	const hasExpenses = await ExpenseModel.exists(
+		bucketId
+			? { bucketId, categoryId }
+			: { userId, bucketId: null, categoryId },
+	);
 
 	if (hasExpenses) {
 		throw new AppError(
@@ -165,8 +188,9 @@ export async function deleteCategory(
 		);
 	}
 
-	return CategoryModel.findOneAndDelete({
-		_id: categoryId,
-		userId,
-	}).lean();
+	return CategoryModel.findOneAndDelete(
+		bucketId
+			? { _id: categoryId, bucketId }
+			: { _id: categoryId, userId, bucketId: null },
+	).lean();
 }
