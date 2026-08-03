@@ -56,6 +56,7 @@ const schema = z.object({
 	amount: z.number().positive(),
 	categoryId: z.string().min(1),
 	paidAt: z.string().min(1),
+	notes: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -109,6 +110,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				amount: undefined,
 				categoryId: "",
 				paidAt: "",
+				notes: "",
 			};
 		if (
 			draftExpense &&
@@ -121,6 +123,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				categoryId: draftExpense.categoryId ?? "",
 				paidAt:
 					draftExpense.paidAt ?? getLocalDateTimeInputValue(),
+				notes: draftExpense.notes ?? "",
 			};
 		}
 		return {
@@ -128,6 +131,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 			amount: undefined,
 			categoryId: "",
 			paidAt: getLocalDateTimeInputValue(),
+			notes: "",
 		};
 	}, [isEditing, draftExpense]);
 
@@ -158,6 +162,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 			paidAt: getLocalDateTimeInputValue(
 				new Date(currentExpense.paidAt),
 			),
+			notes: currentExpense.notes,
 		});
 	}, [currentExpense, reset, isEditing]);
 
@@ -172,6 +177,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				currency,
 				images: [],
 				location: { latitude: 0, longitude: 0 },
+				notes: values.notes,
 			};
 
 			if (isEditing && id) {
@@ -201,7 +207,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 
 	if (isEditing && expensesLoading && !currentExpense) {
 		return (
-			<div className="h-full flex flex-col">
+			<div className="h-full flex flex-col justify-between">
 				<div className="flex flex-col items-center gap-6 px-4 pt-8">
 					<Skeleton className="h-14 w-full max-w-xs" />
 					<Skeleton className="h-10 w-full max-w-xs" />
@@ -281,6 +287,21 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 											{...field}
 											placeholder="What was this for?"
 											className="text-center text-base"
+										/>
+									</FormControl>
+								</FormItem>
+							)}
+						/>
+						<FormField
+							control={control}
+							name="notes"
+							render={({ field }) => (
+								<FormItem className="w-full max-w-xs">
+									<FormControl>
+										<Input
+											{...field}
+											placeholder="Add a note!"
+											className="text-center text-base h-24"
 										/>
 									</FormControl>
 								</FormItem>
