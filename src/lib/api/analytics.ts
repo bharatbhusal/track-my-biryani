@@ -11,6 +11,7 @@ export const analyticsApi = {
 			mimeType: string;
 			exportedAt: string;
 		}>(
-			`/export?format=json${type ? `&type=${encodeURIComponent(type)}` : ""}${bucketId ? `&bucketId=${encodeURIComponent(bucketId)}` : ""}`,
+			`/export?format=json${type ? `&type=${encodeURIComponent(type)}` : ""}`,
+			{ bucketId },
 		),
 };

@@ -17,4 +17,5 @@ export type ApiResponse<T> = ApiSuccess<T> | ApiFailure;
 export type ApiRequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown;
   signal?: AbortSignal;
+  bucketId?: string | null;
 };
