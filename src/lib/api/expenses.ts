@@ -161,10 +161,13 @@ export const expensesApi = {
 			method: "PUT",
 			body: payload,
 		}),
-	deleteExpense: (id: string) =>
-		apiRequest<{ message: string }>(`/expenses/${id}`, {
-			method: "DELETE",
-		}),
+	deleteExpense: (id: string, bucketId?: string | null) =>
+		apiRequest<{ message: string }>(
+			appendBucketId(`/expenses/${id}`, bucketId),
+			{
+				method: "DELETE",
+			},
+		),
 	getOverviewStats: (
 		from: string,
 		to: string,

@@ -133,8 +133,14 @@ export const updateExpense = createAsyncThunk(
 
 export const deleteExpense = createAsyncThunk(
 	"expenses/delete",
-	async (id: string) => {
-		return expensesApi.deleteExpense(id);
+	async ({
+		id,
+		bucketId,
+	}: {
+		id: string;
+		bucketId?: string | null;
+	}) => {
+		return expensesApi.deleteExpense(id, bucketId);
 	},
 );
 
@@ -275,11 +281,10 @@ const expenseSlice = createSlice({
 			})
 			// deleteExpense
 			.addCase(deleteExpense.fulfilled, (state, action) => {
-				state.items = state.items.filter(
-					(e) => e._id !== action.meta.arg,
-				);
+				const id = action.meta.arg.id;
+				state.items = state.items.filter((e) => e._id !== id);
 				state.total = Math.max(0, state.total - 1);
-				if (state.currentExpense?._id === action.meta.arg) {
+				if (state.currentExpense?._id === id) {
 					state.currentExpense = null;
 				}
 			})

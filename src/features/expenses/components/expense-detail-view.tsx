@@ -300,7 +300,12 @@ export function ExpenseDetailView({
 				onCancel={() => setDeleteOpen(false)}
 				onConfirm={async () => {
 					try {
-						await dispatch(deleteExpense(id)).unwrap();
+						await dispatch(
+							deleteExpense({
+								id,
+								bucketId: activeBucketId ?? undefined,
+							}),
+						).unwrap();
 						toast.success("Expense deleted");
 						router.replace("/dashboard");
 					} catch (error) {

@@ -24,9 +24,10 @@ export async function listExpenses(request: NextRequest) {
 
 export async function createExpense(request: NextRequest) {
 	const auth = await getAuthPayload();
-	const bucketId =
-		request.nextUrl.searchParams.get("bucketId") ?? undefined;
 	const body = await request.json();
+	const bucketId =
+		request.nextUrl.searchParams.get("bucketId") ??
+		(body?.bucketId ?? undefined);
 	return createExpenseService(auth.userId, bucketId, body);
 }
 
@@ -46,10 +47,11 @@ export async function updateExpense(
 	context: { params: Promise<{ id: string }> },
 ) {
 	const auth = await getAuthPayload();
-	const bucketId =
-		request.nextUrl.searchParams.get("bucketId") ?? undefined;
 	const { id } = await context.params;
 	const body = await request.json();
+	const bucketId =
+		request.nextUrl.searchParams.get("bucketId") ??
+		(body?.bucketId ?? undefined);
 	return updateExpenseService(auth.userId, bucketId, id, body);
 }
 
