@@ -1,4 +1,7 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+	createSlice,
+	PayloadAction,
+} from "@reduxjs/toolkit";
 import type { GlobalDateRange } from "@/lib/date-range";
 import { DEFAULT_GLOBAL_RANGE } from "@/lib/date-range";
 
@@ -14,6 +17,7 @@ type UIState = {
 		amount: number;
 		categoryId: string;
 		paidAt: string;
+		notes: string;
 	}> | null;
 };
 
@@ -46,21 +50,24 @@ const uiSlice = createSlice({
 			state.locale = action.payload.locale;
 			state.currency = action.payload.currency;
 			state.timezone = action.payload.timezone;
-			state.detectionCompleted = action.payload.detectionCompleted ?? true;
+			state.detectionCompleted =
+				action.payload.detectionCompleted ?? true;
 		},
-		setDateRange(state, action: PayloadAction<GlobalDateRange>) {
+		setDateRange(
+			state,
+			action: PayloadAction<GlobalDateRange>,
+		) {
 			state.dateRange = action.payload;
 		},
 		setDraftExpense(
 			state,
-			action: PayloadAction<
-				Partial<{
-					title: string;
-					amount: number;
-					categoryId: string;
-					paidAt: string;
-				}> | null
-			>,
+			action: PayloadAction<Partial<{
+				title: string;
+				amount: number;
+				categoryId: string;
+				paidAt: string;
+				notes: string;
+			}> | null>,
 		) {
 			state.draftExpense = action.payload;
 		},

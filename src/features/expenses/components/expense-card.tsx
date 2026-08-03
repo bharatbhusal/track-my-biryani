@@ -39,15 +39,17 @@ export function ExpenseCard({
 				className={!hasActions ? "cursor-pointer" : ""}
 			>
 				<div className="flex gap-2 items-center justify-between">
-					<div className="flex gap-2 items-center text-medium">
-						<EmojiBadge
-							color={expense?.categoryColor || ""}
-							emoji={expense?.categoryEmoji}
-							className="flex-1"
-						/>
+					<div className="flex gap-2 items-center text-medium min-w-0 flex-1">
+						<div className="shrink-0">
+							<EmojiBadge
+								color={expense?.categoryColor || ""}
+								emoji={expense?.categoryEmoji}
+								className="flex-1"
+							/>
+						</div>
 
-						<div className="flex flex-col">
-							<p className="font-medium truncate">
+						<div className="flex flex-col min-w-0">
+							<p className="font-medium break-words leading-5">
 								{expense.title}
 							</p>
 							<p className="text-xs text-[var(--color-muted)]">
@@ -55,7 +57,7 @@ export function ExpenseCard({
 							</p>
 						</div>
 					</div>
-					<div className="flex gap-2 items-center">
+					<div className="flex gap-2 items-center shrink-0">
 						<div className="text-right shrink-0">
 							<p className="font-semibold">
 								{formatCurrency(expense.amount, currency)}

@@ -31,7 +31,7 @@ export function DateRangeBar({
 			{loading ? (
 				<Skeleton className="h-5 w-32" />
 			) : (
-				<h3 className="text-base font-semibold tracking-tight">
+				<h3 className="text-base font-semibold tracking-tight truncate">
 					{title}
 				</h3>
 			)}
