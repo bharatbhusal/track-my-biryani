@@ -18,6 +18,7 @@ export type BucketMemberWithName = BucketMember & {
 export type BucketSummary = {
 	_id: string | null;
 	name: string;
+	icon?: string;
 	ownerId: string;
 	memberCount: number;
 	role: BucketRole;
@@ -32,6 +33,7 @@ export type BucketsListPayload = {
 export type BucketDetail = {
 	_id: string;
 	name: string;
+	icon?: string;
 	ownerId: string;
 	memberCount: number;
 	members: BucketMemberWithName[];

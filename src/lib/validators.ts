@@ -90,6 +90,7 @@ export const importDataSchema = z.object({
 
 export const bucketSchema = z.object({
 	name: z.string().trim().min(1).max(50),
+	icon: z.string().trim().min(1).max(8).optional(),
 });
 
 export const inviteSchema = z.object({

@@ -138,11 +138,10 @@ export async function listExpenses(
 	const limit = filters.limit ?? 50;
 	const skip = (page - 1) * limit;
 
-	const isShared = Boolean(bucketId);
-	const expensesQuery = ExpenseModel.find(query);
-	if (isShared) {
-		expensesQuery.populate("userId", "name");
-	}
+	const expensesQuery = ExpenseModel.find(query).populate(
+		"userId",
+		"name username",
+	);
 
 	const [items, total] = await Promise.all([
 		expensesQuery
@@ -158,12 +157,12 @@ export async function listExpenses(
 	]);
 
 	const transformedItems = items.map((item) => {
-		const posterName = isShared
-			? (item.userId as unknown as { name?: string })?.name ?? ""
-			: undefined;
+		const posterName = (
+			item.userId as { username?: string } | undefined
+		)?.username ?? "";
 		return {
 			...item,
-			...(posterName !== undefined ? { posterName } : {}),
+			...(posterName !== "" ? { posterName } : {}),
 			categoryColor: item.categoryId?.color ?? "",
 			categoryEmoji: item.categoryId?.emoji ?? "",
 			categoryId:
