@@ -13,6 +13,9 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { fetchMe, logoutUser } from "@/store/slices/authSlice";
+import { BucketSettings } from "@/features/settings/components/bucket-settings";
+import { InvitationsSection } from "@/features/settings/components/invitations-section";
+import { MigrationCard } from "@/features/settings/components/migration-card";
 
 export function SettingsPage() {
 	const router = useRouter();
@@ -121,6 +124,9 @@ export function SettingsPage() {
 					</Button>
 				</div>
 			</Card>
+			<BucketSettings />
+			<InvitationsSection />
+			<MigrationCard />
 			<Card>
 				<Link
 					href="/logs"
