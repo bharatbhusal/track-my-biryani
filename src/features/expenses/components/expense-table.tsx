@@ -37,7 +37,6 @@ type ExpenseTableProps = {
 	totalPages?: number;
 	onPageChange?: (page: number) => void;
 	emptyMessage?: string;
-	showPoster?: boolean;
 };
 
 function groupByDate(
@@ -64,7 +63,6 @@ export function ExpenseTable({
 	totalPages,
 	onPageChange,
 	emptyMessage = "No expenses found",
-	showPoster = false,
 }: Omit<ExpenseTableProps, "categoryMap">) {
 	const locale = useAppSelector((s) => s.ui.locale);
 	const timezone = useAppSelector((s) => s.ui.timezone);
@@ -151,7 +149,7 @@ export function ExpenseTable({
 								{renderSortIcon("title")}
 							</TableHead>
 							<TableHead>Category</TableHead>
-							{showPoster && <TableHead>Posted by</TableHead>}
+							<TableHead>Posted by</TableHead>
 							<TableHead
 								className={
 									onSort ? "cursor-pointer select-none" : ""
@@ -190,6 +188,9 @@ export function ExpenseTable({
 										<Skeleton className="h-4 w-20" />
 									</TableCell>
 									<TableCell>
+										<Skeleton className="h-4 w-20" />
+									</TableCell>
+									<TableCell>
 										<Skeleton className="h-8 w-8 rounded-md" />
 									</TableCell>
 								</TableRow>
@@ -197,7 +198,7 @@ export function ExpenseTable({
 						) : items.length === 0 ? (
 							<TableRow>
 								<TableCell
-									colSpan={showPoster ? 6 : 5}
+									colSpan={6}
 									className="py-8 text-center text-[var(--color-muted)]"
 								>
 									{emptyMessage}
@@ -220,11 +221,9 @@ export function ExpenseTable({
 											{expense.categoryEmoji ? "" : "Unknown"}
 										</span>
 									</TableCell>
-									{showPoster && (
-										<TableCell className="text-xs text-[var(--color-muted)]">
-											{expense.posterName ?? "—"}
-										</TableCell>
-									)}
+									<TableCell className="text-xs text-[var(--color-muted)]">
+										{expense.posterName ?? "—"}
+									</TableCell>
 									<TableCell className="font-semibold">
 										{formatCurrency(
 											expense.amount,

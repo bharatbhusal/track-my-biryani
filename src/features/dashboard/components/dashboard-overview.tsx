@@ -249,7 +249,6 @@ export function DashboardOverview() {
 				page={page}
 				totalPages={totalPages}
 				onPageChange={setPage}
-				showPoster={Boolean(activeBucketId)}
 			/>
 		</div>
 	);

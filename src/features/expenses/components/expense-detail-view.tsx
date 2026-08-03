@@ -178,7 +178,7 @@ export function ExpenseDetailView({
 				onDelete={() => setDeleteOpen(true)}
 			/>
 
-			{expense.bucketId && expense.posterName && (
+			{expense.posterName && (
 				<p className="px-1 text-xs text-[var(--color-muted)]">
 					Posted by {expense.posterName}
 				</p>
@@ -240,7 +240,6 @@ export function ExpenseDetailView({
 					</p>
 					<ExpenseTable
 						items={recentExpenses}
-						showPoster={Boolean(expense.bucketId)}
 					/>
 				</div>
 			)}

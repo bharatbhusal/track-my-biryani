@@ -55,6 +55,11 @@ export function ExpenseCard({
 							<p className="text-xs text-[var(--color-muted)]">
 								{formatShortDateTime(expense.paidAt)}
 							</p>
+							{expense.posterName && (
+								<p className="text-xs text-[var(--color-muted)]">
+									by {expense.posterName}
+								</p>
+							)}
 						</div>
 					</div>
 					<div className="flex gap-2 items-center shrink-0">
