@@ -37,6 +37,7 @@ const bucketSchema = new Schema(
 			required: true,
 			index: true,
 		},
+		isPersonal: { type: Boolean, default: false, index: true },
 		members: {
 			type: [bucketMemberSchema],
 			default: [],

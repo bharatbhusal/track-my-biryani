@@ -9,30 +9,24 @@ export async function createCategory(data: {
 	name: string;
 	color: string;
 	emoji?: string;
-	bucketId?: string | null;
+	bucketId: string;
 }) {
 	const category = await CategoryModel.create({
 		...data,
-		bucketId: data.bucketId ?? null,
+		bucketId: new Types.ObjectId(data.bucketId),
 	});
 	return category.toObject();
 }
 
 export async function ensureCategoryInBucket(
 	userId: string,
-	bucketId: string | Types.ObjectId | null,
+	bucketId: string,
 	data: { name: string; color: string; emoji?: string },
 ) {
-	const isShared =
-		Boolean(bucketId) &&
-		(bucketId instanceof Types.ObjectId ||
-			Types.ObjectId.isValid(bucketId as string));
-	const filter = isShared
-		? {
-				bucketId: new Types.ObjectId(bucketId as string),
-				name: data.name,
-			}
-		: { userId, bucketId: null, name: data.name };
+	const filter = {
+		bucketId: new Types.ObjectId(bucketId),
+		name: data.name,
+	};
 
 	const existing = await CategoryModel.findOne(filter).lean();
 	if (existing) {
@@ -42,9 +36,7 @@ export async function ensureCategoryInBucket(
 	try {
 		const category = await CategoryModel.create({
 			userId,
-			bucketId: isShared
-				? new Types.ObjectId(bucketId as string)
-				: null,
+			bucketId: new Types.ObjectId(bucketId),
 			name: data.name,
 			color: data.color,
 			emoji: data.emoji,
@@ -62,31 +54,23 @@ export async function ensureCategoryInBucket(
 
 export async function listCategories(
 	userId: string,
-	bucketId: string | null,
+	bucketId: string,
 ) {
-	return CategoryModel.find(
-		bucketId ? { bucketId } : { userId, bucketId: null },
-	)
+	return CategoryModel.find({ bucketId })
 		.sort({ createdAt: -1 })
 		.lean();
 }
 
 export async function listCategoriesWithStats(
 	userId: string,
-	bucketId: string | null,
+	bucketId: string,
 	from: Date,
 	to: Date,
 ) {
-	const match: Record<string, unknown> = bucketId
-		? {
-				bucketId: new Types.ObjectId(bucketId),
-				paidAt: { $gte: from, $lte: to },
-			}
-		: {
-				userId: new Types.ObjectId(userId),
-				bucketId: null,
-				paidAt: { $gte: from, $lte: to },
-			};
+	const match: Record<string, unknown> = {
+		bucketId: new Types.ObjectId(bucketId),
+		paidAt: { $gte: from, $lte: to },
+	};
 
 	const categoryStats = await ExpenseModel.aggregate([
 		{ $match: match },
@@ -102,9 +86,9 @@ export async function listCategoriesWithStats(
 		},
 	]);
 
-	const categories = await CategoryModel.find(
-		bucketId ? { bucketId } : { userId, bucketId: null },
-	).lean();
+	const categories = await CategoryModel.find({
+		bucketId,
+	}).lean();
 
 	const statsById = new Map(
 		categoryStats.map((s) => [s._id.toString(), s]),
@@ -134,7 +118,7 @@ export async function listCategoriesWithStats(
 export async function updateCategory(
 	userId: string,
 	categoryId: string,
-	bucketId: string | null,
+	bucketId: string,
 	data: { name: string; color: string; emoji?: string },
 ) {
 	if (!Types.ObjectId.isValid(categoryId)) {
@@ -142,9 +126,7 @@ export async function updateCategory(
 	}
 
 	return CategoryModel.findOneAndUpdate(
-		bucketId
-			? { _id: categoryId, bucketId }
-			: { _id: categoryId, userId, bucketId: null },
+		{ _id: categoryId, bucketId },
 		data,
 		{ new: true, lean: true },
 	);
@@ -153,32 +135,30 @@ export async function updateCategory(
 export async function getCategoryById(
 	userId: string,
 	categoryId: string,
-	bucketId: string | null,
+	bucketId: string,
 ) {
 	if (!Types.ObjectId.isValid(categoryId)) {
 		return null;
 	}
 
-	return CategoryModel.findOne(
-		bucketId
-			? { _id: categoryId, bucketId }
-			: { _id: categoryId, userId, bucketId: null },
-	).lean();
+	return CategoryModel.findOne({
+		_id: categoryId,
+		bucketId,
+	}).lean();
 }
 
 export async function deleteCategory(
 	userId: string,
 	categoryId: string,
-	bucketId: string | null,
+	bucketId: string,
 ) {
 	if (!Types.ObjectId.isValid(categoryId)) {
 		return null;
 	}
-	const hasExpenses = await ExpenseModel.exists(
-		bucketId
-			? { bucketId, categoryId }
-			: { userId, bucketId: null, categoryId },
-	);
+	const hasExpenses = await ExpenseModel.exists({
+		bucketId,
+		categoryId,
+	});
 
 	if (hasExpenses) {
 		throw new AppError(
@@ -188,9 +168,8 @@ export async function deleteCategory(
 		);
 	}
 
-	return CategoryModel.findOneAndDelete(
-		bucketId
-			? { _id: categoryId, bucketId }
-			: { _id: categoryId, userId, bucketId: null },
-	).lean();
+	return CategoryModel.findOneAndDelete({
+		_id: categoryId,
+		bucketId,
+	}).lean();
 }

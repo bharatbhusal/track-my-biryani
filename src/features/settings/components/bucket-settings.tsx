@@ -398,11 +398,11 @@ export function BucketSettings() {
 				</div>
 			) : (
 				buckets.map((bucket) => {
-					const isPersonal = bucket._id === null;
+					const isPersonal = Boolean(bucket.isPersonal);
 					const isOwner = bucket.role === "owner";
 					return (
 						<Card
-							key={bucket._id ?? "personal"}
+							key={bucket._id}
 							className="flex items-center justify-between gap-3 py-3"
 						>
 							<div className="min-w-0">

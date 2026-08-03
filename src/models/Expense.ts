@@ -19,6 +19,7 @@ const expenseSchema = new Schema(
 		bucketId: {
 			type: Types.ObjectId,
 			ref: "Bucket",
+			required: true,
 			index: true,
 		},
 		notes: { type: String },

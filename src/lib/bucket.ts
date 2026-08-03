@@ -5,22 +5,11 @@ import { BUCKET_ID_HEADER } from "@/lib/constants";
 import { AppError } from "@/lib/errors";
 import { BucketModel } from "@/models/Bucket";
 
-const PERSONAL_BUCKET = "personal";
-
-type BucketMemberDoc = {
-	userId: Types.ObjectId;
-	role: "owner" | "member";
-	status: "pending" | "accepted";
-	invitedBy?: Types.ObjectId;
-	invitedAt?: Date;
-	joinedAt?: Date;
-};
-
 export function getBucketId(
 	request: NextRequest,
 ): string | undefined {
 	const bucketId = request.headers.get(BUCKET_ID_HEADER);
-	if (!bucketId || bucketId === PERSONAL_BUCKET) {
+	if (!bucketId) {
 		return undefined;
 	}
 
@@ -38,9 +27,20 @@ export function getBucketId(
 export async function resolveBucketContext(
 	userId: string,
 	bucketId?: string | null,
-): Promise<{ bucketId: string | null }> {
-	if (!bucketId || bucketId === PERSONAL_BUCKET) {
-		return { bucketId: null };
+): Promise<{ bucketId: string }> {
+	if (!bucketId) {
+		const personal = await BucketModel.findOne({
+			ownerId: new Types.ObjectId(userId),
+			isPersonal: true,
+		}).lean();
+		if (!personal) {
+			throw new AppError(
+				"Personal bucket not found",
+				404,
+				"NOT_FOUND",
+			);
+		}
+		return { bucketId: personal._id.toString() };
 	}
 
 	if (!Types.ObjectId.isValid(bucketId)) {
@@ -53,7 +53,7 @@ export async function resolveBucketContext(
 
 	const bucket = await BucketModel.findById(bucketId).lean();
 	const member = (bucket?.members ?? []).find(
-		(m: BucketMemberDoc) =>
+		(m: { userId: Types.ObjectId; status: string }) =>
 			m.userId.toString() === userId &&
 			m.status === "accepted",
 	);

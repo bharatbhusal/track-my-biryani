@@ -50,8 +50,8 @@ export function BucketSwitcher({
 				) : (
 					buckets.map((bucket) => (
 						<option
-							key={bucket._id ?? "personal"}
-							value={bucket._id ?? ""}
+							key={bucket._id}
+							value={bucket._id}
 						>
 							{bucket.icon ?? "📁"} {bucket.name}
 						</option>

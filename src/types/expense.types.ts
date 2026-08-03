@@ -18,7 +18,7 @@ export type ExpenseItem = {
 	notes?: string;
 	images: string[];
 	location: ExpenseLocation;
-	bucketId?: string | null;
+	bucketId?: string;
 	posterName?: string;
 	createdAt?: string;
 	updatedAt?: string;
@@ -44,7 +44,7 @@ export type CreateExpensePayload = {
 	currency: string;
 	paidAt: string;
 	notes?: string;
-	bucketId?: string | null;
+	bucketId?: string;
 };
 
 export type ExpenseListQuery = {
@@ -58,5 +58,5 @@ export type ExpenseListQuery = {
 	amountMax?: number;
 	sortBy?: "paidAt" | "amount" | "title";
 	order?: "asc" | "desc";
-	bucketId?: string | null;
+	bucketId?: string;
 };
