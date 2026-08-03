@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect } from "react";
 import { FiSearch, FiX } from "react-icons/fi";
 
 import { DateRangeBar } from "@/components/charts/date-range-bar";
-import { BucketSwitcher } from "@/components/layout/bucket-switcher";
 import { ExpenseOverview } from "@/features/expenses/components/expense-overview";
 import { DashboardBarChart } from "@/components/dashboard-bar-chart";
 import { CategoryDistributionBar } from "@/features/expenses/components/category-distribution-bar";
@@ -182,9 +181,6 @@ export function DashboardOverview() {
 				<h2 className="text-lg font-semibold tracking-tight">
 					Dashboard
 				</h2>
-				<div className="w-40 shrink-0">
-					<BucketSwitcher />
-				</div>
 			</div>
 			<DateRangeBar
 				title={periodLabel}

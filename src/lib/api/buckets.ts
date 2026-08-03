@@ -13,7 +13,7 @@ export type MigrationResult = {
 export const bucketsApi = {
 	fetchBuckets: () =>
 		apiRequest<BucketsListPayload>("/buckets"),
-	createBucket: (payload: { name: string }) =>
+	createBucket: (payload: { name: string; icon?: string }) =>
 		apiRequest<BucketDetail>("/buckets", {
 			method: "POST",
 			body: payload,
@@ -22,7 +22,7 @@ export const bucketsApi = {
 		apiRequest<BucketDetail>(`/buckets/${encodeURIComponent(id)}`),
 	updateBucket: (
 		id: string,
-		payload: { name: string },
+		payload: { name: string; icon?: string },
 	) =>
 		apiRequest<BucketDetail>(`/buckets/${encodeURIComponent(id)}`, {
 			method: "PATCH",

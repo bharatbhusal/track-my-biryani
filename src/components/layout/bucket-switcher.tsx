@@ -53,7 +53,7 @@ export function BucketSwitcher({
 							key={bucket._id ?? "personal"}
 							value={bucket._id ?? ""}
 						>
-							{bucket.name}
+							{bucket.icon ?? "📁"} {bucket.name}
 						</option>
 					))
 				)}

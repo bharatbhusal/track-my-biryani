@@ -37,7 +37,10 @@ export const fetchInvitations = createAsyncThunk(
 
 export const createBucket = createAsyncThunk(
 	"buckets/create",
-	async (payload: { name: string }, { dispatch }) => {
+	async (
+		payload: { name: string; icon?: string },
+		{ dispatch },
+	) => {
 		const bucket = await bucketsApi.createBucket(payload);
 		dispatch(fetchBuckets());
 		return bucket;
@@ -47,13 +50,13 @@ export const createBucket = createAsyncThunk(
 export const updateBucket = createAsyncThunk(
 	"buckets/update",
 	async (
-		payload: { id: string; name: string },
+		payload: { id: string; name: string; icon?: string },
 		{ dispatch },
 	) => {
-		const bucket = await bucketsApi.updateBucket(
-			payload.id,
-			{ name: payload.name },
-		);
+		const bucket = await bucketsApi.updateBucket(payload.id, {
+			name: payload.name,
+			icon: payload.icon,
+		});
 		dispatch(fetchBuckets());
 		return bucket;
 	},
