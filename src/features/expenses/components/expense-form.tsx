@@ -40,6 +40,7 @@ import {
 	useAppDispatch,
 } from "@/store/hooks";
 import { fetchCategories } from "@/store/slices/categorySlice";
+import { fetchBuckets } from "@/store/slices/bucketSlice";
 import {
 	fetchExpenseDetail,
 	createExpense,
@@ -75,6 +76,10 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 	const categories = useAppSelector(
 		(s) => s.categories.items,
 	);
+	const buckets = useAppSelector((s) => s.buckets.buckets);
+	const activeBucketId = useAppSelector(
+		(s) => s.ui.activeBucketId,
+	);
 	const currentExpense = useAppSelector(
 		(s) => s.expenses.currentExpense,
 	);
@@ -86,6 +91,9 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 	);
 
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [selectedBucketId, setSelectedBucketId] = useState<
+		string | null
+	>(activeBucketId);
 	const amountRef = useRef<HTMLInputElement>(null);
 	const dateInputRef = useRef<HTMLInputElement>(null);
 
@@ -93,15 +101,36 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 		amountRef.current?.focus();
 	}, []);
 
+	const sharedBuckets = buckets.filter(
+		(b) =>
+			b._id !== null &&
+			b.status === "accepted",
+	);
+
+	const targetBucketId = isEditing
+		? (currentExpense?.bucketId ?? null)
+		: selectedBucketId;
+
 	useEffect(() => {
-		dispatch(fetchCategories());
-	}, [dispatch]);
+		if (buckets.length === 0) {
+			dispatch(fetchBuckets());
+		}
+	}, [dispatch, buckets.length]);
+
+	useEffect(() => {
+		dispatch(fetchCategories(targetBucketId));
+	}, [dispatch, targetBucketId]);
 
 	useEffect(() => {
 		if (isEditing && id) {
-			dispatch(fetchExpenseDetail(id));
+			dispatch(
+				fetchExpenseDetail({
+					id,
+					bucketId: activeBucketId,
+				}),
+			);
 		}
-	}, [dispatch, isEditing, id]);
+	}, [dispatch, isEditing, id, activeBucketId]);
 
 	const defaultValues = useCallback(() => {
 		if (isEditing)
@@ -169,16 +198,19 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 	const onSubmit = async (values: FormValues) => {
 		setIsSubmitting(true);
 		try {
-			const payload: CreateExpensePayload = {
-				title: values.title,
-				amount: values.amount,
-				categoryId: values.categoryId,
-				paidAt: toUtcIsoString(values.paidAt),
-				currency,
-				images: [],
-				location: { latitude: 0, longitude: 0 },
-				notes: values.notes,
-			};
+		const payload: CreateExpensePayload = {
+			title: values.title,
+			amount: values.amount,
+			categoryId: values.categoryId,
+			paidAt: toUtcIsoString(values.paidAt),
+			currency,
+			images: [],
+			location: { latitude: 0, longitude: 0 },
+			notes: values.notes,
+			...(targetBucketId
+				? { bucketId: targetBucketId }
+				: {}),
+		};
 
 			if (isEditing && id) {
 				await dispatch(updateExpense({ id, payload })).unwrap();
@@ -236,10 +268,34 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 					className="h-full flex flex-col justify-between"
 					onSubmit={handleSubmit(onSubmit)}
 				>
-					<div className="flex flex-col items-center gap-6 px-4 pt-8">
-						<FormField
-							control={control}
-							name="amount"
+				<div className="flex flex-col items-center gap-6 px-4 pt-8">
+					{!isEditing && (
+						<div className="w-full max-w-xs">
+							<Select
+								value={selectedBucketId ?? ""}
+								aria-label="Bucket"
+								onChange={(e) => {
+									setSelectedBucketId(
+										e.target.value || null,
+									);
+									setValue("categoryId", "");
+								}}
+							>
+								<option value="">Personal</option>
+								{sharedBuckets.map((b) => (
+									<option
+										key={b._id as string}
+										value={b._id as string}
+									>
+										{b.name}
+									</option>
+								))}
+							</Select>
+						</div>
+					)}
+					<FormField
+						control={control}
+						name="amount"
 							render={({ field }) => (
 								<FormItem className="w-full max-w-xs">
 									<FormControl>

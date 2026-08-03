@@ -33,43 +33,94 @@ function buildListQuery(filters: ExpenseListQuery): string {
 	return params.toString();
 }
 
+function appendBucketId(
+	url: string,
+	bucketId?: string | null,
+): string {
+	if (!bucketId) return url;
+	const sep = url.includes("?") ? "&" : "?";
+	return `${url}${sep}bucketId=${encodeURIComponent(bucketId)}`;
+}
+
 export const expensesApi = {
-	listCategories: () =>
-		apiRequest<CategoryItem[]>("/categories"),
-	createCategory: (payload: {
-		name: string;
-		color?: string;
-		emoji?: string;
-	}) =>
-		apiRequest<CategoryItem>("/categories", {
-			method: "POST",
-			body: payload,
-		}),
+	listCategories: (bucketId?: string | null) =>
+		apiRequest<CategoryItem[]>(
+			appendBucketId("/categories", bucketId),
+		),
+	createCategory: (
+		payload: {
+			name: string;
+			color?: string;
+			emoji?: string;
+		},
+		bucketId?: string | null,
+	) =>
+		apiRequest<CategoryItem>(
+			appendBucketId("/categories", bucketId),
+			{
+				method: "POST",
+				body: payload,
+			},
+		),
 	updateCategory: (
 		id: string,
 		payload: { name: string; color?: string; emoji?: string },
+		bucketId?: string | null,
 	) =>
-		apiRequest<CategoryItem>(`/categories/${id}`, {
-			method: "PUT",
-			body: payload,
-		}),
-	getCategoryById: (id: string) =>
-		apiRequest<CategoryItem>(`/categories/${id}`),
-	deleteCategory: (id: string) =>
-		apiRequest<{ message: string }>(`/categories/${id}`, {
-			method: "DELETE",
-		}),
-	getCategoryStats: (id: string, from: string, to: string) =>
+		apiRequest<CategoryItem>(
+			appendBucketId(`/categories/${id}`, bucketId),
+			{
+				method: "PUT",
+				body: payload,
+			},
+		),
+	getCategoryById: (id: string, bucketId?: string | null) =>
+		apiRequest<CategoryItem>(
+			appendBucketId(`/categories/${id}`, bucketId),
+		),
+	deleteCategory: (
+		id: string,
+		bucketId?: string | null,
+	) =>
+		apiRequest<{ message: string }>(
+			appendBucketId(`/categories/${id}`, bucketId),
+			{
+				method: "DELETE",
+			},
+		),
+	getCategoryStats: (
+		id: string,
+		from: string,
+		to: string,
+		bucketId?: string | null,
+	) =>
 		apiRequest<CategoryRangeStats>(
-			`/categories/${id}/stats?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+			appendBucketId(
+				`/categories/${id}/stats?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+				bucketId,
+			),
 		),
-	getCategoryDistribution: (from: string, to: string) =>
+	getCategoryDistribution: (
+		from: string,
+		to: string,
+		bucketId?: string | null,
+	) =>
 		apiRequest<CategoryBreakdownPoint[]>(
-			`/categories/distribution?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+			appendBucketId(
+				`/categories/distribution?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+				bucketId,
+			),
 		),
-	listCategoriesWithStats: (from: string, to: string) =>
+	listCategoriesWithStats: (
+		from: string,
+		to: string,
+		bucketId?: string | null,
+	) =>
 		apiRequest<CategoryWithStats[]>(
-			`/categories/stats?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+			appendBucketId(
+				`/categories/stats?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+				bucketId,
+			),
 		),
 	listExpenses: (filters: ExpenseListQuery = {}) => {
 		const query = buildListQuery(filters);
@@ -77,12 +128,15 @@ export const expensesApi = {
 			`/expenses${query ? `?${query}` : ""}`,
 		);
 	},
-	getExpenseById: (id: string) =>
-		apiRequest<ExpenseItem>(`/expenses/${id}`),
+	getExpenseById: (id: string, bucketId?: string | null) =>
+		apiRequest<ExpenseItem>(
+			appendBucketId(`/expenses/${id}`, bucketId),
+		),
 	getExpenseContribution: (
 		id: string,
 		from?: string,
 		to?: string,
+		bucketId?: string | null,
 	) => {
 		let url = `/expenses/${encodeURIComponent(id)}/contribution`;
 		const params = new URLSearchParams();
@@ -90,7 +144,9 @@ export const expensesApi = {
 		if (to) params.set("to", to);
 		const qs = params.toString();
 		if (qs) url += `?${qs}`;
-		return apiRequest<ExpenseContribution>(url);
+		return apiRequest<ExpenseContribution>(
+			appendBucketId(url, bucketId),
+		);
 	},
 	createExpense: (payload: CreateExpensePayload) =>
 		apiRequest<ExpenseItem>("/expenses", {
@@ -109,19 +165,30 @@ export const expensesApi = {
 		apiRequest<{ message: string }>(`/expenses/${id}`, {
 			method: "DELETE",
 		}),
-	getOverviewStats: (from: string, to: string) =>
+	getOverviewStats: (
+		from: string,
+		to: string,
+		bucketId?: string | null,
+	) =>
 		apiRequest<DashboardCard[]>(
-			`/expenses/overview?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+			appendBucketId(
+				`/expenses/overview?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+				bucketId,
+			),
 		),
 	getChartData: (
 		from: string,
 		to: string,
 		categoryId?: string,
+		bucketId?: string | null,
 	) => {
 		const params = new URLSearchParams({ from, to });
 		if (categoryId) params.set("categoryId", categoryId);
 		return apiRequest<ChartData>(
-			`/expenses/chart?${params.toString()}`,
+			appendBucketId(
+				`/expenses/chart?${params.toString()}`,
+				bucketId,
+			),
 		);
 	},
 };

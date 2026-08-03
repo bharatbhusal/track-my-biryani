@@ -16,7 +16,10 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
-import { useAppDispatch } from "@/store/hooks";
+import {
+	useAppSelector,
+	useAppDispatch,
+} from "@/store/hooks";
 import {
 	createCategory,
 	updateCategory,
@@ -53,6 +56,9 @@ export function CategoryForm({
 	onCancel,
 }: CategoryFormProps) {
 	const dispatch = useAppDispatch();
+	const activeBucketId = useAppSelector(
+		(s) => s.ui.activeBucketId,
+	);
 	const { resolvedTheme } = useTheme();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -112,6 +118,7 @@ export function CategoryForm({
 							emoji: values.emoji || "🏷️",
 							color: values.color,
 						},
+						bucketId: activeBucketId ?? undefined,
 					}),
 				).unwrap();
 				toast.success("Category updated");
@@ -119,9 +126,12 @@ export function CategoryForm({
 			} else {
 				await dispatch(
 					createCategory({
-						name: values.name.trim(),
-						emoji: values.emoji || "🏷️",
-						color: values.color,
+						payload: {
+							name: values.name.trim(),
+							emoji: values.emoji || "🏷️",
+							color: values.color,
+						},
+						bucketId: activeBucketId ?? undefined,
 					}),
 				).unwrap();
 				toast.success("Category created");

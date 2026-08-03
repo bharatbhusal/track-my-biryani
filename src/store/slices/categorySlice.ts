@@ -25,15 +25,27 @@ const initialState: CategoryState = {
 
 export const fetchCategories = createAsyncThunk(
 	"categories/fetchList",
-	async () => {
-		return expensesApi.listCategories();
+	async (bucketId?: string | null) => {
+		return expensesApi.listCategories(bucketId);
 	},
 );
 
 export const fetchCategoriesWithStats = createAsyncThunk(
 	"categories/fetchListWithStats",
-	async ({ from, to }: { from: string; to: string }) => {
-		return expensesApi.listCategoriesWithStats(from, to);
+	async ({
+		from,
+		to,
+		bucketId,
+	}: {
+		from: string;
+		to: string;
+		bucketId?: string | null;
+	}) => {
+		return expensesApi.listCategoriesWithStats(
+			from,
+			to,
+			bucketId,
+		);
 	},
 );
 
@@ -50,19 +62,36 @@ export const fetchCategoryStats = createAsyncThunk(
 		id,
 		from,
 		to,
+		bucketId,
 	}: {
 		id: string;
 		from: string;
 		to: string;
+		bucketId?: string | null;
 	}) => {
-		return expensesApi.getCategoryStats(id, from, to);
+		return expensesApi.getCategoryStats(
+			id,
+			from,
+			to,
+			bucketId,
+		);
 	},
 );
 
 export const createCategory = createAsyncThunk(
 	"categories/create",
-	async (payload: { name: string; color?: string; emoji?: string }) => {
-		return expensesApi.createCategory(payload);
+	async ({
+		payload,
+		bucketId,
+	}: {
+		payload: {
+			name: string;
+			color?: string;
+			emoji?: string;
+		};
+		bucketId?: string | null;
+	}) => {
+		return expensesApi.createCategory(payload, bucketId);
 	},
 );
 
@@ -71,11 +100,13 @@ export const updateCategory = createAsyncThunk(
 	async ({
 		id,
 		payload,
+		bucketId,
 	}: {
 		id: string;
 		payload: { name: string; color?: string; emoji?: string };
+		bucketId?: string | null;
 	}) => {
-		return expensesApi.updateCategory(id, payload);
+		return expensesApi.updateCategory(id, payload, bucketId);
 	},
 );
 
@@ -88,8 +119,20 @@ export const deleteCategory = createAsyncThunk(
 
 export const fetchCategoryDistribution = createAsyncThunk(
 	"categories/fetchDistribution",
-	async ({ from, to }: { from: string; to: string }) => {
-		return expensesApi.getCategoryDistribution(from, to);
+	async ({
+		from,
+		to,
+		bucketId,
+	}: {
+		from: string;
+		to: string;
+		bucketId?: string | null;
+	}) => {
+		return expensesApi.getCategoryDistribution(
+			from,
+			to,
+			bucketId,
+		);
 	},
 );
 

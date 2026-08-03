@@ -16,6 +16,7 @@ import {
 	useAppDispatch,
 } from "@/store/hooks";
 import { fetchCategoriesWithStats } from "@/store/slices/categorySlice";
+import { fetchBuckets } from "@/store/slices/bucketSlice";
 import { setDateRange } from "@/store/slices/uiSlice";
 import { useDebouncedValue } from "@/hooks/use-debounce";
 import { Input } from "@/components/ui/input";
@@ -24,7 +25,11 @@ import { CategoryCard } from "@/features/categories/components/category-card";
 import { AddCategoryDrawer } from "@/features/categories/components/add-category-drawer";
 import { toIsoBounds } from "@/lib/date-range";
 
-export function CategoryManager() {
+export function CategoryManager({
+	canManageCategories,
+}: {
+	canManageCategories?: boolean;
+}) {
 	const dispatch = useAppDispatch();
 	const [query, setQuery] = useState("");
 	const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
@@ -33,6 +38,10 @@ export function CategoryManager() {
 	const [drawerOpen, setDrawerOpen] = useState(false);
 
 	const range = useAppSelector((s) => s.ui.dateRange);
+	const activeBucketId = useAppSelector(
+		(s) => s.ui.activeBucketId,
+	);
+	const buckets = useAppSelector((s) => s.buckets.buckets);
 	const rangeBounds = useMemo(
 		() => toIsoBounds(range),
 		[range.preset, range.offset],
@@ -43,15 +52,34 @@ export function CategoryManager() {
 
 	const debouncedQuery = useDebouncedValue(query, 300);
 
+	const manage =
+		canManageCategories ??
+		(activeBucketId
+			? buckets.find((b) => b._id === activeBucketId)
+					?.role === "owner"
+			: true);
+
+	useEffect(() => {
+		if (buckets.length === 0) {
+			dispatch(fetchBuckets());
+		}
+	}, [dispatch, buckets.length]);
+
 	useEffect(() => {
 		if (!rangeBounds.from || !rangeBounds.to) return;
 		dispatch(
 			fetchCategoriesWithStats({
 				from: rangeBounds.from,
 				to: rangeBounds.to,
+				bucketId: activeBucketId ?? undefined,
 			}),
 		);
-	}, [dispatch, rangeBounds.from, rangeBounds.to]);
+	}, [
+		dispatch,
+		rangeBounds.from,
+		rangeBounds.to,
+		activeBucketId,
+	]);
 
 	const items = useMemo(
 		() =>
@@ -106,10 +134,12 @@ export function CategoryManager() {
 							)}
 							Sort {sortOrder === "asc" ? "Lowest" : "Highest"}
 						</Button>
-						<Button onClick={() => setDrawerOpen(true)}>
-							<FiPlus className="mr-1.5 h-4 w-4" />
-							Add Category
-						</Button>
+						{manage && (
+							<Button onClick={() => setDrawerOpen(true)}>
+								<FiPlus className="mr-1.5 h-4 w-4" />
+								Add Category
+							</Button>
+						)}
 					</div>
 				</div>
 			</Card>
