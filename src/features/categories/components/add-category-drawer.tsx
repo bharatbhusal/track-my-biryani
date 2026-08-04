@@ -1,6 +1,6 @@
 "use client";
 
-import { Drawer } from "@/components/ui/drawer";
+import { Modal } from "@/components/modals/dialog";
 import { CategoryForm } from "@/features/categories/components/category-form";
 import type { CategoryItem } from "@/types/expense.types";
 
@@ -18,10 +18,13 @@ export function AddCategoryDrawer({
 	const isEditing = Boolean(category);
 
 	return (
-		<Drawer
+		<Modal
 			open={open}
 			onClose={onClose}
 			title={isEditing ? "Edit Category" : "Add Category"}
+			subtitle={
+				isEditing ? "Update category" : "New spending category"
+			}
 			description={
 				isEditing
 					? "Update this spending category"
@@ -33,6 +36,6 @@ export function AddCategoryDrawer({
 				onSuccess={onClose}
 				onCancel={onClose}
 			/>
-		</Drawer>
+		</Modal>
 	);
 }

@@ -5,15 +5,27 @@ import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FiFileText, FiLogOut, FiMoon, FiSun, FiUsers } from "react-icons/fi";
+import {
+	FiFileText,
+	FiLogOut,
+	FiMoon,
+	FiSun,
+	FiUsers,
+} from "react-icons/fi";
 import { toast } from "sonner";
 
 import { BucketSwitcher } from "@/components/layout/bucket-switcher";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { fetchMe, logoutUser } from "@/store/slices/authSlice";
+import {
+	useAppSelector,
+	useAppDispatch,
+} from "@/store/hooks";
+import {
+	fetchMe,
+	logoutUser,
+} from "@/store/slices/authSlice";
 
 export function SettingsPage() {
 	const router = useRouter();
@@ -53,90 +65,54 @@ export function SettingsPage() {
 	};
 
 	return (
-		<div className="space-y-4">
-			<Card>
+		<div className="space-y-2">
+			<div className="flex w-full justify-end">
+				<Button
+					variant="ghost"
+					size="icon"
+					aria-label="Toggle theme"
+					onClick={() =>
+						setTheme(currentTheme === "dark" ? "light" : "dark")
+					}
+					disabled={!mounted}
+				>
+					<FiMoon className="dark:hidden" />
+					<FiSun className="hidden dark:block" />
+				</Button>
 				{authLoading ? (
 					<div className="space-y-3">
 						<Skeleton className="h-5 w-32" />
 						<Skeleton className="h-4 w-48" />
 					</div>
 				) : authUser ? (
-					<div className="flex items-center justify-between gap-3">
-						<div className="min-w-0">
-							<p className="truncate text-sm font-medium">
-								{authUser.name}
-							</p>
-							<p className="truncate text-xs text-[var(--color-muted)]">
-								Signed in
-							</p>
-						</div>
-
-						<Button
-							variant="ghost"
-							size="sm"
-							aria-label="Logout"
-							onClick={handleLogout}
-						>
-							<FiLogOut className="mr-1.5" />
-							Logout
-						</Button>
-					</div>
+					<Button
+						variant="ghost"
+						size="sm"
+						aria-label="Logout"
+						onClick={handleLogout}
+					>
+						<FiLogOut className="mr-1.5" />
+					</Button>
 				) : (
-					<div className="flex items-center justify-between gap-3">
-						<p className="text-sm text-[var(--color-muted)]">
-							Not signed in
-						</p>
-
-						<Link href="/auth/login">
-							<Button size="sm">Login</Button>
-						</Link>
-					</div>
+					<Link href="/auth/login">
+						<Button size="sm">Login</Button>
+					</Link>
 				)}
-			</Card>
+			</div>
 
 			<Card>
 				<div className="space-y-2">
 					<div>
-						<p className="text-sm font-medium">
-							Active bucket
-						</p>
+						<p className="text-sm font-medium">Active bucket</p>
 						<p className="text-xs text-[var(--color-muted)]">
-							Choose which bucket expenses are shown
-							for. Management happens on the Buckets
-							page.
+							Choose which bucket expenses are shown for.
+							Management happens on the Buckets page.
 						</p>
 					</div>
 					<BucketSwitcher />
 				</div>
 			</Card>
-			<Card>
-				<div className="flex items-center justify-between gap-3">
-					<div className="min-w-0">
-						<p className="text-sm font-medium">Theme</p>
 
-						{mounted ? (
-							<p className="text-xs text-[var(--color-muted)] capitalize">
-								{currentTheme}
-							</p>
-						) : (
-							<Skeleton className="mt-1 h-3 w-12" />
-						)}
-					</div>
-
-					<Button
-						variant="ghost"
-						size="icon"
-						aria-label="Toggle theme"
-						onClick={() =>
-							setTheme(currentTheme === "dark" ? "light" : "dark")
-						}
-						disabled={!mounted}
-					>
-						<FiMoon className="dark:hidden" />
-						<FiSun className="hidden dark:block" />
-					</Button>
-				</div>
-			</Card>
 			<Card>
 				<Link
 					href="/buckets"
@@ -145,8 +121,7 @@ export function SettingsPage() {
 					<div className="min-w-0">
 						<p className="text-sm font-medium">Buckets</p>
 						<p className="truncate text-xs text-[var(--color-muted)]">
-							Invitations and the buckets you&apos;re
-							part of
+							Invitations and the buckets you&apos;re part of
 						</p>
 					</div>
 

@@ -196,19 +196,17 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 	const onSubmit = async (values: FormValues) => {
 		setIsSubmitting(true);
 		try {
-		const payload: CreateExpensePayload = {
-			title: values.title,
-			amount: values.amount,
-			categoryId: values.categoryId,
-			paidAt: toUtcIsoString(values.paidAt),
-			currency,
-			images: [],
-			location: { latitude: 0, longitude: 0 },
-			notes: values.notes,
-			...(targetBucketId
-				? { bucketId: targetBucketId }
-				: {}),
-		};
+			const payload: CreateExpensePayload = {
+				title: values.title,
+				amount: values.amount,
+				categoryId: values.categoryId,
+				paidAt: toUtcIsoString(values.paidAt),
+				currency,
+				images: [],
+				location: { latitude: 0, longitude: 0 },
+				notes: values.notes,
+				...(targetBucketId ? { bucketId: targetBucketId } : {}),
+			};
 
 			if (isEditing && id) {
 				await dispatch(updateExpense({ id, payload })).unwrap();
@@ -266,34 +264,10 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 					className="h-full flex flex-col justify-between"
 					onSubmit={handleSubmit(onSubmit)}
 				>
-				<div className="flex flex-col items-center gap-6 px-4 pt-8">
-					{!isEditing && (
-						<div className="w-full max-w-xs">
-							<Select
-								value={selectedBucketId ?? ""}
-								aria-label="Bucket"
-								onChange={(e) => {
-									setSelectedBucketId(
-										e.target.value || null,
-									);
-									setValue("categoryId", "");
-								}}
-							>
-								<option value="">Personal</option>
-								{sharedBuckets.map((b) => (
-									<option
-										key={b._id as string}
-										value={b._id as string}
-									>
-										{b.name}
-									</option>
-								))}
-							</Select>
-						</div>
-					)}
-					<FormField
-						control={control}
-						name="amount"
+					<div className="flex flex-col items-center gap-6 px-4 pt-8">
+						<FormField
+							control={control}
+							name="amount"
 							render={({ field }) => (
 								<FormItem className="w-full max-w-xs">
 									<FormControl>
@@ -364,6 +338,27 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 					</div>
 
 					<div className="space-y-3 px-4 pb-4">
+						{!isEditing && (
+							<div className="w-full">
+								<Select
+									value={selectedBucketId ?? ""}
+									aria-label="Bucket"
+									onChange={(e) => {
+										setSelectedBucketId(e.target.value || null);
+										setValue("categoryId", "");
+									}}
+								>
+									{sharedBuckets.map((b) => (
+										<option
+											key={b._id as string}
+											value={b._id as string}
+										>
+											{b.name}
+										</option>
+									))}
+								</Select>
+							</div>
+						)}
 						<div className="grid grid-cols-2 gap-3">
 							<FormField
 								control={control}
@@ -412,6 +407,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 									</FormItem>
 								)}
 							/>
+
 							<FormField
 								control={control}
 								name="categoryId"

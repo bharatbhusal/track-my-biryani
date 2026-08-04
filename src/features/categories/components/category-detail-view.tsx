@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { ConfirmDrawer } from "@/components/ui/drawer";
+import { ConfirmDialog } from "@/components/modals/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DateRangeBar } from "@/components/charts/date-range-bar";
 
@@ -286,11 +286,11 @@ export function CategoryDetailView({ id }: { id: string }) {
 				category={category}
 			/>
 
-			<ConfirmDrawer
+			<ConfirmDialog
 				open={deleteOpen}
 				title="Delete category"
+				subtitle="Permanent action"
 				description="This action cannot be undone."
-				isPending={false}
 				onCancel={() => setDeleteOpen(false)}
 				onConfirm={async () => {
 					try {

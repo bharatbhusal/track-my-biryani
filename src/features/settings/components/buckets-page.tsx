@@ -6,8 +6,8 @@ import { InvitationsSection } from "@/features/settings/components/invitations-s
 export function BucketsPage() {
 	return (
 		<div className="space-y-4">
-			<InvitationsSection />
 			<BucketSettings />
+			<InvitationsSection />
 		</div>
 	);
 }

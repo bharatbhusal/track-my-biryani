@@ -6,9 +6,12 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ConfirmDialog } from "@/components/ui/dialog";
+import { Modal } from "@/components/modals/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import {
+	useAppDispatch,
+	useAppSelector,
+} from "@/store/hooks";
 import {
 	acceptInvite,
 	declineInvite,
@@ -105,9 +108,7 @@ export function InvitationsSection() {
 							<Button
 								size="sm"
 								disabled={pendingId !== null}
-								onClick={() =>
-									setAccepting(invitation._id!)
-								}
+								onClick={() => setAccepting(invitation._id!)}
 							>
 								<FiCheck className="mr-1" />
 								Accept
@@ -116,9 +117,7 @@ export function InvitationsSection() {
 								variant="ghost"
 								size="sm"
 								disabled={pendingId !== null}
-								onClick={() =>
-									setDeclining(invitation._id!)
-								}
+								onClick={() => setDeclining(invitation._id!)}
 							>
 								<FiX className="mr-1" />
 								Decline
@@ -128,25 +127,60 @@ export function InvitationsSection() {
 				))
 			)}
 
-			<ConfirmDialog
+			<Modal
 				open={accepting !== null}
 				title="Join bucket"
-				description={`Join "${acceptingInvite?.name ?? ""}"?`}
-				onConfirm={() => {
-					if (accepting) handleAccept(accepting);
-				}}
-				onCancel={() => setAccepting(null)}
-			/>
+				subtitle="Accept invitation"
+				description={`Join "${acceptingInvite?.name ?? ""}"? You will get access to all the expenses in the bucket posted by the members. You can post your expenses as well.`}
+				onClose={() => setAccepting(null)}
+			>
+				<div className="flex gap-2 pt-2">
+					<Button
+						variant="outline"
+						className="flex-1"
+						onClick={() => setAccepting(null)}
+					>
+						Cancel
+					</Button>
+					<Button
+						className="flex-1"
+						disabled={pendingId !== null}
+						onClick={() => {
+							if (accepting) handleAccept(accepting);
+						}}
+					>
+						Join
+					</Button>
+				</div>
+			</Modal>
 
-			<ConfirmDialog
+			<Modal
 				open={declining !== null}
 				title="Decline invitation"
-				description={`Decline "${decliningInvite?.name ?? ""}"?`}
-				onConfirm={() => {
-					if (declining) handleDecline(declining);
-				}}
-				onCancel={() => setDeclining(null)}
-			/>
+				subtitle="Reject invitation"
+				description={`Decline "${decliningInvite?.name ?? ""}"? You won't be able to view and add expenses in the bucket.`}
+				onClose={() => setDeclining(null)}
+			>
+				<div className="flex gap-2 pt-2">
+					<Button
+						variant="outline"
+						className="flex-1"
+						onClick={() => setDeclining(null)}
+					>
+						Cancel
+					</Button>
+					<Button
+						variant="destructive"
+						className="flex-1"
+						disabled={pendingId !== null}
+						onClick={() => {
+							if (declining) handleDecline(declining);
+						}}
+					>
+						Decline
+					</Button>
+				</div>
+			</Modal>
 		</section>
 	);
 }

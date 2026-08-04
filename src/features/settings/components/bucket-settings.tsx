@@ -17,8 +17,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ConfirmDialog } from "@/components/ui/dialog";
-import { Drawer } from "@/components/ui/drawer";
+import { ConfirmDialog, Modal } from "@/components/modals/dialog";
 import { Input } from "@/components/ui/input";
 import {
 	Popover,
@@ -28,7 +27,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { bucketsApi } from "@/lib/api/buckets";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import {
+	useAppDispatch,
+	useAppSelector,
+} from "@/store/hooks";
 import {
 	createBucket,
 	deleteBucket,
@@ -58,11 +60,7 @@ export function bucketErrorMessage(
 	if (err instanceof Error) {
 		return err.message;
 	}
-	if (
-		err &&
-		typeof err === "object" &&
-		"message" in err
-	) {
+	if (err && typeof err === "object" && "message" in err) {
 		return String(
 			(err as { message?: unknown }).message ?? fallback,
 		);
@@ -131,9 +129,7 @@ function BucketForm({
 						icon: values.icon || "📁",
 					}),
 				).unwrap();
-				toast.success(
-					`Bucket "${values.name.trim()}" created`,
-				);
+				toast.success(`Bucket "${values.name.trim()}" created`);
 			}
 			onSuccess?.();
 		} catch (err) {
@@ -180,10 +176,7 @@ function BucketForm({
 							{iconValue || "📁"}
 						</button>
 					</PopoverTrigger>
-					<PopoverContent
-						className="w-auto p-0"
-						align="start"
-					>
+					<PopoverContent className="w-auto p-0" align="start">
 						<div className="max-h-[40vh] overflow-y-auto">
 							<EmojiPicker
 								theme={emojiPickerTheme}
@@ -242,26 +235,22 @@ export function BucketSettings() {
 	);
 
 	const [createOpen, setCreateOpen] = useState(false);
-	const [renaming, setRenaming] = useState<BucketSummary | null>(
-		null,
-	);
-	const [inviting, setInviting] = useState<BucketSummary | null>(
-		null,
-	);
+	const [renaming, setRenaming] =
+		useState<BucketSummary | null>(null);
+	const [inviting, setInviting] =
+		useState<BucketSummary | null>(null);
 	const [inviteUsername, setInviteUsername] = useState("");
-	const [deleting, setDeleting] = useState<BucketSummary | null>(
-		null,
-	);
-	const [leaving, setLeaving] = useState<BucketSummary | null>(
-		null,
-	);
-	const [managing, setManaging] = useState<BucketSummary | null>(
-		null,
-	);
-	const [members, setMembers] = useState<BucketMemberWithName[]>(
-		[],
-	);
-	const [membersLoading, setMembersLoading] = useState(false);
+	const [deleting, setDeleting] =
+		useState<BucketSummary | null>(null);
+	const [leaving, setLeaving] =
+		useState<BucketSummary | null>(null);
+	const [managing, setManaging] =
+		useState<BucketSummary | null>(null);
+	const [members, setMembers] = useState<
+		BucketMemberWithName[]
+	>([]);
+	const [membersLoading, setMembersLoading] =
+		useState(false);
 	const [pending, setPending] = useState(false);
 
 	useEffect(() => {
@@ -414,10 +403,8 @@ export function BucketSettings() {
 								</p>
 								<p className="truncate text-xs text-[var(--color-muted)]">
 									{bucket.memberCount}{" "}
-									{bucket.memberCount === 1
-										? "member"
-										: "members"}{" "}
-									· {isOwner ? "Owner" : "Member"}
+									{bucket.memberCount === 1 ? "member" : "members"} ·{" "}
+									{isOwner ? "Owner" : "Member"}
 								</p>
 							</div>
 							<div className="flex shrink-0 items-center gap-1">
@@ -473,22 +460,24 @@ export function BucketSettings() {
 				})
 			)}
 
-			<Drawer
+			<Modal
 				open={createOpen}
 				onClose={() => setCreateOpen(false)}
 				title="Create Bucket"
+				subtitle="New shared space"
 				description="A shared space to track expenses with others."
 			>
 				<BucketForm
 					onSuccess={() => setCreateOpen(false)}
 					onCancel={() => setCreateOpen(false)}
 				/>
-			</Drawer>
+			</Modal>
 
-			<Drawer
+			<Modal
 				open={renaming !== null}
 				onClose={() => setRenaming(null)}
 				title="Rename Bucket"
+				subtitle="Update details"
 				description="Update this bucket's name and icon."
 			>
 				<BucketForm
@@ -496,12 +485,13 @@ export function BucketSettings() {
 					onSuccess={() => setRenaming(null)}
 					onCancel={() => setRenaming(null)}
 				/>
-			</Drawer>
+			</Modal>
 
-			<Drawer
+			<Modal
 				open={inviting !== null}
 				onClose={() => setInviting(null)}
 				title={`Invite to ${inviting?.name ?? ""}`}
+				subtitle="Add a collaborator"
 				description="Invite by exact username."
 			>
 				<form
@@ -517,9 +507,7 @@ export function BucketSettings() {
 						</label>
 						<Input
 							value={inviteUsername}
-							onChange={(e) =>
-								setInviteUsername(e.target.value)
-							}
+							onChange={(e) => setInviteUsername(e.target.value)}
 							placeholder="username"
 							autoFocus
 						/>
@@ -541,12 +529,13 @@ export function BucketSettings() {
 						</Button>
 					</div>
 				</form>
-			</Drawer>
+			</Modal>
 
-			<Drawer
+			<Modal
 				open={managing !== null}
 				onClose={() => setManaging(null)}
 				title={`${managing?.name ?? ""} members`}
+				subtitle="Manage access"
 				description="Revoke pending invites or remove members."
 			>
 				{membersLoading ? (
@@ -584,19 +573,20 @@ export function BucketSettings() {
 									</Button>
 								</li>
 							))}
-						{members.filter((m) => m.role !== "owner")
-							.length === 0 && (
+						{members.filter((m) => m.role !== "owner").length ===
+							0 && (
 							<p className="text-sm text-[var(--color-muted)]">
 								No other members yet.
 							</p>
 						)}
 					</ul>
 				)}
-			</Drawer>
+			</Modal>
 
 			<ConfirmDialog
 				open={deleting !== null}
 				title="Delete bucket"
+				subtitle="Permanent action"
 				description={`Delete "${deleting?.name ?? ""}"? All shared data will be lost. This cannot be undone.`}
 				onConfirm={handleDelete}
 				onCancel={() => setDeleting(null)}
@@ -605,6 +595,7 @@ export function BucketSettings() {
 			<ConfirmDialog
 				open={leaving !== null}
 				title="Leave bucket"
+				subtitle="Revoke access"
 				description={`Leave "${leaving?.name ?? ""}"? You will lose access to its expenses.`}
 				onConfirm={() => {
 					if (leaving) handleLeave(leaving);

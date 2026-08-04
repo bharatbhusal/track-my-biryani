@@ -3,11 +3,10 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { FiFolder } from "react-icons/fi";
 import { toast } from "sonner";
 
 import { Card, CardTitle } from "@/components/ui/card";
-import { ConfirmDrawer, Drawer } from "@/components/ui/drawer";
+import { ConfirmDialog, Modal } from "@/components/modals/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -42,9 +41,9 @@ export function ExpenseDetailView({
 	const dispatch = useAppDispatch();
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [moveOpen, setMoveOpen] = useState(false);
-	const [moveTarget, setMoveTarget] = useState<string | null>(
-		null,
-	);
+	const [moveTarget, setMoveTarget] = useState<
+		string | null
+	>(null);
 	const [isMoving, setIsMoving] = useState(false);
 	const [recentExpenses, setRecentExpenses] = useState<
 		ExpenseItem[]
@@ -96,9 +95,7 @@ export function ExpenseDetailView({
 	);
 
 	const moveOptions = expense
-		? sharedBuckets.filter(
-				(b) => b._id !== expense.bucketId,
-			)
+		? sharedBuckets.filter((b) => b._id !== expense.bucketId)
 		: [];
 
 	const handleMove = async () => {
@@ -189,21 +186,6 @@ export function ExpenseDetailView({
 				</p>
 			)}
 
-			{(moveOptions.length > 0 || expense.bucketId) && (
-				<Button
-					type="button"
-					variant="outline"
-					className="w-full"
-					onClick={() => {
-						setMoveTarget(null);
-						setMoveOpen(true);
-					}}
-				>
-					<FiFolder className="mr-1.5 h-4 w-4" />
-					Move to bucket
-				</Button>
-			)}
-
 			{expense.images.length > 0 && (
 				<Card>
 					<CardTitle className="mb-3">Glimpses</CardTitle>
@@ -243,31 +225,25 @@ export function ExpenseDetailView({
 					<p className="text-sm font-semibold px-1">
 						Recent in Category
 					</p>
-					<ExpenseTable
-						items={recentExpenses}
-					/>
+					<ExpenseTable items={recentExpenses} />
 				</div>
 			)}
 
-			<Drawer
+			<Modal
 				open={moveOpen}
 				onClose={() => setMoveOpen(false)}
 				title="Move to bucket"
+				subtitle="Transfer expense"
 				description="Category resolves from the source expense"
 			>
 				<div className="space-y-3">
 					<Select
 						value={moveTarget ?? ""}
 						aria-label="Destination bucket"
-						onChange={(e) =>
-							setMoveTarget(e.target.value)
-						}
+						onChange={(e) => setMoveTarget(e.target.value)}
 					>
 						{moveOptions.map((b) => (
-							<option
-								key={b._id}
-								value={b._id}
-							>
+							<option key={b._id} value={b._id}>
 								{b.name}
 							</option>
 						))}
@@ -291,13 +267,13 @@ export function ExpenseDetailView({
 						</Button>
 					</div>
 				</div>
-			</Drawer>
+			</Modal>
 
-			<ConfirmDrawer
+			<ConfirmDialog
 				open={deleteOpen}
 				title="Delete expense"
+				subtitle="Permanent action"
 				description="This action cannot be undone."
-				isPending={false}
 				onCancel={() => setDeleteOpen(false)}
 				onConfirm={async () => {
 					try {
