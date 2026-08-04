@@ -30,6 +30,8 @@ export type CategoryItem = {
 	name: string;
 	color: string;
 	emoji?: string;
+	userId?: string;
+	bucketId?: string;
 };
 
 export type ExpensesListPayload = PaginationMeta & {

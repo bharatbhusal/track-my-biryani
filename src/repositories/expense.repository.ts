@@ -764,7 +764,6 @@ export async function getChartData(
 		Record<string, number>
 	>();
 	const periodOrder: string[] = [];
-	const periodTotals = new Map<string, number>();
 
 	for (const row of periodData) {
 		const periodKey = formatPeriodLabel(
@@ -778,27 +777,15 @@ export async function getChartData(
 		if (!periodMap.has(periodKey)) {
 			periodMap.set(periodKey, {});
 			periodOrder.push(periodKey);
-			periodTotals.set(periodKey, 0);
 		}
 		const entry = periodMap.get(periodKey)!;
 		entry[catName] = (entry[catName] ?? 0) + row.total;
-		periodTotals.set(
-			periodKey,
-			(periodTotals.get(periodKey) ?? 0) + row.total,
-		);
 	}
 
 	const series = periodOrder.map((key) => {
 		const categories = periodMap.get(key) ?? {};
 		return { name: key, ...categories };
 	});
-
-	const totals = Array.from(periodTotals.values());
-	const total = totals.reduce((s, v) => s + v, 0);
-	const count = totals.length;
-	const avg = count > 0 ? total / count : 0;
-	const min = count > 0 ? Math.min(...totals) : 0;
-	const max = count > 0 ? Math.max(...totals) : 0;
 
 	const categoryColors: Record<string, string> = {};
 	for (const cat of categories) {
@@ -807,7 +794,6 @@ export async function getChartData(
 
 	return {
 		series,
-		stats: { avg, min, max, total },
 		categoryColors,
 	};
 }

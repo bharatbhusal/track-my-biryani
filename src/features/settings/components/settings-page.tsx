@@ -66,38 +66,43 @@ export function SettingsPage() {
 
 	return (
 		<div className="space-y-2">
-			<div className="flex w-full justify-end">
-				<Button
-					variant="ghost"
-					size="icon"
-					aria-label="Toggle theme"
-					onClick={() =>
-						setTheme(currentTheme === "dark" ? "light" : "dark")
-					}
-					disabled={!mounted}
-				>
-					<FiMoon className="dark:hidden" />
-					<FiSun className="hidden dark:block" />
-				</Button>
-				{authLoading ? (
-					<div className="space-y-3">
-						<Skeleton className="h-5 w-32" />
-						<Skeleton className="h-4 w-48" />
-					</div>
-				) : authUser ? (
+			<div className="flex w-full justify-between items-center">
+				<h2 className="text-lg font-semibold">
+					Hi {authUser?.username || "User"}!
+				</h2>
+				<div>
 					<Button
 						variant="ghost"
-						size="sm"
-						aria-label="Logout"
-						onClick={handleLogout}
+						size="icon"
+						aria-label="Toggle theme"
+						onClick={() =>
+							setTheme(currentTheme === "dark" ? "light" : "dark")
+						}
+						disabled={!mounted}
 					>
-						<FiLogOut className="mr-1.5" />
+						<FiMoon className="dark:hidden" />
+						<FiSun className="hidden dark:block" />
 					</Button>
-				) : (
-					<Link href="/auth/login">
-						<Button size="sm">Login</Button>
-					</Link>
-				)}
+					{authLoading ? (
+						<div className="space-y-3">
+							<Skeleton className="h-5 w-32" />
+							<Skeleton className="h-4 w-48" />
+						</div>
+					) : authUser ? (
+						<Button
+							variant="ghost"
+							size="sm"
+							aria-label="Logout"
+							onClick={handleLogout}
+						>
+							<FiLogOut className="mr-1.5" />
+						</Button>
+					) : (
+						<Link href="/auth/login">
+							<Button size="sm">Login</Button>
+						</Link>
+					)}
+				</div>
 			</div>
 
 			<Card>

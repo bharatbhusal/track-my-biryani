@@ -41,6 +41,9 @@ export function CategoryDetailView({ id }: { id: string }) {
 	const activeBucketId = useAppSelector(
 		(s) => s.ui.activeBucketId,
 	);
+	const currentUserId = useAppSelector(
+		(s) => s.auth.user?.id,
+	);
 
 	const category = useAppSelector(
 		(s) => s.categories.currentCategory,
@@ -50,6 +53,11 @@ export function CategoryDetailView({ id }: { id: string }) {
 	const expensesLoading = useAppSelector(
 		(s) => s.expenses.loading,
 	);
+
+	const isCreator =
+		!!category &&
+		!!currentUserId &&
+		category.userId === currentUserId;
 
 	const rangeBounds = useMemo(
 		() => toIsoBounds(dateRange),
@@ -246,8 +254,12 @@ export function CategoryDetailView({ id }: { id: string }) {
 			{categoryWithStats && (
 				<CategoryCard
 					category={categoryWithStats}
-					onEdit={() => setEditDrawerOpen(true)}
-					onDelete={() => setDeleteOpen(true)}
+					onEdit={
+						isCreator ? () => setEditDrawerOpen(true) : undefined
+					}
+					onDelete={
+						isCreator ? () => setDeleteOpen(true) : undefined
+					}
 				/>
 			)}
 			{expensesLoading ? (

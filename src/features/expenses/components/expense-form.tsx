@@ -338,27 +338,26 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 					</div>
 
 					<div className="space-y-3 px-4 pb-4">
-						{!isEditing && (
-							<div className="w-full">
-								<Select
-									value={selectedBucketId ?? ""}
-									aria-label="Bucket"
-									onChange={(e) => {
-										setSelectedBucketId(e.target.value || null);
-										setValue("categoryId", "");
-									}}
-								>
-									{sharedBuckets.map((b) => (
-										<option
-											key={b._id as string}
-											value={b._id as string}
-										>
-											{b.name}
-										</option>
-									))}
-								</Select>
-							</div>
-						)}
+						<div className="w-full">
+							<Select
+								value={selectedBucketId ?? ""}
+								aria-label="Bucket"
+								onChange={(e) => {
+									setSelectedBucketId(e.target.value || null);
+									setValue("categoryId", "");
+								}}
+							>
+								{sharedBuckets.map((b) => (
+									<option
+										key={b._id as string}
+										value={b._id as string}
+									>
+										{b.name}
+									</option>
+								))}
+							</Select>
+						</div>
+
 						<div className="grid grid-cols-2 gap-3">
 							<FormField
 								control={control}
@@ -433,7 +432,6 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 								)}
 							/>
 						</div>
-
 						<div className="flex gap-2">
 							<Button
 								type="button"

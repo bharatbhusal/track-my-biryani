@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import {
 	Popover,
 	PopoverContent,
@@ -24,6 +25,7 @@ import {
 	createCategory,
 	updateCategory,
 } from "@/store/slices/categorySlice";
+import { fetchBuckets } from "@/store/slices/bucketSlice";
 import type { CategoryItem } from "@/types/expense.types";
 
 const EmojiPicker = dynamic(
@@ -59,10 +61,26 @@ export function CategoryForm({
 	const activeBucketId = useAppSelector(
 		(s) => s.ui.activeBucketId,
 	);
+	const buckets = useAppSelector((s) => s.buckets.buckets);
 	const { resolvedTheme } = useTheme();
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [bucketId, setBucketId] = useState(
+		() => activeBucketId ?? "",
+	);
 
 	const isEditing = Boolean(category);
+
+	useEffect(() => {
+		if (buckets.length === 0) {
+			dispatch(fetchBuckets());
+		}
+	}, [dispatch, buckets.length]);
+
+	useEffect(() => {
+		if (!bucketId && buckets.length > 0) {
+			setBucketId(activeBucketId ?? buckets[0]._id);
+		}
+	}, [bucketId, buckets, activeBucketId]);
 
 	const emojiPickerTheme =
 		resolvedTheme === "dark" ? Theme.DARK : Theme.LIGHT;
@@ -131,7 +149,7 @@ export function CategoryForm({
 							emoji: values.emoji || "🏷️",
 							color: values.color,
 						},
-						bucketId: activeBucketId ?? undefined,
+						bucketId: bucketId || activeBucketId || undefined,
 					}),
 				).unwrap();
 				toast.success("Category created");
@@ -155,6 +173,25 @@ export function CategoryForm({
 			onSubmit={handleSubmit(onSubmit)}
 			className="space-y-4"
 		>
+			{!isEditing && (
+				<div className="space-y-1.5">
+					<label className="text-sm font-medium text-[var(--color-foreground)]">
+						Bucket
+					</label>
+					<Select
+						value={bucketId}
+						onChange={(e) => setBucketId(e.target.value)}
+					>
+						<option value="">Select a bucket</option>
+						{buckets.map((bucket) => (
+							<option key={bucket._id} value={bucket._id}>
+								{bucket.icon} {bucket.name}
+							</option>
+						))}
+					</Select>
+				</div>
+			)}
+
 			<div className="space-y-1.5">
 				<label className="text-sm font-medium text-[var(--color-foreground)]">
 					Name

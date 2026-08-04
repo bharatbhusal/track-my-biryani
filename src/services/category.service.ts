@@ -14,15 +14,29 @@ import {
 	getCategoryDistribution,
 } from "@/repositories/expense.repository";
 import { findUserById } from "@/repositories/user.repository";
-import { BucketModel } from "@/models/Bucket";
 import { logAuditEvent } from "@/services/audit.service";
 import { randomHexColor } from "@/lib/utils";
 
-async function assertBucketOwner(userId: string, bucketId: string) {
-	const bucket = await BucketModel.findById(bucketId).lean();
-	if (!bucket || bucket.ownerId.toString() !== userId) {
+async function assertCategoryCreator(
+	userId: string,
+	categoryId: string,
+	bucketId: string,
+) {
+	const category = await getCategoryById(
+		userId,
+		categoryId,
+		bucketId,
+	);
+	if (!category) {
 		throw new AppError(
-			"Only the bucket owner can manage categories",
+			"Category not found",
+			404,
+			"NOT_FOUND",
+		);
+	}
+	if (category.userId.toString() !== userId) {
+		throw new AppError(
+			"Only the category creator can manage this category",
 			403,
 			"NOT_OWNER",
 		);
@@ -65,7 +79,6 @@ export async function createCategoryService(
 ) {
 	const payload = categorySchema.parse(body);
 	const ctx = await resolveBucketContext(userId, bucketId);
-	await assertBucketOwner(userId, ctx.bucketId);
 
 	const existing = await findUserById(userId);
 	if (!existing) {
@@ -124,7 +137,11 @@ export async function updateCategoryService(
 ) {
 	const payload = categorySchema.parse(body);
 	const ctx = await resolveBucketContext(userId, bucketId);
-	await assertBucketOwner(userId, ctx.bucketId);
+	await assertCategoryCreator(
+		userId,
+		categoryId,
+		ctx.bucketId,
+	);
 
 	const category = await updateCategory(
 		userId,
@@ -161,7 +178,11 @@ export async function deleteCategoryService(
 	categoryId: string,
 ) {
 	const ctx = await resolveBucketContext(userId, bucketId);
-	await assertBucketOwner(userId, ctx.bucketId);
+	await assertCategoryCreator(
+		userId,
+		categoryId,
+		ctx.bucketId,
+	);
 
 	const deleted = await deleteCategory(
 		userId,

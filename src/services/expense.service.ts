@@ -267,14 +267,8 @@ export async function getExpenseOverviewStatsService(
 
 	let periodCount: number;
 	let perPeriodLabel: string;
-	if (dayDiff <= 1) {
-		periodCount = 1;
-		perPeriodLabel = "spend_per_day";
-	} else if (dayDiff <= 7) {
-		periodCount = 7;
-		perPeriodLabel = "spend_per_day";
-	} else if (dayDiff <= 60) {
-		periodCount = dayDiff;
+	if (dayDiff <= 60) {
+		periodCount = Math.max(1, dayDiff);
 		perPeriodLabel = "spend_per_day";
 	} else {
 		periodCount =
@@ -296,7 +290,10 @@ export async function getExpenseOverviewStatsService(
 		},
 		{
 			key: perPeriodLabel,
-			title: "Average",
+			title:
+				perPeriodLabel === "spend_per_month"
+					? "Per Month Spend"
+					: "Per Day Spend",
 			value: averageSpend,
 		},
 	];

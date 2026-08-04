@@ -76,11 +76,5 @@ export type ActivityLogItem = {
 
 export type ChartData = {
 	series: Array<Record<string, string | number>>;
-	stats: {
-		avg: number;
-		min: number;
-		max: number;
-		total: number;
-	};
 	categoryColors: Record<string, string>;
 };
