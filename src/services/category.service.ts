@@ -13,6 +13,7 @@ import {
 	getCategoryRangeStats,
 	getCategoryDistribution,
 } from "@/repositories/expense.repository";
+import { findBucketById } from "@/repositories/bucket.repository";
 import { findUserById } from "@/repositories/user.repository";
 import { logAuditEvent } from "@/services/audit.service";
 import { randomHexColor } from "@/lib/utils";
@@ -41,6 +42,7 @@ async function assertCategoryCreator(
 			"NOT_OWNER",
 		);
 	}
+	return category;
 }
 
 export async function listCategoriesService(
@@ -98,11 +100,12 @@ export async function createCategoryService(
 	});
 
 	await logAuditEvent({
-		userId,
+		actorId: userId,
+		bucketId: ctx.bucketId,
 		action: "create",
-		entityType: "category",
+		entity: "category",
 		entityId: category._id.toString(),
-		metadata: { name: category.name },
+		note: `Created category "${category.name}"`,
 	});
 
 	return category;
@@ -168,12 +171,39 @@ export async function updateCategoryService(
 		);
 	}
 
-	await logAuditEvent({
-		userId,
-		action: "update",
-		entityType: "category",
-		entityId: category._id.toString(),
-	});
+	if (payload.bucketId && payload.bucketId !== ctx.bucketId) {
+		const sourceId = ctx.bucketId;
+		const destId = targetBucketId;
+		const sourceName =
+			(await findBucketById(sourceId))?.name ?? sourceId;
+		const destName =
+			(await findBucketById(destId))?.name ?? destId;
+		await logAuditEvent({
+			actorId: userId,
+			bucketId: sourceId,
+			action: "move-out",
+			entity: "category",
+			entityId: category._id.toString(),
+			note: `Moved category "${category.name}" to ${destName}`,
+		});
+		await logAuditEvent({
+			actorId: userId,
+			bucketId: destId,
+			action: "move-in",
+			entity: "category",
+			entityId: category._id.toString(),
+			note: `Category "${category.name}" moved from ${sourceName}`,
+		});
+	} else {
+		await logAuditEvent({
+			actorId: userId,
+			bucketId: ctx.bucketId,
+			action: "update",
+			entity: "category",
+			entityId: category._id.toString(),
+			note: `Updated category "${category.name}"`,
+		});
+	}
 
 	return category;
 }
@@ -184,7 +214,7 @@ export async function deleteCategoryService(
 	categoryId: string,
 ) {
 	const ctx = await resolveBucketContext(userId, bucketId);
-	await assertCategoryCreator(
+	const category = await assertCategoryCreator(
 		userId,
 		categoryId,
 		ctx.bucketId,
@@ -204,10 +234,12 @@ export async function deleteCategoryService(
 	}
 
 	await logAuditEvent({
-		userId,
+		actorId: userId,
+		bucketId: ctx.bucketId,
 		action: "delete",
-		entityType: "category",
+		entity: "category",
 		entityId: categoryId,
+		note: `Deleted category "${category.name}"`,
 	});
 
 	return { message: "Category deleted" };
