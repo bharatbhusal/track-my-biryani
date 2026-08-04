@@ -4,14 +4,13 @@ import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/modals/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DateRangeBar } from "@/components/charts/date-range-bar";
 
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
-import { AddCategoryDrawer } from "@/features/categories/components/add-category-drawer";
+import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
 import { CategoryCard } from "@/features/categories/components/category-card";
 import {
 	useAppSelector,
@@ -292,10 +291,10 @@ export function CategoryDetailView({ id }: { id: string }) {
 				</>
 			)}
 
-			<AddCategoryDrawer
+			<AddCategoryDialog
 				open={editDrawerOpen}
 				onClose={() => setEditDrawerOpen(false)}
-				category={category}
+				id={category?._id}
 			/>
 
 			<ConfirmDialog
@@ -306,7 +305,12 @@ export function CategoryDetailView({ id }: { id: string }) {
 				onCancel={() => setDeleteOpen(false)}
 				onConfirm={async () => {
 					try {
-						await dispatch(deleteCategory(id)).unwrap();
+						await dispatch(
+							deleteCategory({
+								id,
+								bucketId: category?.bucketId,
+							}),
+						).unwrap();
 						toast.success("Category deleted");
 						router.replace("/categories");
 					} catch (error) {

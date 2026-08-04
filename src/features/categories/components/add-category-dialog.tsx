@@ -2,20 +2,19 @@
 
 import { Modal } from "@/components/modals/dialog";
 import { CategoryForm } from "@/features/categories/components/category-form";
-import type { CategoryItem } from "@/types/expense.types";
 
 type Props = {
 	open: boolean;
 	onClose: () => void;
-	category?: CategoryItem | null;
+	id?: string;
 };
 
-export function AddCategoryDrawer({
+export function AddCategoryDialog({
 	open,
 	onClose,
-	category,
+	id,
 }: Props) {
-	const isEditing = Boolean(category);
+	const isEditing = Boolean(id);
 
 	return (
 		<Modal
@@ -31,11 +30,7 @@ export function AddCategoryDrawer({
 					: "Create a new spending category"
 			}
 		>
-			<CategoryForm
-				category={category}
-				onSuccess={onClose}
-				onCancel={onClose}
-			/>
+			<CategoryForm id={id} onSuccess={onClose} onCancel={onClose} />
 		</Modal>
 	);
 }

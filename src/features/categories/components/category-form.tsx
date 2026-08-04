@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
 import { Theme } from "emoji-picker-react";
 import { FiPlus, FiSave } from "react-icons/fi";
 import { toast } from "sonner";
@@ -16,6 +17,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import {
 	useAppSelector,
@@ -24,9 +26,10 @@ import {
 import {
 	createCategory,
 	updateCategory,
+	fetchCategoryDetail,
 } from "@/store/slices/categorySlice";
 import { fetchBuckets } from "@/store/slices/bucketSlice";
-import type { CategoryItem } from "@/types/expense.types";
+import { setActiveBucketId } from "@/store/slices/uiSlice";
 
 const EmojiPicker = dynamic(
 	() => import("emoji-picker-react"),
@@ -47,28 +50,33 @@ type FormValues = {
 };
 
 type CategoryFormProps = {
-	category?: CategoryItem | null;
+	id?: string;
 	onSuccess?: () => void;
 	onCancel?: () => void;
 };
 
 export function CategoryForm({
-	category,
+	id,
 	onSuccess,
 	onCancel,
 }: CategoryFormProps) {
+	const router = useRouter();
 	const dispatch = useAppDispatch();
 	const activeBucketId = useAppSelector(
 		(s) => s.ui.activeBucketId,
 	);
 	const buckets = useAppSelector((s) => s.buckets.buckets);
+	const category = useAppSelector(
+		(s) => s.categories.currentCategory,
+	);
 	const { resolvedTheme } = useTheme();
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [bucketId, setBucketId] = useState(
+	const [selectedBucketId, setSelectedBucketId] = useState(
 		() => activeBucketId ?? "",
 	);
 
-	const isEditing = Boolean(category);
+	const isEditing = Boolean(id);
+	const categoryLoaded = isEditing && category?._id === id;
 
 	useEffect(() => {
 		if (buckets.length === 0) {
@@ -77,37 +85,50 @@ export function CategoryForm({
 	}, [dispatch, buckets.length]);
 
 	useEffect(() => {
-		if (!bucketId && buckets.length > 0) {
-			setBucketId(activeBucketId ?? buckets[0]._id);
+		if (!selectedBucketId && buckets.length > 0) {
+			setSelectedBucketId(activeBucketId ?? buckets[0]._id);
 		}
-	}, [bucketId, buckets, activeBucketId]);
+	}, [selectedBucketId, buckets, activeBucketId]);
+
+	useEffect(() => {
+		if (isEditing && id) {
+			dispatch(
+				fetchCategoryDetail({
+					id,
+					bucketId: activeBucketId ?? undefined,
+				}),
+			);
+		}
+	}, [dispatch, isEditing, id, activeBucketId]);
 
 	const emojiPickerTheme =
 		resolvedTheme === "dark" ? Theme.DARK : Theme.LIGHT;
 
-	const {
-		register,
-		handleSubmit,
-		reset,
-		setValue,
-		watch,
-	} = useForm<FormValues>({
-		defaultValues: {
-			name: "",
-			color: randomColor(),
-			emoji: "🏷️",
-		},
-	});
+	const { register, handleSubmit, reset, setValue, watch } =
+		useForm<FormValues>({
+			defaultValues: {
+				name: "",
+				color: randomColor(),
+				emoji: "🏷️",
+			},
+		});
 
 	const emojiValue = watch("emoji");
 
 	useEffect(() => {
-		if (category) {
-			reset({
-				name: category.name,
-				color: category.color ?? randomColor(),
-				emoji: category.emoji ?? "🏷️",
-			});
+		if (isEditing) {
+			const loaded =
+				category && category._id === id ? category : null;
+			if (loaded) {
+				reset({
+					name: loaded.name,
+					color: loaded.color ?? randomColor(),
+					emoji: loaded.emoji ?? "🏷️",
+				});
+				setSelectedBucketId(
+					loaded.bucketId ?? activeBucketId ?? "",
+				);
+			}
 		} else {
 			reset({
 				name: "",
@@ -115,7 +136,7 @@ export function CategoryForm({
 				emoji: "🏷️",
 			});
 		}
-	}, [category, reset]);
+	}, [category, id, reset, isEditing]);
 
 	const handleEmojiClick = useCallback(
 		(emojiObject: { emoji: string }) => {
@@ -127,20 +148,32 @@ export function CategoryForm({
 	const onSubmit = async (values: FormValues) => {
 		setIsSubmitting(true);
 		try {
-			if (isEditing && category) {
+			if (isEditing && id) {
 				await dispatch(
 					updateCategory({
-						id: category._id,
+						id,
 						payload: {
 							name: values.name.trim(),
 							emoji: values.emoji || "🏷️",
 							color: values.color,
+							bucketId: selectedBucketId || undefined,
 						},
-						bucketId: activeBucketId ?? undefined,
+						bucketId:
+							category?.bucketId ?? activeBucketId ?? undefined,
 					}),
 				).unwrap();
 				toast.success("Category updated");
-				onSuccess?.();
+				if (
+					selectedBucketId &&
+					selectedBucketId !== category?.bucketId
+				) {
+					dispatch(setActiveBucketId(selectedBucketId));
+				}
+				if (onSuccess) {
+					onSuccess();
+				} else {
+					router.replace(`/categories/${id}`);
+				}
 			} else {
 				await dispatch(
 					createCategory({
@@ -149,7 +182,10 @@ export function CategoryForm({
 							emoji: values.emoji || "🏷️",
 							color: values.color,
 						},
-						bucketId: bucketId || activeBucketId || undefined,
+						bucketId:
+							selectedBucketId ||
+							activeBucketId ||
+							undefined,
 					}),
 				).unwrap();
 				toast.success("Category created");
@@ -168,29 +204,50 @@ export function CategoryForm({
 		}
 	};
 
+	const handleCancel = () => {
+		if (onCancel) onCancel();
+		else if (id) router.replace(`/categories/${id}`);
+	};
+
+	if (isEditing && !categoryLoaded) {
+		return (
+			<div className="space-y-4">
+				<div className="space-y-2">
+					<Skeleton className="h-4 w-16" />
+					<Skeleton className="h-10 w-full" />
+				</div>
+				<div className="space-y-2">
+					<Skeleton className="h-4 w-12" />
+					<Skeleton className="h-10 w-full" />
+				</div>
+				<Skeleton className="h-10 w-32" />
+			</div>
+		);
+	}
+
 	return (
 		<form
 			onSubmit={handleSubmit(onSubmit)}
 			className="space-y-4"
 		>
-			{!isEditing && (
-				<div className="space-y-1.5">
-					<label className="text-sm font-medium text-[var(--color-foreground)]">
-						Bucket
-					</label>
-					<Select
-						value={bucketId}
-						onChange={(e) => setBucketId(e.target.value)}
-					>
-						<option value="">Select a bucket</option>
-						{buckets.map((bucket) => (
-							<option key={bucket._id} value={bucket._id}>
-								{bucket.icon} {bucket.name}
-							</option>
-						))}
-					</Select>
-				</div>
-			)}
+			<div className="space-y-1.5">
+				<label className="text-sm font-medium text-[var(--color-foreground)]">
+					Bucket
+				</label>
+				<Select
+					value={selectedBucketId}
+					onChange={(e) =>
+						setSelectedBucketId(e.target.value)
+					}
+				>
+					<option value="">Select a bucket</option>
+					{buckets.map((bucket) => (
+						<option key={bucket._id} value={bucket._id}>
+							{bucket.icon} {bucket.name}
+						</option>
+					))}
+				</Select>
+			</div>
 
 			<div className="space-y-1.5">
 				<label className="text-sm font-medium text-[var(--color-foreground)]">
@@ -218,10 +275,7 @@ export function CategoryForm({
 								{emojiValue || "🏷️"}
 							</button>
 						</PopoverTrigger>
-						<PopoverContent
-							className="w-auto p-0"
-							align="start"
-						>
+						<PopoverContent className="w-auto p-0" align="start">
 							<div className="max-h-[40vh] overflow-y-auto">
 								<EmojiPicker
 									theme={emojiPickerTheme}
@@ -246,19 +300,17 @@ export function CategoryForm({
 			</div>
 
 			<div className="flex gap-2 pt-2">
-				{onCancel && (
-					<Button
-						type="button"
-						variant="outline"
-						className="flex-1"
-						onClick={onCancel}
-					>
-						Cancel
-					</Button>
-				)}
+				<Button
+					type="button"
+					variant="outline"
+					className="flex-1"
+					onClick={handleCancel}
+				>
+					Cancel
+				</Button>
 				<Button
 					type="submit"
-					className={onCancel ? "flex-1" : "w-full"}
+					className="flex-1"
 					disabled={isSubmitting}
 				>
 					{isSubmitting ? (

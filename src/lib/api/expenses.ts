@@ -52,7 +52,7 @@ export const expensesApi = {
 		}),
 	updateCategory: (
 		id: string,
-		payload: { name: string; color?: string; emoji?: string },
+		payload: { name: string; color?: string; emoji?: string; bucketId?: string },
 		bucketId?: string | null,
 	) =>
 		apiRequest<CategoryItem>(`/categories/${id}`, {

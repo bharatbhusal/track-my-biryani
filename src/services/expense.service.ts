@@ -109,32 +109,41 @@ export async function updateExpenseService(
 	expenseId: string,
 	body: unknown,
 ) {
-	const payload = expenseSchema.parse(body);
-	const sourceCtx = await resolveBucketContext(userId, bucketId);
+	const payload = expenseSchema.partial().parse(body);
 
-	const current = await getExpenseById(
-		expenseId,
-		sourceCtx.bucketId,
-	);
+	const current = await getExpenseById(expenseId);
 	if (!current) {
 		throw new AppError("Expense not found", 404, "NOT_FOUND");
 	}
 
-	const payloadBucketId = payload.bucketId;
-	const moving =
-		payloadBucketId !== undefined &&
-		payloadBucketId !== sourceCtx.bucketId;
+	const targetBucketId = payload.bucketId ?? current.bucketId;
+	await resolveBucketContext(
+		userId,
+		bucketId ?? targetBucketId,
+	);
 
-	let data: Record<string, unknown>;
-	if (moving) {
-		const destCtx = await resolveBucketContext(
+	let categoryId: string;
+	if (payload.categoryId) {
+		const category = await getCategoryById(
 			userId,
-			payloadBucketId,
+			payload.categoryId,
+			targetBucketId,
 		);
+		if (!category) {
+			throw new AppError(
+				"Category does not belong to this bucket",
+				400,
+				"CATEGORY_NOT_IN_BUCKET",
+			);
+		}
+		categoryId = category._id.toString();
+	} else if (targetBucketId === current.bucketId) {
+		categoryId = current.categoryId;
+	} else {
 		const sourceCategory = await getCategoryById(
 			userId,
 			current.categoryId,
-			sourceCtx.bucketId,
+			current.bucketId,
 		);
 		if (!sourceCategory) {
 			throw new AppError(
@@ -145,39 +154,21 @@ export async function updateExpenseService(
 		}
 		const destCategory = await ensureCategoryInBucket(
 			userId,
-			destCtx.bucketId,
+			targetBucketId,
 			{
 				name: sourceCategory.name,
 				color: sourceCategory.color,
 				emoji: sourceCategory.emoji,
 			},
 		);
-		data = {
-			...payload,
-			categoryId: destCategory._id.toString(),
-			bucketId: destCtx.bucketId,
-		};
-	} else {
-		const category = await getCategoryById(
-			userId,
-			payload.categoryId,
-			sourceCtx.bucketId,
-		);
-		if (!category) {
-			throw new AppError(
-				"Category does not belong to this bucket",
-				400,
-				"CATEGORY_NOT_IN_BUCKET",
-			);
-		}
-		data = { ...payload, bucketId: sourceCtx.bucketId };
+		categoryId = destCategory._id.toString();
 	}
 
-	const expense = await updateExpense(
-		userId,
-		expenseId,
-		data,
-	);
+	const expense = await updateExpense(userId, expenseId, {
+		...payload,
+		categoryId,
+		bucketId: targetBucketId,
+	});
 	if (!expense) {
 		throw new AppError("Expense not found", 404, "NOT_FOUND");
 	}

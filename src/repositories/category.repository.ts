@@ -119,7 +119,7 @@ export async function updateCategory(
 	userId: string,
 	categoryId: string,
 	bucketId: string,
-	data: { name: string; color: string; emoji?: string },
+	data: { name: string; color: string; emoji?: string; bucketId?: string },
 ) {
 	if (!Types.ObjectId.isValid(categoryId)) {
 		return null;

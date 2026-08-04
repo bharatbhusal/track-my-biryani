@@ -143,6 +143,11 @@ export async function updateCategoryService(
 		ctx.bucketId,
 	);
 
+	const targetBucketId = payload.bucketId ?? ctx.bucketId;
+	if (targetBucketId !== ctx.bucketId) {
+		await resolveBucketContext(userId, targetBucketId);
+	}
+
 	const category = await updateCategory(
 		userId,
 		categoryId,
@@ -151,6 +156,7 @@ export async function updateCategoryService(
 			name: payload.name,
 			color: payload.color ?? randomHexColor(),
 			emoji: payload.emoji,
+			bucketId: targetBucketId,
 		},
 	);
 

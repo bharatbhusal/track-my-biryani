@@ -109,7 +109,7 @@ export const updateCategory = createAsyncThunk(
 		bucketId,
 	}: {
 		id: string;
-		payload: { name: string; color?: string; emoji?: string };
+		payload: { name: string; color?: string; emoji?: string; bucketId?: string };
 		bucketId?: string | null;
 	}) => {
 		return expensesApi.updateCategory(id, payload, bucketId);
@@ -118,8 +118,14 @@ export const updateCategory = createAsyncThunk(
 
 export const deleteCategory = createAsyncThunk(
 	"categories/delete",
-	async (id: string) => {
-		return expensesApi.deleteCategory(id);
+	async ({
+		id,
+		bucketId,
+	}: {
+		id: string;
+		bucketId?: string | null;
+	}) => {
+		return expensesApi.deleteCategory(id, bucketId);
 	},
 );
 
@@ -218,10 +224,11 @@ const categorySlice = createSlice({
 			})
 			// deleteCategory
 			.addCase(deleteCategory.fulfilled, (state, action) => {
+				const deletedId = action.meta.arg.id;
 				state.items = state.items.filter(
-					(c) => c._id !== action.meta.arg,
+					(c) => c._id !== deletedId,
 				);
-				if (state.currentCategory?._id === action.meta.arg) {
+				if (state.currentCategory?._id === deletedId) {
 					state.currentCategory = null;
 				}
 			})

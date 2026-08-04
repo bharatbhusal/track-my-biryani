@@ -105,9 +105,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 		(b) => b.status === "accepted",
 	);
 
-	const targetBucketId = isEditing
-		? (currentExpense?.bucketId ?? null)
-		: selectedBucketId;
+	const targetBucketId = selectedBucketId;
 
 	useEffect(() => {
 		if (buckets.length === 0) {
@@ -181,6 +179,10 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 	useEffect(() => {
 		if (!isEditing) return;
 		if (!currentExpense) return;
+
+		if (currentExpense.bucketId) {
+			setSelectedBucketId(currentExpense.bucketId);
+		}
 
 		reset({
 			title: currentExpense.title,

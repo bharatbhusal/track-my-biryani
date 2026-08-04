@@ -214,7 +214,7 @@ export async function deleteExpense(
 }
 export async function getExpenseById(
 	expenseId: string,
-	bucketId: string,
+	bucketId?: string,
 ) {
 	if (!Types.ObjectId.isValid(expenseId)) {
 		return null;
@@ -222,7 +222,7 @@ export async function getExpenseById(
 
 	const expense = await ExpenseModel.findOne({
 		_id: expenseId,
-		bucketId,
+		...(bucketId ? { bucketId } : {}),
 	})
 		.populate("categoryId", "emoji color")
 		.lean();

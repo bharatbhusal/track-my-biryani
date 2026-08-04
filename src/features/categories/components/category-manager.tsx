@@ -21,7 +21,7 @@ import { useDebouncedValue } from "@/hooks/use-debounce";
 import { Input } from "@/components/ui/input";
 import { DateRangeBar } from "@/components/charts/date-range-bar";
 import { CategoryCard } from "@/features/categories/components/category-card";
-import { AddCategoryDrawer } from "@/features/categories/components/add-category-drawer";
+import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
 import { toIsoBounds } from "@/lib/date-range";
 
 export function CategoryManager() {
@@ -115,10 +115,10 @@ export function CategoryManager() {
 							)}
 							Sort {sortOrder === "asc" ? "Lowest" : "Highest"}
 						</Button>
-					<Button onClick={() => setDrawerOpen(true)}>
-						<FiPlus className="mr-1.5 h-4 w-4" />
-						Add Category
-					</Button>
+						<Button onClick={() => setDrawerOpen(true)}>
+							<FiPlus className="mr-1.5 h-4 w-4" />
+							Add Category
+						</Button>
 					</div>
 				</div>
 			</Card>
@@ -138,7 +138,7 @@ export function CategoryManager() {
 				)}
 			</div>
 
-			<AddCategoryDrawer
+			<AddCategoryDialog
 				open={drawerOpen}
 				onClose={() => setDrawerOpen(false)}
 			/>

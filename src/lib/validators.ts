@@ -17,6 +17,7 @@ export const categorySchema = z.object({
 	name: z.string().min(1).max(50),
 	color: z.string().regex(HEX_COLOR_REGEX).optional(),
 	emoji: z.string().trim().max(8).optional(),
+	bucketId: z.string().optional(),
 });
 
 const roundedAmountSchema = z
