@@ -18,9 +18,10 @@ export async function getCurrentUserService(userId: string) {
 export async function logoutUserService(userId: string) {
 	await clearAuthCookie();
 	await logAuditEvent({
-		userId,
+		actorId: userId,
 		action: "logout",
-		entityType: "auth",
+		entity: "auth",
+		note: "Logged out",
 	});
 	return { message: "Logged out" };
 }

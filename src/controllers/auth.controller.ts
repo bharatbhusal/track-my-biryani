@@ -10,9 +10,10 @@ export async function signupController(payload: unknown) {
   const result = await registerUser(data);
   await setAuthCookie(result.token);
   await logAuditEvent({
-    userId: result.user.id,
+    actorId: result.user.id,
     action: 'signup',
-    entityType: 'auth',
+    entity: 'auth',
+    note: 'Signed up',
   });
   return result.user;
 }
@@ -23,9 +24,10 @@ export async function loginController(payload: unknown) {
   const result = await loginUser(data);
   await setAuthCookie(result.token);
   await logAuditEvent({
-    userId: result.user.id,
+    actorId: result.user.id,
     action: 'login',
-    entityType: 'auth',
+    entity: 'auth',
+    note: 'Logged in',
   });
   return result.user;
 }

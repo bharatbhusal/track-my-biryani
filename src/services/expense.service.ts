@@ -18,6 +18,7 @@ import {
 	ensureCategoryInBucket,
 	getCategoryById,
 } from "@/repositories/category.repository";
+import { findBucketById } from "@/repositories/bucket.repository";
 import { findUserById } from "@/repositories/user.repository";
 import { logAuditEvent } from "@/services/audit.service";
 
@@ -77,10 +78,12 @@ export async function createExpenseService(
 	});
 
 	await logAuditEvent({
-		userId,
+		actorId: userId,
+		bucketId: ctx.bucketId,
 		action: "create",
-		entityType: "expense",
+		entity: "expense",
 		entityId: expense._id.toString(),
+		note: `Created expense "${expense.title}"`,
 		metadata: { amount: expense.amount },
 	});
 
@@ -173,12 +176,39 @@ export async function updateExpenseService(
 		throw new AppError("Expense not found", 404, "NOT_FOUND");
 	}
 
-	await logAuditEvent({
-		userId,
-		action: "update",
-		entityType: "expense",
-		entityId: expenseId,
-	});
+	if (payload.bucketId && payload.bucketId !== current.bucketId.toString()) {
+		const sourceId = current.bucketId.toString();
+		const destId = targetBucketId;
+		const sourceName =
+			(await findBucketById(sourceId))?.name ?? sourceId;
+		const destName =
+			(await findBucketById(destId))?.name ?? destId;
+		await logAuditEvent({
+			actorId: userId,
+			bucketId: sourceId,
+			action: "move-out",
+			entity: "expense",
+			entityId: expenseId,
+			note: `Moved expense "${expense.title}" to ${destName}`,
+		});
+		await logAuditEvent({
+			actorId: userId,
+			bucketId: destId,
+			action: "move-in",
+			entity: "expense",
+			entityId: expenseId,
+			note: `Expense "${expense.title}" moved from ${sourceName}`,
+		});
+	} else {
+		await logAuditEvent({
+			actorId: userId,
+			bucketId: current.bucketId.toString(),
+			action: "update",
+			entity: "expense",
+			entityId: expenseId,
+			note: `Updated expense "${expense.title}"`,
+		});
+	}
 
 	return expense;
 }
@@ -199,10 +229,12 @@ export async function deleteExpenseService(
 	}
 
 	await logAuditEvent({
-		userId,
+		actorId: userId,
+		bucketId: ctx.bucketId,
 		action: "delete",
-		entityType: "expense",
+		entity: "expense",
 		entityId: expenseId,
+		note: `Deleted expense "${deleted.title}"`,
 	});
 
 	return { message: "Expense deleted" };

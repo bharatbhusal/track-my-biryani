@@ -73,11 +73,12 @@ export async function createBucketService(
 	}
 
 	await logAuditEvent({
-		userId,
+		actorId: userId,
+		bucketId: bucket._id.toString(),
 		action: "create",
-		entityType: "bucket",
+		entity: "bucket",
 		entityId: bucket._id.toString(),
-		metadata: { name: bucket.name },
+		note: `Created bucket "${bucket.name}"`,
 	});
 
 	return toDetail(bucket);
@@ -117,11 +118,12 @@ export async function updateBucketService(
 	});
 
 	await logAuditEvent({
-		userId,
+		actorId: userId,
+		bucketId,
 		action: "update",
-		entityType: "bucket",
+		entity: "bucket",
 		entityId: bucketId,
-		metadata: { name: payload.name },
+		note: `Updated bucket "${payload.name}"`,
 	});
 
 	return toDetail(bucket!);
@@ -131,7 +133,7 @@ export async function deleteBucketService(
 	userId: string,
 	bucketId: string,
 ) {
-	await requireOwner(userId, bucketId);
+	const bucket = await requireOwner(userId, bucketId);
 	const hasExpenses = await expenseExistsInBucket(bucketId);
 	if (hasExpenses) {
 		throw new AppError(
@@ -144,10 +146,12 @@ export async function deleteBucketService(
 	await deleteBucket(bucketId);
 
 	await logAuditEvent({
-		userId,
+		actorId: userId,
+		bucketId,
 		action: "delete",
-		entityType: "bucket",
+		entity: "bucket",
 		entityId: bucketId,
+		note: `Deleted bucket "${bucket.name}"`,
 	});
 
 	return { message: "Bucket deleted" };
@@ -187,10 +191,12 @@ export async function inviteUserService(
 	});
 
 	await logAuditEvent({
-		userId,
+		actorId: userId,
+		bucketId,
 		action: "invite",
-		entityType: "bucket-member",
+		entity: "bucket-member",
 		entityId: bucketId,
+		note: `Invited @${user.username} to ${bucket.name}`,
 		metadata: { targetUserId: targetId },
 	});
 
@@ -205,10 +211,12 @@ export async function acceptInviteService(
 	const bucket = await acceptBucketMember(bucketId, userId, new Date());
 
 	await logAuditEvent({
-		userId,
+		actorId: userId,
+		bucketId,
 		action: "accept",
-		entityType: "bucket-member",
+		entity: "bucket-member",
 		entityId: bucketId,
+		note: `Joined bucket "${bucket!.name}"`,
 	});
 
 	return toDetail(bucket!);
@@ -222,10 +230,12 @@ export async function declineInviteService(
 	await pullBucketMember(bucketId, userId);
 
 	await logAuditEvent({
-		userId,
+		actorId: userId,
+		bucketId,
 		action: "decline",
-		entityType: "bucket-member",
+		entity: "bucket-member",
 		entityId: bucketId,
+		note: `Declined invite to "${bucket.name}"`,
 	});
 
 	return {
@@ -269,10 +279,12 @@ export async function leaveBucketService(
 	await pullBucketMember(bucketId, userId);
 
 	await logAuditEvent({
-		userId,
+		actorId: userId,
+		bucketId,
 		action: "leave",
-		entityType: "bucket-member",
+		entity: "bucket-member",
 		entityId: bucketId,
+		note: `Left bucket "${bucket.name}"`,
 	});
 
 	return { message: "Left the bucket" };
@@ -295,10 +307,12 @@ export async function revokeInviteService(
 	const updated = await pullBucketMember(bucketId, targetUserId);
 
 	await logAuditEvent({
-		userId,
+		actorId: userId,
+		bucketId,
 		action: "revoke",
-		entityType: "bucket-member",
+		entity: "bucket-member",
 		entityId: bucketId,
+		note: `Revoked invite for member of "${bucket.name}"`,
 		metadata: { targetUserId },
 	});
 
