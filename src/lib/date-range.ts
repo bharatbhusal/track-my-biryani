@@ -48,7 +48,10 @@ export function toIsoBounds(range: GlobalDateRange): {
 		from.setDate(now.getDate() - range.offset);
 		from.setHours(0, 0, 0, 0);
 		if (range.offset === 0) {
-			return { from: from.toISOString(), to: now.toISOString() };
+			return {
+				from: from.toISOString(),
+				to: now.toISOString(),
+			};
 		}
 		const to = new Date(from);
 		to.setHours(23, 59, 59, 999);
@@ -61,7 +64,10 @@ export function toIsoBounds(range: GlobalDateRange): {
 		const from = new Date(monday);
 		if (range.offset === 0) {
 			const to = new Date(now);
-			return { from: from.toISOString(), to: to.toISOString() };
+			return {
+				from: from.toISOString(),
+				to: to.toISOString(),
+			};
 		}
 		const to = new Date(monday);
 		to.setDate(to.getDate() + 6);
@@ -73,7 +79,10 @@ export function toIsoBounds(range: GlobalDateRange): {
 		const year = now.getFullYear() - range.offset;
 		const from = new Date(year, 0, 1);
 		if (range.offset === 0) {
-			return { from: from.toISOString(), to: now.toISOString() };
+			return {
+				from: from.toISOString(),
+				to: now.toISOString(),
+			};
 		}
 		const to = new Date(year, 11, 31, 23, 59, 59, 999);
 		return { from: from.toISOString(), to: to.toISOString() };
@@ -82,9 +91,20 @@ export function toIsoBounds(range: GlobalDateRange): {
 	const month = now.getMonth() - range.offset;
 	const from = new Date(now.getFullYear(), month, 1);
 	if (range.offset === 0) {
-		return { from: from.toISOString(), to: now.toISOString() };
+		return {
+			from: from.toISOString(),
+			to: now.toISOString(),
+		};
 	}
-	const to = new Date(now.getFullYear(), month + 1, 0, 23, 59, 59, 999);
+	const to = new Date(
+		now.getFullYear(),
+		month + 1,
+		0,
+		23,
+		59,
+		59,
+		999,
+	);
 	return { from: from.toISOString(), to: to.toISOString() };
 }
 
@@ -126,7 +146,15 @@ export function toRangeDates(range: GlobalDateRange): {
 	const month = now.getMonth() - range.offset;
 	const from = new Date(now.getFullYear(), month, 1);
 	if (range.offset === 0) return { from, to: now };
-	const to = new Date(now.getFullYear(), month + 1, 0, 23, 59, 59, 999);
+	const to = new Date(
+		now.getFullYear(),
+		month + 1,
+		0,
+		23,
+		59,
+		59,
+		999,
+	);
 	return { from, to };
 }
 
@@ -168,20 +196,24 @@ export function computePeriodLabel(
 	}).format(from);
 }
 
-export function rangePeriodLabel(range: GlobalDateRange): string {
+export function rangePeriodLabel(
+	range: GlobalDateRange,
+): string {
 	const { from, to } = toRangeDates(range);
 	return computePeriodLabel(from, to, range.preset);
 }
 
-const STORAGE_KEY = "expense-tracker-range";
+const STORAGE_KEY = "tmb-range";
 
 export function loadPersistedRange(): GlobalDateRange {
-	if (typeof window === "undefined") return DEFAULT_GLOBAL_RANGE;
+	if (typeof window === "undefined")
+		return DEFAULT_GLOBAL_RANGE;
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
 		if (raw) {
 			const p = JSON.parse(raw);
-			if (p?.preset && typeof p.offset === "number") return p as GlobalDateRange;
+			if (p?.preset && typeof p.offset === "number")
+				return p as GlobalDateRange;
 		}
 	} catch {
 		/* ignore */

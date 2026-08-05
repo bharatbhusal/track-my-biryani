@@ -6,8 +6,10 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 import { Card, CardTitle } from "@/components/ui/card";
-import { ConfirmDrawer } from "@/components/ui/drawer";
+import { ConfirmDialog, Modal } from "@/components/modals/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import GoogleMap from "@/components/maps/google-map";
 import {
 	useAppSelector,
@@ -19,7 +21,9 @@ import type { GlobalDateRange } from "@/lib/date-range";
 import {
 	fetchExpenseDetail,
 	deleteExpense,
+	updateExpense,
 } from "@/store/slices/expenseSlice";
+import { fetchBuckets } from "@/store/slices/bucketSlice";
 import { setDateRange } from "@/store/slices/uiSlice";
 import { expensesApi } from "@/lib/api/expenses";
 import { ExpenseCard } from "@/features/expenses/components/expense-card";
@@ -36,6 +40,11 @@ export function ExpenseDetailView({
 	const router = useRouter();
 	const dispatch = useAppDispatch();
 	const [deleteOpen, setDeleteOpen] = useState(false);
+	const [moveOpen, setMoveOpen] = useState(false);
+	const [moveTarget, setMoveTarget] = useState<
+		string | null
+	>(null);
+	const [isMoving, setIsMoving] = useState(false);
 	const [recentExpenses, setRecentExpenses] = useState<
 		ExpenseItem[]
 	>([]);
@@ -49,10 +58,25 @@ export function ExpenseDetailView({
 		(s) => s.expenses.loading,
 	);
 	const localRange = useAppSelector((s) => s.ui.dateRange);
+	const activeBucketId = useAppSelector(
+		(s) => s.ui.activeBucketId,
+	);
+	const buckets = useAppSelector((s) => s.buckets.buckets);
 
 	useEffect(() => {
-		dispatch(fetchExpenseDetail(id));
-	}, [dispatch, id]);
+		dispatch(
+			fetchExpenseDetail({
+				id,
+				bucketId: activeBucketId,
+			}),
+		);
+	}, [dispatch, id, activeBucketId]);
+
+	useEffect(() => {
+		if (buckets.length === 0) {
+			dispatch(fetchBuckets());
+		}
+	}, [dispatch, buckets.length]);
 
 	useEffect(() => {
 		if (!expense?.categoryId) return;
@@ -60,10 +84,51 @@ export function ExpenseDetailView({
 			.listExpenses({
 				categoryId: expense.categoryId,
 				limit: 20,
+				bucketId: expense.bucketId ?? undefined,
 			})
 			.then((res) => setRecentExpenses(res.items))
 			.catch(() => {});
-	}, [expense?.categoryId]);
+	}, [expense?.categoryId, expense?.bucketId]);
+
+	const sharedBuckets = buckets.filter(
+		(b) => b.status === "accepted",
+	);
+
+	const moveOptions = expense
+		? sharedBuckets.filter((b) => b._id !== expense.bucketId)
+		: [];
+
+	const handleMove = async () => {
+		if (!moveTarget) return;
+		setIsMoving(true);
+		try {
+			await dispatch(
+				updateExpense({
+					id,
+					payload: {
+						bucketId: moveTarget,
+					},
+				}),
+			).unwrap();
+			toast.success("Expense moved");
+			setMoveOpen(false);
+			setMoveTarget(null);
+			dispatch(
+				fetchExpenseDetail({
+					id,
+					bucketId: moveTarget,
+				}),
+			);
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Failed to move expense",
+			);
+		} finally {
+			setIsMoving(false);
+		}
+	};
 
 	if (expensesLoading && !expense) {
 		return (
@@ -115,6 +180,12 @@ export function ExpenseDetailView({
 				onDelete={() => setDeleteOpen(true)}
 			/>
 
+			{expense.posterName && (
+				<p className="px-1 text-xs text-[var(--color-muted)]">
+					Posted by {expense.posterName}
+				</p>
+			)}
+
 			{expense.images.length > 0 && (
 				<Card>
 					<CardTitle className="mb-3">Glimpses</CardTitle>
@@ -158,15 +229,60 @@ export function ExpenseDetailView({
 				</div>
 			)}
 
-			<ConfirmDrawer
+			<Modal
+				open={moveOpen}
+				onClose={() => setMoveOpen(false)}
+				title="Move to bucket"
+				subtitle="Transfer expense"
+				description="Category resolves from the source expense"
+			>
+				<div className="space-y-3">
+					<Select
+						value={moveTarget ?? ""}
+						aria-label="Destination bucket"
+						onChange={(e) => setMoveTarget(e.target.value)}
+					>
+						{moveOptions.map((b) => (
+							<option key={b._id} value={b._id}>
+								{b.name}
+							</option>
+						))}
+					</Select>
+					<div className="flex gap-2">
+						<Button
+							type="button"
+							variant="outline"
+							className="flex-1"
+							onClick={() => setMoveOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button
+							type="button"
+							className="flex-1"
+							disabled={!moveTarget || isMoving}
+							onClick={handleMove}
+						>
+							{isMoving ? "Moving..." : "Move"}
+						</Button>
+					</div>
+				</div>
+			</Modal>
+
+			<ConfirmDialog
 				open={deleteOpen}
 				title="Delete expense"
+				subtitle="Permanent action"
 				description="This action cannot be undone."
-				isPending={false}
 				onCancel={() => setDeleteOpen(false)}
 				onConfirm={async () => {
 					try {
-						await dispatch(deleteExpense(id)).unwrap();
+						await dispatch(
+							deleteExpense({
+								id,
+								bucketId: activeBucketId ?? undefined,
+							}),
+						).unwrap();
 						toast.success("Expense deleted");
 						router.replace("/dashboard");
 					} catch (error) {

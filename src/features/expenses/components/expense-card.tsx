@@ -23,7 +23,12 @@ export function ExpenseCard({
 	onDelete,
 }: Props) {
 	const currency = useAppSelector((s) => s.ui.currency);
-	const hasActions = onEdit || onDelete;
+	const currentUserId = useAppSelector(
+		(s) => s.auth.user?.id,
+	);
+	const isOwner =
+		!!currentUserId && expense.userId === currentUserId;
+	const hasActions = isOwner && (onEdit || onDelete);
 	const router = useRouter();
 
 	return (
@@ -50,11 +55,19 @@ export function ExpenseCard({
 
 						<div className="flex flex-col min-w-0">
 							<p className="font-medium break-words leading-5">
-								{expense.title}
+								{expense.title
+									? expense.title.charAt(0).toUpperCase() +
+										expense.title.slice(1)
+									: expense.title}
 							</p>
 							<p className="text-xs text-[var(--color-muted)]">
 								{formatShortDateTime(expense.paidAt)}
 							</p>
+							{expense.posterName && (
+								<p className="text-xs text-[var(--color-muted)]">
+									by {expense.posterName}
+								</p>
+							)}
 						</div>
 					</div>
 					<div className="flex gap-2 items-center shrink-0">

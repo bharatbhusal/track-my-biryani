@@ -66,21 +66,7 @@ export type CategoryWithStats = {
 	pct: number;
 };
 
-export type ActivityLogItem = {
-	_id: string;
-	action: string;
-	entityType: string;
-	entityId?: string;
-	timestamp: string;
-};
-
 export type ChartData = {
 	series: Array<Record<string, string | number>>;
-	stats: {
-		avg: number;
-		min: number;
-		max: number;
-		total: number;
-	};
 	categoryColors: Record<string, string>;
 };

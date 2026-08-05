@@ -9,24 +9,66 @@ export async function createCategory(data: {
 	name: string;
 	color: string;
 	emoji?: string;
+	bucketId: string;
 }) {
-	const category = await CategoryModel.create(data);
+	const category = await CategoryModel.create({
+		...data,
+		bucketId: new Types.ObjectId(data.bucketId),
+	});
 	return category.toObject();
 }
 
-export async function listCategories(userId: string) {
-	return CategoryModel.find({ userId })
+export async function ensureCategoryInBucket(
+	userId: string,
+	bucketId: string,
+	data: { name: string; color: string; emoji?: string },
+) {
+	const filter = {
+		bucketId: new Types.ObjectId(bucketId),
+		name: data.name,
+	};
+
+	const existing = await CategoryModel.findOne(filter).lean();
+	if (existing) {
+		return existing;
+	}
+
+	try {
+		const category = await CategoryModel.create({
+			userId,
+			bucketId: new Types.ObjectId(bucketId),
+			name: data.name,
+			color: data.color,
+			emoji: data.emoji,
+		});
+		return category.toObject();
+	} catch (error) {
+		// ponytail: concurrent create loses the race → re-find the winner
+		const refound = await CategoryModel.findOne(filter).lean();
+		if (refound) {
+			return refound;
+		}
+		throw error;
+	}
+}
+
+export async function listCategories(
+	userId: string,
+	bucketId: string,
+) {
+	return CategoryModel.find({ bucketId })
 		.sort({ createdAt: -1 })
 		.lean();
 }
 
 export async function listCategoriesWithStats(
 	userId: string,
+	bucketId: string,
 	from: Date,
 	to: Date,
 ) {
 	const match: Record<string, unknown> = {
-		userId: new Types.ObjectId(userId),
+		bucketId: new Types.ObjectId(bucketId),
 		paidAt: { $gte: from, $lte: to },
 	};
 
@@ -45,7 +87,7 @@ export async function listCategoriesWithStats(
 	]);
 
 	const categories = await CategoryModel.find({
-		userId,
+		bucketId,
 	}).lean();
 
 	const statsById = new Map(
@@ -76,14 +118,15 @@ export async function listCategoriesWithStats(
 export async function updateCategory(
 	userId: string,
 	categoryId: string,
-	data: { name: string; color: string; emoji?: string },
+	bucketId: string,
+	data: { name: string; color: string; emoji?: string; bucketId?: string },
 ) {
 	if (!Types.ObjectId.isValid(categoryId)) {
 		return null;
 	}
 
 	return CategoryModel.findOneAndUpdate(
-		{ _id: categoryId, userId },
+		{ _id: categoryId, bucketId },
 		data,
 		{ new: true, lean: true },
 	);
@@ -92,6 +135,7 @@ export async function updateCategory(
 export async function getCategoryById(
 	userId: string,
 	categoryId: string,
+	bucketId: string,
 ) {
 	if (!Types.ObjectId.isValid(categoryId)) {
 		return null;
@@ -99,19 +143,20 @@ export async function getCategoryById(
 
 	return CategoryModel.findOne({
 		_id: categoryId,
-		userId,
+		bucketId,
 	}).lean();
 }
 
 export async function deleteCategory(
 	userId: string,
 	categoryId: string,
+	bucketId: string,
 ) {
 	if (!Types.ObjectId.isValid(categoryId)) {
 		return null;
 	}
 	const hasExpenses = await ExpenseModel.exists({
-		userId,
+		bucketId,
 		categoryId,
 	});
 
@@ -125,6 +170,6 @@ export async function deleteCategory(
 
 	return CategoryModel.findOneAndDelete({
 		_id: categoryId,
-		userId,
+		bucketId,
 	}).lean();
 }

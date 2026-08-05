@@ -33,6 +33,9 @@ import {
 export function DashboardOverview() {
 	const dispatch = useAppDispatch();
 	const mainRange = useAppSelector((s) => s.ui.dateRange);
+	const activeBucketId = useAppSelector(
+		(s) => s.ui.activeBucketId,
+	);
 	const [selectedCategoryId, setSelectedCategoryId] =
 		useState<string | undefined>();
 	const [query, setQuery] = useState("");
@@ -59,6 +62,13 @@ export function DashboardOverview() {
 		(s) => s.expenses.loading,
 	);
 
+	const [prevBucketId, setPrevBucketId] = useState(activeBucketId);
+	if (prevBucketId !== activeBucketId) {
+		setPrevBucketId(activeBucketId);
+		setPage(1);
+		setSelectedCategoryId(undefined);
+	}
+
 	const { from, to } = useMemo(
 		() => toRangeDates(mainRange),
 		[mainRange.preset, mainRange.offset],
@@ -75,15 +85,22 @@ export function DashboardOverview() {
 			fetchOverviewStats({
 				from: isoBounds.from,
 				to: isoBounds.to,
+				bucketId: activeBucketId ?? undefined,
 			}),
 		);
 		dispatch(
 			fetchCategoryDistribution({
 				from: isoBounds.from,
 				to: isoBounds.to,
+				bucketId: activeBucketId ?? undefined,
 			}),
 		);
-	}, [dispatch, isoBounds.from, isoBounds.to]);
+	}, [
+		dispatch,
+		isoBounds.from,
+		isoBounds.to,
+		activeBucketId,
+	]);
 
 	useEffect(() => {
 		if (!isoBounds.from || !isoBounds.to) return;
@@ -92,6 +109,7 @@ export function DashboardOverview() {
 				from: isoBounds.from,
 				to: isoBounds.to,
 				categoryId: selectedCategoryId,
+				bucketId: activeBucketId ?? undefined,
 			}),
 		);
 	}, [
@@ -99,6 +117,7 @@ export function DashboardOverview() {
 		isoBounds.from,
 		isoBounds.to,
 		selectedCategoryId,
+		activeBucketId,
 	]);
 
 	useEffect(() => {
@@ -113,6 +132,7 @@ export function DashboardOverview() {
 				to: isoBounds.to,
 				sortBy,
 				order,
+				bucketId: activeBucketId ?? undefined,
 			}),
 		);
 	}, [
@@ -124,6 +144,7 @@ export function DashboardOverview() {
 		isoBounds.to,
 		sortBy,
 		order,
+		activeBucketId,
 	]);
 
 	const periodLabel = useMemo(

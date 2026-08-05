@@ -53,7 +53,11 @@ export function CategoryCard({
 									size="icon"
 									className="h-8 w-8"
 									aria-label="Edit category"
-									onClick={onEdit}
+									onClick={(e) => {
+										e.preventDefault();
+										e.stopPropagation();
+										onEdit();
+									}}
 								>
 									<FiEdit2 className="h-4 w-4" />
 								</Button>
@@ -64,7 +68,11 @@ export function CategoryCard({
 									size="icon"
 									className="h-8 w-8"
 									aria-label="Delete category"
-									onClick={onDelete}
+									onClick={(e) => {
+										e.preventDefault();
+										e.stopPropagation();
+										onDelete();
+									}}
 								>
 									<FiTrash2 className="h-4 w-4" />
 								</Button>

@@ -1,4 +1,5 @@
 import { AppError } from "@/lib/errors";
+import { resolveBucketContext } from "@/lib/bucket";
 import {
 	expenseFiltersSchema,
 	expenseSchema,
@@ -13,22 +14,31 @@ import {
 	listExpenses,
 	updateExpense,
 } from "@/repositories/expense.repository";
+import {
+	ensureCategoryInBucket,
+	getCategoryById,
+} from "@/repositories/category.repository";
+import { findBucketById } from "@/repositories/bucket.repository";
 import { findUserById } from "@/repositories/user.repository";
 import { logAuditEvent } from "@/services/audit.service";
 
 export async function listExpensesService(
 	userId: string,
 	queryParams: Record<string, string>,
+	bucketId?: string | null,
 ) {
+	const ctx = await resolveBucketContext(userId, bucketId);
 	const filters = expenseFiltersSchema.parse(queryParams);
-	return listExpenses(userId, filters);
+	return listExpenses(userId, filters, ctx.bucketId);
 }
 
 export async function createExpenseService(
 	userId: string,
+	bucketId: string | null | undefined,
 	body: unknown,
 ) {
 	const payload = expenseSchema.parse(body);
+	const ctx = await resolveBucketContext(userId, bucketId);
 
 	const existing = await findUserById(userId);
 	if (!existing) {
@@ -39,8 +49,22 @@ export async function createExpenseService(
 		);
 	}
 
+	const category = await getCategoryById(
+		userId,
+		payload.categoryId,
+		ctx.bucketId,
+	);
+	if (!category) {
+		throw new AppError(
+			"Category does not belong to this bucket",
+			400,
+			"CATEGORY_NOT_IN_BUCKET",
+		);
+	}
+
 	const expense = await createExpense({
 		userId,
+		bucketId: ctx.bucketId,
 		title: payload.title,
 		amount: payload.amount,
 		categoryId: payload.categoryId,
@@ -54,10 +78,12 @@ export async function createExpenseService(
 	});
 
 	await logAuditEvent({
-		userId,
+		actorId: userId,
+		bucketId: ctx.bucketId,
 		action: "create",
-		entityType: "expense",
+		entity: "expense",
 		entityId: expense._id.toString(),
+		note: `Created expense "${expense.title}"`,
 		metadata: { amount: expense.amount },
 	});
 
@@ -67,8 +93,13 @@ export async function createExpenseService(
 export async function getExpenseService(
 	userId: string,
 	expenseId: string,
+	bucketId?: string | null,
 ) {
-	const expense = await getExpenseById(userId, expenseId);
+	const ctx = await resolveBucketContext(userId, bucketId);
+	const expense = await getExpenseById(
+		expenseId,
+		ctx.bucketId,
+	);
 	if (!expense) {
 		throw new AppError("Expense not found", 404, "NOT_FOUND");
 	}
@@ -77,25 +108,107 @@ export async function getExpenseService(
 
 export async function updateExpenseService(
 	userId: string,
+	bucketId: string | null | undefined,
 	expenseId: string,
 	body: unknown,
 ) {
-	const payload = expenseSchema.parse(body);
-	const expense = await updateExpense(
+	const payload = expenseSchema.partial().parse(body);
+
+	const current = await getExpenseById(expenseId);
+	if (!current) {
+		throw new AppError("Expense not found", 404, "NOT_FOUND");
+	}
+
+	const targetBucketId = payload.bucketId ?? current.bucketId;
+	await resolveBucketContext(
 		userId,
-		expenseId,
-		payload,
+		bucketId ?? targetBucketId,
 	);
+
+	let categoryId: string;
+	if (payload.categoryId) {
+		const category = await getCategoryById(
+			userId,
+			payload.categoryId,
+			targetBucketId,
+		);
+		if (!category) {
+			throw new AppError(
+				"Category does not belong to this bucket",
+				400,
+				"CATEGORY_NOT_IN_BUCKET",
+			);
+		}
+		categoryId = category._id.toString();
+	} else if (targetBucketId === current.bucketId) {
+		categoryId = current.categoryId;
+	} else {
+		const sourceCategory = await getCategoryById(
+			userId,
+			current.categoryId,
+			current.bucketId,
+		);
+		if (!sourceCategory) {
+			throw new AppError(
+				"Source category not found",
+				400,
+				"CATEGORY_NOT_IN_BUCKET",
+			);
+		}
+		const destCategory = await ensureCategoryInBucket(
+			userId,
+			targetBucketId,
+			{
+				name: sourceCategory.name,
+				color: sourceCategory.color,
+				emoji: sourceCategory.emoji,
+			},
+		);
+		categoryId = destCategory._id.toString();
+	}
+
+	const expense = await updateExpense(userId, expenseId, {
+		...payload,
+		categoryId,
+		bucketId: targetBucketId,
+	});
 	if (!expense) {
 		throw new AppError("Expense not found", 404, "NOT_FOUND");
 	}
 
-	await logAuditEvent({
-		userId,
-		action: "update",
-		entityType: "expense",
-		entityId: expenseId,
-	});
+	if (payload.bucketId && payload.bucketId !== current.bucketId.toString()) {
+		const sourceId = current.bucketId.toString();
+		const destId = targetBucketId;
+		const sourceName =
+			(await findBucketById(sourceId))?.name ?? sourceId;
+		const destName =
+			(await findBucketById(destId))?.name ?? destId;
+		await logAuditEvent({
+			actorId: userId,
+			bucketId: sourceId,
+			action: "move-out",
+			entity: "expense",
+			entityId: expenseId,
+			note: `Moved expense "${expense.title}" to ${destName}`,
+		});
+		await logAuditEvent({
+			actorId: userId,
+			bucketId: destId,
+			action: "move-in",
+			entity: "expense",
+			entityId: expenseId,
+			note: `Expense "${expense.title}" moved from ${sourceName}`,
+		});
+	} else {
+		await logAuditEvent({
+			actorId: userId,
+			bucketId: current.bucketId.toString(),
+			action: "update",
+			entity: "expense",
+			entityId: expenseId,
+			note: `Updated expense "${expense.title}"`,
+		});
+	}
 
 	return expense;
 }
@@ -103,17 +216,25 @@ export async function updateExpenseService(
 export async function deleteExpenseService(
 	userId: string,
 	expenseId: string,
+	bucketId?: string | null,
 ) {
-	const deleted = await deleteExpense(userId, expenseId);
+	const ctx = await resolveBucketContext(userId, bucketId);
+	const deleted = await deleteExpense(
+		userId,
+		expenseId,
+		ctx.bucketId,
+	);
 	if (!deleted) {
 		throw new AppError("Expense not found", 404, "NOT_FOUND");
 	}
 
 	await logAuditEvent({
-		userId,
+		actorId: userId,
+		bucketId: ctx.bucketId,
 		action: "delete",
-		entityType: "expense",
+		entity: "expense",
 		entityId: expenseId,
+		note: `Deleted expense "${deleted.title}"`,
 	});
 
 	return { message: "Expense deleted" };
@@ -122,12 +243,15 @@ export async function deleteExpenseService(
 export async function getContributionService(
 	userId: string,
 	expenseId: string,
+	bucketId?: string | null,
 	from?: string,
 	to?: string,
 ) {
+	const ctx = await resolveBucketContext(userId, bucketId);
 	const data = await getExpenseContribution(
 		userId,
 		expenseId,
+		ctx.bucketId,
 		from ? new Date(from) : undefined,
 		to ? new Date(to) : undefined,
 	);
@@ -141,6 +265,7 @@ export async function getExpenseOverviewStatsService(
 	userId: string,
 	from: string,
 	to: string,
+	bucketId?: string | null,
 ) {
 	if (!from || !to) {
 		throw new AppError(
@@ -148,12 +273,14 @@ export async function getExpenseOverviewStatsService(
 			400,
 		);
 	}
+	const ctx = await resolveBucketContext(userId, bucketId);
 	const fromDate = new Date(from);
 	const toDate = new Date(to);
 	const { total } = await getExpenseOverviewStats(
 		userId,
 		fromDate,
 		toDate,
+		ctx.bucketId,
 	);
 
 	const dayDiff = Math.ceil(
@@ -163,14 +290,8 @@ export async function getExpenseOverviewStatsService(
 
 	let periodCount: number;
 	let perPeriodLabel: string;
-	if (dayDiff <= 1) {
-		periodCount = 1;
-		perPeriodLabel = "spend_per_day";
-	} else if (dayDiff <= 7) {
-		periodCount = 7;
-		perPeriodLabel = "spend_per_day";
-	} else if (dayDiff <= 60) {
-		periodCount = dayDiff;
+	if (dayDiff <= 60) {
+		periodCount = Math.max(1, dayDiff);
 		perPeriodLabel = "spend_per_day";
 	} else {
 		periodCount =
@@ -192,7 +313,10 @@ export async function getExpenseOverviewStatsService(
 		},
 		{
 			key: perPeriodLabel,
-			title: "Average",
+			title:
+				perPeriodLabel === "spend_per_month"
+					? "Per Month Spend"
+					: "Per Day Spend",
 			value: averageSpend,
 		},
 	];
@@ -205,6 +329,7 @@ export async function getChartDataService(
 	from: string,
 	to: string,
 	categoryId?: string,
+	bucketId?: string | null,
 ) {
 	if (!from || !to) {
 		throw new AppError(
@@ -212,10 +337,12 @@ export async function getChartDataService(
 			400,
 		);
 	}
+	const ctx = await resolveBucketContext(userId, bucketId);
 	return getChartData(
 		userId,
 		new Date(from),
 		new Date(to),
+		ctx.bucketId,
 		categoryId || undefined,
 	);
 }

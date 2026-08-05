@@ -10,7 +10,7 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/ui/dialog";
+import { Modal } from "@/components/modals/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { uploadsApi } from "@/lib/api/uploads";
@@ -251,6 +251,8 @@ export function GlimpsesUpload({
 			<Modal
 				open={!!clickedImage}
 				title="Image"
+				subtitle="Full image preview"
+				description="Click download to save a copy."
 				onClose={() => setClickedImage(null)}
 				className="sm:max-w-3xl"
 			>

@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 type ModalProps = {
 	open: boolean;
 	title: string;
+	subtitle: string;
 	description?: string;
 	onClose: () => void;
 	children: React.ReactNode;
@@ -19,13 +20,17 @@ type ModalProps = {
 export function Modal({
 	open,
 	title,
+	subtitle,
 	description,
 	onClose,
 	children,
 	className,
 }: ModalProps) {
 	return (
-		<DialogPrimitive.Root open={open} onOpenChange={(v) => !v && onClose()}>
+		<DialogPrimitive.Root
+			open={open}
+			onOpenChange={(v) => !v && onClose()}
+		>
 			<DialogPrimitive.Portal>
 				<DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
 				<DialogPrimitive.Content
@@ -34,16 +39,14 @@ export function Modal({
 						className,
 					)}
 				>
-					<div className="mb-4 flex items-start justify-between gap-3">
+					<div className="mb-4 flex items-start justify-between gap-3 border-b pb-2">
 						<div>
 							<DialogPrimitive.Title className="text-base font-semibold tracking-tight">
 								{title}
 							</DialogPrimitive.Title>
-							{description ? (
-								<DialogPrimitive.Description className="mt-1 text-sm text-[var(--color-muted)]">
-									{description}
-								</DialogPrimitive.Description>
-							) : null}
+							<p className="text-sm text-[var(--color-muted)]">
+								{subtitle}
+							</p>
 						</div>
 						<DialogPrimitive.Close asChild>
 							<Button
@@ -56,6 +59,11 @@ export function Modal({
 							</Button>
 						</DialogPrimitive.Close>
 					</div>
+					{description ? (
+						<DialogPrimitive.Description className="mb-3 text-sm text-[var(--color-muted)]">
+							{description}
+						</DialogPrimitive.Description>
+					) : null}
 					{children}
 				</DialogPrimitive.Content>
 			</DialogPrimitive.Portal>
@@ -66,6 +74,7 @@ export function Modal({
 type ConfirmDialogProps = {
 	open: boolean;
 	title: string;
+	subtitle: string;
 	description: string;
 	onConfirm: () => void;
 	onCancel: () => void;
@@ -74,12 +83,20 @@ type ConfirmDialogProps = {
 export function ConfirmDialog({
 	open,
 	title,
+	subtitle,
 	description,
 	onConfirm,
 	onCancel,
 }: ConfirmDialogProps) {
 	return (
-		<Modal open={open} title={title} description={description} onClose={onCancel} className="max-w-sm">
+		<Modal
+			open={open}
+			title={title}
+			subtitle={subtitle}
+			description={description}
+			onClose={onCancel}
+			className="max-w-sm"
+		>
 			<div className="mt-4 flex justify-end gap-2">
 				<Button variant="ghost" onClick={onCancel}>
 					Cancel

@@ -4,14 +4,13 @@ import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardTitle } from "@/components/ui/card";
-import { ConfirmDrawer } from "@/components/ui/drawer";
+import { Card } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/modals/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DateRangeBar } from "@/components/charts/date-range-bar";
 
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
-import { AddCategoryDrawer } from "@/features/categories/components/add-category-drawer";
+import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
 import { CategoryCard } from "@/features/categories/components/category-card";
 import {
 	useAppSelector,
@@ -38,6 +37,12 @@ export function CategoryDetailView({ id }: { id: string }) {
 	const [page, setPage] = useState(1);
 
 	const dateRange = useAppSelector((s) => s.ui.dateRange);
+	const activeBucketId = useAppSelector(
+		(s) => s.ui.activeBucketId,
+	);
+	const currentUserId = useAppSelector(
+		(s) => s.auth.user?.id,
+	);
 
 	const category = useAppSelector(
 		(s) => s.categories.currentCategory,
@@ -48,14 +53,24 @@ export function CategoryDetailView({ id }: { id: string }) {
 		(s) => s.expenses.loading,
 	);
 
+	const isCreator =
+		!!category &&
+		!!currentUserId &&
+		category.userId === currentUserId;
+
 	const rangeBounds = useMemo(
 		() => toIsoBounds(dateRange),
 		[dateRange],
 	);
 
 	useEffect(() => {
-		dispatch(fetchCategoryDetail(id));
-	}, [dispatch, id]);
+		dispatch(
+			fetchCategoryDetail({
+				id,
+				bucketId: activeBucketId ?? undefined,
+			}),
+		);
+	}, [dispatch, id, activeBucketId]);
 
 	useEffect(() => {
 		if (rangeBounds.from && rangeBounds.to) {
@@ -64,10 +79,17 @@ export function CategoryDetailView({ id }: { id: string }) {
 					id,
 					from: rangeBounds.from,
 					to: rangeBounds.to,
+					bucketId: activeBucketId ?? undefined,
 				}),
 			);
 		}
-	}, [dispatch, id, rangeBounds.from, rangeBounds.to]);
+	}, [
+		dispatch,
+		id,
+		rangeBounds.from,
+		rangeBounds.to,
+		activeBucketId,
+	]);
 
 	useEffect(() => {
 		const params: ExpenseListQuery = {
@@ -78,9 +100,17 @@ export function CategoryDetailView({ id }: { id: string }) {
 			to: rangeBounds.to,
 			sortBy: "paidAt",
 			order: "desc",
+			bucketId: activeBucketId ?? undefined,
 		};
 		dispatch(fetchExpenses(params));
-	}, [dispatch, id, page, rangeBounds.from, rangeBounds.to]);
+	}, [
+		dispatch,
+		id,
+		page,
+		rangeBounds.from,
+		rangeBounds.to,
+		activeBucketId,
+	]);
 
 	const chartTrend = useMemo(() => {
 		const raw = stats?.trend ?? [];
@@ -223,8 +253,12 @@ export function CategoryDetailView({ id }: { id: string }) {
 			{categoryWithStats && (
 				<CategoryCard
 					category={categoryWithStats}
-					onEdit={() => setEditDrawerOpen(true)}
-					onDelete={() => setDeleteOpen(true)}
+					onEdit={
+						isCreator ? () => setEditDrawerOpen(true) : undefined
+					}
+					onDelete={
+						isCreator ? () => setDeleteOpen(true) : undefined
+					}
 				/>
 			)}
 			{expensesLoading ? (
@@ -257,21 +291,26 @@ export function CategoryDetailView({ id }: { id: string }) {
 				</>
 			)}
 
-			<AddCategoryDrawer
+			<AddCategoryDialog
 				open={editDrawerOpen}
 				onClose={() => setEditDrawerOpen(false)}
-				category={category}
+				id={category?._id}
 			/>
 
-			<ConfirmDrawer
+			<ConfirmDialog
 				open={deleteOpen}
 				title="Delete category"
+				subtitle="Permanent action"
 				description="This action cannot be undone."
-				isPending={false}
 				onCancel={() => setDeleteOpen(false)}
 				onConfirm={async () => {
 					try {
-						await dispatch(deleteCategory(id)).unwrap();
+						await dispatch(
+							deleteCategory({
+								id,
+								bucketId: category?.bucketId,
+							}),
+						).unwrap();
 						toast.success("Category deleted");
 						router.replace("/categories");
 					} catch (error) {

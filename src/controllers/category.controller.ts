@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 
 import { getAuthPayload } from "@/lib/auth";
+import { getBucketId } from "@/lib/bucket";
 import {
 	createCategoryService,
 	deleteCategoryService,
@@ -12,31 +13,40 @@ import {
 	updateCategoryService,
 } from "@/services/category.service";
 
-export async function listCategories() {
+export async function listCategories(request: NextRequest) {
 	const auth = await getAuthPayload();
-	return listCategoriesService(auth.userId);
+	const bucketId = getBucketId(request);
+	return listCategoriesService(auth.userId, bucketId);
 }
 
 export async function listCategoriesWithStats(request: NextRequest) {
 	const auth = await getAuthPayload();
 	const from = request.nextUrl.searchParams.get("from") ?? "";
 	const to = request.nextUrl.searchParams.get("to") ?? "";
-	return listCategoriesWithStatsService(auth.userId, from, to);
+	const bucketId = getBucketId(request);
+	return listCategoriesWithStatsService(
+		auth.userId,
+		bucketId,
+		from,
+		to,
+	);
 }
 
 export async function createCategory(request: NextRequest) {
 	const auth = await getAuthPayload();
+	const bucketId = getBucketId(request);
 	const body = await request.json();
-	return createCategoryService(auth.userId, body);
+	return createCategoryService(auth.userId, bucketId, body);
 }
 
 export async function getCategory(
-	_request: NextRequest,
+	request: NextRequest,
 	context: { params: Promise<{ id: string }> },
 ) {
 	const auth = await getAuthPayload();
+	const bucketId = getBucketId(request);
 	const { id } = await context.params;
-	return getCategoryService(auth.userId, id);
+	return getCategoryService(auth.userId, id, bucketId);
 }
 
 export async function updateCategory(
@@ -44,18 +54,20 @@ export async function updateCategory(
 	context: { params: Promise<{ id: string }> },
 ) {
 	const auth = await getAuthPayload();
+	const bucketId = getBucketId(request);
 	const { id } = await context.params;
 	const body = await request.json();
-	return updateCategoryService(auth.userId, id, body);
+	return updateCategoryService(auth.userId, bucketId, id, body);
 }
 
 export async function deleteCategory(
-	_request: NextRequest,
+	request: NextRequest,
 	context: { params: Promise<{ id: string }> },
 ) {
 	const auth = await getAuthPayload();
+	const bucketId = getBucketId(request);
 	const { id } = await context.params;
-	return deleteCategoryService(auth.userId, id);
+	return deleteCategoryService(auth.userId, bucketId, id);
 }
 
 export async function getCategoryStats(
@@ -66,7 +78,14 @@ export async function getCategoryStats(
 	const { id } = await context.params;
 	const from = request.nextUrl.searchParams.get("from") ?? "";
 	const to = request.nextUrl.searchParams.get("to") ?? "";
-	return getCategoryStatsService(auth.userId, id, from, to);
+	const bucketId = getBucketId(request);
+	return getCategoryStatsService(
+		auth.userId,
+		id,
+		from,
+		to,
+		bucketId,
+	);
 }
 
 export async function getCategoryDistribution(
@@ -75,5 +94,11 @@ export async function getCategoryDistribution(
 	const auth = await getAuthPayload();
 	const from = request.nextUrl.searchParams.get("from") ?? "";
 	const to = request.nextUrl.searchParams.get("to") ?? "";
-	return getCategoryDistributionService(auth.userId, from, to);
+	const bucketId = getBucketId(request);
+	return getCategoryDistributionService(
+		auth.userId,
+		from,
+		to,
+		bucketId,
+	);
 }

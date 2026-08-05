@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 
 import { getAuthPayload } from "@/lib/auth";
+import { getBucketId, resolveBucketContext } from "@/lib/bucket";
 import {
 	errorResponse,
 	successResponse,
@@ -45,6 +46,11 @@ export async function GET(request: NextRequest) {
 	try {
 		await connectToDatabase();
 		const auth = await getAuthPayload();
+		const bucketId = getBucketId(request);
+		const ctx = await resolveBucketContext(
+			auth.userId,
+			bucketId,
+		);
 		const type = request.nextUrl.searchParams.get("type");
 		const now = new Date();
 		const monthStart = new Date(
@@ -55,14 +61,19 @@ export async function GET(request: NextRequest) {
 
 		const [categories, expenses, monthlyExpenses] =
 			await Promise.all([
-				listCategories(auth.userId),
+				listCategories(auth.userId, ctx.bucketId),
 				listExpenses(auth.userId, {
 					page: 1,
 					limit: 5000,
 					sortBy: "paidAt",
 					order: "desc",
-				}),
-				listExpensesForRange(auth.userId, monthStart, now),
+				}, ctx.bucketId),
+				listExpensesForRange(
+					auth.userId,
+					monthStart,
+					now,
+					ctx.bucketId,
+				),
 			]);
 
 		const exportedAt = new Date().toISOString();

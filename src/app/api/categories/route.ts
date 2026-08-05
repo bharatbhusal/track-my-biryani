@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 			const data = await listCategoriesWithStats(request);
 			return successResponse(data);
 		}
-		const data = await listCategories();
+		const data = await listCategories(request);
 		return successResponse(data);
 	} catch (error) {
 		return errorResponse(error);

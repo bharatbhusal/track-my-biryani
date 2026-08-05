@@ -17,6 +17,7 @@ export const categorySchema = z.object({
 	name: z.string().min(1).max(50),
 	color: z.string().regex(HEX_COLOR_REGEX).optional(),
 	emoji: z.string().trim().max(8).optional(),
+	bucketId: z.string().optional(),
 });
 
 const roundedAmountSchema = z
@@ -28,6 +29,7 @@ export const expenseSchema = z.object({
 	title: z.string().min(1).max(120),
 	amount: roundedAmountSchema,
 	categoryId: z.string().min(1),
+	bucketId: z.string().optional(),
 	notes: z.string().max(400).optional(),
 	images: z.array(z.string()).max(5).default([]),
 	location: z.object({
@@ -87,9 +89,20 @@ export const importDataSchema = z.object({
 	),
 });
 
+export const bucketSchema = z.object({
+	name: z.string().trim().min(1).max(50),
+	icon: z.string().trim().min(1).max(8).optional(),
+});
+
+export const inviteSchema = z.object({
+	username: z.string().trim().min(1).max(20),
+});
+
 export type SignupInput = z.infer<typeof signupSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type CategoryInput = z.infer<typeof categorySchema>;
 export type ExpenseInput = z.infer<typeof expenseSchema>;
 export type SettingsInput = z.infer<typeof settingsSchema>;
 export type ImportInput = z.infer<typeof importDataSchema>;
+export type BucketInput = z.infer<typeof bucketSchema>;
+export type InviteInput = z.infer<typeof inviteSchema>;

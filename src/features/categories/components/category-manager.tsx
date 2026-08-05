@@ -21,7 +21,7 @@ import { useDebouncedValue } from "@/hooks/use-debounce";
 import { Input } from "@/components/ui/input";
 import { DateRangeBar } from "@/components/charts/date-range-bar";
 import { CategoryCard } from "@/features/categories/components/category-card";
-import { AddCategoryDrawer } from "@/features/categories/components/add-category-drawer";
+import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
 import { toIsoBounds } from "@/lib/date-range";
 
 export function CategoryManager() {
@@ -33,6 +33,9 @@ export function CategoryManager() {
 	const [drawerOpen, setDrawerOpen] = useState(false);
 
 	const range = useAppSelector((s) => s.ui.dateRange);
+	const activeBucketId = useAppSelector(
+		(s) => s.ui.activeBucketId,
+	);
 	const rangeBounds = useMemo(
 		() => toIsoBounds(range),
 		[range.preset, range.offset],
@@ -49,9 +52,15 @@ export function CategoryManager() {
 			fetchCategoriesWithStats({
 				from: rangeBounds.from,
 				to: rangeBounds.to,
+				bucketId: activeBucketId ?? undefined,
 			}),
 		);
-	}, [dispatch, rangeBounds.from, rangeBounds.to]);
+	}, [
+		dispatch,
+		rangeBounds.from,
+		rangeBounds.to,
+		activeBucketId,
+	]);
 
 	const items = useMemo(
 		() =>
@@ -129,7 +138,7 @@ export function CategoryManager() {
 				)}
 			</div>
 
-			<AddCategoryDrawer
+			<AddCategoryDialog
 				open={drawerOpen}
 				onClose={() => setDrawerOpen(false)}
 			/>

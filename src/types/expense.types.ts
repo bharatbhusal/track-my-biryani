@@ -18,6 +18,9 @@ export type ExpenseItem = {
 	notes?: string;
 	images: string[];
 	location: ExpenseLocation;
+	bucketId?: string;
+	userId?: string;
+	posterName?: string;
 	createdAt?: string;
 	updatedAt?: string;
 };
@@ -27,6 +30,8 @@ export type CategoryItem = {
 	name: string;
 	color: string;
 	emoji?: string;
+	userId?: string;
+	bucketId?: string;
 };
 
 export type ExpensesListPayload = PaginationMeta & {
@@ -42,6 +47,7 @@ export type CreateExpensePayload = {
 	currency: string;
 	paidAt: string;
 	notes?: string;
+	bucketId?: string;
 };
 
 export type ExpenseListQuery = {
@@ -55,4 +61,5 @@ export type ExpenseListQuery = {
 	amountMax?: number;
 	sortBy?: "paidAt" | "amount" | "title";
 	order?: "asc" | "desc";
+	bucketId?: string;
 };

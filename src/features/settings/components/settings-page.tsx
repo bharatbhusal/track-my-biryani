@@ -5,14 +5,27 @@ import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FiFileText, FiLogOut, FiMoon, FiSun } from "react-icons/fi";
+import {
+	FiFileText,
+	FiLogOut,
+	FiMoon,
+	FiSun,
+	FiUsers,
+} from "react-icons/fi";
 import { toast } from "sonner";
 
+import { BucketSwitcher } from "@/components/layout/bucket-switcher";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { fetchMe, logoutUser } from "@/store/slices/authSlice";
+import {
+	useAppSelector,
+	useAppDispatch,
+} from "@/store/hooks";
+import {
+	fetchMe,
+	logoutUser,
+} from "@/store/slices/authSlice";
 
 export function SettingsPage() {
 	const router = useRouter();
@@ -52,61 +65,12 @@ export function SettingsPage() {
 	};
 
 	return (
-		<div className="space-y-4">
-			<Card>
-				{authLoading ? (
-					<div className="space-y-3">
-						<Skeleton className="h-5 w-32" />
-						<Skeleton className="h-4 w-48" />
-					</div>
-				) : authUser ? (
-					<div className="flex items-center justify-between gap-3">
-						<div className="min-w-0">
-							<p className="truncate text-sm font-medium">
-								{authUser.name}
-							</p>
-							<p className="truncate text-xs text-[var(--color-muted)]">
-								Signed in
-							</p>
-						</div>
-
-						<Button
-							variant="ghost"
-							size="sm"
-							aria-label="Logout"
-							onClick={handleLogout}
-						>
-							<FiLogOut className="mr-1.5" />
-							Logout
-						</Button>
-					</div>
-				) : (
-					<div className="flex items-center justify-between gap-3">
-						<p className="text-sm text-[var(--color-muted)]">
-							Not signed in
-						</p>
-
-						<Link href="/auth/login">
-							<Button size="sm">Login</Button>
-						</Link>
-					</div>
-				)}
-			</Card>
-
-			<Card>
-				<div className="flex items-center justify-between gap-3">
-					<div className="min-w-0">
-						<p className="text-sm font-medium">Theme</p>
-
-						{mounted ? (
-							<p className="text-xs text-[var(--color-muted)] capitalize">
-								{currentTheme}
-							</p>
-						) : (
-							<Skeleton className="mt-1 h-3 w-12" />
-						)}
-					</div>
-
+		<div className="space-y-2">
+			<div className="flex w-full justify-between items-center">
+				<h2 className="text-lg font-semibold">
+					Hi {authUser?.username || "User"}!
+				</h2>
+				<div className="flex items-center">
 					<Button
 						variant="ghost"
 						size="icon"
@@ -119,7 +83,62 @@ export function SettingsPage() {
 						<FiMoon className="dark:hidden" />
 						<FiSun className="hidden dark:block" />
 					</Button>
+					{authLoading ? (
+						<Skeleton className="h-6 w-6 rounded-full" />
+					) : authUser ? (
+						<Button
+							variant="ghost"
+							size="sm"
+							aria-label="Logout"
+							onClick={handleLogout}
+						>
+							<FiLogOut className="mr-1.5" />
+						</Button>
+					) : (
+						<Link href="/auth/login">
+							<Button size="sm">Login</Button>
+						</Link>
+					)}
 				</div>
+			</div>
+
+			<Card>
+				<div className="space-y-2">
+					<div>
+						<p className="text-sm font-medium">Active bucket</p>
+						<p className="text-xs text-[var(--color-muted)]">
+							Choose which bucket expenses are shown for.
+							Management happens on the Buckets page.
+						</p>
+					</div>
+					{!authLoading ? (
+						<BucketSwitcher />
+					) : (
+						<Skeleton className="h-8 w-32 rounded-full" />
+					)}
+				</div>
+			</Card>
+
+			<Card>
+				<Link
+					href="/buckets"
+					className="flex items-center justify-between gap-3"
+				>
+					<div className="min-w-0">
+						<p className="text-sm font-medium">Buckets</p>
+						<p className="truncate text-xs text-[var(--color-muted)]">
+							Invitations and the buckets you&apos;re part of
+						</p>
+					</div>
+
+					<Button
+						variant="ghost"
+						size="icon"
+						aria-label="View buckets"
+					>
+						<FiUsers className="h-4 w-4" />
+					</Button>
+				</Link>
 			</Card>
 			<Card>
 				<Link
