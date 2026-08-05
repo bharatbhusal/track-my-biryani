@@ -70,7 +70,7 @@ export function SettingsPage() {
 				<h2 className="text-lg font-semibold">
 					Hi {authUser?.username || "User"}!
 				</h2>
-				<div>
+				<div className="flex items-center">
 					<Button
 						variant="ghost"
 						size="icon"
@@ -84,10 +84,7 @@ export function SettingsPage() {
 						<FiSun className="hidden dark:block" />
 					</Button>
 					{authLoading ? (
-						<div className="space-y-3">
-							<Skeleton className="h-5 w-32" />
-							<Skeleton className="h-4 w-48" />
-						</div>
+						<Skeleton className="h-6 w-6 rounded-full" />
 					) : authUser ? (
 						<Button
 							variant="ghost"
@@ -114,7 +111,11 @@ export function SettingsPage() {
 							Management happens on the Buckets page.
 						</p>
 					</div>
-					<BucketSwitcher />
+					{!authLoading ? (
+						<BucketSwitcher />
+					) : (
+						<Skeleton className="h-8 w-32 rounded-full" />
+					)}
 				</div>
 			</Card>
 
