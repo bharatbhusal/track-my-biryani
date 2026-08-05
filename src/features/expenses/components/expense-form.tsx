@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -58,6 +57,7 @@ const schema = z.object({
 	categoryId: z.string().min(1),
 	paidAt: z.string().min(1),
 	notes: z.string().optional(),
+	bucketId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -91,11 +91,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 	);
 
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [selectedBucketId, setSelectedBucketId] = useState<
-		string | null
-	>(activeBucketId);
 	const amountRef = useRef<HTMLInputElement>(null);
-	const dateInputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
 		amountRef.current?.focus();
@@ -105,17 +101,11 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 		(b) => b.status === "accepted",
 	);
 
-	const targetBucketId = selectedBucketId;
-
 	useEffect(() => {
 		if (buckets.length === 0) {
 			dispatch(fetchBuckets());
 		}
 	}, [dispatch, buckets.length]);
-
-	useEffect(() => {
-		dispatch(fetchCategories(targetBucketId));
-	}, [dispatch, targetBucketId]);
 
 	useEffect(() => {
 		if (isEditing && id) {
@@ -136,6 +126,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				categoryId: "",
 				paidAt: "",
 				notes: "",
+				bucketId: activeBucketId ?? "",
 			};
 		if (
 			draftExpense &&
@@ -149,6 +140,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				paidAt:
 					draftExpense.paidAt ?? getLocalDateTimeInputValue(),
 				notes: draftExpense.notes ?? "",
+				bucketId: activeBucketId ?? "",
 			};
 		}
 		return {
@@ -157,8 +149,9 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 			categoryId: "",
 			paidAt: getLocalDateTimeInputValue(),
 			notes: "",
+			bucketId: activeBucketId ?? "",
 		};
-	}, [isEditing, draftExpense]);
+	}, [isEditing, draftExpense, activeBucketId]);
 
 	const form = useForm<FormValues>({
 		resolver: zodResolver(schema),
@@ -170,6 +163,15 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 		control,
 	}) as FormValues | undefined;
 
+	const watchedBucketId = useWatch({
+		control,
+		name: "bucketId",
+	});
+
+	useEffect(() => {
+		dispatch(fetchCategories(watchedBucketId || null));
+	}, [dispatch, watchedBucketId]);
+
 	useEffect(() => {
 		if (!isEditing && allValues?.title) {
 			dispatch(setDraftExpense(allValues));
@@ -180,10 +182,6 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 		if (!isEditing) return;
 		if (!currentExpense) return;
 
-		if (currentExpense.bucketId) {
-			setSelectedBucketId(currentExpense.bucketId);
-		}
-
 		reset({
 			title: currentExpense.title,
 			amount: currentExpense.amount,
@@ -192,6 +190,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				new Date(currentExpense.paidAt),
 			),
 			notes: currentExpense.notes,
+			bucketId: currentExpense.bucketId ?? "",
 		});
 	}, [currentExpense, reset, isEditing]);
 
@@ -207,7 +206,9 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				images: [],
 				location: { latitude: 0, longitude: 0 },
 				notes: values.notes,
-				...(targetBucketId ? { bucketId: targetBucketId } : {}),
+				...(values.bucketId
+					? { bucketId: values.bucketId }
+					: {}),
 			};
 
 			if (isEditing && id) {
@@ -244,12 +245,12 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 					<Skeleton className="h-30 w-full" />
 				</div>
 				<div className="space-y-3 px-4">
-					<Skeleton className="h-10 w-full" />
 					<div className="space-y-3 pb-4">
 						<div className="grid grid-cols-2 gap-3">
 							<Skeleton className="h-10 w-full" />
 							<Skeleton className="h-10" />
 						</div>
+						<Skeleton className="h-10 w-full" />
 						<div className="flex gap-2">
 							<Skeleton className="h-12 flex-1" />
 							<Skeleton className="h-12 flex-1" />
@@ -344,68 +345,30 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 					</div>
 
 					<div className="space-y-3 px-4 pb-4 text-[16px]">
-						<Select
-							value={selectedBucketId ?? ""}
-							aria-label="Bucket"
-							onChange={(e) => {
-								setSelectedBucketId(e.target.value || null);
-								setValue("categoryId", "");
-							}}
-						>
-							{availableBuckets.map((b) => (
-								<option
-									key={b._id as string}
-									value={b._id as string}
-								>
-									{b.name}
-								</option>
-							))}
-						</Select>
-
 						<div className="grid grid-cols-2 gap-3">
 							<FormField
 								control={control}
-								name="paidAt"
+								name="bucketId"
 								render={({ field }) => (
 									<FormItem>
 										<FormControl>
-											<div className="relative">
-												<Input
-													ref={dateInputRef}
-													type="datetime-local"
-													tabIndex={-1}
-													aria-hidden="true"
-													className="pointer-events-none absolute inset-0 h-full w-full opacity-0"
-													value={field.value?.slice(0, 16) ?? ""}
-													onChange={(e) => {
-														field.onChange(e.target.value);
-														setValue("paidAt", e.target.value, {
-															shouldValidate: true,
-														});
-													}}
-												/>
-												<Button
-													type="button"
-													variant="outline"
-													className="w-full flex items-center justify-center gap-2"
-													onClick={() => {
-														const input = dateInputRef.current;
-														if (!input) return;
-														if (typeof input.showPicker === "function") {
-															input.showPicker();
-														} else {
-															// ponytail: iOS Safari lacks showPicker();
-															// focus() within the tap gesture opens the native picker.
-															input.focus();
-														}
-													}}
-												>
-													<FiCalendar className="h-4 w-4" />
-													{field.value
-														? formatShortDateTime(field.value, locale)
-														: "Select date & time"}
-												</Button>
-											</div>
+											<Select
+												aria-label="Bucket"
+												value={field.value}
+												onChange={(e) => {
+													field.onChange(e.target.value);
+													setValue("categoryId", "");
+												}}
+											>
+												{availableBuckets.map((b) => (
+													<option
+														key={b._id as string}
+														value={b._id as string}
+													>
+														{b.name}
+													</option>
+												))}
+											</Select>
 										</FormControl>
 									</FormItem>
 								)}
@@ -436,6 +399,45 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 								)}
 							/>
 						</div>
+						<FormField
+							control={control}
+							name="paidAt"
+							render={({ field }) => (
+								<FormItem>
+									<FormControl>
+										<div className="relative flex h-11 items-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+											<span className="flex-1 truncate px-3 text-[16px] text-[var(--color-text)]">
+												{field.value
+													? formatShortDateTime(field.value, locale)
+													: "Select date & time"}
+											</span>
+											<span
+												aria-hidden="true"
+												className="pointer-events-none mr-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[var(--color-muted)]"
+											>
+												<FiCalendar className="h-4 w-4" />
+											</span>
+											<Input
+												type="datetime-local"
+												className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+												value={field.value?.slice(0, 16) ?? ""}
+												onChange={(e) => {
+													field.onChange(e.target.value);
+												}}
+												onClick={(e) => {
+													try {
+														e.currentTarget.showPicker?.();
+													} catch {
+														// ponytail: native picker already open
+													}
+												}}
+											/>
+										</div>
+									</FormControl>
+								</FormItem>
+							)}
+						/>
+
 						<div className="flex gap-2">
 							<Button
 								type="button"
