@@ -723,9 +723,7 @@ export async function getChartData(
 
 	let dateGroup: Record<string, unknown>;
 	if (dayDiff <= 1) {
-		dateGroup = {
-			hour: { $floor: { $divide: [{ $hour: "$paidAt" }, 2] } },
-		};
+		dateGroup = { $hour: "$paidAt" };
 	} else if (dayDiff > 60) {
 		dateGroup = {
 			$dateToString: { format: "%Y-%m", date: "$paidAt" },
@@ -803,7 +801,7 @@ function formatPeriodLabel(
 	dayDiff: number,
 ): string {
 	if (dayDiff <= 1) {
-		const hour = Number(id) * 2;
+		const hour = Number(id);
 		return `${String(hour).padStart(2, "0")}:00`;
 	}
 	if (typeof id === "string" && id.length === 7) {
