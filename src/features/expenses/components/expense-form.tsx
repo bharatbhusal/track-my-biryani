@@ -101,7 +101,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 		amountRef.current?.focus();
 	}, []);
 
-	const sharedBuckets = buckets.filter(
+	const availableBuckets = buckets.filter(
 		(b) => b.status === "accepted",
 	);
 
@@ -339,26 +339,24 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 						/>
 					</div>
 
-					<div className="space-y-3 px-4 pb-4">
-						<div className="w-full">
-							<Select
-								value={selectedBucketId ?? ""}
-								aria-label="Bucket"
-								onChange={(e) => {
-									setSelectedBucketId(e.target.value || null);
-									setValue("categoryId", "");
-								}}
-							>
-								{sharedBuckets.map((b) => (
-									<option
-										key={b._id as string}
-										value={b._id as string}
-									>
-										{b.name}
-									</option>
-								))}
-							</Select>
-						</div>
+					<div className="space-y-3 px-4 pb-4 text-[16px]">
+						<Select
+							value={selectedBucketId ?? ""}
+							aria-label="Bucket"
+							onChange={(e) => {
+								setSelectedBucketId(e.target.value || null);
+								setValue("categoryId", "");
+							}}
+						>
+							{availableBuckets.map((b) => (
+								<option
+									key={b._id as string}
+									value={b._id as string}
+								>
+									{b.name}
+								</option>
+							))}
+						</Select>
 
 						<div className="grid grid-cols-2 gap-3">
 							<FormField
