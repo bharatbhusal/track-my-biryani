@@ -239,17 +239,21 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 		return (
 			<div className="h-full flex flex-col justify-between">
 				<div className="flex flex-col items-center gap-6 px-4 pt-8">
-					<Skeleton className="h-14 w-full max-w-xs" />
-					<Skeleton className="h-10 w-full max-w-xs" />
+					<Skeleton className="h-14 w-full" />
+					<Skeleton className="h-10 w-full" />
+					<Skeleton className="h-30 w-full" />
 				</div>
-				<div className="space-y-3 px-4 pb-4">
-					<div className="grid grid-cols-2 gap-3">
-						<Skeleton className="h-10 w-full" />
-						<Skeleton className="h-10 w-full" />
-					</div>
-					<div className="flex gap-2">
-						<Skeleton className="h-12 flex-1" />
-						<Skeleton className="h-12 flex-1" />
+				<div className="space-y-3 px-4">
+					<Skeleton className="h-10 w-full" />
+					<div className="space-y-3 pb-4">
+						<div className="grid grid-cols-2 gap-3">
+							<Skeleton className="h-10 w-full" />
+							<Skeleton className="h-10" />
+						</div>
+						<div className="flex gap-2">
+							<Skeleton className="h-12 flex-1" />
+							<Skeleton className="h-12 flex-1" />
+						</div>
 					</div>
 				</div>
 			</div>
@@ -271,7 +275,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 							control={control}
 							name="amount"
 							render={({ field }) => (
-								<FormItem className="w-full max-w-xs">
+								<FormItem className="w-full max-w-md">
 									<FormControl>
 										<div className="relative">
 											<span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-2xl text-[var(--color-muted)]">
@@ -311,7 +315,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 							control={control}
 							name="title"
 							render={({ field }) => (
-								<FormItem className="w-full max-w-xs">
+								<FormItem className="w-full max-w-md">
 									<FormControl>
 										<Input
 											{...field}
@@ -326,7 +330,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 							control={control}
 							name="notes"
 							render={({ field }) => (
-								<FormItem className="w-full max-w-xs">
+								<FormItem className="w-full max-w-md">
 									<FormControl>
 										<Input
 											{...field}
