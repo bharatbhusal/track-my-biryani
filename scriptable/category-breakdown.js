@@ -21,11 +21,22 @@ bootstrap.run(async () => {
 	widget.backgroundColor = theme.background()
 
 	const { from, to } = currentMonthRange()
-	const [rows, over] = await Promise.all([
-		endpoints.distribution({ from, to }),
+	const [chart, over] = await Promise.all([
+		endpoints.chart({ from, to }),
 		endpoints.overview({ from, to }),
 	])
 	const total = Number((over || []).find((r) => r.key === "total_spend")?.value) || 0
+
+	const totals = {}
+	for (const day of chart.series || []) {
+		for (const [cat, amount] of Object.entries(day)) {
+			if (cat === "name") continue
+			totals[cat] = (totals[cat] || 0) + Number(amount)
+		}
+	}
+	const rows = Object.entries(totals)
+		.map(([name, value]) => ({ name, value, color: chart.categoryColors?.[name] }))
+		.sort((a, b) => b.value - a.value)
 	const share = (c) => (total > 0 ? c.value / total : 0)
 
 	if (!rows.length) {
