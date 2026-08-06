@@ -3,8 +3,8 @@
 Scriptable iOS widgets for Track My Biryani. The widgets are a pure client:
 they talk to the Track My Biryani API and render whatever the API returns, with
 no data stored on the device. Login, cookies, requests, layout and formatting
-live in the shared modules under `lib/` and `api/`; each script in `widgets/`
-is just a small file that fetches data and draws a `ListWidget`.
+live in the shared modules under `lib/` and `api/`; each widget script at the
+top level is just a small file that fetches data and draws a `ListWidget`.
 
 Six widget scripts ship:
 
@@ -29,11 +29,18 @@ Six widget scripts ship:
    Drive.
 2. Copy the whole `scriptable/` folder from this repo into
    `iCloud Drive > Scriptable/` (via the Files app on the iPhone, or the
-   iCloud Drive folder on a Mac). `config.js`, `lib/`, `api/` and `widgets/`
-   must sit directly under `Scriptable/`:
+   iCloud Drive folder on a Mac). The whole contents of this folder — the
+   widget scripts, `config.js`, `lib/` and `api/` — must sit directly under
+   `Scriptable/`:
 
    ```text
    Scriptable/
+   ├── month-overview.js
+   ├── category-breakdown.js
+   ├── recent-expenses.js
+   ├── daily-trend.js
+   ├── bucket-summary.js
+   ├── accessory.js
    ├── config.js
    ├── lib/
    │   ├── bootstrap.js
@@ -46,18 +53,15 @@ Six widget scripts ship:
    │   ├── money.js
    │   ├── theme.js
    │   └── _selfcheck.js
-   ├── api/
-   │   ├── auth.js
-   │   ├── client.js
-   │   └── endpoints.js
-   └── widgets/
-       ├── month-overview.js
-       ├── category-breakdown.js
-       ├── recent-expenses.js
-       ├── daily-trend.js
-       ├── bucket-summary.js
-       └── accessory.js
+   └── api/
+       ├── auth.js
+       ├── client.js
+       └── endpoints.js
    ```
+
+   The widget scripts must sit at the top level: Scriptable only lists scripts
+   stored directly in its folder, and hides subfolders. `lib/` and `api/` are
+   imported by path and never shown in the app.
 
 3. Scripts import each other with `importModule` paths like `api/client` and
    `lib/theme`, which resolve relative to the running script. Mirroring the
