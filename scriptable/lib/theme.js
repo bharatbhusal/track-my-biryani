@@ -1,5 +1,3 @@
-module.exports = { PALETTE, t, background, solidBackground }
-
 // ponytail: Color.dynamic(light,dark) because Device.isUsingDarkAppearance() does not work in widgets
 const PALETTE = {
 	text: { light: "#1c1c1e", dark: "#f2f2f7" },
@@ -30,3 +28,5 @@ function solidBackground(topHex, bottomHex) {
 	g.locations = [0, 1]
 	return g
 }
+
+module.exports = { PALETTE, t, background, solidBackground }

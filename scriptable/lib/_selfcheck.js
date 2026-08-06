@@ -7,6 +7,10 @@ function check(cond, msg) {
 const money = load("money")
 const date = load("date")
 const format = load("format")
+const theme = load("theme")
+
+check(typeof theme.t === "function" && typeof theme.background === "function", "theme exports t/background")
+check(theme.PALETTE.text && theme.PALETTE.danger && theme.PALETTE.border, "theme PALETTE keys present")
 
 check(money.money(31127) === "₹31,127", `money(31127) = ${money.money(31127)}`)
 check(money.money(0) === "₹0", `money(0) = ${money.money(0)}`)
