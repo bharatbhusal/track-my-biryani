@@ -3,9 +3,13 @@ const config = importModule("config")
 module.exports = { ensureCredentials, getCredentials, getAuthCookie, setAuthCookie, clearAuth, resetCredentialsIfNeeded }
 
 function getCredentials() {
-	const username = Keychain.get(config.KEYS.USERNAME)
-	const password = Keychain.get(config.KEYS.PASSWORD)
-	return username ? { username, password } : null
+	try {
+		const username = Keychain.get(config.KEYS.USERNAME)
+		const password = Keychain.get(config.KEYS.PASSWORD)
+		return username ? { username, password } : null
+	} catch (e) {
+		return null
+	}
 }
 
 async function ensureCredentials() {
@@ -25,7 +29,11 @@ async function ensureCredentials() {
 }
 
 function getAuthCookie() {
-	return Keychain.get(config.KEYS.AUTH_COOKIE) || null
+	try {
+		return Keychain.get(config.KEYS.AUTH_COOKIE) || null
+	} catch (e) {
+		return null
+	}
 }
 
 function setAuthCookie(token) {
@@ -33,14 +41,22 @@ function setAuthCookie(token) {
 }
 
 function clearAuth() {
-	Keychain.remove(config.KEYS.USERNAME)
-	Keychain.remove(config.KEYS.PASSWORD)
-	Keychain.remove(config.KEYS.AUTH_COOKIE)
+	removeKey(config.KEYS.USERNAME)
+	removeKey(config.KEYS.PASSWORD)
+	removeKey(config.KEYS.AUTH_COOKIE)
+}
+
+function removeKey(key) {
+	try {
+		Keychain.remove(key)
+	} catch (e) {
+		// key not present — nothing to remove
+	}
 }
 
 function resetCredentialsIfNeeded() {
 	if (config.RESET_CREDENTIALS) {
-		Keychain.remove(config.KEYS.USERNAME)
-		Keychain.remove(config.KEYS.PASSWORD)
+		removeKey(config.KEYS.USERNAME)
+		removeKey(config.KEYS.PASSWORD)
 	}
 }
