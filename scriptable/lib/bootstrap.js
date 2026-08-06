@@ -1,4 +1,4 @@
-const config = importModule("config")
+const cfg = importModule("config")
 const debug = importModule("lib/debug")
 const theme = importModule("lib/theme")
 const format = importModule("lib/format")
@@ -12,8 +12,9 @@ async function run(build) {
 		await client.ensureSession()
 		const widget = await build()
 		const now = new Date()
-		widget.refreshAfterDate = new Date(now.getTime() + config.REFRESH_MINUTES * 60000)
+		widget.refreshAfterDate = new Date(now.getTime() + cfg.REFRESH_MINUTES * 60000)
 		Script.setWidget(widget)
+		// ponytail: runsInWidget is Scriptable's GLOBAL config, not our settings module
 		if (!config.runsInWidget) {
 			const f = layout.family()
 			const fn = f === "large" || f === "extraLarge" ? "presentLarge" : f === "small" ? "presentSmall" : "presentMedium"

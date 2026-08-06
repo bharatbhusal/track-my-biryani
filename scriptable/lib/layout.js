@@ -1,6 +1,6 @@
-const config = importModule("config")
-
 module.exports = { family, isAccessory, mode, scale, font }
+
+// ponytail: widgetFamily/runsInAccessoryWidget live on Scriptable's GLOBAL `config`, not our settings module
 
 function family() {
 	return config.widgetFamily
