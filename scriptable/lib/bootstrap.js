@@ -12,6 +12,7 @@ async function run(build) {
 		const client = importModule("api/client")
 		await client.ensureSession()
 		const widget = await build()
+		widget.url = cfg.WEBSITE_URL
 		addRefreshFooter(widget)
 		const now = new Date()
 		widget.refreshAfterDate = new Date(now.getTime() + cfg.REFRESH_MINUTES * 60000)
