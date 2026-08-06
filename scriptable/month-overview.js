@@ -1,5 +1,5 @@
 // Track My Biryani — month-overview widget
-// Monthly spend vs projected month-end spend.
+// Monthly spend vs per-day pace for the current month.
 const endpoints = importModule("api/endpoints")
 const bootstrap = importModule("lib/bootstrap")
 const layout = importModule("lib/layout")
@@ -8,11 +8,37 @@ const theme = importModule("lib/theme")
 const moneyLib = importModule("lib/money")
 const date = importModule("lib/date")
 
-const { header, stat, statRow, progressBar, listRow, divider, footer } = components
+const { header, statRow, listRow, divider, footer } = components
 const { t } = theme
 const { font } = layout
 const { money, moneyShort, compact } = moneyLib
-const { currentMonthRange, currentMonthProgress, formatDay, relativeDay, projectSpend } = date
+const { currentMonthRange, currentMonthProgress, formatDay, relativeDay } = date
+
+// ponytail: approximate card widths per family; stacks clip instead of wrap so
+// the bar can never spill onto a second line
+function barWidth() {
+	const f = layout.family()
+	if (f === "small") return 123
+	if (f === "extraLarge") return 672
+	if (f === "accessoryRectangular") return 137
+	return 297
+}
+
+function bar(parent, { value, color, trackColor }) {
+	const total = barWidth()
+	const fill = Math.round(total * Math.max(0, Math.min(1, value)))
+	const row = parent.addStack()
+	row.layoutHorizontally()
+	const filled = row.addStack()
+	filled.size = new Size(fill, 6)
+	filled.cornerRadius = 3
+	filled.backgroundColor = color || t("accent")
+	const track = row.addStack()
+	track.size = new Size(total - fill, 6)
+	track.cornerRadius = 3
+	track.backgroundColor = trackColor || t("border")
+	return row
+}
 
 bootstrap.run(async () => {
 	const widget = new ListWidget()
@@ -26,7 +52,6 @@ bootstrap.run(async () => {
 	for (const r of rows) data[r.key] = r.value
 	const totalSpend = Number(data.total_spend) || 0
 	const perDay = Number(data.spend_per_day) || 0
-	const projected = projectSpend(perDay, month.daysInMonth)
 
 	if (layout.isAccessory()) {
 		const fam = layout.family()
@@ -43,31 +68,31 @@ bootstrap.run(async () => {
 			value.centerAlignText()
 			return widget
 		}
-		// accessoryRectangular
 		const total = widget.addText(money(totalSpend))
 		total.font = font("semibold", 14)
 		total.textColor = t("primary")
-		progressBar(widget, { value: month.progress, color: t("accent") })
+		bar(widget, { value: month.progress, color: t("accent") })
 		return widget
 	}
 
 	if (layout.family() === "small") {
-		header(widget, { icon: "💸", title: "This month" })
-		stat(widget, { label: "Spent", value: money(totalSpend), emphasis: true, color: t("primary") })
-		progressBar(widget, { value: month.progress, color: t("accent") })
-		footer(widget, {
-			left: `Day ${month.currentDay}/${month.daysInMonth}`,
-			right: `≈ ${moneyShort(projected)}`,
-		})
+		widget.noRefreshFooter = true
+		header(widget, { icon: "💸", title: "Track My Biryani" })
+		statRow(widget, [
+			{ label: "Spent", value: compact(totalSpend), color: t("primary") },
+			{ label: "Per Day", value: moneyShort(perDay) },
+		])
+		bar(widget, { value: month.progress, color: t("accent") })
+		footer(widget, { left: `Day ${month.currentDay}/${month.daysInMonth}`, right: "" })
 		return widget
 	}
 
-	header(widget, { icon: "💸", title: "This month" })
+	header(widget, { icon: "💸", title: "Track My Biryani", subtitle: "This Month" })
 	statRow(widget, [
 		{ label: "Spent", value: money(totalSpend), emphasis: true, color: t("primary") },
-		{ label: "Per day", value: moneyShort(perDay) },
+		{ label: "Per Day", value: moneyShort(perDay) },
 	])
-	progressBar(widget, { value: month.progress, color: t("accent") })
+	bar(widget, { value: month.progress, color: t("accent") })
 
 	if (layout.mode() === "expanded") {
 		divider(widget)
@@ -76,14 +101,10 @@ bootstrap.run(async () => {
 			title: `Day ${month.currentDay}/${month.daysInMonth}`,
 			subtitle: relativeDay(new Date().toISOString()),
 		})
-		listRow(widget, { emoji: "📈", title: "Projected by month end", amount: moneyShort(projected) })
-		footer(widget, { left: formatDay(to), right: "auto-refresh" })
+		footer(widget, { left: formatDay(to), right: "" })
 		return widget
 	}
 
-	footer(widget, {
-		left: `Day ${month.currentDay}/${month.daysInMonth}`,
-		right: `≈ ${moneyShort(projected)}`,
-	})
+	footer(widget, { left: `Day ${month.currentDay}/${month.daysInMonth}`, right: "" })
 	return widget
 })

@@ -119,7 +119,7 @@ lock-screen accessory slots take the accessory scripts.
 
 | Script | Shows | Families | Widget parameter | Example |
 |---|---|---|---|---|
-| `month-overview.js` | Month spend total, per-day, month progress, projected month-end | small, medium, large, accessory\* | — | "₹31,127 · ₹1,004/day" |
+| `month-overview.js` | Month spend total, per-day, month progress | small, medium, large, accessory\* | — | "₹31,127 · ₹1,004/day" |
 | `category-week.js` | This week's categories by spend share as a bar graph | small, medium, large, accessory\* | — | "Food ████████ 42%" |
 | `recent-expenses.js` | Latest 5 expenses with day labels | medium, large | — | "🍜 Biryani ₹450 Yesterday" |
 | `daily-trend.js` | Last 7 days of spend | medium, large, accessory\* | — | "7d ₹8,900" |

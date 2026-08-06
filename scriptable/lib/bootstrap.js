@@ -32,8 +32,9 @@ async function run(build) {
 
 // ponytail: tiny accessory slots have no room for a footer line
 function addRefreshFooter(widget) {
+	if (widget.noRefreshFooter) return
 	if (layout.isAccessory() && layout.family() !== "accessoryRectangular") return
-	const label = widget.addText(`Updated ${date.formatClock24(new Date())}`)
+	const label = widget.addText(`Refreshed ${date.formatClock24(new Date())}`)
 	label.font = layout.font("regular", 10)
 	label.textColor = theme.t("muted")
 	label.rightAlignText()
