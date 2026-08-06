@@ -1,4 +1,4 @@
-module.exports = { currentMonthRange, rangeForDays, currentMonthProgress, formatDay, relativeDay, formatClock, projectSpend }
+module.exports = { currentMonthRange, rangeForDays, currentMonthProgress, formatDay, relativeDay, formatClock, formatClock24, projectSpend }
 
 const DAY_LABEL = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" })
 
@@ -49,6 +49,10 @@ function formatClock(date) {
 	const ampm = h >= 12 ? "PM" : "AM"
 	h = h % 12 || 12
 	return `${h}:${m} ${ampm}`
+}
+
+function formatClock24(date) {
+	return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`
 }
 
 function projectSpend(perDay, daysInMonth) {

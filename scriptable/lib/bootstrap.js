@@ -3,6 +3,7 @@ const debug = importModule("lib/debug")
 const theme = importModule("lib/theme")
 const format = importModule("lib/format")
 const layout = importModule("lib/layout")
+const date = importModule("lib/date")
 
 module.exports = { run, renderError }
 
@@ -11,6 +12,7 @@ async function run(build) {
 		const client = importModule("api/client")
 		await client.ensureSession()
 		const widget = await build()
+		addRefreshFooter(widget)
 		const now = new Date()
 		widget.refreshAfterDate = new Date(now.getTime() + cfg.REFRESH_MINUTES * 60000)
 		Script.setWidget(widget)
@@ -25,6 +27,15 @@ async function run(build) {
 		renderError(e)
 		Script.complete()
 	}
+}
+
+// ponytail: tiny accessory slots have no room for a footer line
+function addRefreshFooter(widget) {
+	if (layout.isAccessory() && layout.family() !== "accessoryRectangular") return
+	const label = widget.addText(`Updated ${date.formatClock24(new Date())}`)
+	label.font = layout.font("regular", 10)
+	label.textColor = theme.t("muted")
+	label.rightAlignText()
 }
 
 function renderError(e) {
