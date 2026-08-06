@@ -10,23 +10,32 @@ const PALETTE = {
 	danger: { light: "#dc2626", dark: "#f87171" },
 	card: { light: "#ffffff", dark: "#1c1c1e" },
 	border: { light: "#00000014", dark: "#ffffff14" },
-}
+};
 
 function t(key) {
-	const pair = PALETTE[key]
-	if (!pair) throw new Error(`theme.t: unknown color key "${key}"`)
-	return Color.dynamic(new Color(pair.light), new Color(pair.dark))
+	const pair = PALETTE[key];
+	if (!pair)
+		throw new Error(`theme.t: unknown color key "${key}"`);
+	return Color.dynamic(
+		new Color(pair.light),
+		new Color(pair.dark),
+	);
 }
 
 function background() {
-	return Color.clear()
+	return Color.clear();
 }
 
 function solidBackground(topHex, bottomHex) {
-	const g = new LinearGradient()
-	g.colors = [new Color(topHex), new Color(bottomHex)]
-	g.locations = [0, 1]
-	return g
+	const g = new LinearGradient();
+	g.colors = [new Color(topHex), new Color(bottomHex)];
+	g.locations = [0, 1];
+	return g;
 }
 
-module.exports = { PALETTE, t, background, solidBackground }
+module.exports = {
+	PALETTE,
+	t,
+	background,
+	solidBackground,
+};
