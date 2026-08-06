@@ -1,5 +1,5 @@
-// Track My Biryani — category-breakdown widget
-// Top categories by spend share for the current month.
+// Track My Biryani — category-week widget
+// Bar graph of top categories by spend share for the current week.
 const endpoints = importModule("api/endpoints")
 const bootstrap = importModule("lib/bootstrap")
 const layout = importModule("lib/layout")
@@ -9,18 +9,36 @@ const money = importModule("lib/money")
 const date = importModule("lib/date")
 const format = importModule("lib/format")
 
-const { header, listRow, progressBar, footer } = components
+const { header, listRow, footer } = components
 const { t } = theme
 const { font } = layout
 const { moneyShort } = money
-const { currentMonthRange } = date
-const { pct, truncate, pluralize } = format
+const { rangeForDays } = date
+const { pct, truncate, pluralize, blockBar } = format
+
+// one-line bar graph row: name ············ bar ······ pct
+function barRow(parent, { title, value, color }) {
+	const row = parent.addStack()
+	row.layoutHorizontally()
+	row.spacing = 6
+	const name = row.addText(truncate(title, 14))
+	name.font = font("semibold", 12)
+	name.textColor = t("text")
+	row.addSpacer()
+	const bar = row.addText(blockBar(value))
+	bar.font = font("mono", 10)
+	bar.textColor = color ? new Color(color) : t("accent")
+	const p = row.addText(pct(value))
+	p.font = font("regular", 11)
+	p.textColor = t("muted")
+	return row
+}
 
 bootstrap.run(async () => {
 	const widget = new ListWidget()
 	widget.backgroundColor = theme.background()
 
-	const { from, to } = currentMonthRange()
+	const { from, to } = rangeForDays(7)
 	const [chart, over] = await Promise.all([
 		endpoints.chart({ from, to }),
 		endpoints.overview({ from, to }),
@@ -40,7 +58,7 @@ bootstrap.run(async () => {
 	const share = (c) => (total > 0 ? c.value / total : 0)
 
 	if (!rows.length) {
-		const empty = widget.addText("No expenses this month")
+		const empty = widget.addText("No expenses this week")
 		empty.font = font("regular", 12)
 		empty.textColor = t("muted")
 		return widget
@@ -65,7 +83,6 @@ bootstrap.run(async () => {
 			name.centerAlignText()
 			return widget
 		}
-		// accessoryRectangular: up to 3 rows, pct only (no amounts)
 		for (const c of rows.slice(0, 3)) {
 			listRow(widget, { title: c.name, right: pct(share(c)), color: c.color })
 		}
@@ -73,27 +90,25 @@ bootstrap.run(async () => {
 	}
 
 	if (layout.family() === "small") {
-		header(widget, { title: "Categories" })
-		for (const c of rows.slice(0, 3)) {
+		header(widget, { icon: "📊", title: "This week" })
+		for (const c of rows.slice(0, 4)) {
 			listRow(widget, { title: c.name, right: pct(share(c)), color: c.color })
 		}
 		footer(widget, { left: truncate(rows[0].name, 12), right: moneyShort(total) })
 		return widget
 	}
 
-	header(widget, { title: "Categories" })
+	header(widget, { icon: "📊", title: "This week" })
 	if (layout.mode() === "expanded") {
-		for (const c of rows.slice(0, 6)) {
-			listRow(widget, { title: c.name, right: pct(share(c)), color: c.color })
-			progressBar(widget, { value: share(c), color: c.color })
+		for (const c of rows.slice(0, 8)) {
+			barRow(widget, { title: c.name, value: share(c), color: c.color })
 		}
-		footer(widget, { left: pluralize(rows.length, "category"), right: "this month" })
+		footer(widget, { left: pluralize(rows.length, "category"), right: "this week" })
 		return widget
 	}
 
-	for (const c of rows.slice(0, 4)) {
-		listRow(widget, { title: c.name, right: pct(share(c)), color: c.color })
-		progressBar(widget, { value: share(c), color: c.color })
+	for (const c of rows.slice(0, 5)) {
+		barRow(widget, { title: c.name, value: share(c), color: c.color })
 	}
 	return widget
 })

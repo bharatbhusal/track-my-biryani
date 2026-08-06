@@ -9,7 +9,7 @@ top level is just a small file that fetches data and draws a `ListWidget`.
 Six widget scripts ship:
 
 - `month-overview.js` — monthly spend vs projected
-- `category-breakdown.js` — top categories by spend share
+- `category-week.js` — this week's categories as a bar graph
 - `recent-expenses.js` — latest expenses
 - `daily-trend.js` — last 7 days of spend
 - `bucket-summary.js` — one bucket's month at a glance
@@ -36,7 +36,7 @@ Six widget scripts ship:
    ```text
    Scriptable/
    ├── month-overview.js
-   ├── category-breakdown.js
+   ├── category-week.js
    ├── recent-expenses.js
    ├── daily-trend.js
    ├── bucket-summary.js
@@ -120,7 +120,7 @@ lock-screen accessory slots take the accessory scripts.
 | Script | Shows | Families | Widget parameter | Example |
 |---|---|---|---|---|
 | `month-overview.js` | Month spend total, per-day, month progress, projected month-end | small, medium, large, accessory\* | — | "₹31,127 · ₹1,004/day" |
-| `category-breakdown.js` | Top categories by spend share with percent bars | small, medium, large, accessory\* | — | "Food 42%" |
+| `category-week.js` | This week's categories by spend share as a bar graph | small, medium, large, accessory\* | — | "Food ████████ 42%" |
 | `recent-expenses.js` | Latest 5 expenses with day labels | medium, large | — | "🍜 Biryani ₹450 Yesterday" |
 | `daily-trend.js` | Last 7 days of spend | medium, large, accessory\* | — | "7d ₹8,900" |
 | `bucket-summary.js` | One bucket's month total, per-day, month progress | small, medium, large, extraLarge, accessory\* | bucket id — empty for Personal | "Family ₹22,400" |
