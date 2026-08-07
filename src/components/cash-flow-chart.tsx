@@ -14,7 +14,7 @@ import {
 import { ChartContainer } from "@/components/ui/chart";
 import { ChartCard } from "@/components/charts/chart-card";
 import { ChartTooltip } from "@/components/charts/chart-tooltip";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ChartSkeleton } from "@/components/charts/chart-skeleton";
 
 type Props = {
 	stackedSeries: Array<Record<string, string | number>>;
@@ -53,20 +53,12 @@ export function CashFlowChart({
 
 	const [showTooltip, setShowTooltip] = useState(false);
 
-	if (paddedSeries.length < 1) return null;
+	if (paddedSeries.length < 1 && !isLoading) return null;
 
 	return (
 		<ChartCard title={title}>
 			{isLoading ? (
-				<div className="h-64 space-y-3 p-4">
-					<div className="flex items-end justify-around h-full">
-						{[60, 80, 45, 90, 55, 70, 85].map((h, i) => (
-							<div key={i} className="w-4" style={{ height: `${h}%` }}>
-								<Skeleton className="h-full w-full rounded-sm" />
-							</div>
-						))}
-					</div>
-				</div>
+				<ChartSkeleton />
 			) : (
 				<ChartContainer
 					config={Object.fromEntries(
@@ -75,8 +67,7 @@ export function CashFlowChart({
 							{
 								label: name,
 								color:
-									categoryColorMap.get(name) ??
-									"var(--chart-2)",
+									categoryColorMap.get(name) ?? "var(--chart-2)",
 							},
 						]),
 					)}
@@ -115,8 +106,7 @@ export function CashFlowChart({
 									type="monotone"
 									dataKey={name}
 									stroke={
-										categoryColorMap.get(name) ??
-										"var(--chart-2)"
+										categoryColorMap.get(name) ?? "var(--chart-2)"
 									}
 									strokeWidth={2.5}
 									dot={false}

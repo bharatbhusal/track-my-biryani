@@ -26,6 +26,7 @@ import { setDateRange } from "@/store/slices/uiSlice";
 import { toIsoBounds } from "@/lib/date-range";
 import type { ExpenseListQuery } from "@/types";
 import { CashFlowChart } from "@/components/cash-flow-chart";
+import { ChartSkeleton } from "@/components/charts/chart-skeleton";
 import type { CategoryWithStats } from "@/types/analytics.types";
 
 export function CategoryDetailView({ id }: { id: string }) {
@@ -51,6 +52,9 @@ export function CategoryDetailView({ id }: { id: string }) {
 	const expenses = useAppSelector((s) => s.expenses.items);
 	const expensesLoading = useAppSelector(
 		(s) => s.expenses.loading,
+	);
+	const expensesTotalPages = useAppSelector(
+		(s) => s.expenses.totalPages,
 	);
 
 	const isCreator =
@@ -226,7 +230,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 				</Card>
 				<Card>
 					<Skeleton className="h-4 w-32 mb-3" />
-					<Skeleton className="h-64 w-full" />
+					<ChartSkeleton />
 				</Card>
 				<Card>
 					<Skeleton className="h-4 w-32 mb-3" />
@@ -261,34 +265,22 @@ export function CategoryDetailView({ id }: { id: string }) {
 					}
 				/>
 			)}
-			{expensesLoading ? (
-				<div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 md:grid-cols-4">
-					{[...Array(4)].map((_, i) => (
-						<div key={i}>
-							<Skeleton className="h-4 w-16 mb-1" />
-							<Skeleton className="h-5 w-24" />
-						</div>
-					))}
-				</div>
-			) : (
-				<>
-					<CashFlowChart
-						title="Trend"
-						stackedSeries={chartStackedSeries}
-						categoryColorMap={chartColorMap}
-						isLoading={expensesLoading}
-					/>
+			<CashFlowChart
+				title="Trend"
+				stackedSeries={chartStackedSeries}
+				categoryColorMap={chartColorMap}
+				isLoading={expensesLoading}
+			/>
 
-					{expenses.length > 0 && (
-						<ExpenseTable
-							items={expenses.slice(0, 10)}
-							emptyMessage="No expenses in this category"
-							page={page}
-							totalPages={Math.ceil(expenses.length / 20)}
-							onPageChange={setPage}
-						/>
-					)}
-				</>
+			{expenses.length > 0 && (
+				<ExpenseTable
+					items={expenses}
+					isLoading={expensesLoading}
+					emptyMessage="No expenses in this category"
+					page={page}
+					totalPages={expensesTotalPages}
+					onPageChange={setPage}
+				/>
 			)}
 
 			<AddCategoryDialog
