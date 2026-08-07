@@ -74,8 +74,12 @@ export function ExpenseDetailView({
 				id,
 				bucketId: activeBucketId,
 			}),
-		);
-	}, [dispatch, id, activeBucketId]);
+		)
+			.unwrap()
+			.catch(() =>
+				router.replace("/unauthorized?type=expense"),
+			);
+	}, [dispatch, id, activeBucketId, router]);
 
 	useEffect(() => {
 		if (buckets.length === 0) {

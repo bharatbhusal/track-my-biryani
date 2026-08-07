@@ -1,14 +1,15 @@
 "use client";
 
-import Link from "next/link";
-import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import type { ExpenseItem } from "@/types/expense.types";
+import { FiMoreVertical, FiShare2 } from "react-icons/fi";
 import { formatCurrency } from "@/lib/format";
 import { useAppSelector } from "@/store/hooks";
 import { EmojiBadge } from "@/components/ui/emoji-badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { DropdownList } from "@/components/ui/dropdown-list";
 import { formatShortDateTime } from "@/lib/datetime";
+import { shareLink } from "@/lib/share";
 import { useRouter } from "next/navigation";
 
 type Props = {
@@ -28,8 +29,32 @@ export function ExpenseCard({
 	);
 	const isOwner =
 		!!currentUserId && expense.userId === currentUserId;
-	const hasActions = isOwner && (onEdit || onDelete);
+	const hasActions = onEdit || onDelete;
 	const router = useRouter();
+
+	const handleShare = () => {
+		const url = `${window.location.origin}/expenses/${expense._id}`;
+		return shareLink({
+			url,
+			title: expense.title || "Expense",
+		});
+	};
+
+	const handleMenu = (value: string) => {
+		if (value === "edit") onEdit?.();
+		else if (value === "delete") onDelete?.();
+		else if (value === "share") void handleShare();
+	};
+
+	const menuOptions = [
+		{ value: "share", label: "Share" },
+		...(onEdit
+			? [{ value: "edit", label: "Edit" }]
+			: []),
+		...(onDelete
+			? [{ value: "delete", label: "Delete" }]
+			: []),
+	];
 
 	return (
 		<Card
@@ -77,30 +102,35 @@ export function ExpenseCard({
 							</p>
 						</div>
 						{hasActions && (
-							<div className="flex gap-1">
-								{onEdit && (
+							<>
+								{isOwner ? (
+									<DropdownList
+										value=""
+										placeholder="Actions"
+										trigger={
+											<FiMoreVertical className="h-4 w-4" />
+										}
+										options={menuOptions}
+										onValueChange={handleMenu}
+										aria-label="Expense actions"
+										className="h-8 w-8 cursor-pointer"
+										onClick={(e) => e.stopPropagation()}
+									/>
+								) : (
 									<Button
-										variant="outline"
+										variant="ghost"
 										size="icon"
-										className="h-8 w-8  cursor-pointer"
-										aria-label="Edit category"
-										onClick={onEdit}
+										className="h-8 w-8 cursor-pointer"
+										aria-label="Share expense"
+										onClick={(e) => {
+											e.stopPropagation();
+											void handleShare();
+										}}
 									>
-										<FiEdit2 className="h-4 w-4" />
+										<FiShare2 className="h-4 w-4" />
 									</Button>
 								)}
-								{onDelete && (
-									<Button
-										variant="destructive"
-										size="icon"
-										className="h-8 w-8  cursor-pointer"
-										aria-label="Delete category"
-										onClick={onDelete}
-									>
-										<FiTrash2 className="h-4 w-4" />
-									</Button>
-								)}
-							</div>
+							</>
 						)}
 					</div>
 				</div>
