@@ -86,18 +86,26 @@ export const fetchCategoryStats = createAsyncThunk(
 
 export const createCategory = createAsyncThunk(
 	"categories/create",
-	async ({
-		payload,
-		bucketId,
-	}: {
-		payload: {
-			name: string;
-			color?: string;
-			emoji?: string;
-		};
-		bucketId?: string | null;
-	}) => {
-		return expensesApi.createCategory(payload, bucketId);
+	async (
+		{
+			payload,
+			bucketId,
+		}: {
+			payload: {
+				name: string;
+				color?: string;
+				emoji?: string;
+			};
+			bucketId?: string | null;
+		},
+		{ dispatch },
+	) => {
+		const category = await expensesApi.createCategory(
+			payload,
+			bucketId,
+		);
+		dispatch(fetchCategories(bucketId));
+		return category;
 	},
 );
 
@@ -209,8 +217,9 @@ const categorySlice = createSlice({
 				state.stats = action.payload;
 			})
 			// createCategory
-			.addCase(createCategory.fulfilled, (state, action) => {
-				state.items.push(action.payload);
+			.addCase(createCategory.rejected, (state, action) => {
+				state.error =
+					action.error.message ?? "Failed to create category";
 			})
 			// updateCategory
 			.addCase(updateCategory.fulfilled, (state, action) => {

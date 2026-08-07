@@ -7,12 +7,14 @@ type Props = {
 	open: boolean;
 	onClose: () => void;
 	id?: string;
+	onCreated?: () => void;
 };
 
 export function AddCategoryDialog({
 	open,
 	onClose,
 	id,
+	onCreated,
 }: Props) {
 	const isEditing = Boolean(id);
 
@@ -30,7 +32,14 @@ export function AddCategoryDialog({
 					: "Create a new spending category"
 			}
 		>
-			<CategoryForm id={id} onSuccess={onClose} onCancel={onClose} />
+			<CategoryForm
+				id={id}
+				onSuccess={() => {
+					onCreated?.();
+					onClose();
+				}}
+				onCancel={onClose}
+			/>
 		</Modal>
 	);
 }

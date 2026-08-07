@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-import { FiFolder } from "react-icons/fi";
+import { useEffect, useState } from "react";
 
-import { Select } from "@/components/ui/select";
+import { DropdownList } from "@/components/ui/dropdown-list";
+import { AddBucketDialog } from "@/features/settings/components/add-bucket-dialog";
 import { cn } from "@/lib/utils";
 import {
 	useAppDispatch,
@@ -24,6 +24,7 @@ export function BucketSwitcher({
 	const activeBucketId = useAppSelector(
 		(s) => s.ui.activeBucketId,
 	);
+	const [createOpen, setCreateOpen] = useState(false);
 
 	useEffect(() => {
 		dispatch(fetchBuckets());
@@ -31,29 +32,33 @@ export function BucketSwitcher({
 
 	return (
 		<div className={cn("relative inline-block", className)}>
-			<Select
+			<DropdownList
 				aria-label="Active bucket"
 				value={activeBucketId ?? ""}
-				onChange={(e) =>
+				onValueChange={(v) =>
 					dispatch(
-						setActiveBucketId(
-							e.target.value === "" ? null : e.target.value,
-						),
+						setActiveBucketId(v === "" ? null : v),
 					)
 				}
+				options={buckets.map((bucket) => ({
+					value: bucket._id,
+					label: bucket.name,
+					icon: bucket.icon ?? "📁",
+				}))}
+				placeholder={
+					loading && buckets.length === 0
+						? "Loading…"
+						: undefined
+				}
+				addLabel="Add new bucket"
+				onAddNew={() => setCreateOpen(true)}
 				disabled={loading && buckets.length === 0}
 				className="h-9 w-auto min-w-[130px] max-w-[190px] py-1.5"
-			>
-				{loading && buckets.length === 0 ? (
-					<option value="">Loading…</option>
-				) : (
-					buckets.map((bucket) => (
-						<option key={bucket._id} value={bucket._id}>
-							{bucket.icon ?? "📁"} {bucket.name}
-						</option>
-					))
-				)}
-			</Select>
+			/>
+			<AddBucketDialog
+				open={createOpen}
+				onClose={() => setCreateOpen(false)}
+			/>
 		</div>
 	);
 }

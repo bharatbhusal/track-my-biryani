@@ -50,7 +50,6 @@ export async function createExpenseService(
 	}
 
 	const category = await getCategoryById(
-		userId,
 		payload.categoryId,
 		ctx.bucketId,
 	);
@@ -119,7 +118,8 @@ export async function updateExpenseService(
 		throw new AppError("Expense not found", 404, "NOT_FOUND");
 	}
 
-	const targetBucketId = payload.bucketId ?? current.bucketId;
+	const targetBucketId =
+		payload.bucketId ?? current.bucketId;
 	await resolveBucketContext(
 		userId,
 		bucketId ?? targetBucketId,
@@ -128,7 +128,6 @@ export async function updateExpenseService(
 	let categoryId: string;
 	if (payload.categoryId) {
 		const category = await getCategoryById(
-			userId,
 			payload.categoryId,
 			targetBucketId,
 		);
@@ -144,7 +143,6 @@ export async function updateExpenseService(
 		categoryId = current.categoryId;
 	} else {
 		const sourceCategory = await getCategoryById(
-			userId,
 			current.categoryId,
 			current.bucketId,
 		);
@@ -176,7 +174,10 @@ export async function updateExpenseService(
 		throw new AppError("Expense not found", 404, "NOT_FOUND");
 	}
 
-	if (payload.bucketId && payload.bucketId !== current.bucketId.toString()) {
+	if (
+		payload.bucketId &&
+		payload.bucketId !== current.bucketId.toString()
+	) {
 		const sourceId = current.bucketId.toString();
 		const destId = targetBucketId;
 		const sourceName =

@@ -28,7 +28,8 @@ export async function ensureCategoryInBucket(
 		name: data.name,
 	};
 
-	const existing = await CategoryModel.findOne(filter).lean();
+	const existing =
+		await CategoryModel.findOne(filter).lean();
 	if (existing) {
 		return existing;
 	}
@@ -44,7 +45,8 @@ export async function ensureCategoryInBucket(
 		return category.toObject();
 	} catch (error) {
 		// ponytail: concurrent create loses the race → re-find the winner
-		const refound = await CategoryModel.findOne(filter).lean();
+		const refound =
+			await CategoryModel.findOne(filter).lean();
 		if (refound) {
 			return refound;
 		}
@@ -52,17 +54,19 @@ export async function ensureCategoryInBucket(
 	}
 }
 
-export async function listCategories(
-	userId: string,
-	bucketId: string,
-) {
+export async function listCategories(bucketId: string) {
 	return CategoryModel.find({ bucketId })
 		.sort({ createdAt: -1 })
 		.lean();
 }
 
+export async function deleteCategoriesByBucket(bucketId: string) {
+	return CategoryModel.deleteMany({
+		bucketId: new Types.ObjectId(bucketId),
+	});
+}
+
 export async function listCategoriesWithStats(
-	userId: string,
 	bucketId: string,
 	from: Date,
 	to: Date,
@@ -116,10 +120,14 @@ export async function listCategoriesWithStats(
 }
 
 export async function updateCategory(
-	userId: string,
 	categoryId: string,
 	bucketId: string,
-	data: { name: string; color: string; emoji?: string; bucketId?: string },
+	data: {
+		name: string;
+		color: string;
+		emoji?: string;
+		bucketId?: string;
+	},
 ) {
 	if (!Types.ObjectId.isValid(categoryId)) {
 		return null;
@@ -133,7 +141,6 @@ export async function updateCategory(
 }
 
 export async function getCategoryById(
-	userId: string,
 	categoryId: string,
 	bucketId: string,
 ) {
@@ -148,7 +155,6 @@ export async function getCategoryById(
 }
 
 export async function deleteCategory(
-	userId: string,
 	categoryId: string,
 	bucketId: string,
 ) {
