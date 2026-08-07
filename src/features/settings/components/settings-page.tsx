@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { BucketSwitcher } from "@/components/layout/bucket-switcher";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/modals/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	useAppSelector,
@@ -36,6 +37,7 @@ export function SettingsPage() {
 	const authLoading = useAppSelector((s) => s.auth.loading);
 
 	const [mounted, setMounted] = useState(false);
+	const [logoutOpen, setLogoutOpen] = useState(false);
 
 	useEffect(() => {
 		dispatch(fetchMe());
@@ -48,21 +50,6 @@ export function SettingsPage() {
 	const currentTheme = mounted
 		? (resolvedTheme ?? "light")
 		: null;
-
-	const handleLogout = async () => {
-		try {
-			await dispatch(logoutUser()).unwrap();
-			toast.success("Logged out");
-			router.replace("/auth/login");
-			router.refresh();
-		} catch (error) {
-			toast.error(
-				error instanceof Error
-					? error.message
-					: "Logout failed",
-			);
-		}
-	};
 
 	return (
 		<div className="space-y-2">
@@ -90,7 +77,7 @@ export function SettingsPage() {
 							variant="ghost"
 							size="sm"
 							aria-label="Logout"
-							onClick={handleLogout}
+							onClick={() => setLogoutOpen(true)}
 						>
 							<FiLogOut className="mr-1.5" />
 						</Button>
@@ -161,6 +148,28 @@ export function SettingsPage() {
 					</Button>
 				</Link>
 			</Card>
+
+			<ConfirmDialog
+				open={logoutOpen}
+				title="Log out"
+				subtitle="End your session"
+				description="You will be signed out of your account."
+				onCancel={() => setLogoutOpen(false)}
+				onConfirm={async () => {
+					try {
+						await dispatch(logoutUser()).unwrap();
+						toast.success("Logged out");
+						router.replace("/auth/login");
+						router.refresh();
+					} catch (error) {
+						toast.error(
+							error instanceof Error
+								? error.message
+								: "Logout failed",
+						);
+					}
+				}}
+			/>
 		</div>
 	);
 }

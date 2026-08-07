@@ -1,6 +1,9 @@
 import { DEFAULT_CATEGORIES } from "@/lib/constants";
 import { AppError } from "@/lib/errors";
-import { bucketSchema, inviteSchema } from "@/lib/validators";
+import {
+	bucketSchema,
+	inviteSchema,
+} from "@/lib/validators";
 import {
 	addBucketMember,
 	acceptBucketMember,
@@ -15,7 +18,10 @@ import {
 	updateBucketName,
 	type BucketDoc,
 } from "@/repositories/bucket.repository";
-import { ensureCategoryInBucket } from "@/repositories/category.repository";
+import {
+	ensureCategoryInBucket,
+	deleteCategoriesByBucket,
+} from "@/repositories/category.repository";
 import { findUserByUsername } from "@/repositories/user.repository";
 import { logAuditEvent } from "@/services/audit.service";
 import type {
@@ -143,6 +149,7 @@ export async function deleteBucketService(
 		);
 	}
 
+	await deleteCategoriesByBucket(bucketId);
 	await deleteBucket(bucketId);
 
 	await logAuditEvent({
@@ -167,7 +174,11 @@ export async function inviteUserService(
 
 	const user = await findUserByUsername(payload.username);
 	if (!user) {
-		throw new AppError("User not found", 404, "USER_NOT_FOUND");
+		throw new AppError(
+			"User not found",
+			404,
+			"USER_NOT_FOUND",
+		);
 	}
 	const targetId = user._id.toString();
 	if (
@@ -208,7 +219,11 @@ export async function acceptInviteService(
 	bucketId: string,
 ): Promise<BucketDetail> {
 	await requirePendingMember(userId, bucketId);
-	const bucket = await acceptBucketMember(bucketId, userId, new Date());
+	const bucket = await acceptBucketMember(
+		bucketId,
+		userId,
+		new Date(),
+	);
 
 	await logAuditEvent({
 		actorId: userId,
@@ -226,7 +241,10 @@ export async function declineInviteService(
 	userId: string,
 	bucketId: string,
 ): Promise<BucketSummary> {
-	const bucket = await requirePendingMember(userId, bucketId);
+	const bucket = await requirePendingMember(
+		userId,
+		bucketId,
+	);
 	await pullBucketMember(bucketId, userId);
 
 	await logAuditEvent({
@@ -304,7 +322,10 @@ export async function revokeInviteService(
 		throw new AppError("Member not found", 404, "NOT_FOUND");
 	}
 
-	const updated = await pullBucketMember(bucketId, targetUserId);
+	const updated = await pullBucketMember(
+		bucketId,
+		targetUserId,
+	);
 
 	await logAuditEvent({
 		actorId: userId,
@@ -368,7 +389,10 @@ async function requirePendingMember(
 	return bucket;
 }
 
-function toSummary(bucket: BucketDoc, userId: string): BucketSummary {
+function toSummary(
+	bucket: BucketDoc,
+	userId: string,
+): BucketSummary {
 	const member = bucket.members.find(
 		(m) => m.userId.toString() === userId,
 	);
@@ -384,7 +408,9 @@ function toSummary(bucket: BucketDoc, userId: string): BucketSummary {
 	};
 }
 
-async function toDetail(bucket: BucketDoc): Promise<BucketDetail> {
+async function toDetail(
+	bucket: BucketDoc,
+): Promise<BucketDetail> {
 	const users = await findUsersByIds(
 		bucket.members.map((m) => m.userId.toString()),
 	);

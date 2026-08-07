@@ -79,7 +79,7 @@ type BucketFormProps = {
 	onCancel?: () => void;
 };
 
-function BucketForm({
+export function BucketForm({
 	bucket,
 	onSuccess,
 	onCancel,

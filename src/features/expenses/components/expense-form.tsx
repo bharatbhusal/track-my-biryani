@@ -26,7 +26,7 @@ import {
 	FormItem,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { DropdownList } from "@/components/ui/dropdown-list";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -40,11 +40,9 @@ import {
 } from "@/store/hooks";
 import { fetchCategories } from "@/store/slices/categorySlice";
 import { fetchBuckets } from "@/store/slices/bucketSlice";
-import {
-	fetchExpenseDetail,
-	createExpense,
-	updateExpense,
-} from "@/store/slices/expenseSlice";
+import { fetchExpenseDetail, createExpense, updateExpense } from "@/store/slices/expenseSlice";
+import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
+import { AddBucketDialog } from "@/features/settings/components/add-bucket-dialog";
 import {
 	setDraftExpense,
 	clearDraftExpense,
@@ -91,6 +89,8 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 	);
 
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [addCategoryOpen, setAddCategoryOpen] = useState(false);
+	const [addBucketOpen, setAddBucketOpen] = useState(false);
 	const amountRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
@@ -352,23 +352,25 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 								render={({ field }) => (
 									<FormItem>
 										<FormControl>
-											<Select
+											<DropdownList
 												aria-label="Bucket"
-												value={field.value}
-												onChange={(e) => {
-													field.onChange(e.target.value);
+												value={field.value ?? ""}
+												onValueChange={(value) => {
+													field.onChange(value);
 													setValue("categoryId", "");
 												}}
-											>
-												{availableBuckets.map((b) => (
-													<option
-														key={b._id as string}
-														value={b._id as string}
-													>
-														{b.name}
-													</option>
-												))}
-											</Select>
+												options={availableBuckets.map(
+													(b) => ({
+														value: b._id as string,
+														label: b.name,
+														icon: b.icon ?? "📁",
+													}),
+												)}
+												addLabel="Add new bucket"
+												onAddNew={() =>
+													setAddBucketOpen(true)
+												}
+											/>
 										</FormControl>
 									</FormItem>
 								)}
@@ -380,20 +382,23 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 								render={({ field }) => (
 									<FormItem>
 										<FormControl>
-											<Select
+											<DropdownList
+												aria-label="Category"
 												value={field.value}
-												onChange={(e) => field.onChange(e.target.value)}
-											>
-												<option value="">Category</option>
-												{categories.map((category) => (
-													<option
-														key={category._id}
-														value={category._id}
-													>
-														{category.name}
-													</option>
-												))}
-											</Select>
+												onValueChange={field.onChange}
+												options={categories.map(
+													(category) => ({
+														value: category._id,
+														label: category.name,
+														icon: category.emoji,
+													}),
+												)}
+												placeholder="Category"
+												addLabel="Add new category"
+												onAddNew={() =>
+													setAddCategoryOpen(true)
+												}
+											/>
 										</FormControl>
 									</FormItem>
 								)}
@@ -474,6 +479,18 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 					</div>
 				</form>
 			</Form>
+
+			<AddCategoryDialog
+				open={addCategoryOpen}
+				onClose={() => setAddCategoryOpen(false)}
+				onCreated={() => {
+					dispatch(fetchCategories(watchedBucketId || null));
+				}}
+			/>
+			<AddBucketDialog
+				open={addBucketOpen}
+				onClose={() => setAddBucketOpen(false)}
+			/>
 		</div>
 	);
 }

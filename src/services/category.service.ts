@@ -24,7 +24,6 @@ async function assertCategoryCreator(
 	bucketId: string,
 ) {
 	const category = await getCategoryById(
-		userId,
 		categoryId,
 		bucketId,
 	);
@@ -50,7 +49,7 @@ export async function listCategoriesService(
 	bucketId?: string | null,
 ) {
 	const ctx = await resolveBucketContext(userId, bucketId);
-	return listCategories(userId, ctx.bucketId);
+	return listCategories(ctx.bucketId);
 }
 
 export async function listCategoriesWithStatsService(
@@ -67,7 +66,6 @@ export async function listCategoriesWithStatsService(
 	}
 	const ctx = await resolveBucketContext(userId, bucketId);
 	return listCategoriesWithStats(
-		userId,
 		ctx.bucketId,
 		new Date(from),
 		new Date(to),
@@ -118,7 +116,6 @@ export async function getCategoryService(
 ) {
 	const ctx = await resolveBucketContext(userId, bucketId);
 	const category = await getCategoryById(
-		userId,
 		categoryId,
 		ctx.bucketId,
 	);
@@ -152,7 +149,6 @@ export async function updateCategoryService(
 	}
 
 	const category = await updateCategory(
-		userId,
 		categoryId,
 		ctx.bucketId,
 		{
@@ -171,7 +167,10 @@ export async function updateCategoryService(
 		);
 	}
 
-	if (payload.bucketId && payload.bucketId !== ctx.bucketId) {
+	if (
+		payload.bucketId &&
+		payload.bucketId !== ctx.bucketId
+	) {
 		const sourceId = ctx.bucketId;
 		const destId = targetBucketId;
 		const sourceName =
@@ -221,7 +220,6 @@ export async function deleteCategoryService(
 	);
 
 	const deleted = await deleteCategory(
-		userId,
 		categoryId,
 		ctx.bucketId,
 	);

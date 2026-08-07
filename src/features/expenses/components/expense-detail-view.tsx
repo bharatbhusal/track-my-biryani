@@ -18,16 +18,16 @@ import {
 import { shallowEqual } from "react-redux";
 import { DateRangeBar } from "@/components/charts/date-range-bar";
 import type { GlobalDateRange } from "@/lib/date-range";
+import { toIsoBounds } from "@/lib/date-range";
 import {
 	fetchExpenseDetail,
 	deleteExpense,
 	updateExpense,
 } from "@/store/slices/expenseSlice";
+import { fetchExpenses } from "@/store/slices/expenseSlice";
 import { fetchBuckets } from "@/store/slices/bucketSlice";
 import { setDateRange } from "@/store/slices/uiSlice";
-import { expensesApi } from "@/lib/api/expenses";
 import { ExpenseCard } from "@/features/expenses/components/expense-card";
-import type { ExpenseItem } from "@/types/expense.types";
 import { ExpenseTable } from "./expense-table";
 
 type ExpenseDetailViewProps = {
@@ -45,9 +45,7 @@ export function ExpenseDetailView({
 		string | null
 	>(null);
 	const [isMoving, setIsMoving] = useState(false);
-	const [recentExpenses, setRecentExpenses] = useState<
-		ExpenseItem[]
-	>([]);
+	const [recentPage, setRecentPage] = useState(1);
 
 	const expense = useAppSelector(
 		(s) => s.expenses.currentExpense,
@@ -57,6 +55,13 @@ export function ExpenseDetailView({
 	const expensesLoading = useAppSelector(
 		(s) => s.expenses.loading,
 	);
+	const recentExpenses = useAppSelector(
+		(s) => s.expenses.items,
+	);
+	const recentTotalPages = useAppSelector(
+		(s) => s.expenses.totalPages,
+	);
+	const recentLoading = useAppSelector((s) => s.expenses.loading);
 	const localRange = useAppSelector((s) => s.ui.dateRange);
 	const activeBucketId = useAppSelector(
 		(s) => s.ui.activeBucketId,
@@ -80,15 +85,33 @@ export function ExpenseDetailView({
 
 	useEffect(() => {
 		if (!expense?.categoryId) return;
-		expensesApi
-			.listExpenses({
-				categoryId: expense.categoryId,
+		const bounds = toIsoBounds(localRange);
+		dispatch(
+			fetchExpenses({
+				page: recentPage,
 				limit: 20,
+				categoryId: expense.categoryId,
 				bucketId: expense.bucketId ?? undefined,
+				from: bounds.from ?? undefined,
+				to: bounds.to ?? undefined,
+				sortBy: "paidAt",
+				order: "desc",
+			}),
+		)
+			.unwrap()
+			.then((res) => {
+				if (res.items.length === 0 && recentPage > 1) {
+					setRecentPage(1);
+				}
 			})
-			.then((res) => setRecentExpenses(res.items))
 			.catch(() => {});
-	}, [expense?.categoryId, expense?.bucketId]);
+	}, [
+		dispatch,
+		expense?.categoryId,
+		expense?.bucketId,
+		recentPage,
+		localRange,
+	]);
 
 	const sharedBuckets = buckets.filter(
 		(b) => b.status === "accepted",
@@ -169,9 +192,10 @@ export function ExpenseDetailView({
 			<DateRangeBar
 				title={expense.title}
 				range={localRange}
-				onRangeChange={(r: GlobalDateRange) =>
-					dispatch(setDateRange(r))
-				}
+				onRangeChange={(r: GlobalDateRange) => {
+					dispatch(setDateRange(r));
+					setRecentPage(1);
+				}}
 			/>
 
 			<ExpenseCard
@@ -220,14 +244,19 @@ export function ExpenseDetailView({
 					/>
 				)}
 
-			{recentExpenses.length > 0 && (
-				<div className="space-y-2">
-					<p className="text-sm font-semibold px-1">
-						Recent in Category
-					</p>
-					<ExpenseTable items={recentExpenses} />
-				</div>
-			)}
+			<div className="space-y-2">
+				<p className="text-sm font-semibold px-1">
+					Recent in Category
+				</p>
+				<ExpenseTable
+					items={recentExpenses}
+					isLoading={recentLoading}
+					page={recentPage}
+					totalPages={recentTotalPages}
+					onPageChange={setRecentPage}
+					emptyMessage="No expenses in this category for the selected range"
+				/>
+			</div>
 
 			<Modal
 				open={moveOpen}
