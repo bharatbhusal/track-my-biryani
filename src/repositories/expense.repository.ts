@@ -406,10 +406,7 @@ export async function getCategoryRangeStats(
 		categoryId: new Types.ObjectId(categoryId),
 	};
 
-	const dayDiff = Math.ceil(
-		(to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24),
-	);
-	const dateFormat = dayDiff > 60 ? "%Y-%m" : "%Y-%m-%d";
+	const dateFormat = "%Y-%m-%d";
 
 	const [categoryResult, totalResult, trend] =
 		await Promise.all([
