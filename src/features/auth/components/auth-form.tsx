@@ -69,6 +69,12 @@ export function AuthForm({
 	const getFieldError = (field: string) =>
 		fieldErrors[field]?.message;
 
+	const switchPath =
+		mode === "signup" ? "/auth/login" : "/auth/signup";
+	const switchHref = nextPath
+		? `${switchPath}?next=${encodeURIComponent(nextPath)}`
+		: switchPath;
+
 	const onSubmit = async (
 		values: SignupValues | LoginValues,
 	) => {
@@ -177,9 +183,7 @@ export function AuthForm({
 					? "Already have an account?"
 					: "Need an account?"}{" "}
 				<Link
-					href={
-						mode === "signup" ? "/auth/login" : "/auth/signup"
-					}
+					href={switchHref}
 					className="underline"
 				>
 					{mode === "signup" ? "Login" : "Sign up"}

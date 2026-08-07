@@ -58,6 +58,8 @@ export type CategoryWithStats = {
 	name: string;
 	color: string;
 	emoji?: string;
+	userId?: string;
+	bucketId?: string;
 	total: number;
 	count: number;
 	min: number;

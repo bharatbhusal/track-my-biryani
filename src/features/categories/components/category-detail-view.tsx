@@ -73,8 +73,12 @@ export function CategoryDetailView({ id }: { id: string }) {
 				id,
 				bucketId: activeBucketId ?? undefined,
 			}),
-		);
-	}, [dispatch, id, activeBucketId]);
+		)
+			.unwrap()
+			.catch(() =>
+				router.replace("/unauthorized?type=category"),
+			);
+	}, [dispatch, id, activeBucketId, router]);
 
 	useEffect(() => {
 		if (rangeBounds.from && rangeBounds.to) {
@@ -164,6 +168,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 			if (!category || !stats) return null;
 			return {
 				...category,
+				bucketId: category.bucketId,
 				total: stats.total,
 				count: stats.count,
 				min: stats.min,
@@ -257,12 +262,8 @@ export function CategoryDetailView({ id }: { id: string }) {
 			{categoryWithStats && (
 				<CategoryCard
 					category={categoryWithStats}
-					onEdit={
-						isCreator ? () => setEditDrawerOpen(true) : undefined
-					}
-					onDelete={
-						isCreator ? () => setDeleteOpen(true) : undefined
-					}
+					onEdit={() => setEditDrawerOpen(true)}
+					onDelete={() => setDeleteOpen(true)}
 				/>
 			)}
 			<CashFlowChart

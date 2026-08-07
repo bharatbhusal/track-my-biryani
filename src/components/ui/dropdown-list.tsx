@@ -20,6 +20,7 @@ type DropdownListProps = Omit<
 	placeholder?: string;
 	addLabel?: string;
 	onAddNew?: () => void;
+	trigger?: React.ReactNode;
 };
 
 const ADD_NEW_VALUE = "__add_new__";
@@ -31,12 +32,17 @@ export function DropdownList({
 	placeholder,
 	addLabel,
 	onAddNew,
+	trigger,
 	className,
 	...rest
 }: DropdownListProps) {
-	return (
+	const select = (
 		<Select
-			className={className}
+			className={
+				trigger
+					? "absolute inset-0 cursor-pointer opacity-0 outline-none"
+					: className
+			}
 			value={value}
 			onChange={(e) => {
 				const next = e.target.value;
@@ -46,6 +52,7 @@ export function DropdownList({
 					return;
 				}
 				onValueChange(next);
+				e.target.value = value;
 			}}
 			{...rest}
 		>
@@ -63,5 +70,18 @@ export function DropdownList({
 				<option value={ADD_NEW_VALUE}>+ {addLabel}</option>
 			)}
 		</Select>
+	);
+
+	if (!trigger) return select;
+
+	return (
+		<div
+			className={`relative inline-flex items-center justify-center ${className ?? ""}`}
+		>
+			<span className="pointer-events-none flex items-center justify-center">
+				{trigger}
+			</span>
+			{select}
+		</div>
 	);
 }

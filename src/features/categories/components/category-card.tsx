@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { FiEdit2, FiTrash2 } from "react-icons/fi";
+import { FiMoreVertical, FiShare2 } from "react-icons/fi";
 import { formatCurrency } from "@/lib/format";
 import { useAppSelector } from "@/store/hooks";
 import { EmojiBadge } from "@/components/ui/emoji-badge";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { DropdownList } from "@/components/ui/dropdown-list";
+import { shareLink } from "@/lib/share";
 import type { CategoryWithStats } from "@/types/analytics.types";
 
 type CategoryCardProps = {
@@ -21,7 +23,36 @@ export function CategoryCard({
 	onDelete,
 }: CategoryCardProps) {
 	const currency = useAppSelector((s) => s.ui.currency);
+	const currentUserId = useAppSelector(
+		(s) => s.auth.user?.id,
+	);
+	const isOwner =
+		!!currentUserId && category.userId === currentUserId;
 	const hasActions = onEdit || onDelete;
+
+	const handleShare = () => {
+		const url = `${window.location.origin}/categories/${category._id}`;
+		return shareLink({
+			url,
+			title: category.name,
+		});
+	};
+
+	const handleMenu = (value: string) => {
+		if (value === "edit") onEdit?.();
+		else if (value === "delete") onDelete?.();
+		else if (value === "share") void handleShare();
+	};
+
+	const menuOptions = [
+		{ value: "share", label: "Share" },
+		...(onEdit
+			? [{ value: "edit", label: "Edit" }]
+			: []),
+		...(onDelete
+			? [{ value: "delete", label: "Delete" }]
+			: []),
+	];
 
 	return (
 		<Card>
@@ -46,38 +77,39 @@ export function CategoryCard({
 						</p>
 					</div>
 					{hasActions && (
-						<div className="flex gap-1">
-							{onEdit && (
-								<Button
-									variant="outline"
-									size="icon"
-									className="h-8 w-8"
-									aria-label="Edit category"
+						<>
+							{isOwner ? (
+								<DropdownList
+									value=""
+									placeholder="Actions"
+									trigger={
+										<FiMoreVertical className="h-4 w-4" />
+									}
+									options={menuOptions}
+									onValueChange={handleMenu}
+									aria-label="Category actions"
+									className="h-8 w-8 cursor-pointer"
 									onClick={(e) => {
 										e.preventDefault();
 										e.stopPropagation();
-										onEdit();
 									}}
-								>
-									<FiEdit2 className="h-4 w-4" />
-								</Button>
-							)}
-							{onDelete && (
+								/>
+							) : (
 								<Button
-									variant="destructive"
+									variant="ghost"
 									size="icon"
-									className="h-8 w-8"
-									aria-label="Delete category"
+									className="h-8 w-8 cursor-pointer"
+									aria-label="Share category"
 									onClick={(e) => {
 										e.preventDefault();
 										e.stopPropagation();
-										onDelete();
+										void handleShare();
 									}}
 								>
-									<FiTrash2 className="h-4 w-4" />
+									<FiShare2 className="h-4 w-4" />
 								</Button>
 							)}
-						</div>
+						</>
 					)}
 				</div>
 				{category.pct > 0 && (
