@@ -246,6 +246,8 @@ export function BucketSettings() {
 		useState<BucketSummary | null>(null);
 	const [managing, setManaging] =
 		useState<BucketSummary | null>(null);
+	const [revoking, setRevoking] =
+		useState<BucketMemberWithName | null>(null);
 	const [members, setMembers] = useState<
 		BucketMemberWithName[]
 	>([]);
@@ -336,6 +338,7 @@ export function BucketSettings() {
 			toast.success(
 				`Removed ${member.name || member.username || "member"}`,
 			);
+			setRevoking(null);
 			await loadMembers(managing);
 		} catch (err) {
 			toast.error(
@@ -567,7 +570,7 @@ export function BucketSettings() {
 										variant="ghost"
 										size="sm"
 										disabled={pending}
-										onClick={() => handleRevoke(member)}
+										onClick={() => setRevoking(member)}
 									>
 										Remove
 									</Button>
@@ -590,6 +593,17 @@ export function BucketSettings() {
 				description={`Delete "${deleting?.name ?? ""}"? All shared data will be lost. This cannot be undone.`}
 				onConfirm={handleDelete}
 				onCancel={() => setDeleting(null)}
+			/>
+
+			<ConfirmDialog
+				open={revoking !== null}
+				title="Remove member"
+				subtitle="Revoke access"
+				description={`Remove ${revoking?.name || revoking?.username || "this member"}? They will lose access to "${managing?.name ?? ""}".`}
+				onConfirm={() => {
+					if (revoking) handleRevoke(revoking);
+				}}
+				onCancel={() => setRevoking(null)}
 			/>
 
 			<ConfirmDialog
