@@ -229,3 +229,167 @@ export function persistRange(range: GlobalDateRange): void {
 		/* ignore */
 	}
 }
+
+export type FilterDatePreset =
+	| "TODAY"
+	| "YESTERDAY"
+	| "THIS_WEEK"
+	| "LAST_WEEK"
+	| "THIS_MONTH"
+	| "LAST_MONTH"
+	| "LAST_6_MONTHS"
+	| "THIS_YEAR"
+	| "LAST_YEAR"
+	| "ANY_TIME"
+	| "CUSTOM";
+
+const FILTER_PRESET_LABELS: Record<FilterDatePreset, string> = {
+	TODAY: "Today",
+	YESTERDAY: "Yesterday",
+	THIS_WEEK: "This Week",
+	LAST_WEEK: "Last Week",
+	THIS_MONTH: "This Month",
+	LAST_MONTH: "Last Month",
+	LAST_6_MONTHS: "Last 6 Months",
+	THIS_YEAR: "This Year",
+	LAST_YEAR: "Last Year",
+	ANY_TIME: "Any Time",
+	CUSTOM: "Custom",
+};
+
+export function presetLabel(preset: FilterDatePreset): string {
+	return FILTER_PRESET_LABELS[preset];
+}
+
+function startOfDay(date: Date): Date {
+	const d = new Date(date);
+	d.setHours(0, 0, 0, 0);
+	return d;
+}
+
+function endOfDay(date: Date): Date {
+	const d = new Date(date);
+	d.setHours(23, 59, 59, 999);
+	return d;
+}
+
+function startOfWeek(date: Date): Date {
+	const d = startOfDay(date);
+	const day = d.getDay();
+	const diff = day === 0 ? -6 : 1 - day;
+	d.setDate(d.getDate() + diff);
+	return d;
+}
+
+function endOfWeek(date: Date): Date {
+	const start = startOfWeek(date);
+	const d = new Date(start);
+	d.setDate(d.getDate() + 6);
+	return endOfDay(d);
+}
+
+function startOfMonth(year: number, month: number): Date {
+	return new Date(year, month, 1);
+}
+
+function endOfMonth(year: number, month: number): Date {
+	return new Date(year, month + 1, 0, 23, 59, 59, 999);
+}
+
+export function toIsoBoundsForPreset(
+	preset: FilterDatePreset,
+	customFrom?: string,
+	customTo?: string,
+): { from?: string; to?: string } | null {
+	const now = new Date();
+
+	if (preset === "ANY_TIME") {
+		return null;
+	}
+
+	if (preset === "CUSTOM") {
+		const from = customFrom ? new Date(customFrom) : undefined;
+		const to = customTo ? new Date(customTo) : undefined;
+		if (!from && !to) return null;
+		return {
+			from: from?.toISOString(),
+			to: to?.toISOString(),
+		};
+	}
+
+	if (preset === "TODAY") {
+		return {
+			from: startOfDay(now).toISOString(),
+			to: now.toISOString(),
+		};
+	}
+
+	if (preset === "YESTERDAY") {
+		const yesterday = new Date(now);
+		yesterday.setDate(now.getDate() - 1);
+		return {
+			from: startOfDay(yesterday).toISOString(),
+			to: endOfDay(yesterday).toISOString(),
+		};
+	}
+
+	if (preset === "THIS_WEEK") {
+		return {
+			from: startOfWeek(now).toISOString(),
+			to: now.toISOString(),
+		};
+	}
+
+	if (preset === "LAST_WEEK") {
+		const lastWeek = new Date(now);
+		lastWeek.setDate(now.getDate() - 7);
+		return {
+			from: startOfWeek(lastWeek).toISOString(),
+			to: endOfWeek(lastWeek).toISOString(),
+		};
+	}
+
+	if (preset === "THIS_MONTH") {
+		return {
+			from: startOfMonth(now.getFullYear(), now.getMonth()).toISOString(),
+			to: now.toISOString(),
+		};
+	}
+
+	if (preset === "LAST_MONTH") {
+		const month = now.getMonth() - 1;
+		const year = month < 0 ? now.getFullYear() - 1 : now.getFullYear();
+		const adjustedMonth = month < 0 ? 11 : month;
+		return {
+			from: startOfMonth(year, adjustedMonth).toISOString(),
+			to: endOfMonth(year, adjustedMonth).toISOString(),
+		};
+	}
+
+	if (preset === "LAST_6_MONTHS") {
+		const from = new Date(now);
+		from.setMonth(now.getMonth() - 6);
+		from.setDate(1);
+		return {
+			from: startOfDay(from).toISOString(),
+			to: now.toISOString(),
+		};
+	}
+
+	if (preset === "THIS_YEAR") {
+		return {
+			from: startOfMonth(now.getFullYear(), 0).toISOString(),
+			to: now.toISOString(),
+		};
+	}
+
+	if (preset === "LAST_YEAR") {
+		const year = now.getFullYear() - 1;
+		return {
+			from: startOfMonth(year, 0).toISOString(),
+			to: endOfMonth(year, 11).toISOString(),
+		};
+	}
+
+	return null;
+}

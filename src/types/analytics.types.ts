@@ -68,6 +68,23 @@ export type CategoryWithStats = {
 	pct: number;
 };
 
+export type DistributionPoint = {
+	id: string;
+	name: string;
+	value: number;
+	color?: string;
+	icon?: string;
+};
+
+export type CategoryStatsSummary = {
+	total: number;
+	min: number;
+	max: number;
+	avg: number;
+	categoryCount: number;
+	expenseCount: number;
+};
+
 export type ChartData = {
 	series: Array<Record<string, string | number>>;
 	categoryColors: Record<string, string>;

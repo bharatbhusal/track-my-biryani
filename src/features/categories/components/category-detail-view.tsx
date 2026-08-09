@@ -8,6 +8,8 @@ import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/modals/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DateRangeBar } from "@/components/charts/date-range-bar";
+import { FilterBar } from "@/components/filters";
+import type { FilterValue } from "@/components/filters";
 
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
@@ -21,13 +23,19 @@ import {
 	fetchCategoryStats,
 	deleteCategory,
 } from "@/store/slices/categorySlice";
-import { fetchExpenses } from "@/store/slices/expenseSlice";
 import { setDateRange } from "@/store/slices/uiSlice";
-import { toIsoBounds } from "@/lib/date-range";
-import type { ExpenseListQuery } from "@/types";
+import { toIsoBounds, toIsoBoundsForPreset } from "@/lib/date-range";
+import { expensesApi } from "@/lib/api/expenses";
+import { filterBounds, scopedExpenseRequest } from "@/lib/filters";
 import { CashFlowChart } from "@/components/cash-flow-chart";
 import { ChartSkeleton } from "@/components/charts/chart-skeleton";
 import type { CategoryWithStats } from "@/types/analytics.types";
+import type { ExpenseItem } from "@/types/expense.types";
+
+const DEFAULT_LIST_FILTER: FilterValue = {
+	filterCriteria: { datePreset: "ANY_TIME" },
+	sortCriteria: { field: "paidAt", direction: "DESC" },
+};
 
 export function CategoryDetailView({ id }: { id: string }) {
 	const router = useRouter();
@@ -36,11 +44,11 @@ export function CategoryDetailView({ id }: { id: string }) {
 	const [editDrawerOpen, setEditDrawerOpen] =
 		useState(false);
 	const [page, setPage] = useState(1);
+	const [listFilter, setListFilter] = useState<FilterValue | null>(
+		null,
+	);
 
 	const dateRange = useAppSelector((s) => s.ui.dateRange);
-	const activeBucketId = useAppSelector(
-		(s) => s.ui.activeBucketId,
-	);
 	const currentUserId = useAppSelector(
 		(s) => s.auth.user?.id,
 	);
@@ -49,13 +57,16 @@ export function CategoryDetailView({ id }: { id: string }) {
 		(s) => s.categories.currentCategory,
 	);
 	const stats = useAppSelector((s) => s.categories.stats);
-	const expenses = useAppSelector((s) => s.expenses.items);
-	const expensesLoading = useAppSelector(
-		(s) => s.expenses.loading,
-	);
-	const expensesTotalPages = useAppSelector(
-		(s) => s.expenses.totalPages,
-	);
+	const [expenseList, setExpenseList] = useState<{
+		items: ExpenseItem[];
+		totalPages: number;
+		loading: boolean;
+	}>({ items: [], totalPages: 0, loading: true });
+	const {
+		items: expenses,
+		totalPages: expensesTotalPages,
+		loading: expensesLoading,
+	} = expenseList;
 
 	const isCreator =
 		!!category &&
@@ -68,57 +79,65 @@ export function CategoryDetailView({ id }: { id: string }) {
 	);
 
 	useEffect(() => {
-		dispatch(
-			fetchCategoryDetail({
-				id,
-				bucketId: activeBucketId ?? undefined,
-			}),
-		)
+		dispatch(fetchCategoryDetail(id))
 			.unwrap()
 			.catch(() =>
 				router.replace("/unauthorized?type=category"),
 			);
-	}, [dispatch, id, activeBucketId, router]);
+	}, [dispatch, id, router]);
 
 	useEffect(() => {
-		if (rangeBounds.from && rangeBounds.to) {
-			dispatch(
-				fetchCategoryStats({
-					id,
-					from: rangeBounds.from,
-					to: rangeBounds.to,
-					bucketId: activeBucketId ?? undefined,
+		const { from, to } = filterBounds(rangeBounds);
+		dispatch(fetchCategoryStats({ id, from, to }));
+	}, [dispatch, id, rangeBounds]);
+
+	// ponytail: the list filter takes over the range once applied; the chart
+	// keeps reading rangeBounds, so sorting the table never touches the series.
+	const listBounds = useMemo(() => {
+		if (!listFilter) return rangeBounds;
+		const { datePreset, customFrom, customTo } =
+			listFilter.filterCriteria;
+		return (
+			toIsoBoundsForPreset(datePreset, customFrom, customTo) ?? {}
+		);
+	}, [listFilter, rangeBounds]);
+
+	const listSort =
+		listFilter?.sortCriteria ?? DEFAULT_LIST_FILTER.sortCriteria;
+
+	useEffect(() => {
+		let cancelled = false;
+		expensesApi
+			.searchExpenses({
+				...scopedExpenseRequest({
+					bucketId: category?.bucketId,
+					categoryId: id,
+					page,
+					from: listBounds.from,
+					to: listBounds.to,
 				}),
-			);
-		}
-	}, [
-		dispatch,
-		id,
-		rangeBounds.from,
-		rangeBounds.to,
-		activeBucketId,
-	]);
-
-	useEffect(() => {
-		const params: ExpenseListQuery = {
-			page,
-			limit: 20,
-			categoryId: id,
-			from: rangeBounds.from,
-			to: rangeBounds.to,
-			sortBy: "paidAt",
-			order: "desc",
-			bucketId: activeBucketId ?? undefined,
+				sortCriteria: listSort,
+			})
+			.then((res) => {
+				if (cancelled) return;
+				setExpenseList({
+					items: res.items,
+					totalPages: res.totalPages,
+					loading: false,
+				});
+			})
+			.catch(() => {
+				if (!cancelled)
+					setExpenseList({
+						items: [],
+						totalPages: 0,
+						loading: false,
+					});
+			});
+		return () => {
+			cancelled = true;
 		};
-		dispatch(fetchExpenses(params));
-	}, [
-		dispatch,
-		id,
-		page,
-		rangeBounds.from,
-		rangeBounds.to,
-		activeBucketId,
-	]);
+	}, [id, page, listBounds, listSort, category?.bucketId]);
 
 	const chartTrend = useMemo(() => {
 		const raw = stats?.trend ?? [];
@@ -273,6 +292,27 @@ export function CategoryDetailView({ id }: { id: string }) {
 				isLoading={expensesLoading}
 			/>
 
+			<FilterBar
+				variant="expenses"
+				buckets={[]}
+				categories={[]}
+				owners={[]}
+				sections={{
+					buckets: false,
+					categories: false,
+					owners: false,
+					additional: false,
+					search: false,
+				}}
+				local={{
+					value: listFilter ?? DEFAULT_LIST_FILTER,
+					onChange: (next) => {
+						setListFilter(next);
+						setPage(1);
+					},
+				}}
+			/>
+
 			{expenses.length > 0 && (
 				<ExpenseTable
 					items={expenses}
@@ -298,12 +338,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 				onCancel={() => setDeleteOpen(false)}
 				onConfirm={async () => {
 					try {
-						await dispatch(
-							deleteCategory({
-								id,
-								bucketId: category?.bucketId,
-							}),
-						).unwrap();
+						await dispatch(deleteCategory(id)).unwrap();
 						toast.success("Category deleted");
 						router.replace("/categories");
 					} catch (error) {

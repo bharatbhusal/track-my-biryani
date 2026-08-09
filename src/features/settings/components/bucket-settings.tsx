@@ -40,7 +40,6 @@ import {
 	revokeInvite,
 	updateBucket,
 } from "@/store/slices/bucketSlice";
-import { setActiveBucketId } from "@/store/slices/uiSlice";
 import type {
 	BucketMemberWithName,
 	BucketSummary,
@@ -230,10 +229,6 @@ export function BucketSettings() {
 	const { buckets, loading } = useAppSelector(
 		(s) => s.buckets,
 	);
-	const activeBucketId = useAppSelector(
-		(s) => s.ui.activeBucketId,
-	);
-
 	const [createOpen, setCreateOpen] = useState(false);
 	const [renaming, setRenaming] =
 		useState<BucketSummary | null>(null);
@@ -255,22 +250,17 @@ export function BucketSettings() {
 		useState(false);
 	const [pending, setPending] = useState(false);
 
+	const bucketsFilter = useAppSelector((s) => s.bucketsFilter);
+
 	useEffect(() => {
 		dispatch(fetchBuckets());
-	}, [dispatch]);
-
-	const resetActiveIfDeleted = (id: string) => {
-		if (activeBucketId === id) {
-			dispatch(setActiveBucketId(null));
-		}
-	};
+	}, [dispatch, bucketsFilter]);
 
 	const handleDelete = async () => {
 		if (!deleting?._id) return;
 		setPending(true);
 		try {
 			await dispatch(deleteBucket(deleting._id)).unwrap();
-			resetActiveIfDeleted(deleting._id);
 			toast.success("Bucket deleted");
 			setDeleting(null);
 		} catch (err) {
@@ -354,7 +344,6 @@ export function BucketSettings() {
 		setPending(true);
 		try {
 			await dispatch(leaveBucket(bucket._id)).unwrap();
-			resetActiveIfDeleted(bucket._id);
 			toast.success(`Left ${bucket.name}`);
 		} catch (err) {
 			toast.error(

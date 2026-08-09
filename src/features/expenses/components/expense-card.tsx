@@ -48,9 +48,7 @@ export function ExpenseCard({
 
 	const menuOptions = [
 		{ value: "share", label: "Share" },
-		...(onEdit
-			? [{ value: "edit", label: "Edit" }]
-			: []),
+		...(onEdit ? [{ value: "edit", label: "Edit" }] : []),
 		...(onDelete
 			? [{ value: "delete", label: "Delete" }]
 			: []),
@@ -63,7 +61,7 @@ export function ExpenseCard({
 			<div
 				onClick={
 					!hasActions
-						? () => router.replace(`/expenses/${expense._id}`)
+						? () => router.push(`/expenses/${expense._id}`)
 						: undefined
 				}
 				className={!hasActions ? "cursor-pointer" : ""}
@@ -107,9 +105,7 @@ export function ExpenseCard({
 									<DropdownList
 										value=""
 										placeholder="Actions"
-										trigger={
-											<FiMoreVertical className="h-4 w-4" />
-										}
+										trigger={<FiMoreVertical className="h-4 w-4" />}
 										options={menuOptions}
 										onValueChange={handleMenu}
 										aria-label="Expense actions"
@@ -134,7 +130,7 @@ export function ExpenseCard({
 						)}
 					</div>
 				</div>
-				{expense.notes && (
+				{expense.notes && hasActions && (
 					<p className="text-sm border-t-2 mt-4 py-2 text-[var(--color-muted)]">
 						{expense.notes}
 					</p>

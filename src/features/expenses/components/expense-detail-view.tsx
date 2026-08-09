@@ -2,11 +2,14 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 
 import { Card, CardTitle } from "@/components/ui/card";
-import { ConfirmDialog, Modal } from "@/components/modals/dialog";
+import {
+	ConfirmDialog,
+	Modal,
+} from "@/components/modals/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -17,21 +20,33 @@ import {
 } from "@/store/hooks";
 import { shallowEqual } from "react-redux";
 import { DateRangeBar } from "@/components/charts/date-range-bar";
+import { FilterBar } from "@/components/filters";
+import type { FilterValue } from "@/components/filters";
 import type { GlobalDateRange } from "@/lib/date-range";
-import { toIsoBounds } from "@/lib/date-range";
+import {
+	toIsoBounds,
+	toIsoBoundsForPreset,
+} from "@/lib/date-range";
+import { expensesApi } from "@/lib/api/expenses";
+import { scopedExpenseRequest } from "@/lib/filters";
 import {
 	fetchExpenseDetail,
 	deleteExpense,
 	updateExpense,
 } from "@/store/slices/expenseSlice";
-import { fetchExpenses } from "@/store/slices/expenseSlice";
-import { fetchBuckets } from "@/store/slices/bucketSlice";
+import { fetchAllBuckets } from "@/store/slices/bucketSlice";
 import { setDateRange } from "@/store/slices/uiSlice";
 import { ExpenseCard } from "@/features/expenses/components/expense-card";
 import { ExpenseTable } from "./expense-table";
+import type { ExpenseItem } from "@/types/expense.types";
 
 type ExpenseDetailViewProps = {
 	id: string;
+};
+
+const DEFAULT_RECENT_FILTER: FilterValue = {
+	filterCriteria: { datePreset: "ANY_TIME" },
+	sortCriteria: { field: "paidAt", direction: "DESC" },
 };
 
 export function ExpenseDetailView({
@@ -46,6 +61,8 @@ export function ExpenseDetailView({
 	>(null);
 	const [isMoving, setIsMoving] = useState(false);
 	const [recentPage, setRecentPage] = useState(1);
+	const [recentFilter, setRecentFilter] =
+		useState<FilterValue | null>(null);
 
 	const expense = useAppSelector(
 		(s) => s.expenses.currentExpense,
@@ -55,66 +72,84 @@ export function ExpenseDetailView({
 	const expensesLoading = useAppSelector(
 		(s) => s.expenses.loading,
 	);
-	const recentExpenses = useAppSelector(
-		(s) => s.expenses.items,
-	);
-	const recentTotalPages = useAppSelector(
-		(s) => s.expenses.totalPages,
-	);
-	const recentLoading = useAppSelector((s) => s.expenses.loading);
+	const [recent, setRecent] = useState<{
+		items: ExpenseItem[];
+		totalPages: number;
+		loading: boolean;
+	}>({ items: [], totalPages: 0, loading: true });
 	const localRange = useAppSelector((s) => s.ui.dateRange);
-	const activeBucketId = useAppSelector(
-		(s) => s.ui.activeBucketId,
+	const buckets = useAppSelector(
+		(s) => s.buckets.allBuckets,
 	);
-	const buckets = useAppSelector((s) => s.buckets.buckets);
 
 	useEffect(() => {
-		dispatch(
-			fetchExpenseDetail({
-				id,
-				bucketId: activeBucketId,
-			}),
-		)
+		dispatch(fetchExpenseDetail(id))
 			.unwrap()
 			.catch(() =>
 				router.replace("/unauthorized?type=expense"),
 			);
-	}, [dispatch, id, activeBucketId, router]);
+	}, [dispatch, id, router]);
 
 	useEffect(() => {
 		if (buckets.length === 0) {
-			dispatch(fetchBuckets());
+			dispatch(fetchAllBuckets());
 		}
 	}, [dispatch, buckets.length]);
 
+	// ponytail: untouched, the section follows the page-wide DateRangeBar; once
+	// the dialog is applied its range wins, ANY_TIME included.
+	const recentBounds = useMemo(() => {
+		if (!recentFilter) return toIsoBounds(localRange);
+		const { datePreset, customFrom, customTo } =
+			recentFilter.filterCriteria;
+		return (
+			toIsoBoundsForPreset(datePreset, customFrom, customTo) ??
+			{}
+		);
+	}, [recentFilter, localRange]);
+
 	useEffect(() => {
 		if (!expense?.categoryId) return;
-		const bounds = toIsoBounds(localRange);
-		dispatch(
-			fetchExpenses({
-				page: recentPage,
-				limit: 20,
-				categoryId: expense.categoryId,
-				bucketId: expense.bucketId ?? undefined,
-				from: bounds.from ?? undefined,
-				to: bounds.to ?? undefined,
-				sortBy: "paidAt",
-				order: "desc",
-			}),
-		)
-			.unwrap()
+		const bounds = recentBounds;
+		let cancelled = false;
+		expensesApi
+			.searchExpenses(
+				scopedExpenseRequest({
+					bucketId: expense.bucketId ?? undefined,
+					categoryId: expense.categoryId,
+					page: recentPage,
+					from: bounds.from,
+					to: bounds.to,
+				}),
+			)
 			.then((res) => {
+				if (cancelled) return;
 				if (res.items.length === 0 && recentPage > 1) {
 					setRecentPage(1);
+					return;
 				}
+				setRecent({
+					items: res.items,
+					totalPages: res.totalPages,
+					loading: false,
+				});
 			})
-			.catch(() => {});
+			.catch(() => {
+				if (!cancelled)
+					setRecent({
+						items: [],
+						totalPages: 0,
+						loading: false,
+					});
+			});
+		return () => {
+			cancelled = true;
+		};
 	}, [
-		dispatch,
 		expense?.categoryId,
 		expense?.bucketId,
 		recentPage,
-		localRange,
+		recentBounds,
 	]);
 
 	const sharedBuckets = buckets.filter(
@@ -140,12 +175,7 @@ export function ExpenseDetailView({
 			toast.success("Expense moved");
 			setMoveOpen(false);
 			setMoveTarget(null);
-			dispatch(
-				fetchExpenseDetail({
-					id,
-					bucketId: moveTarget,
-				}),
-			);
+			dispatch(fetchExpenseDetail(id));
 		} catch (error) {
 			toast.error(
 				error instanceof Error
@@ -193,14 +223,14 @@ export function ExpenseDetailView({
 
 	return (
 		<div className="space-y-4">
-			<DateRangeBar
+			{/* <DateRangeBar
 				title={expense.title}
 				range={localRange}
 				onRangeChange={(r: GlobalDateRange) => {
 					dispatch(setDateRange(r));
 					setRecentPage(1);
 				}}
-			/>
+			/> */}
 
 			<ExpenseCard
 				expense={expense}
@@ -214,7 +244,7 @@ export function ExpenseDetailView({
 				</p>
 			)}
 
-			{expense.images.length > 0 && (
+			{expense.images?.length > 0 && (
 				<Card>
 					<CardTitle className="mb-3">Glimpses</CardTitle>
 					<div className="flex snap-x gap-3 overflow-x-auto pb-2">
@@ -238,8 +268,9 @@ export function ExpenseDetailView({
 				</Card>
 			)}
 
-			{expense.location?.latitude !== 0 &&
-				expense.location?.longitude !== 0 && (
+			{expense.location &&
+				(expense.location.latitude !== 0 ||
+					expense.location.longitude !== 0) && (
 					<GoogleMap
 						latitude={expense.location.latitude}
 						longitude={expense.location.longitude}
@@ -252,11 +283,32 @@ export function ExpenseDetailView({
 				<p className="text-sm font-semibold px-1">
 					Recent in Category
 				</p>
+				{/* <FilterBar
+					variant="expenses"
+					buckets={[]}
+					categories={[]}
+					owners={[]}
+					sections={{
+						buckets: false,
+						categories: false,
+						owners: false,
+						additional: false,
+						search: false,
+						sort: false,
+					}}
+					local={{
+						value: recentFilter ?? DEFAULT_RECENT_FILTER,
+						onChange: (next) => {
+							setRecentFilter(next);
+							setRecentPage(1);
+						},
+					}}
+				/> */}
 				<ExpenseTable
-					items={recentExpenses}
-					isLoading={recentLoading}
+					items={recent.items}
+					isLoading={recent.loading}
 					page={recentPage}
-					totalPages={recentTotalPages}
+					totalPages={recent.totalPages}
 					onPageChange={setRecentPage}
 					emptyMessage="No expenses in this category for the selected range"
 				/>
@@ -310,12 +362,7 @@ export function ExpenseDetailView({
 				onCancel={() => setDeleteOpen(false)}
 				onConfirm={async () => {
 					try {
-						await dispatch(
-							deleteExpense({
-								id,
-								bucketId: activeBucketId ?? undefined,
-							}),
-						).unwrap();
+						await dispatch(deleteExpense(id)).unwrap();
 						toast.success("Expense deleted");
 						router.replace("/dashboard");
 					} catch (error) {

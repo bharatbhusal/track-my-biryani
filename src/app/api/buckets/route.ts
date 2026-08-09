@@ -1,23 +1,17 @@
-import { NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
 import {
 	errorResponse,
 	successResponse,
 } from "@/lib/api-response";
 import { connectToDatabase } from "@/lib/db";
-import {
-	createBucket,
-	listBuckets,
-} from "@/controllers/bucket.controller";
+import { createBucket } from "@/controllers/bucket.controller";
 
 export async function GET() {
-	try {
-		await connectToDatabase();
-		const data = await listBuckets();
-		return successResponse(data);
-	} catch (error) {
-		return errorResponse(error);
-	}
+	return NextResponse.json(
+		{ success: false, error: { message: "Not found", code: "NOT_FOUND" } },
+		{ status: 404 },
+	);
 }
 
 export async function POST(request: NextRequest) {

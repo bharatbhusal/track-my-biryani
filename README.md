@@ -32,6 +32,41 @@ cp .env.example .env.local
 npm run dev
 ```
 
+## Search API Tests
+
+Plain-Node scripts (no test framework, no new dependencies) that exercise the
+search endpoints against a running dev server. They assert real values — ordering,
+date bounds, membership isolation — not just HTTP 200.
+
+```bash
+# 1. start the dev server (in another terminal)
+npm run dev
+
+# 2. seed idempotent test data (safe to re-run; wipes prior test data first)
+node --env-file=.env scripts/seed-test-data.mjs
+
+# 3. run a single suite
+node scripts/test-expenses-search.mjs
+node scripts/test-categories-search.mjs
+node scripts/test-buckets-search.mjs
+
+# 4. or run everything
+node scripts/test-all.mjs
+```
+
+Set `TEST_BASE_URL` (default `http://localhost:3000`) if the server listens elsewhere.
+
+The seed creates three test users (`testuser_alice`, `testuser_bob`, `testuser_carol`,
+password `testpass123`), each with a personal bucket, plus shared buckets
+`Test Trip` and `Test Office`, with categories and expenses spanning every date
+preset, owner, notes/location combination. Existing account `bharatbhusal` is made
+an accepted member of `Test Trip`. Test data is namespaced and wiped on each run.
+
+Seed-created ids are written to `scripts/.test-data.json` so the suites reference
+known records. Suites cover: defaults, every preset, custom ranges, sorting (both
+directions), pagination, empty results, invalid-input handling, and cross-bucket
+membership isolation (a user never sees a bucket they are not an accepted member of).
+
 ## Environment Variables
 
 - `DATABASE_URL`: MongoDB connection URI (primary)

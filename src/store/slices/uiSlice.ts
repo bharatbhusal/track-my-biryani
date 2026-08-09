@@ -12,7 +12,6 @@ type UIState = {
 	timezone: string;
 	detectionCompleted: boolean;
 	dateRange: GlobalDateRange;
-	activeBucketId: string | null;
 	draftExpense: Partial<{
 		title: string;
 		amount: number;
@@ -29,7 +28,6 @@ const initialState: UIState = {
 	timezone: "Asia/Kolkata",
 	detectionCompleted: false,
 	dateRange: DEFAULT_GLOBAL_RANGE,
-	activeBucketId: null,
 	draftExpense: null,
 };
 
@@ -61,12 +59,6 @@ const uiSlice = createSlice({
 		) {
 			state.dateRange = action.payload;
 		},
-		setActiveBucketId(
-			state,
-			action: PayloadAction<string | null>,
-		) {
-			state.activeBucketId = action.payload;
-		},
 		setDraftExpense(
 			state,
 			action: PayloadAction<Partial<{
@@ -89,7 +81,6 @@ export const {
 	setQuickAddOpen,
 	setPreferences,
 	setDateRange,
-	setActiveBucketId,
 	setDraftExpense,
 	clearDraftExpense,
 } = uiSlice.actions;

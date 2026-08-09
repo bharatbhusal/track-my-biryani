@@ -7,7 +7,7 @@ import {
 import { connectToDatabase } from "@/lib/db";
 import { listCategoriesWithStats } from "@/controllers/category.controller";
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
 	try {
 		await connectToDatabase();
 		const data = await listCategoriesWithStats(request);

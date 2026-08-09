@@ -4,12 +4,12 @@ import {
 	isAnyOf,
 } from "@reduxjs/toolkit";
 import { bucketsApi } from "@/lib/api/buckets";
-import { setActiveBucketId } from "@/store/slices/uiSlice";
 import type { RootState } from "@/store";
 import type { BucketSummary } from "@/types/bucket.types";
 
 type BucketState = {
 	buckets: BucketSummary[];
+	allBuckets: BucketSummary[];
 	invitations: BucketSummary[];
 	loading: boolean;
 	error: string | null;
@@ -17,37 +17,44 @@ type BucketState = {
 
 const initialState: BucketState = {
 	buckets: [],
+	allBuckets: [],
 	invitations: [],
 	loading: false,
 	error: null,
 };
 
 export const fetchBuckets = createAsyncThunk(
-	"buckets/fetchList",
-	async (_, { dispatch, getState }) => {
-		const data = await bucketsApi.fetchBuckets();
-		const { activeBucketId } = (getState() as RootState).ui;
-		const stale =
-			activeBucketId !== null &&
-			!data.items.some((b) => b._id === activeBucketId);
-		if ((!activeBucketId || stale) && data.items.length > 0) {
-			const personal =
-				data.items.find((b) => b.isPersonal) ??
-				data.items[0];
-			if (personal) {
-				dispatch(setActiveBucketId(personal._id));
-			}
-		}
-		return data;
+	"buckets/search",
+	async (_, { getState }) => {
+		const state = getState() as RootState;
+		const result = await bucketsApi.searchBuckets({
+			filterCriteria: state.bucketsFilter.filterCriteria,
+			sortCriteria: state.bucketsFilter.sortCriteria,
+			pagination: state.bucketsFilter.pagination,
+		});
+		return result.items;
 	},
+);
+
+export const fetchAllBuckets = createAsyncThunk(
+	"buckets/searchAll",
+	() =>
+		bucketsApi
+			.searchBuckets({
+				filterCriteria: { datePreset: "ANY_TIME" },
+				sortCriteria: { field: "createdAt", direction: "DESC" },
+				pagination: { page: 1, pageSize: 100 },
+			})
+			.then((r) => r.items),
 );
 
 export const fetchInvitations = createAsyncThunk(
 	"buckets/fetchInvitations",
-	async () => {
-		const data = await bucketsApi.fetchBuckets();
-		return data.invitations;
-	},
+	() => bucketsApi.searchBuckets({
+		filterCriteria: { datePreset: "ANY_TIME" },
+		sortCriteria: { field: "createdAt", direction: "DESC" },
+		pagination: { page: 1, pageSize: 100 },
+	}).then((r) => r.items.filter((b) => b.status === "pending")),
 );
 
 export const createBucket = createAsyncThunk(
@@ -172,8 +179,14 @@ const bucketSlice = createSlice({
 			})
 			.addCase(fetchBuckets.fulfilled, (state, action) => {
 				state.loading = false;
-				state.buckets = action.payload.items;
-				state.invitations = action.payload.invitations;
+				const items = action.payload;
+				state.buckets = items.filter((b) => b.status === "accepted");
+				state.invitations = items.filter((b) => b.status === "pending");
+			})
+			.addCase(fetchAllBuckets.fulfilled, (state, action) => {
+				state.allBuckets = action.payload.filter(
+					(b) => b.status === "accepted",
+				);
 			})
 			.addCase(fetchInvitations.pending, (state) => {
 				state.loading = true;

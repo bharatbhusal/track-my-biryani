@@ -3,7 +3,7 @@ import { errorResponse, successResponse } from "@/lib/api-response";
 import { connectToDatabase } from "@/lib/db";
 import { getChartData } from "@/controllers/expense.controller";
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
 	try {
 		await connectToDatabase();
 		const data = await getChartData(request);

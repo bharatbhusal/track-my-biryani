@@ -1,10 +1,7 @@
 import { NextRequest } from "next/server";
 
 import { getAuthPayload } from "@/lib/auth";
-import {
-	getBucketId,
-	resolveBucketContext,
-} from "@/lib/bucket";
+import { resolveBucketContext } from "@/lib/bucket";
 import {
 	errorResponse,
 	successResponse,
@@ -48,13 +45,14 @@ type ExportPayload = {
 export async function GET(request: NextRequest) {
 	try {
 		await connectToDatabase();
-		const auth = await getAuthPayload();
-		const bucketId = getBucketId(request);
-		const ctx = await resolveBucketContext(
-			auth.userId,
-			bucketId,
-		);
-		const type = request.nextUrl.searchParams.get("type");
+	const auth = await getAuthPayload();
+	const bucketId =
+		request.nextUrl.searchParams.get("bucketId") ?? undefined;
+	const ctx = await resolveBucketContext(
+		auth.userId,
+		bucketId,
+	);
+	const type = request.nextUrl.searchParams.get("type");
 		const now = new Date();
 		const monthStart = new Date(
 			now.getFullYear(),

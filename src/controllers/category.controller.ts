@@ -1,29 +1,39 @@
 import { NextRequest } from "next/server";
 
 import { getAuthPayload } from "@/lib/auth";
-import { getBucketId } from "@/lib/bucket";
 import {
 	createCategoryService,
 	deleteCategoryService,
 	getCategoryDistributionService,
 	getCategoryService,
 	getCategoryStatsService,
+	getCategoryStatsSummaryService,
 	listCategoriesService,
 	listCategoriesWithStatsService,
+	searchCategoriesService,
 	updateCategoryService,
 } from "@/services/category.service";
 
+export async function searchCategories(request: NextRequest) {
+	const auth = await getAuthPayload();
+	const body = await request.json();
+	return searchCategoriesService(auth.userId, body);
+}
+
 export async function listCategories(request: NextRequest) {
 	const auth = await getAuthPayload();
-	const bucketId = getBucketId(request);
+	const bucketId =
+		request.nextUrl.searchParams.get("bucketId") ?? undefined;
 	return listCategoriesService(auth.userId, bucketId);
 }
 
 export async function listCategoriesWithStats(request: NextRequest) {
 	const auth = await getAuthPayload();
-	const from = request.nextUrl.searchParams.get("from") ?? "";
+	const from =
+		request.nextUrl.searchParams.get("from") ?? "";
 	const to = request.nextUrl.searchParams.get("to") ?? "";
-	const bucketId = getBucketId(request);
+	const bucketId =
+		request.nextUrl.searchParams.get("bucketId") ?? undefined;
 	return listCategoriesWithStatsService(
 		auth.userId,
 		bucketId,
@@ -34,19 +44,17 @@ export async function listCategoriesWithStats(request: NextRequest) {
 
 export async function createCategory(request: NextRequest) {
 	const auth = await getAuthPayload();
-	const bucketId = getBucketId(request);
 	const body = await request.json();
-	return createCategoryService(auth.userId, bucketId, body);
+	return createCategoryService(auth.userId, body.bucketId, body);
 }
 
 export async function getCategory(
-	request: NextRequest,
+	_request: NextRequest,
 	context: { params: Promise<{ id: string }> },
 ) {
 	const auth = await getAuthPayload();
-	const bucketId = getBucketId(request);
 	const { id } = await context.params;
-	return getCategoryService(auth.userId, id, bucketId);
+	return getCategoryService(auth.userId, id, undefined);
 }
 
 export async function updateCategory(
@@ -54,20 +62,18 @@ export async function updateCategory(
 	context: { params: Promise<{ id: string }> },
 ) {
 	const auth = await getAuthPayload();
-	const bucketId = getBucketId(request);
 	const { id } = await context.params;
 	const body = await request.json();
-	return updateCategoryService(auth.userId, bucketId, id, body);
+	return updateCategoryService(auth.userId, body.bucketId, id, body);
 }
 
 export async function deleteCategory(
-	request: NextRequest,
+	_request: NextRequest,
 	context: { params: Promise<{ id: string }> },
 ) {
 	const auth = await getAuthPayload();
-	const bucketId = getBucketId(request);
 	const { id } = await context.params;
-	return deleteCategoryService(auth.userId, bucketId, id);
+	return deleteCategoryService(auth.userId, undefined, id);
 }
 
 export async function getCategoryStats(
@@ -76,9 +82,11 @@ export async function getCategoryStats(
 ) {
 	const auth = await getAuthPayload();
 	const { id } = await context.params;
-	const from = request.nextUrl.searchParams.get("from") ?? "";
+	const from =
+		request.nextUrl.searchParams.get("from") ?? "";
 	const to = request.nextUrl.searchParams.get("to") ?? "";
-	const bucketId = getBucketId(request);
+	const bucketId =
+		request.nextUrl.searchParams.get("bucketId") ?? undefined;
 	return getCategoryStatsService(
 		auth.userId,
 		id,
@@ -92,13 +100,14 @@ export async function getCategoryDistribution(
 	request: NextRequest,
 ) {
 	const auth = await getAuthPayload();
-	const from = request.nextUrl.searchParams.get("from") ?? "";
-	const to = request.nextUrl.searchParams.get("to") ?? "";
-	const bucketId = getBucketId(request);
-	return getCategoryDistributionService(
-		auth.userId,
-		from,
-		to,
-		bucketId,
-	);
+	const body = await request.json().catch(() => ({}));
+	return getCategoryDistributionService(auth.userId, body);
+}
+
+export async function getCategoryStatsSummary(
+	request: NextRequest,
+) {
+	const auth = await getAuthPayload();
+	const body = await request.json().catch(() => ({}));
+	return getCategoryStatsSummaryService(auth.userId, body);
 }

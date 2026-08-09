@@ -1,13 +1,13 @@
 import { apiRequest } from "@/lib/api/client";
-import type {
-	BucketDetail,
-	BucketsListPayload,
-	BucketSummary,
-} from "@/types/bucket.types";
+import type { BucketDetail, BucketSummary } from "@/types/bucket.types";
+import type { BucketSearchRequest, SearchResult } from "@/types/search.types";
 
 export const bucketsApi = {
-	fetchBuckets: () =>
-		apiRequest<BucketsListPayload>("/buckets"),
+	searchBuckets: (request: BucketSearchRequest) =>
+		apiRequest<SearchResult<BucketSummary>>("/buckets/search", {
+			method: "POST",
+			body: request,
+		}),
 	createBucket: (payload: { name: string; icon?: string }) =>
 		apiRequest<BucketDetail>("/buckets", {
 			method: "POST",

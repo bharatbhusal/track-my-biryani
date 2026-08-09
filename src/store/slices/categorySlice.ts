@@ -1,7 +1,13 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { expensesApi } from "@/lib/api/expenses";
 import type { CategoryItem } from "@/types/expense.types";
-import type { CategoryRangeStats, CategoryBreakdownPoint, CategoryWithStats } from "@/types/analytics.types";
+import type {
+	CategoryBreakdownPoint,
+	CategoryRangeStats,
+	CategoryWithStats,
+} from "@/types/analytics.types";
+import type { ExpenseFilterCriteria } from "@/types/search.types";
+import type { RootState } from "@/store";
 
 type CategoryState = {
 	items: CategoryItem[];
@@ -24,87 +30,52 @@ const initialState: CategoryState = {
 };
 
 export const fetchCategories = createAsyncThunk(
-	"categories/fetchList",
-	async (bucketId?: string | null) => {
-		return expensesApi.listCategories(bucketId);
+	"categories/search",
+	async (_: void, { getState }) => {
+		const state = getState() as RootState;
+		const result = await expensesApi.searchCategories({
+			filterCriteria: state.categoriesFilter.filterCriteria,
+			sortCriteria: state.categoriesFilter.sortCriteria,
+			pagination: state.categoriesFilter.pagination,
+		});
+		return result.items;
 	},
 );
 
 export const fetchCategoriesWithStats = createAsyncThunk(
 	"categories/fetchListWithStats",
-	async ({
-		from,
-		to,
-		bucketId,
-	}: {
-		from: string;
-		to: string;
-		bucketId?: string | null;
-	}) => {
-		return expensesApi.listCategoriesWithStats(
-			from,
-			to,
-			bucketId,
-		);
+	async ({ from, to }: { from: string; to: string }) => {
+		return expensesApi.listCategoriesWithStats(from, to);
 	},
 );
 
 export const fetchCategoryDetail = createAsyncThunk(
 	"categories/fetchDetail",
-	async ({
-		id,
-		bucketId,
-	}: {
-		id: string;
-		bucketId?: string | null;
-	}) => {
-		return expensesApi.getCategoryById(id, bucketId);
+	async (id: string) => {
+		return expensesApi.getCategoryById(id);
 	},
 );
 
 export const fetchCategoryStats = createAsyncThunk(
 	"categories/fetchStats",
-	async ({
-		id,
-		from,
-		to,
-		bucketId,
-	}: {
-		id: string;
-		from: string;
-		to: string;
-		bucketId?: string | null;
-	}) => {
-		return expensesApi.getCategoryStats(
-			id,
-			from,
-			to,
-			bucketId,
-		);
+	async ({ id, from, to }: { id: string; from: string; to: string }) => {
+		return expensesApi.getCategoryStats(id, from, to);
 	},
 );
 
 export const createCategory = createAsyncThunk(
 	"categories/create",
 	async (
-		{
-			payload,
-			bucketId,
-		}: {
-			payload: {
-				name: string;
-				color?: string;
-				emoji?: string;
-			};
-			bucketId?: string | null;
+		payload: {
+			name: string;
+			color?: string;
+			emoji?: string;
+			bucketId?: string;
 		},
 		{ dispatch },
 	) => {
-		const category = await expensesApi.createCategory(
-			payload,
-			bucketId,
-		);
-		dispatch(fetchCategories(bucketId));
+		const category = await expensesApi.createCategory(payload);
+		dispatch(fetchCategories());
 		return category;
 	},
 );
@@ -114,45 +85,25 @@ export const updateCategory = createAsyncThunk(
 	async ({
 		id,
 		payload,
-		bucketId,
 	}: {
 		id: string;
 		payload: { name: string; color?: string; emoji?: string; bucketId?: string };
-		bucketId?: string | null;
 	}) => {
-		return expensesApi.updateCategory(id, payload, bucketId);
+		return expensesApi.updateCategory(id, payload);
 	},
 );
 
 export const deleteCategory = createAsyncThunk(
 	"categories/delete",
-	async ({
-		id,
-		bucketId,
-	}: {
-		id: string;
-		bucketId?: string | null;
-	}) => {
-		return expensesApi.deleteCategory(id, bucketId);
+	async (id: string) => {
+		return expensesApi.deleteCategory(id);
 	},
 );
 
 export const fetchCategoryDistribution = createAsyncThunk(
 	"categories/fetchDistribution",
-	async ({
-		from,
-		to,
-		bucketId,
-	}: {
-		from: string;
-		to: string;
-		bucketId?: string | null;
-	}) => {
-		return expensesApi.getCategoryDistribution(
-			from,
-			to,
-			bucketId,
-		);
+	async (filterCriteria: ExpenseFilterCriteria) => {
+		return expensesApi.getCategoryDistribution(filterCriteria);
 	},
 );
 
@@ -233,7 +184,7 @@ const categorySlice = createSlice({
 			})
 			// deleteCategory
 			.addCase(deleteCategory.fulfilled, (state, action) => {
-				const deletedId = action.meta.arg.id;
+				const deletedId = action.meta.arg;
 				state.items = state.items.filter(
 					(c) => c._id !== deletedId,
 				);

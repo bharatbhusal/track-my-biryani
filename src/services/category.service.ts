@@ -1,22 +1,39 @@
 import { AppError } from "@/lib/errors";
 import { resolveBucketContext } from "@/lib/bucket";
-import { categorySchema } from "@/lib/validators";
+import {
+	categoryDistributionSchema,
+	categorySchema,
+	categorySearchSchema,
+	categoryStatsSummarySchema,
+} from "@/lib/validators";
+import {
+	buildCategoryQuery,
+	buildExpenseQuery,
+} from "@/lib/query-builders";
 import {
 	createCategory,
 	deleteCategory,
 	getCategoryById,
 	listCategories,
 	listCategoriesWithStats,
+	listCategoryIds,
+	searchCategories,
 	updateCategory,
 } from "@/repositories/category.repository";
 import {
 	getCategoryRangeStats,
-	getCategoryDistribution,
+	getExpenseStatsForCategories,
+	getFilteredCategoryDistribution,
 } from "@/repositories/expense.repository";
 import { findBucketById } from "@/repositories/bucket.repository";
 import { findUserById } from "@/repositories/user.repository";
 import { logAuditEvent } from "@/services/audit.service";
 import { randomHexColor } from "@/lib/utils";
+import type { CategoryStatsSummary } from "@/types/analytics.types";
+import type {
+	CategorySearchRequest,
+	ExpenseFilterCriteria,
+} from "@/types/search.types";
 
 async function assertCategoryCreator(
 	userId: string,
@@ -114,11 +131,7 @@ export async function getCategoryService(
 	categoryId: string,
 	bucketId?: string | null,
 ) {
-	const ctx = await resolveBucketContext(userId, bucketId);
-	const category = await getCategoryById(
-		categoryId,
-		ctx.bucketId,
-	);
+	const category = await getCategoryById(categoryId, bucketId);
 	if (!category) {
 		throw new AppError(
 			"Category not found",
@@ -126,6 +139,10 @@ export async function getCategoryService(
 			"NOT_FOUND",
 		);
 	}
+	await resolveBucketContext(
+		userId,
+		bucketId ?? category.bucketId?.toString(),
+	);
 	return category;
 }
 
@@ -212,7 +229,18 @@ export async function deleteCategoryService(
 	bucketId: string | null | undefined,
 	categoryId: string,
 ) {
-	const ctx = await resolveBucketContext(userId, bucketId);
+	const existing = await getCategoryById(categoryId, bucketId);
+	if (!existing) {
+		throw new AppError(
+			"Category not found",
+			404,
+			"NOT_FOUND",
+		);
+	}
+	const ctx = await resolveBucketContext(
+		userId,
+		bucketId ?? existing.bucketId?.toString(),
+	);
 	const category = await assertCategoryCreator(
 		userId,
 		categoryId,
@@ -266,23 +294,88 @@ export async function getCategoryStatsService(
 	);
 }
 
+// Full expense filter criteria so the distribution respects bucket/owner/
+// category scope, not just the date range.
 export async function getCategoryDistributionService(
 	userId: string,
-	from: string,
-	to: string,
-	bucketId?: string | null,
+	body: unknown,
 ) {
-	if (!from || !to) {
-		throw new AppError(
-			"from and to query params are required",
-			400,
-		);
+	const parsed = categoryDistributionSchema.parse(body ?? {});
+	const filterCriteria =
+		parsed.filterCriteria ?? defaultExpenseFilterCriteria();
+	const { query } = await buildExpenseQuery(userId, {
+		filterCriteria,
+		sortCriteria: { field: "paidAt", direction: "DESC" },
+		pagination: { page: 1, pageSize: 1 },
+	});
+	return getFilteredCategoryDistribution(query);
+}
+
+export async function getCategoryStatsSummaryService(
+	userId: string,
+	body: unknown,
+): Promise<CategoryStatsSummary> {
+	const parsed = categoryStatsSummarySchema.parse(body ?? {});
+	const filterCriteria =
+		parsed.filterCriteria ??
+		defaultCategorySearchRequest().filterCriteria;
+	const { query } = await buildCategoryQuery(userId, {
+		filterCriteria,
+		sortCriteria: { field: "createdAt", direction: "DESC" },
+		pagination: { page: 1, pageSize: 1 },
+	});
+
+	const categoryIds = await listCategoryIds(query);
+	if (categoryIds.length === 0) {
+		return {
+			total: 0,
+			min: 0,
+			max: 0,
+			avg: 0,
+			categoryCount: 0,
+			expenseCount: 0,
+		};
 	}
-	const ctx = await resolveBucketContext(userId, bucketId);
-	return getCategoryDistribution(
-		userId,
-		new Date(from),
-		new Date(to),
-		ctx.bucketId,
-	);
+
+	const stats = await getExpenseStatsForCategories(categoryIds);
+	return { ...stats, categoryCount: categoryIds.length };
+}
+
+function defaultExpenseFilterCriteria(): ExpenseFilterCriteria {
+	return {
+		bucketPreset: "PERSONAL",
+		bucketIds: [],
+		categoryPreset: "ALL",
+		categoryIds: [],
+		ownerPreset: "ME",
+		ownerIds: [],
+		datePreset: "THIS_MONTH",
+	};
+}
+
+function defaultCategorySearchRequest(): CategorySearchRequest {
+	return {
+		filterCriteria: {
+			bucketPreset: "PERSONAL",
+			bucketIds: [],
+			ownerPreset: "ME",
+			ownerIds: [],
+			datePreset: "THIS_MONTH",
+		},
+		sortCriteria: { field: "amount", direction: "DESC" },
+		pagination: { page: 1, pageSize: 20 },
+	};
+}
+
+export async function searchCategoriesService(
+	userId: string,
+	searchRequest: unknown,
+) {
+	const parsed = categorySearchSchema.parse(searchRequest ?? {});
+	const request: CategorySearchRequest = {
+		filterCriteria: parsed.filterCriteria ?? defaultCategorySearchRequest().filterCriteria,
+		sortCriteria: parsed.sortCriteria ?? defaultCategorySearchRequest().sortCriteria,
+		pagination: parsed.pagination ?? defaultCategorySearchRequest().pagination,
+	};
+	return searchCategories(userId, request);
 }

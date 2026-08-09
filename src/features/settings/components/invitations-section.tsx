@@ -16,7 +16,6 @@ import {
 	acceptInvite,
 	declineInvite,
 } from "@/store/slices/bucketSlice";
-import { setActiveBucketId } from "@/store/slices/uiSlice";
 import { bucketErrorMessage } from "./bucket-settings";
 
 export function InvitationsSection() {
@@ -46,7 +45,6 @@ export function InvitationsSection() {
 		setPendingId(id);
 		try {
 			const bucket = await dispatch(acceptInvite(id)).unwrap();
-			dispatch(setActiveBucketId(bucket._id));
 			toast.success(`Joined ${bucket.name}`);
 		} catch (err) {
 			toast.error(

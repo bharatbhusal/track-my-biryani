@@ -22,6 +22,8 @@ export type BucketSummary = {
 	ownerId: string;
 	isPersonal?: boolean;
 	memberCount: number;
+	totalAmount?: number;
+	createdAt?: string;
 	role: BucketRole;
 	status: BucketStatus;
 };

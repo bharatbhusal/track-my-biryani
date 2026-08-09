@@ -1,23 +1,17 @@
-import { NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
 import {
 	errorResponse,
 	successResponse,
 } from "@/lib/api-response";
 import { connectToDatabase } from "@/lib/db";
-import {
-	createExpense,
-	listExpenses,
-} from "@/controllers/expense.controller";
+import { createExpense } from "@/controllers/expense.controller";
 
-export async function GET(request: NextRequest) {
-	try {
-		await connectToDatabase();
-		const data = await listExpenses(request);
-		return successResponse(data);
-	} catch (error) {
-		return errorResponse(error);
-	}
+export async function GET() {
+	return NextResponse.json(
+		{ success: false, error: { message: "Not found", code: "NOT_FOUND" } },
+		{ status: 404 },
+	);
 }
 
 export async function POST(request: NextRequest) {

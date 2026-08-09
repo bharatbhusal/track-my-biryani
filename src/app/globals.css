@@ -178,3 +178,12 @@ input[type="datetime-local"] {
 	/* Optional: Standardizes minimum dimensions */
 	min-width: 0;
 }
+
+@utility scrollbar-hide {
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}

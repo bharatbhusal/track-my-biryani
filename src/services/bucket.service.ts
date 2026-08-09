@@ -2,6 +2,7 @@ import { DEFAULT_CATEGORIES } from "@/lib/constants";
 import { AppError } from "@/lib/errors";
 import {
 	bucketSchema,
+	bucketSearchSchema,
 	inviteSchema,
 } from "@/lib/validators";
 import {
@@ -15,6 +16,7 @@ import {
 	listBucketsForMember,
 	listBucketsForPendingMember,
 	pullBucketMember,
+	searchBuckets,
 	updateBucketName,
 	type BucketDoc,
 } from "@/repositories/bucket.repository";
@@ -29,6 +31,7 @@ import type {
 	BucketsListPayload,
 	BucketSummary,
 } from "@/types/bucket.types";
+import type { BucketSearchRequest } from "@/types/search.types";
 
 export async function listBucketsService(
 	userId: string,
@@ -441,4 +444,27 @@ async function toDetail(
 		createdAt: bucket.createdAt?.toISOString(),
 		updatedAt: bucket.updatedAt?.toISOString(),
 	};
+}
+
+function defaultBucketSearchRequest(): BucketSearchRequest {
+	return {
+		filterCriteria: {
+			datePreset: "THIS_MONTH",
+		},
+		sortCriteria: { field: "createdAt", direction: "DESC" },
+		pagination: { page: 1, pageSize: 20 },
+	};
+}
+
+export async function searchBucketsService(
+	userId: string,
+	searchRequest: unknown,
+) {
+	const parsed = bucketSearchSchema.parse(searchRequest ?? {});
+	const request: BucketSearchRequest = {
+		filterCriteria: parsed.filterCriteria ?? defaultBucketSearchRequest().filterCriteria,
+		sortCriteria: parsed.sortCriteria ?? defaultBucketSearchRequest().sortCriteria,
+		pagination: parsed.pagination ?? defaultBucketSearchRequest().pagination,
+	};
+	return searchBuckets(userId, request);
 }

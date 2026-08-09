@@ -1,126 +1,142 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import {
-	FiPlus,
-	FiSearch,
-	FiArrowUp,
-	FiArrowDown,
-	FiTag,
-} from "react-icons/fi";
+import { FiPlus, FiTag } from "react-icons/fi";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
+import { FilterBar } from "@/components/filters";
 import {
 	useAppSelector,
 	useAppDispatch,
 } from "@/store/hooks";
 import { fetchCategoriesWithStats } from "@/store/slices/categorySlice";
-import { setDateRange } from "@/store/slices/uiSlice";
-import { useDebouncedValue } from "@/hooks/use-debounce";
-import { Input } from "@/components/ui/input";
-import { DateRangeBar } from "@/components/charts/date-range-bar";
+import { fetchAllBuckets } from "@/store/slices/bucketSlice";
 import { CategoryCard } from "@/features/categories/components/category-card";
 import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
-import { toIsoBounds } from "@/lib/date-range";
+import { expensesApi } from "@/lib/api/expenses";
+import { formatCurrency } from "@/lib/format";
+import { toIsoBoundsForPreset } from "@/lib/date-range";
+import { filterBounds } from "@/lib/filters";
+import type { CategoryStatsSummary } from "@/types/analytics.types";
 
 export function CategoryManager() {
 	const dispatch = useAppDispatch();
-	const [query, setQuery] = useState("");
-	const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
-		"desc",
-	);
 	const [drawerOpen, setDrawerOpen] = useState(false);
+	const [summary, setSummary] =
+		useState<CategoryStatsSummary | null>(null);
 
-	const range = useAppSelector((s) => s.ui.dateRange);
-	const activeBucketId = useAppSelector(
-		(s) => s.ui.activeBucketId,
+	const filterCriteria = useAppSelector(
+		(s) => s.categoriesFilter.filterCriteria,
 	);
-	const rangeBounds = useMemo(
-		() => toIsoBounds(range),
-		[range.preset, range.offset],
+	const sortCriteria = useAppSelector(
+		(s) => s.categoriesFilter.sortCriteria,
 	);
+	const buckets = useAppSelector(
+		(s) => s.buckets.allBuckets,
+	);
+	const currency = useAppSelector((s) => s.ui.currency);
 	const categoriesWithStats = useAppSelector(
 		(s) => s.categories.itemsWithStats,
 	);
 
-	const debouncedQuery = useDebouncedValue(query, 300);
+	const { from, to } = useMemo(
+		() =>
+			filterBounds(
+				toIsoBoundsForPreset(
+					filterCriteria.datePreset,
+					filterCriteria.customFrom,
+					filterCriteria.customTo,
+				),
+			),
+		[
+			filterCriteria.datePreset,
+			filterCriteria.customFrom,
+			filterCriteria.customTo,
+		],
+	);
 
 	useEffect(() => {
-		if (!rangeBounds.from || !rangeBounds.to) return;
-		dispatch(
-			fetchCategoriesWithStats({
-				from: rangeBounds.from,
-				to: rangeBounds.to,
-				bucketId: activeBucketId ?? undefined,
-			}),
-		);
+		dispatch(fetchAllBuckets());
+	}, [dispatch]);
+
+	useEffect(() => {
+		dispatch(fetchCategoriesWithStats({ from, to }));
+	}, [dispatch, from, to]);
+
+	useEffect(() => {
+		let cancelled = false;
+		expensesApi
+			.getCategoryStatsSummary(filterCriteria)
+			.then((res) => {
+				if (!cancelled) setSummary(res);
+			})
+			.catch(() => {
+				if (!cancelled) setSummary(null);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [filterCriteria]);
+
+	// ponytail: /categories/stats only takes from/to, so `q` is matched here
+	// against the already-loaded page. Move it server-side if the list ever
+	// outgrows one response.
+	const items = useMemo(() => {
+		const dir = sortCriteria.direction === "ASC" ? 1 : -1;
+		const q = (filterCriteria.q ?? "").toLowerCase();
+		return categoriesWithStats
+			.filter((item) => item.name.toLowerCase().includes(q))
+			.slice()
+			.sort((a, b) =>
+				sortCriteria.field === "amount"
+					? (a.total - b.total) * dir
+					: a._id.localeCompare(b._id) * dir,
+			);
 	}, [
-		dispatch,
-		rangeBounds.from,
-		rangeBounds.to,
-		activeBucketId,
+		categoriesWithStats,
+		filterCriteria.q,
+		sortCriteria.field,
+		sortCriteria.direction,
 	]);
 
-	const items = useMemo(
-		() =>
-			categoriesWithStats
-				.filter((item) =>
-					item.name
-						.toLowerCase()
-						.includes(debouncedQuery.toLowerCase()),
-				)
-				.sort((a, b) => {
-					if (sortOrder === "asc") return a.total - b.total;
-					return b.total - a.total;
-				}),
-		[categoriesWithStats, debouncedQuery, sortOrder],
-	);
+	const summaryCells: Array<[string, string]> = [
+		["Total", formatCurrency(summary?.total ?? 0, currency)],
+		["Avg", formatCurrency(summary?.avg ?? 0, currency)],
+		["Min", formatCurrency(summary?.min ?? 0, currency)],
+		["Max", formatCurrency(summary?.max ?? 0, currency)],
+		["Categories", String(summary?.categoryCount ?? 0)],
+		["Expenses", String(summary?.expenseCount ?? 0)],
+	];
 
 	return (
 		<div className="flex gap-2 flex-col">
-			<DateRangeBar
-				range={range}
-				onRangeChange={(r) => dispatch(setDateRange(r))}
+			<FilterBar
+				variant="categories"
+				buckets={buckets}
+				categories={[]}
+				owners={[]}
+				sections={{
+					categories: false,
+					search: false,
+				}}
 			/>
-			<Card>
-				<div className="flex items-center justify-between mb-4">
-					<CardTitle>
-						<FiTag className="inline mr-1.5 h-4 w-4" />
-						Categories
-					</CardTitle>
+			<Card className="flex gap-2 justify-between items-center">
+				<div className="flex flex-wrap gap-4">
+					{summaryCells.map(([label, value]) => (
+						<div key={label} className="min-w-2">
+							<p className="truncate text-xs text-[var(--color-muted)]">
+								{label}
+							</p>
+							<p className="truncate font-medium tabular-nums">
+								{value}
+							</p>
+						</div>
+					))}
 				</div>
-
-				<div className="grid grid-cols-1 gap-2">
-					<div className="relative">
-						<FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-muted)]" />
-						<Input
-							value={query}
-							onChange={(e) => setQuery(e.target.value)}
-							placeholder="Search categories"
-							className="pl-9"
-						/>
-					</div>
-					<div className="flex w-full items-center justify-between">
-						<Button
-							variant="outline"
-							onClick={() =>
-								setSortOrder((c) => (c === "asc" ? "desc" : "asc"))
-							}
-						>
-							{sortOrder === "asc" ? (
-								<FiArrowUp className="mr-1.5 h-4 w-4" />
-							) : (
-								<FiArrowDown className="mr-1.5 h-4 w-4" />
-							)}
-							Sort {sortOrder === "asc" ? "Lowest" : "Highest"}
-						</Button>
-						<Button onClick={() => setDrawerOpen(true)}>
-							<FiPlus className="mr-1.5 h-4 w-4" />
-							Add Category
-						</Button>
-					</div>
-				</div>
+				<Button onClick={() => setDrawerOpen(true)}>
+					<FiPlus className="h-4 w-4" />
+				</Button>
 			</Card>
 
 			<div className="grid grid-cols-1 gap-2">

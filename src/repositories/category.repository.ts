@@ -1,8 +1,11 @@
 import { Types } from "mongoose";
 
+import { buildCategoryQuery } from "@/lib/query-builders";
 import { CategoryModel } from "@/models/Category";
 import { ExpenseModel } from "@/models/Expense";
 import { AppError } from "@/lib/errors";
+import type { CategorySearchRequest, SearchResult } from "@/types/search.types";
+import type { CategoryItem } from "@/types/expense.types";
 
 export async function createCategory(data: {
 	userId: string;
@@ -142,7 +145,7 @@ export async function updateCategory(
 
 export async function getCategoryById(
 	categoryId: string,
-	bucketId: string,
+	bucketId?: string | null,
 ) {
 	if (!Types.ObjectId.isValid(categoryId)) {
 		return null;
@@ -150,7 +153,7 @@ export async function getCategoryById(
 
 	return CategoryModel.findOne({
 		_id: categoryId,
-		bucketId,
+		...(bucketId ? { bucketId: new Types.ObjectId(bucketId) } : {}),
 	}).lean();
 }
 
@@ -178,4 +181,46 @@ export async function deleteCategory(
 		_id: categoryId,
 		bucketId,
 	}).lean();
+}
+
+export async function listCategoryIds(
+	query: Record<string, unknown>,
+): Promise<Types.ObjectId[]> {
+	const docs = await CategoryModel.find(query)
+		.select("_id")
+		.lean();
+	return docs.map((d) => d._id as Types.ObjectId);
+}
+
+export async function searchCategories(
+	userId: string,
+	request: CategorySearchRequest,
+): Promise<SearchResult<CategoryItem>> {
+	const { query, sort, skip, limit } = await buildCategoryQuery(
+		userId,
+		request,
+	);
+
+	const [items, total] = await Promise.all([
+		CategoryModel.find(query)
+			.sort(sort)
+			.skip(skip)
+			.limit(limit)
+			.lean(),
+		CategoryModel.countDocuments(query),
+	]);
+
+	return {
+		items: items.map((item) => ({
+			_id: (item._id as Types.ObjectId).toString(),
+			name: item.name,
+			color: item.color,
+			emoji: item.emoji,
+			userId: (item.userId as Types.ObjectId | undefined)?.toString(),
+			bucketId: (item.bucketId as Types.ObjectId | undefined)?.toString(),
+		})),
+		total,
+		page: request.pagination.page,
+		totalPages: Math.ceil(total / request.pagination.pageSize) || 1,
+	};
 }

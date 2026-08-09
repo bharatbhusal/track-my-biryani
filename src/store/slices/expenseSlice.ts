@@ -5,8 +5,6 @@ import {
 import { expensesApi } from "@/lib/api/expenses";
 import type {
 	ExpenseItem,
-	ExpenseListQuery,
-	ExpensesListPayload,
 	CreateExpensePayload,
 } from "@/types/expense.types";
 import type {
@@ -16,6 +14,7 @@ import type {
 } from "@/types/analytics.types";
 import type { GlobalDateRange } from "@/lib/date-range";
 import { toIsoBounds } from "@/lib/date-range";
+import type { RootState } from "@/store";
 
 type ExpenseState = {
 	items: ExpenseItem[];
@@ -44,21 +43,21 @@ const initialState: ExpenseState = {
 };
 
 export const fetchExpenses = createAsyncThunk(
-	"expenses/fetchList",
-	async (filters: ExpenseListQuery = {}) => {
-		return expensesApi.listExpenses(filters);
+	"expenses/search",
+	async (_: void, { getState }) => {
+		const state = getState() as RootState;
+		return expensesApi.searchExpenses({
+			filterCriteria: state.expensesFilter.filterCriteria,
+			sortCriteria: state.expensesFilter.sortCriteria,
+			pagination: state.expensesFilter.pagination,
+		});
 	},
 );
 
 export const fetchExpensesInRange = createAsyncThunk(
 	"expenses/fetchInRange",
-	async ({
-		range,
-		bucketId,
-	}: {
-		range: GlobalDateRange;
-		bucketId?: string | null;
-	}) => {
+	async (range: GlobalDateRange, { getState }) => {
+		const state = getState() as RootState;
 		const { from, to } = toIsoBounds(range);
 		if (!from || !to) {
 			return {
@@ -68,24 +67,23 @@ export const fetchExpensesInRange = createAsyncThunk(
 				totalPages: null,
 			};
 		}
-		return expensesApi.listExpenses({
-			from,
-			to,
-			bucketId: bucketId ?? undefined,
+		return expensesApi.searchExpenses({
+			filterCriteria: {
+				...state.expensesFilter.filterCriteria,
+				datePreset: "CUSTOM",
+				customFrom: from,
+				customTo: to,
+			},
+			sortCriteria: state.expensesFilter.sortCriteria,
+			pagination: { page: 1, pageSize: state.expensesFilter.pagination.pageSize },
 		});
 	},
 );
 
 export const fetchExpenseDetail = createAsyncThunk(
 	"expenses/fetchDetail",
-	async ({
-		id,
-		bucketId,
-	}: {
-		id: string;
-		bucketId?: string | null;
-	}) => {
-		return expensesApi.getExpenseById(id, bucketId);
+	async (id: string) => {
+		return expensesApi.getExpenseById(id);
 	},
 );
 
@@ -95,19 +93,12 @@ export const fetchExpenseContribution = createAsyncThunk(
 		id,
 		from,
 		to,
-		bucketId,
 	}: {
 		id: string;
 		from?: string;
 		to?: string;
-		bucketId?: string | null;
 	}) => {
-		return expensesApi.getExpenseContribution(
-			id,
-			from,
-			to,
-			bucketId,
-		);
+		return expensesApi.getExpenseContribution(id, from, to);
 	},
 );
 
@@ -133,51 +124,57 @@ export const updateExpense = createAsyncThunk(
 
 export const deleteExpense = createAsyncThunk(
 	"expenses/delete",
-	async ({
-		id,
-		bucketId,
-	}: {
-		id: string;
-		bucketId?: string | null;
-	}) => {
-		return expensesApi.deleteExpense(id, bucketId);
+	async (id: string) => {
+		return expensesApi.deleteExpense(id);
 	},
 );
 
 export const fetchOverviewStats = createAsyncThunk(
 	"expenses/fetchOverviewStats",
-	async ({
-		from,
-		to,
-		bucketId,
-	}: {
-		from: string;
-		to: string;
-		bucketId?: string | null;
-	}) => {
-		return expensesApi.getOverviewStats(from, to, bucketId);
+	async ({ from, to }: { from: string; to: string }) => {
+		return expensesApi.getOverviewStats({ from, to });
 	},
 );
 
 export const fetchChartData = createAsyncThunk(
 	"expenses/fetchChartData",
-	async ({
-		from,
-		to,
-		categoryId,
-		bucketId,
-	}: {
-		from: string;
-		to: string;
-		categoryId?: string;
-		bucketId?: string | null;
-	}) => {
-		return expensesApi.getChartData(
+	async (
+		{
 			from,
 			to,
-			categoryId,
-			bucketId,
+			categoryIds,
+		}: {
+			from: string;
+			to: string;
+			categoryIds?: string[];
+		},
+		{ getState },
+	) => {
+		const data = await expensesApi.getChartData({ from, to });
+		if (!categoryIds || categoryIds.length === 0) return data;
+
+		// ponytail: backend chart endpoint only takes a single categoryId, so
+		// fetch the full set and narrow to the selected categories client-side.
+		const categories = (getState() as RootState).categories.items;
+		const names = new Set(
+			categories
+				.filter((c) => categoryIds.includes(c._id))
+				.map((c) => c.name),
 		);
+		if (names.size === 0) return data;
+
+		return {
+			series: data.series.map((point) => {
+				const filtered: Record<string, string | number> = { name: point.name };
+				for (const [key, val] of Object.entries(point)) {
+					if (key !== "name" && names.has(key)) filtered[key] = val;
+				}
+				return filtered;
+			}),
+			categoryColors: Object.fromEntries(
+				Object.entries(data.categoryColors).filter(([name]) => names.has(name)),
+			),
+		};
 	},
 );
 
@@ -202,7 +199,7 @@ const expenseSlice = createSlice({
 			})
 			.addCase(fetchExpenses.fulfilled, (state, action) => {
 				state.loading = false;
-				const data = action.payload as ExpensesListPayload;
+				const data = action.payload;
 				state.items = data.items ?? [];
 				state.total = data.total ?? 0;
 				state.totalPages = data.totalPages ?? 0;
@@ -222,7 +219,7 @@ const expenseSlice = createSlice({
 				fetchExpensesInRange.fulfilled,
 				(state, action) => {
 					state.loading = false;
-					const data = action.payload as ExpensesListPayload;
+					const data = action.payload;
 					state.items = data.items ?? [];
 					state.total = data.total ?? 0;
 					state.totalPages = data.totalPages ?? 0;
@@ -281,7 +278,7 @@ const expenseSlice = createSlice({
 			})
 			// deleteExpense
 			.addCase(deleteExpense.fulfilled, (state, action) => {
-				const id = action.meta.arg.id;
+				const id = action.meta.arg;
 				state.items = state.items.filter((e) => e._id !== id);
 				state.total = Math.max(0, state.total - 1);
 				if (state.currentExpense?._id === id) {

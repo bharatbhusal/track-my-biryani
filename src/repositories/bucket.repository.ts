@@ -1,8 +1,11 @@
 import { Types } from "mongoose";
 
+import { buildBucketQuery } from "@/lib/query-builders";
 import { BucketModel } from "@/models/Bucket";
 import { ExpenseModel } from "@/models/Expense";
 import { UserModel } from "@/models/User";
+import type { BucketSearchRequest, SearchResult } from "@/types/search.types";
+import type { BucketSummary } from "@/types/bucket.types";
 
 export type BucketMemberDoc = {
 	userId: Types.ObjectId;
@@ -166,4 +169,62 @@ export async function findUsersByIds(ids: string[]) {
 	return UserModel.find({ _id: { $in: ids } })
 		.select("name username")
 		.lean();
+}
+
+export async function searchBuckets(
+	userId: string,
+	request: BucketSearchRequest,
+): Promise<SearchResult<BucketSummary>> {
+	const { query, sort, skip, limit } = await buildBucketQuery(
+		userId,
+		request,
+	);
+
+	const [items, total] = await Promise.all([
+		BucketModel.aggregate([
+			{ $match: query },
+			{ $addFields: { memberCount: { $size: "$members" } } },
+			{
+				$lookup: {
+					from: "expenses",
+					localField: "_id",
+					foreignField: "bucketId",
+					as: "bucketExpenses",
+				},
+			},
+			{
+				$addFields: {
+					totalAmount: { $sum: "$bucketExpenses.amount" },
+				},
+			},
+			{ $project: { bucketExpenses: 0 } },
+			{ $sort: sort },
+			{ $skip: skip },
+			{ $limit: limit },
+		]),
+		BucketModel.countDocuments(query),
+	]);
+
+	return {
+		items: items.map((bucket) => {
+			const member = bucket.members.find(
+				(m: BucketMemberDoc) => m.userId.toString() === userId,
+			);
+			return {
+				_id: bucket._id.toString(),
+				name: bucket.name,
+				icon: bucket.icon,
+				ownerId: bucket.ownerId.toString(),
+				isPersonal: bucket.isPersonal,
+				memberCount: bucket.memberCount,
+				totalAmount: bucket.totalAmount,
+				createdAt: bucket.createdAt?.toISOString(),
+				role: (member?.role ?? "member") as "owner" | "member",
+				status: (member?.status ?? "pending") as "pending" | "accepted",
+			} satisfies BucketSummary;
+		}),
+		total,
+		page: request.pagination.page,
+		totalPages: Math.ceil(total / request.pagination.pageSize) || 1,
+	};
 }

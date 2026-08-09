@@ -1,42 +1,43 @@
 import { NextRequest } from "next/server";
 
 import { getAuthPayload } from "@/lib/auth";
-import { getBucketId } from "@/lib/bucket";
 import {
 	createExpenseService,
 	deleteExpenseService,
 	getChartDataService,
 	getContributionService,
+	getDistributionService,
 	getExpenseOverviewStatsService,
 	getExpenseService,
-	listExpensesService,
+	searchExpensesService,
 	updateExpenseService,
 } from "@/services/expense.service";
 
-export async function listExpenses(request: NextRequest) {
+export async function searchExpenses(request: NextRequest) {
 	const auth = await getAuthPayload();
-	const bucketId = getBucketId(request);
-	const queryParams = Object.fromEntries(
-		request.nextUrl.searchParams.entries(),
-	);
-	return listExpensesService(auth.userId, queryParams, bucketId);
+	const body = await request.json();
+	return searchExpensesService(auth.userId, body);
+}
+
+export async function getDistribution(request: NextRequest) {
+	const auth = await getAuthPayload();
+	const body = await request.json().catch(() => ({}));
+	return getDistributionService(auth.userId, body);
 }
 
 export async function createExpense(request: NextRequest) {
 	const auth = await getAuthPayload();
 	const body = await request.json();
-	const bucketId = getBucketId(request) ?? (body?.bucketId ?? undefined);
-	return createExpenseService(auth.userId, bucketId, body);
+	return createExpenseService(auth.userId, body.bucketId, body);
 }
 
 export async function getExpense(
-	request: NextRequest,
+	_request: NextRequest,
 	context: { params: Promise<{ id: string }> },
 ) {
 	const auth = await getAuthPayload();
-	const bucketId = getBucketId(request);
 	const { id } = await context.params;
-	return getExpenseService(auth.userId, id, bucketId);
+	return getExpenseService(auth.userId, id);
 }
 
 export async function updateExpense(
@@ -46,18 +47,16 @@ export async function updateExpense(
 	const auth = await getAuthPayload();
 	const { id } = await context.params;
 	const body = await request.json();
-	const bucketId = getBucketId(request) ?? (body?.bucketId ?? undefined);
-	return updateExpenseService(auth.userId, bucketId, id, body);
+	return updateExpenseService(auth.userId, body.bucketId, id, body);
 }
 
 export async function deleteExpense(
-	request: NextRequest,
+	_request: NextRequest,
 	context: { params: Promise<{ id: string }> },
 ) {
 	const auth = await getAuthPayload();
-	const bucketId = getBucketId(request);
 	const { id } = await context.params;
-	return deleteExpenseService(auth.userId, id, bucketId);
+	return deleteExpenseService(auth.userId, id);
 }
 
 export async function getContribution(
@@ -65,7 +64,6 @@ export async function getContribution(
 	context: { params: Promise<{ id: string }> },
 ) {
 	const auth = await getAuthPayload();
-	const bucketId = getBucketId(request);
 	const { id } = await context.params;
 	const from =
 		request.nextUrl.searchParams.get("from") ?? undefined;
@@ -74,7 +72,7 @@ export async function getContribution(
 	return getContributionService(
 		auth.userId,
 		id,
-		bucketId,
+		undefined,
 		from,
 		to,
 	);
@@ -84,10 +82,14 @@ export async function getExpenseOverviewStats(
 	request: NextRequest,
 ) {
 	const auth = await getAuthPayload();
+	const body = await request.json().catch(() => ({}));
 	const from =
-		request.nextUrl.searchParams.get("from") ?? "";
-	const to = request.nextUrl.searchParams.get("to") ?? "";
-	const bucketId = getBucketId(request);
+		body?.from ??
+		request.nextUrl.searchParams.get("from") ??
+		"";
+	const to =
+		body?.to ?? request.nextUrl.searchParams.get("to") ?? "";
+	const bucketId = body?.bucketId;
 	return getExpenseOverviewStatsService(
 		auth.userId,
 		from,
@@ -98,13 +100,18 @@ export async function getExpenseOverviewStats(
 
 export async function getChartData(request: NextRequest) {
 	const auth = await getAuthPayload();
+	const body = await request.json().catch(() => ({}));
 	const from =
-		request.nextUrl.searchParams.get("from") ?? "";
-	const to = request.nextUrl.searchParams.get("to") ?? "";
+		body?.from ??
+		request.nextUrl.searchParams.get("from") ??
+		"";
+	const to =
+		body?.to ?? request.nextUrl.searchParams.get("to") ?? "";
 	const categoryId =
+		body?.categoryId ??
 		request.nextUrl.searchParams.get("categoryId") ??
 		undefined;
-	const bucketId = getBucketId(request);
+	const bucketId = body?.bucketId;
 	return getChartDataService(
 		auth.userId,
 		from,
