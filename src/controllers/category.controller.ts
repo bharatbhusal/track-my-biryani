@@ -29,17 +29,8 @@ export async function listCategories(request: NextRequest) {
 
 export async function listCategoriesWithStats(request: NextRequest) {
 	const auth = await getAuthPayload();
-	const from =
-		request.nextUrl.searchParams.get("from") ?? "";
-	const to = request.nextUrl.searchParams.get("to") ?? "";
-	const bucketId =
-		request.nextUrl.searchParams.get("bucketId") ?? undefined;
-	return listCategoriesWithStatsService(
-		auth.userId,
-		bucketId,
-		from,
-		to,
-	);
+	const body = await request.json().catch(() => ({}));
+	return listCategoriesWithStatsService(auth.userId, body);
 }
 
 export async function createCategory(request: NextRequest) {

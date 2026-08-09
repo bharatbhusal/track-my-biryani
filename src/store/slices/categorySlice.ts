@@ -6,7 +6,10 @@ import type {
 	CategoryRangeStats,
 	CategoryWithStats,
 } from "@/types/analytics.types";
-import type { ExpenseFilterCriteria } from "@/types/search.types";
+import type {
+	CategoryFilterCriteria,
+	ExpenseFilterCriteria,
+} from "@/types/search.types";
 import type { RootState } from "@/store";
 
 type CategoryState = {
@@ -44,8 +47,8 @@ export const fetchCategories = createAsyncThunk(
 
 export const fetchCategoriesWithStats = createAsyncThunk(
 	"categories/fetchListWithStats",
-	async ({ from, to }: { from: string; to: string }) => {
-		return expensesApi.listCategoriesWithStats(from, to);
+	async (filterCriteria: CategoryFilterCriteria) => {
+		return expensesApi.listCategoriesWithStats(filterCriteria);
 	},
 );
 

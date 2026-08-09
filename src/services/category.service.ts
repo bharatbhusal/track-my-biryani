@@ -1,5 +1,8 @@
 import { AppError } from "@/lib/errors";
+import { Types } from "mongoose";
 import { resolveBucketContext } from "@/lib/bucket";
+import { resolveBucketScope } from "@/lib/query-builders/membership";
+import { toIsoBoundsForPreset } from "@/lib/date-range";
 import {
 	categoryDistributionSchema,
 	categorySchema,
@@ -71,22 +74,40 @@ export async function listCategoriesService(
 
 export async function listCategoriesWithStatsService(
 	userId: string,
-	bucketId: string | null | undefined,
-	from: string,
-	to: string,
+	body: unknown,
 ) {
-	if (!from || !to) {
-		throw new AppError(
-			"from and to query params are required",
-			400,
-		);
+	const parsed = categoryStatsSummarySchema.parse(body ?? {});
+	const filterCriteria =
+		parsed.filterCriteria ??
+		defaultCategorySearchRequest().filterCriteria;
+
+	const categoryQuery: Record<string, unknown> = {
+		bucketId: await resolveBucketScope(
+			userId,
+			filterCriteria.bucketPreset,
+			filterCriteria.bucketIds,
+		),
+	};
+
+	if (filterCriteria.ownerPreset === "ME") {
+		categoryQuery.userId = new Types.ObjectId(userId);
+	} else if (filterCriteria.ownerPreset === "MULTIPLE") {
+		categoryQuery.userId = {
+			$in: filterCriteria.ownerIds
+				.filter((id) => Types.ObjectId.isValid(id))
+				.map((id) => new Types.ObjectId(id)),
+		};
 	}
-	const ctx = await resolveBucketContext(userId, bucketId);
-	return listCategoriesWithStats(
-		ctx.bucketId,
-		new Date(from),
-		new Date(to),
+
+	const bounds = toIsoBoundsForPreset(
+		filterCriteria.datePreset,
+		filterCriteria.customFrom,
+		filterCriteria.customTo,
 	);
+	const from = bounds?.from ? new Date(bounds.from) : new Date(0);
+	const to = bounds?.to ? new Date(bounds.to) : new Date();
+
+	return listCategoriesWithStats(categoryQuery, from, to);
 }
 
 export async function createCategoryService(

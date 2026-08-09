@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/modals/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DateRangeBar } from "@/components/charts/date-range-bar";
 import { FilterBar } from "@/components/filters";
 import type { FilterValue } from "@/components/filters";
 
@@ -23,8 +22,7 @@ import {
 	fetchCategoryStats,
 	deleteCategory,
 } from "@/store/slices/categorySlice";
-import { setDateRange } from "@/store/slices/uiSlice";
-import { toIsoBounds, toIsoBoundsForPreset } from "@/lib/date-range";
+import { toIsoBoundsForPreset } from "@/lib/date-range";
 import { expensesApi } from "@/lib/api/expenses";
 import { filterBounds, scopedExpenseRequest } from "@/lib/filters";
 import { CashFlowChart } from "@/components/cash-flow-chart";
@@ -33,7 +31,7 @@ import type { CategoryWithStats } from "@/types/analytics.types";
 import type { ExpenseItem } from "@/types/expense.types";
 
 const DEFAULT_LIST_FILTER: FilterValue = {
-	filterCriteria: { datePreset: "ANY_TIME" },
+	filterCriteria: { datePreset: "THIS_MONTH" },
 	sortCriteria: { field: "paidAt", direction: "DESC" },
 };
 
@@ -44,13 +42,8 @@ export function CategoryDetailView({ id }: { id: string }) {
 	const [editDrawerOpen, setEditDrawerOpen] =
 		useState(false);
 	const [page, setPage] = useState(1);
-	const [listFilter, setListFilter] = useState<FilterValue | null>(
-		null,
-	);
-
-	const dateRange = useAppSelector((s) => s.ui.dateRange);
-	const currentUserId = useAppSelector(
-		(s) => s.auth.user?.id,
+	const [filter, setFilter] = useState<FilterValue>(
+		DEFAULT_LIST_FILTER,
 	);
 
 	const category = useAppSelector(
@@ -68,14 +61,22 @@ export function CategoryDetailView({ id }: { id: string }) {
 		loading: expensesLoading,
 	} = expenseList;
 
-	const isCreator =
-		!!category &&
-		!!currentUserId &&
-		category.userId === currentUserId;
-
-	const rangeBounds = useMemo(
-		() => toIsoBounds(dateRange),
-		[dateRange],
+	// ponytail: one filter drives the card, the chart and the list — no more
+	// split between a global range and a local list filter.
+	const bounds = useMemo(
+		() =>
+			filterBounds(
+				toIsoBoundsForPreset(
+					filter.filterCriteria.datePreset,
+					filter.filterCriteria.customFrom,
+					filter.filterCriteria.customTo,
+				),
+			),
+		[
+			filter.filterCriteria.datePreset,
+			filter.filterCriteria.customFrom,
+			filter.filterCriteria.customTo,
+		],
 	);
 
 	useEffect(() => {
@@ -87,23 +88,8 @@ export function CategoryDetailView({ id }: { id: string }) {
 	}, [dispatch, id, router]);
 
 	useEffect(() => {
-		const { from, to } = filterBounds(rangeBounds);
-		dispatch(fetchCategoryStats({ id, from, to }));
-	}, [dispatch, id, rangeBounds]);
-
-	// ponytail: the list filter takes over the range once applied; the chart
-	// keeps reading rangeBounds, so sorting the table never touches the series.
-	const listBounds = useMemo(() => {
-		if (!listFilter) return rangeBounds;
-		const { datePreset, customFrom, customTo } =
-			listFilter.filterCriteria;
-		return (
-			toIsoBoundsForPreset(datePreset, customFrom, customTo) ?? {}
-		);
-	}, [listFilter, rangeBounds]);
-
-	const listSort =
-		listFilter?.sortCriteria ?? DEFAULT_LIST_FILTER.sortCriteria;
+		dispatch(fetchCategoryStats({ id, from: bounds.from, to: bounds.to }));
+	}, [dispatch, id, bounds.from, bounds.to]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -113,10 +99,10 @@ export function CategoryDetailView({ id }: { id: string }) {
 					bucketId: category?.bucketId,
 					categoryId: id,
 					page,
-					from: listBounds.from,
-					to: listBounds.to,
+					from: bounds.from,
+					to: bounds.to,
 				}),
-				sortCriteria: listSort,
+				sortCriteria: filter.sortCriteria,
 			})
 			.then((res) => {
 				if (cancelled) return;
@@ -137,7 +123,14 @@ export function CategoryDetailView({ id }: { id: string }) {
 		return () => {
 			cancelled = true;
 		};
-	}, [id, page, listBounds, listSort, category?.bucketId]);
+	}, [
+		id,
+		page,
+		bounds.from,
+		bounds.to,
+		filter.sortCriteria,
+		category?.bucketId,
+	]);
 
 	const chartTrend = useMemo(() => {
 		const raw = stats?.trend ?? [];
@@ -197,40 +190,6 @@ export function CategoryDetailView({ id }: { id: string }) {
 			};
 		}, [category, stats]);
 
-	const routeUrl = useMemo(() => {
-		if (expenses.length < 1) return null;
-
-		const points = expenses
-			.slice(0, 5)
-			.filter(
-				(item) =>
-					item.location?.latitude && item.location?.longitude,
-			);
-
-		if (points.length < 2) return null;
-
-		const origin = `${points[0].location.latitude},${points[0].location.longitude}`;
-		const destination = `${points[points.length - 1].location.latitude},${points[points.length - 1].location.longitude}`;
-
-		const waypoints = points
-			.slice(1, -1)
-			.map(
-				(item) =>
-					`${item.location.latitude},${item.location.longitude}`,
-			)
-			.join("|");
-
-		return (
-			`https://www.google.com/maps/dir/?api=1` +
-			`&origin=${origin}` +
-			`&destination=${destination}` +
-			(waypoints
-				? `&waypoints=${encodeURIComponent(waypoints)}`
-				: "") +
-			`&travelmode=driving`
-		);
-	}, [expenses]);
-
 	if (!category) {
 		return (
 			<div className="space-y-4">
@@ -270,12 +229,24 @@ export function CategoryDetailView({ id }: { id: string }) {
 
 	return (
 		<div className="space-y-4">
-			<DateRangeBar
-				title={category?.name ?? "Category"}
-				range={dateRange}
-				onRangeChange={(r) => {
-					dispatch(setDateRange(r));
-					setPage(1);
+			<FilterBar
+				variant="expenses"
+				buckets={[]}
+				categories={[]}
+				owners={[]}
+				sections={{
+					buckets: false,
+					categories: false,
+					owners: false,
+					additional: false,
+					search: false,
+				}}
+				local={{
+					value: filter,
+					onChange: (next) => {
+						setFilter(next);
+						setPage(1);
+					},
 				}}
 			/>
 			{categoryWithStats && (
@@ -290,27 +261,6 @@ export function CategoryDetailView({ id }: { id: string }) {
 				stackedSeries={chartStackedSeries}
 				categoryColorMap={chartColorMap}
 				isLoading={expensesLoading}
-			/>
-
-			<FilterBar
-				variant="expenses"
-				buckets={[]}
-				categories={[]}
-				owners={[]}
-				sections={{
-					buckets: false,
-					categories: false,
-					owners: false,
-					additional: false,
-					search: false,
-				}}
-				local={{
-					value: listFilter ?? DEFAULT_LIST_FILTER,
-					onChange: (next) => {
-						setListFilter(next);
-						setPage(1);
-					},
-				}}
 			/>
 
 			{expenses.length > 0 && (

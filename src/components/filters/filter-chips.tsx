@@ -2,7 +2,10 @@
 
 import { Chip } from "@/components/ui/chip";
 import { presetLabel } from "@/lib/date-range";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import {
+	useAppDispatch,
+	useAppSelector,
+} from "@/store/hooks";
 import type { BucketSummary } from "@/types/bucket.types";
 import type { CategoryItem } from "@/types/expense.types";
 import type { FilterOwner } from "./owner-filter-section";
@@ -26,6 +29,8 @@ type FilterChipsProps = {
 	owners: FilterOwner[];
 	sections?: Partial<SectionFlags>;
 	local?: LocalFilter;
+	hideDate?: boolean;
+	hideSort?: boolean;
 };
 
 export function FilterChips({
@@ -35,10 +40,15 @@ export function FilterChips({
 	owners,
 	sections: sectionsOverride,
 	local,
+	hideDate,
+	hideSort,
 }: FilterChipsProps) {
 	const dispatch = useAppDispatch();
 	const actions = ACTIONS[variant];
-	const sections = resolveSections(variant, sectionsOverride);
+	const sections = resolveSections(
+		variant,
+		sectionsOverride,
+	);
 
 	const sliceState = useAppSelector(
 		(s) =>
@@ -46,10 +56,15 @@ export function FilterChips({
 				SLICE_KEY[variant]
 			],
 	);
-	const { filterCriteria, sortCriteria } = local?.value ?? sliceState;
+	const { filterCriteria, sortCriteria } =
+		local?.value ?? sliceState;
 
 	const patchLocal = (next: Partial<FilterSliceState>) =>
-		local?.onChange({ filterCriteria, sortCriteria, ...next });
+		local?.onChange({
+			filterCriteria,
+			sortCriteria,
+			...next,
+		});
 
 	const chips: React.ReactNode[] = [];
 
@@ -64,7 +79,9 @@ export function FilterChips({
 			dispatch(fallbackClear() as never);
 			return;
 		}
-		dispatch(set({ preset: "MULTIPLE" as never, ids: next }) as never);
+		dispatch(
+			set({ preset: "MULTIPLE" as never, ids: next }) as never,
+		);
 	};
 
 	if (sections.search && filterCriteria.q) {
@@ -81,8 +98,13 @@ export function FilterChips({
 		);
 	}
 
-	const { datePreset, customFrom, customTo } = filterCriteria;
-	if (sections.date && datePreset !== "ANY_TIME") {
+	const { datePreset, customFrom, customTo } =
+		filterCriteria;
+	if (
+		sections.date &&
+		!hideDate &&
+		datePreset !== "ANY_TIME"
+	) {
 		const isCustom = datePreset === "CUSTOM";
 		const clearDate = local
 			? () =>
@@ -108,38 +130,6 @@ export function FilterChips({
 				onRemove={clearDate}
 			/>,
 		);
-	}
-
-	if (sections.categories) {
-		const { categoryPreset, categoryIds = [] } = filterCriteria;
-		if (categoryPreset === "ALL") {
-			chips.push(
-				<Chip
-					key="category-all"
-					label="All categories"
-					variant="muted"
-				/>,
-			);
-		} else if (categoryPreset === "MULTIPLE") {
-			for (const id of categoryIds) {
-				const category = categories.find((c) => c._id === id);
-				chips.push(
-					<Chip
-						key={`category-${id}`}
-						label={category?.name ?? "Category"}
-						icon={category?.emoji}
-						onRemove={() =>
-							removeId(
-								actions.setCategoryFilter as never,
-								categoryIds,
-								id,
-								actions.clearCategoryFilter,
-							)
-						}
-					/>,
-				);
-			}
-		}
 	}
 
 	if (sections.buckets) {
@@ -186,29 +176,45 @@ export function FilterChips({
 		}
 	}
 
-	if (sections.sort && sortCriteria?.field) {
-		chips.push(
-			<Chip
-				key="sort"
-				variant="muted"
-				label={`${sortFieldLabel(variant, sortCriteria.field)} ${
-					sortCriteria.direction === "ASC" ? "↑" : "↓"
-				}`}
-				onRemove={
-					local
-						? () => patchLocal({ sortCriteria: defaultSort(variant) })
-						: actions.clearSort
-							? () => dispatch(actions.clearSort!())
-							: undefined
-				}
-			/>,
-		);
+	if (sections.categories) {
+		const { categoryPreset, categoryIds = [] } =
+			filterCriteria;
+		if (categoryPreset === "ALL") {
+			chips.push(
+				<Chip
+					key="category-all"
+					label="All categories"
+					variant="muted"
+				/>,
+			);
+		} else if (categoryPreset === "MULTIPLE") {
+			for (const id of categoryIds) {
+				const category = categories.find((c) => c._id === id);
+				chips.push(
+					<Chip
+						key={`category-${id}`}
+						label={category?.name ?? "Category"}
+						icon={category?.emoji}
+						onRemove={() =>
+							removeId(
+								actions.setCategoryFilter as never,
+								categoryIds,
+								id,
+								actions.clearCategoryFilter,
+							)
+						}
+					/>,
+				);
+			}
+		}
 	}
 
 	if (sections.owners) {
 		const { ownerPreset, ownerIds = [] } = filterCriteria;
 		if (ownerPreset === "ME") {
-			chips.push(<Chip key="owner-me" label="Me" variant="muted" />);
+			chips.push(
+				<Chip key="owner-me" label="Me" variant="muted" />,
+			);
 		} else if (ownerPreset === "ALL") {
 			chips.push(
 				<Chip
@@ -240,6 +246,26 @@ export function FilterChips({
 				);
 			}
 		}
+	}
+
+	if (sections.sort && !hideSort && sortCriteria?.field) {
+		chips.push(
+			<Chip
+				key="sort"
+				variant="muted"
+				label={`${sortFieldLabel(variant, sortCriteria.field)} ${
+					sortCriteria.direction === "ASC" ? "↑" : "↓"
+				}`}
+				onRemove={
+					local
+						? () =>
+								patchLocal({ sortCriteria: defaultSort(variant) })
+						: actions.clearSort
+							? () => dispatch(actions.clearSort!())
+							: undefined
+				}
+			/>,
+		);
 	}
 
 	if (sections.additional) {

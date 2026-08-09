@@ -1,6 +1,6 @@
 "use client";
 
-import { Chip } from "@/components/ui/chip";
+import { DropdownList } from "@/components/ui/dropdown-list";
 import { Input } from "@/components/ui/input";
 import { FilterSection } from "./section";
 import { presetLabel } from "@/lib/date-range";
@@ -11,7 +11,7 @@ import {
 import type { FilterDatePreset } from "@/types/search.types";
 import { dateSummary } from "./section-summary";
 
-const PRESETS: FilterDatePreset[] = [
+export const PRESETS: FilterDatePreset[] = [
 	"TODAY",
 	"YESTERDAY",
 	"THIS_WEEK",
@@ -75,42 +75,43 @@ export function DateFilterSection({
 			defaultOpen={defaultOpen}
 			summary={dateSummary(preset, customFrom, customTo)}
 		>
-			<div className="flex flex-wrap gap-2">
-				{PRESETS.map((p) => (
-					<Chip
-						key={p}
-						label={presetLabel(p)}
-						variant={p === preset ? "default" : "muted"}
-						onClick={() =>
-							onChange(
-								p === "CUSTOM"
-									? { preset: p, customFrom, customTo }
-									: { preset: p },
-							)
-						}
-					/>
-				))}
+			<div className="space-y-2">
+				<DropdownList
+					value={preset}
+					onValueChange={(v) => {
+						const next = v as FilterDatePreset;
+						onChange(
+							next === "CUSTOM"
+								? { preset: next, customFrom, customTo }
+								: { preset: next },
+						);
+					}}
+					options={PRESETS.map((p) => ({
+						value: p,
+						label: p === "CUSTOM" ? "Custom Range" : presetLabel(p),
+					}))}
+				/>
+				{isCustom ? (
+					<div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2">
+						<label className="space-y-1">
+							<span className="text-xs text-[var(--color-muted)]">From</span>
+							<Input
+								type="datetime-local"
+								value={toInputValue(customFrom)}
+								onChange={(e) => setBound("customFrom", e.target.value)}
+							/>
+						</label>
+						<label className="space-y-1">
+							<span className="text-xs text-[var(--color-muted)]">To</span>
+							<Input
+								type="datetime-local"
+								value={toInputValue(customTo)}
+								onChange={(e) => setBound("customTo", e.target.value)}
+							/>
+						</label>
+					</div>
+				) : null}
 			</div>
-			{isCustom ? (
-				<div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2">
-					<label className="space-y-1">
-						<span className="text-xs text-[var(--color-muted)]">From</span>
-						<Input
-							type="datetime-local"
-							value={toInputValue(customFrom)}
-							onChange={(e) => setBound("customFrom", e.target.value)}
-						/>
-					</label>
-					<label className="space-y-1">
-						<span className="text-xs text-[var(--color-muted)]">To</span>
-						<Input
-							type="datetime-local"
-							value={toInputValue(customTo)}
-							onChange={(e) => setBound("customTo", e.target.value)}
-						/>
-					</label>
-				</div>
-			) : null}
 		</FilterSection>
 	);
 }

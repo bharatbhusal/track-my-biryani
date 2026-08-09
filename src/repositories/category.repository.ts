@@ -70,14 +70,19 @@ export async function deleteCategoriesByBucket(bucketId: string) {
 }
 
 export async function listCategoriesWithStats(
-	bucketId: string,
+	categoryQuery: Record<string, unknown>,
 	from: Date,
 	to: Date,
 ) {
+	const categories = await CategoryModel.find(categoryQuery).lean();
+
 	const match: Record<string, unknown> = {
-		bucketId: new Types.ObjectId(bucketId),
+		categoryId: {
+			$in: categories.map((c) => c._id as Types.ObjectId),
+		},
 		paidAt: { $gte: from, $lte: to },
 	};
+	if (categoryQuery.bucketId) match.bucketId = categoryQuery.bucketId;
 
 	const categoryStats = await ExpenseModel.aggregate([
 		{ $match: match },
@@ -92,10 +97,6 @@ export async function listCategoriesWithStats(
 			},
 		},
 	]);
-
-	const categories = await CategoryModel.find({
-		bucketId,
-	}).lean();
 
 	const statsById = new Map(
 		categoryStats.map((s) => [s._id.toString(), s]),

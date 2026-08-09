@@ -9,11 +9,14 @@ import { useAppDispatch } from "@/store/hooks";
 import type { BucketSummary } from "@/types/bucket.types";
 import type { CategoryItem } from "@/types/expense.types";
 import { FilterChips } from "./filter-chips";
+import { DateDropdown } from "./date-dropdown";
+import { SortDropdown } from "./sort-dropdown";
 import { FilterDialog } from "./filter-dialog";
 import type { FilterOwner } from "./owner-filter-section";
 import {
 	ACTIONS,
 	defaultSort,
+	resolveSections,
 	type FilterVariant,
 	type LocalFilter,
 	type SectionFlags,
@@ -41,6 +44,7 @@ export function FilterBar({
 	const [confirmClear, setConfirmClear] = useState(false);
 	const clearAllFilters = ACTIONS[variant].clearAllFilters;
 	const canClear = local ? true : !!clearAllFilters;
+	const resolvedSections = resolveSections(variant, sections);
 
 	return (
 		<>
@@ -57,6 +61,16 @@ export function FilterBar({
 				</Button>
 
 				<div className="scrollbar-hide flex flex-1 items-center gap-2 overflow-x-auto">
+					{resolvedSections.date ? (
+						<DateDropdown
+							variant={variant}
+							local={local}
+							onCustomOpen={() => setOpen(true)}
+						/>
+					) : null}
+					{resolvedSections.sort ? (
+						<SortDropdown variant={variant} local={local} />
+					) : null}
 					<FilterChips
 						variant={variant}
 						buckets={buckets}
@@ -64,6 +78,8 @@ export function FilterBar({
 						owners={owners}
 						sections={sections}
 						local={local}
+						hideDate={resolvedSections.date}
+						hideSort={resolvedSections.sort}
 					/>
 				</div>
 
@@ -96,7 +112,7 @@ export function FilterBar({
 				onConfirm={() => {
 					if (local) {
 						local.onChange({
-							filterCriteria: { datePreset: "ANY_TIME" },
+							filterCriteria: { datePreset: "THIS_MONTH" },
 							sortCriteria: defaultSort(variant),
 						});
 					} else if (clearAllFilters) {

@@ -145,9 +145,9 @@ export const expensesApi = {
 			{ method: "POST", body: { filterCriteria } },
 		),
 
-	listCategoriesWithStats: (from: string, to: string) =>
-		apiRequest<CategoryWithStats[]>(
-			`/categories/stats?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
-			{ method: "POST" },
-		),
+	listCategoriesWithStats: (filterCriteria: CategoryFilterCriteria) =>
+		apiRequest<CategoryWithStats[]>("/categories/stats", {
+			method: "POST",
+			body: { filterCriteria },
+		}),
 };

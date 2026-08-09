@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { FiPlus, FiTag } from "react-icons/fi";
+import { FiPlus } from "react-icons/fi";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { FilterBar } from "@/components/filters";
+import { FilterBar, useScopedOptions } from "@/components/filters";
 import {
 	useAppSelector,
 	useAppDispatch,
@@ -16,8 +16,6 @@ import { CategoryCard } from "@/features/categories/components/category-card";
 import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
 import { expensesApi } from "@/lib/api/expenses";
 import { formatCurrency } from "@/lib/format";
-import { toIsoBoundsForPreset } from "@/lib/date-range";
-import { filterBounds } from "@/lib/filters";
 import type { CategoryStatsSummary } from "@/types/analytics.types";
 
 export function CategoryManager() {
@@ -40,20 +38,13 @@ export function CategoryManager() {
 		(s) => s.categories.itemsWithStats,
 	);
 
-	const { from, to } = useMemo(
-		() =>
-			filterBounds(
-				toIsoBoundsForPreset(
-					filterCriteria.datePreset,
-					filterCriteria.customFrom,
-					filterCriteria.customTo,
-				),
-			),
-		[
-			filterCriteria.datePreset,
-			filterCriteria.customFrom,
-			filterCriteria.customTo,
-		],
+	// ponytail: owners come from bucket members through the shared hook, so the
+	// user filter can list everyone in the selected buckets.
+	const { owners } = useScopedOptions(
+		true,
+		buckets,
+		filterCriteria.bucketPreset,
+		filterCriteria.bucketIds,
 	);
 
 	useEffect(() => {
@@ -61,8 +52,8 @@ export function CategoryManager() {
 	}, [dispatch]);
 
 	useEffect(() => {
-		dispatch(fetchCategoriesWithStats({ from, to }));
-	}, [dispatch, from, to]);
+		dispatch(fetchCategoriesWithStats(filterCriteria));
+	}, [dispatch, filterCriteria]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -79,26 +70,18 @@ export function CategoryManager() {
 		};
 	}, [filterCriteria]);
 
-	// ponytail: /categories/stats only takes from/to, so `q` is matched here
-	// against the already-loaded page. Move it server-side if the list ever
-	// outgrows one response.
+	// ponytail: /categories/stats returns without an order, so amount sorting
+	// is applied here against the fetched page.
 	const items = useMemo(() => {
 		const dir = sortCriteria.direction === "ASC" ? 1 : -1;
-		const q = (filterCriteria.q ?? "").toLowerCase();
 		return categoriesWithStats
-			.filter((item) => item.name.toLowerCase().includes(q))
 			.slice()
 			.sort((a, b) =>
 				sortCriteria.field === "amount"
 					? (a.total - b.total) * dir
 					: a._id.localeCompare(b._id) * dir,
 			);
-	}, [
-		categoriesWithStats,
-		filterCriteria.q,
-		sortCriteria.field,
-		sortCriteria.direction,
-	]);
+	}, [categoriesWithStats, sortCriteria.field, sortCriteria.direction]);
 
 	const summaryCells: Array<[string, string]> = [
 		["Total", formatCurrency(summary?.total ?? 0, currency)],
@@ -115,7 +98,7 @@ export function CategoryManager() {
 				variant="categories"
 				buckets={buckets}
 				categories={[]}
-				owners={[]}
+				owners={owners}
 				sections={{
 					categories: false,
 					search: false,
