@@ -14,6 +14,7 @@ import type {
 } from "@/types/analytics.types";
 import type { GlobalDateRange } from "@/lib/date-range";
 import { toIsoBounds } from "@/lib/date-range";
+import { sortForVariant } from "@/components/filters/variants";
 import type { RootState } from "@/store";
 
 type ExpenseState = {
@@ -47,9 +48,12 @@ export const fetchExpenses = createAsyncThunk(
 	async (_: void, { getState }) => {
 		const state = getState() as RootState;
 		return expensesApi.searchExpenses({
-			filterCriteria: state.expensesFilter.filterCriteria,
-			sortCriteria: state.expensesFilter.sortCriteria,
-			pagination: state.expensesFilter.pagination,
+			filterCriteria: state.filters.filterCriteria,
+			sortCriteria: sortForVariant(
+				"expenses",
+				state.filters.sortCriteria,
+			),
+			pagination: state.filters.pagination,
 		});
 	},
 );
@@ -69,13 +73,16 @@ export const fetchExpensesInRange = createAsyncThunk(
 		}
 		return expensesApi.searchExpenses({
 			filterCriteria: {
-				...state.expensesFilter.filterCriteria,
+				...state.filters.filterCriteria,
 				datePreset: "CUSTOM",
 				customFrom: from,
 				customTo: to,
 			},
-			sortCriteria: state.expensesFilter.sortCriteria,
-			pagination: { page: 1, pageSize: state.expensesFilter.pagination.pageSize },
+			sortCriteria: sortForVariant(
+				"expenses",
+				state.filters.sortCriteria,
+			),
+			pagination: { page: 1, pageSize: state.filters.pagination.pageSize },
 		});
 	},
 );

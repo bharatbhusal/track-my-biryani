@@ -1,9 +1,55 @@
 import type { BucketSummary } from "@/types/bucket.types";
 import type {
+	AuditFilterCriteria,
+	BucketFilterCriteria,
+	CategoryFilterCriteria,
 	CategorySearchRequest,
+	ExpenseFilterCriteria,
 	ExpenseSearchRequest,
 	FilterDatePreset,
 } from "@/types/search.types";
+
+// ponytail: one shared criteria (the expenses superset) drives every page; the
+// category/audit/bucket endpoints take narrower shapes, so the request boundary
+// trims the shared criteria to exactly what each schema expects.
+export function categoryCriteria(
+	c: ExpenseFilterCriteria,
+): CategoryFilterCriteria {
+	return {
+		bucketPreset: c.bucketPreset,
+		bucketIds: c.bucketIds,
+		ownerPreset: c.ownerPreset,
+		ownerIds: c.ownerIds,
+		datePreset: c.datePreset,
+		customFrom: c.customFrom,
+		customTo: c.customTo,
+		q: c.q,
+	};
+}
+
+export function auditCriteria(
+	c: ExpenseFilterCriteria,
+): AuditFilterCriteria {
+	return {
+		bucketPreset: c.bucketPreset,
+		bucketIds: c.bucketIds,
+		ownerPreset: c.ownerPreset,
+		ownerIds: c.ownerIds,
+		datePreset: c.datePreset,
+		customFrom: c.customFrom,
+		customTo: c.customTo,
+	};
+}
+
+export function bucketCriteria(
+	c: ExpenseFilterCriteria,
+): BucketFilterCriteria {
+	return {
+		datePreset: c.datePreset,
+		customFrom: c.customFrom,
+		customTo: c.customTo,
+	};
+}
 
 // ponytail: the stats/chart/distribution endpoints still demand a concrete
 // from/to pair, so ANY_TIME (and a half-open custom range) widen to epoch..now.

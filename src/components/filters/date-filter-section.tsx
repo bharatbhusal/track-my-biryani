@@ -1,6 +1,6 @@
 "use client";
 
-import { DropdownList } from "@/components/ui/dropdown-list";
+import { Chip } from "@/components/ui/chip";
 import { Input } from "@/components/ui/input";
 import { FilterSection } from "./section";
 import { presetLabel } from "@/lib/date-range";
@@ -76,21 +76,31 @@ export function DateFilterSection({
 			summary={dateSummary(preset, customFrom, customTo)}
 		>
 			<div className="space-y-2">
-				<DropdownList
-					value={preset}
-					onValueChange={(v) => {
-						const next = v as FilterDatePreset;
-						onChange(
-							next === "CUSTOM"
-								? { preset: next, customFrom, customTo }
-								: { preset: next },
+				<div className="flex flex-wrap gap-1.5">
+					{PRESETS.map((p) => {
+						const selected = p === preset;
+						return (
+							<Chip
+								key={p}
+								label={
+									p === "CUSTOM" ? "Custom Range" : presetLabel(p)
+								}
+								variant={selected ? "default" : "muted"}
+								onClick={() =>
+									onChange(
+										p === "CUSTOM"
+											? {
+													preset: p,
+													customFrom,
+													customTo,
+												}
+											: { preset: p },
+									)
+								}
+							/>
 						);
-					}}
-					options={PRESETS.map((p) => ({
-						value: p,
-						label: p === "CUSTOM" ? "Custom Range" : presetLabel(p),
-					}))}
-				/>
+					})}
+				</div>
 				{isCustom ? (
 					<div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2">
 						<label className="space-y-1">

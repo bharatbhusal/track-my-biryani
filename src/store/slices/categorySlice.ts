@@ -6,10 +6,11 @@ import type {
 	CategoryRangeStats,
 	CategoryWithStats,
 } from "@/types/analytics.types";
-import type {
-	CategoryFilterCriteria,
-	ExpenseFilterCriteria,
-} from "@/types/search.types";
+import {
+	categoryCriteria,
+} from "@/lib/filters";
+import { sortForVariant } from "@/components/filters/variants";
+import type { ExpenseFilterCriteria } from "@/types/search.types";
 import type { RootState } from "@/store";
 
 type CategoryState = {
@@ -37,9 +38,12 @@ export const fetchCategories = createAsyncThunk(
 	async (_: void, { getState }) => {
 		const state = getState() as RootState;
 		const result = await expensesApi.searchCategories({
-			filterCriteria: state.categoriesFilter.filterCriteria,
-			sortCriteria: state.categoriesFilter.sortCriteria,
-			pagination: state.categoriesFilter.pagination,
+			filterCriteria: categoryCriteria(state.filters.filterCriteria),
+			sortCriteria: sortForVariant(
+				"categories",
+				state.filters.sortCriteria,
+			),
+			pagination: state.filters.pagination,
 		});
 		return result.items;
 	},
@@ -47,8 +51,10 @@ export const fetchCategories = createAsyncThunk(
 
 export const fetchCategoriesWithStats = createAsyncThunk(
 	"categories/fetchListWithStats",
-	async (filterCriteria: CategoryFilterCriteria) => {
-		return expensesApi.listCategoriesWithStats(filterCriteria);
+	async (filterCriteria: ExpenseFilterCriteria) => {
+		return expensesApi.listCategoriesWithStats(
+			categoryCriteria(filterCriteria),
+		);
 	},
 );
 

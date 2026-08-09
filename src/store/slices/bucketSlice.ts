@@ -4,6 +4,8 @@ import {
 	isAnyOf,
 } from "@reduxjs/toolkit";
 import { bucketsApi } from "@/lib/api/buckets";
+import { bucketCriteria } from "@/lib/filters";
+import { sortForVariant } from "@/components/filters/variants";
 import type { RootState } from "@/store";
 import type { BucketSummary } from "@/types/bucket.types";
 
@@ -28,9 +30,12 @@ export const fetchBuckets = createAsyncThunk(
 	async (_, { getState }) => {
 		const state = getState() as RootState;
 		const result = await bucketsApi.searchBuckets({
-			filterCriteria: state.bucketsFilter.filterCriteria,
-			sortCriteria: state.bucketsFilter.sortCriteria,
-			pagination: state.bucketsFilter.pagination,
+			filterCriteria: bucketCriteria(state.filters.filterCriteria),
+			sortCriteria: sortForVariant(
+				"buckets",
+				state.filters.sortCriteria,
+			),
+			pagination: state.filters.pagination,
 		});
 		return result.items;
 	},

@@ -7,8 +7,7 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/modals/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FilterBar } from "@/components/filters";
-import type { FilterValue } from "@/components/filters";
+import { FilterBar, sortForVariant } from "@/components/filters";
 
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
@@ -24,16 +23,14 @@ import {
 } from "@/store/slices/categorySlice";
 import { toIsoBoundsForPreset } from "@/lib/date-range";
 import { expensesApi } from "@/lib/api/expenses";
-import { filterBounds, scopedExpenseRequest } from "@/lib/filters";
+import {
+	filterBounds,
+	scopedExpenseRequest,
+} from "@/lib/filters";
 import { CashFlowChart } from "@/components/cash-flow-chart";
 import { ChartSkeleton } from "@/components/charts/chart-skeleton";
 import type { CategoryWithStats } from "@/types/analytics.types";
 import type { ExpenseItem } from "@/types/expense.types";
-
-const DEFAULT_LIST_FILTER: FilterValue = {
-	filterCriteria: { datePreset: "THIS_MONTH" },
-	sortCriteria: { field: "paidAt", direction: "DESC" },
-};
 
 export function CategoryDetailView({ id }: { id: string }) {
 	const router = useRouter();
@@ -42,14 +39,24 @@ export function CategoryDetailView({ id }: { id: string }) {
 	const [editDrawerOpen, setEditDrawerOpen] =
 		useState(false);
 	const [page, setPage] = useState(1);
-	const [filter, setFilter] = useState<FilterValue>(
-		DEFAULT_LIST_FILTER,
+
+	const filterCriteria = useAppSelector(
+		(s) => s.filters.filterCriteria,
+	);
+	const sortCriteria = useAppSelector(
+		(s) => s.filters.sortCriteria,
 	);
 
 	const category = useAppSelector(
 		(s) => s.categories.currentCategory,
 	);
 	const stats = useAppSelector((s) => s.categories.stats);
+	// ponytail: memoized on the raw slice reference (stable across unrelated
+	// renders) so the normalized sort is a stable dependency for the effect.
+	const effectiveSort = useMemo(
+		() => sortForVariant("expenses", sortCriteria),
+		[sortCriteria],
+	);
 	const [expenseList, setExpenseList] = useState<{
 		items: ExpenseItem[];
 		totalPages: number;
@@ -61,23 +68,37 @@ export function CategoryDetailView({ id }: { id: string }) {
 		loading: expensesLoading,
 	} = expenseList;
 
-	// ponytail: one filter drives the card, the chart and the list — no more
-	// split between a global range and a local list filter.
+	// ponytail: the persisted filters slice drives the card, the chart and
+	// the list — no local copy, so the selection survives navigation.
 	const bounds = useMemo(
 		() =>
 			filterBounds(
 				toIsoBoundsForPreset(
-					filter.filterCriteria.datePreset,
-					filter.filterCriteria.customFrom,
-					filter.filterCriteria.customTo,
+					filterCriteria.datePreset,
+					filterCriteria.customFrom,
+					filterCriteria.customTo,
 				),
 			),
 		[
-			filter.filterCriteria.datePreset,
-			filter.filterCriteria.customFrom,
-			filter.filterCriteria.customTo,
+			filterCriteria.datePreset,
+			filterCriteria.customFrom,
+			filterCriteria.customTo,
 		],
 	);
+
+	// ponytail: when the shared filter changes, drop back to page one — the
+	// documented "adjust state while rendering" pattern (store the previous
+	// value in state, compare during render), same as the filter dialog draft.
+	const filterKey = JSON.stringify([
+		filterCriteria,
+		sortCriteria,
+	]);
+	const [prevFilterKey, setPrevFilterKey] =
+		useState(filterKey);
+	if (prevFilterKey !== filterKey) {
+		setPrevFilterKey(filterKey);
+		setPage(1);
+	}
 
 	useEffect(() => {
 		dispatch(fetchCategoryDetail(id))
@@ -88,7 +109,13 @@ export function CategoryDetailView({ id }: { id: string }) {
 	}, [dispatch, id, router]);
 
 	useEffect(() => {
-		dispatch(fetchCategoryStats({ id, from: bounds.from, to: bounds.to }));
+		dispatch(
+			fetchCategoryStats({
+				id,
+				from: bounds.from,
+				to: bounds.to,
+			}),
+		);
 	}, [dispatch, id, bounds.from, bounds.to]);
 
 	useEffect(() => {
@@ -102,7 +129,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 					from: bounds.from,
 					to: bounds.to,
 				}),
-				sortCriteria: filter.sortCriteria,
+				sortCriteria: effectiveSort,
 			})
 			.then((res) => {
 				if (cancelled) return;
@@ -128,7 +155,8 @@ export function CategoryDetailView({ id }: { id: string }) {
 		page,
 		bounds.from,
 		bounds.to,
-		filter.sortCriteria,
+		sortCriteria,
+		effectiveSort,
 		category?.bucketId,
 	]);
 
@@ -240,13 +268,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 					owners: false,
 					additional: false,
 					search: false,
-				}}
-				local={{
-					value: filter,
-					onChange: (next) => {
-						setFilter(next);
-						setPage(1);
-					},
+					sort: true,
 				}}
 			/>
 			{categoryWithStats && (
@@ -271,6 +293,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 					page={page}
 					totalPages={expensesTotalPages}
 					onPageChange={setPage}
+					isSection={effectiveSort.field === "paidAt"}
 				/>
 			)}
 

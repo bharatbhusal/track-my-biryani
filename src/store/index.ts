@@ -21,10 +21,7 @@ import uiReducer from "./slices/uiSlice";
 import expenseReducer from "./slices/expenseSlice";
 import categoryReducer from "./slices/categorySlice";
 import bucketReducer from "./slices/bucketSlice";
-import expensesFilterReducer from "./slices/expensesFilterSlice";
-import categoriesFilterReducer from "./slices/categoriesFilterSlice";
-import bucketsFilterReducer from "./slices/bucketsFilterSlice";
-import logsFilterReducer from "./slices/logsFilterSlice";
+import filtersReducer from "./slices/filtersSlice";
 
 const rootReducer = combineReducers({
 	auth: authReducer,
@@ -32,10 +29,7 @@ const rootReducer = combineReducers({
 	expenses: expenseReducer,
 	categories: categoryReducer,
 	buckets: bucketReducer,
-	expensesFilter: expensesFilterReducer,
-	categoriesFilter: categoriesFilterReducer,
-	bucketsFilter: bucketsFilterReducer,
-	logsFilter: logsFilterReducer,
+	filters: filtersReducer,
 });
 
 type RootReducerState = ReturnType<typeof rootReducer>;
@@ -49,10 +43,7 @@ const persistConfig: PersistConfig<RootReducerState> = {
 		"ui",
 		"expenses",
 		"categories",
-		"expensesFilter",
-		"categoriesFilter",
-		"bucketsFilter",
-		"logsFilter",
+		"filters",
 	],
 };
 

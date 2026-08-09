@@ -250,11 +250,11 @@ export function BucketSettings() {
 		useState(false);
 	const [pending, setPending] = useState(false);
 
-	const bucketsFilter = useAppSelector((s) => s.bucketsFilter);
+	const filters = useAppSelector((s) => s.filters);
 
 	useEffect(() => {
 		dispatch(fetchBuckets());
-	}, [dispatch, bucketsFilter]);
+	}, [dispatch, filters]);
 
 	const handleDelete = async () => {
 		if (!deleting?._id) return;

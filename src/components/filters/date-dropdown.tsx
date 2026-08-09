@@ -5,12 +5,11 @@ import { presetLabel } from "@/lib/date-range";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import type { FilterDatePreset } from "@/types/search.types";
 import { PRESETS } from "./date-filter-section";
-import type { FilterSliceState, FilterVariant, LocalFilter } from "./variants";
+import type { FilterSliceState, FilterVariant } from "./variants";
 import { ACTIONS, SLICE_KEY } from "./variants";
 
 type DateDropdownProps = {
 	variant: FilterVariant;
-	local?: LocalFilter;
 	onCustomOpen: () => void;
 };
 
@@ -18,7 +17,6 @@ type DateDropdownProps = {
 // where the from/to inputs already live — no duplicate range UI here.
 export function DateDropdown({
 	variant,
-	local,
 	onCustomOpen,
 }: DateDropdownProps) {
 	const dispatch = useAppDispatch();
@@ -28,24 +26,11 @@ export function DateDropdown({
 				SLICE_KEY[variant]
 			],
 	);
-	const filterCriteria =
-		local?.value.filterCriteria ?? sliceState.filterCriteria;
+	const filterCriteria = sliceState.filterCriteria;
 
 	const setPreset = (preset: FilterDatePreset) => {
 		if (preset === "CUSTOM") {
 			onCustomOpen();
-			return;
-		}
-		if (local) {
-			local.onChange({
-				...local.value,
-				filterCriteria: {
-					...local.value.filterCriteria,
-					datePreset: preset,
-					customFrom: undefined,
-					customTo: undefined,
-				},
-			});
 			return;
 		}
 		dispatch(ACTIONS[variant].setDateFilter!({ preset }));

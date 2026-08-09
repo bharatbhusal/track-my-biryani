@@ -1,9 +1,6 @@
 import type { UnknownAction } from "@reduxjs/toolkit";
 
-import * as bucketsFilterSlice from "@/store/slices/bucketsFilterSlice";
-import * as categoriesFilterSlice from "@/store/slices/categoriesFilterSlice";
-import * as expensesFilterSlice from "@/store/slices/expensesFilterSlice";
-import * as logsFilterSlice from "@/store/slices/logsFilterSlice";
+import * as filtersSlice from "@/store/slices/filtersSlice";
 import type {
 	BucketPreset,
 	CategoryPreset,
@@ -66,17 +63,19 @@ type FilterActions = {
 };
 
 export const SLICE_KEY = {
-	expenses: "expensesFilter",
-	categories: "categoriesFilter",
-	buckets: "bucketsFilter",
-	logs: "logsFilter",
+	expenses: "filters",
+	categories: "filters",
+	buckets: "filters",
+	logs: "filters",
 } as const;
 
+// ponytail: every variant reads and writes the one shared filters slice, so a
+// date picked on the dashboard is the same date everywhere else.
 export const ACTIONS: Record<FilterVariant, FilterActions> = {
-	expenses: expensesFilterSlice,
-	categories: categoriesFilterSlice,
-	buckets: bucketsFilterSlice,
-	logs: logsFilterSlice,
+	expenses: filtersSlice,
+	categories: filtersSlice,
+	buckets: filtersSlice,
+	logs: filtersSlice,
 };
 
 export type SectionName =
@@ -89,14 +88,6 @@ export type SectionName =
 	| "sort";
 
 export type SectionFlags = Record<SectionName, boolean>;
-
-// ponytail: pages that own their filter state locally (a section of a detail
-// page) pass `local` instead of leaning on a slice — no new reducer, and no
-// leak into the page-wide filters other views render from.
-export type LocalFilter = {
-	value: FilterValue;
-	onChange: (next: FilterValue) => void;
-};
 
 export const SECTIONS: Record<FilterVariant, SectionFlags> = {
 	expenses: {
@@ -146,6 +137,20 @@ export function resolveSections(
 
 export function defaultSort(variant: FilterVariant): SortCriteria {
 	return { field: SORT_FIELDS[variant][0].value, direction: "DESC" };
+}
+
+// ponytail: the one shared sortCriteria is a preference every page interprets
+// within its own field set — a sort picked on logs ("timestamp") is meaningless
+// on the expenses list, so consumers normalize before use. Only the audit
+// endpoint rejects unknown fields, but the others would silently sort by a
+// nonexistent field, so the normalization happens at every boundary.
+export function sortForVariant(
+	variant: FilterVariant,
+	sort: SortCriteria,
+): SortCriteria {
+	return SORT_FIELDS[variant].some((f) => f.value === sort.field)
+		? sort
+		: defaultSort(variant);
 }
 
 export const SORT_FIELDS: Record<FilterVariant, SortField[]> = {

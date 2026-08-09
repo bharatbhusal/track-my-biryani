@@ -2,10 +2,14 @@
 
 import { useMemo, useEffect } from "react";
 
-import { FilterBar } from "@/components/filters";
+import {
+	FilterBar,
+	useScopedOptions,
+	sortForVariant,
+} from "@/components/filters";
 import { ExpenseOverview } from "@/features/expenses/components/expense-overview";
 import { DashboardBarChart } from "@/components/dashboard-bar-chart";
-import { DistributionBar } from "@/components/charts/distribution-bar";
+// import { DistributionBar } from "@/components/charts/distribution-bar";
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import type { SortField } from "@/features/expenses/components/expense-table";
 import {
@@ -21,12 +25,12 @@ import { fetchAllBuckets } from "@/store/slices/bucketSlice";
 import {
 	setSort,
 	setPage,
-} from "@/store/slices/expensesFilterSlice";
+} from "@/store/slices/filtersSlice";
 // import { expensesApi } from "@/lib/api/expenses";
 // import type { DistributionPoint } from "@/types/analytics.types";
 import { getChartLabel } from "@/lib/format";
 import {
-	presetLabel,
+	// presetLabel,
 	toIsoBoundsForPreset,
 } from "@/lib/date-range";
 import {
@@ -39,20 +43,17 @@ export function DashboardOverview() {
 	const dispatch = useAppDispatch();
 
 	const filterCriteria = useAppSelector(
-		(s) => s.expensesFilter.filterCriteria,
+		(s) => s.filters.filterCriteria,
 	);
 	const sortCriteria = useAppSelector(
-		(s) => s.expensesFilter.sortCriteria,
+		(s) => s.filters.sortCriteria,
 	);
 	const pagination = useAppSelector(
-		(s) => s.expensesFilter.pagination,
+		(s) => s.filters.pagination,
 	);
 
 	const buckets = useAppSelector(
 		(s) => s.buckets.allBuckets,
-	);
-	const categories = useAppSelector(
-		(s) => s.categories.items,
 	);
 	const overviewStats = useAppSelector(
 		(s) => s.expenses.overviewStats,
@@ -94,6 +95,15 @@ export function DashboardOverview() {
 			filterCriteria.customFrom,
 			filterCriteria.customTo,
 		],
+	);
+
+	// ponytail: chip labels need real names, so owners/categories come from the
+	// bucket members through the shared hook — same source the manager uses.
+	const { categories, owners } = useScopedOptions(
+		true,
+		buckets,
+		filterCriteria.bucketPreset,
+		filterCriteria.bucketIds,
 	);
 
 	useEffect(() => {
@@ -187,13 +197,17 @@ export function DashboardOverview() {
 	// 	buckets,
 	// ]);
 
+	// ponytail: the shared sort is a preference — normalize it to the expense
+	// fields for the table and the toggle baseline.
+	const effectiveSort = sortForVariant("expenses", sortCriteria);
+
 	const handleSort = (field: SortField) => {
 		dispatch(
 			setSort({
 				field,
 				direction:
-					sortCriteria.field === field &&
-					sortCriteria.direction === "DESC"
+					effectiveSort.field === field &&
+					effectiveSort.direction === "DESC"
 						? "ASC"
 						: "DESC",
 			}),
@@ -206,7 +220,7 @@ export function DashboardOverview() {
 				variant="expenses"
 				buckets={buckets}
 				categories={categories}
-				owners={[]}
+				owners={owners}
 			/>
 			{/* <h3 className="truncate px-2 text-base font-semibold tracking-tight">
 				{presetLabel(filterCriteria.datePreset)}
@@ -255,14 +269,15 @@ export function DashboardOverview() {
 			<ExpenseTable
 				items={items}
 				isLoading={isLoading}
-				sortBy={sortCriteria.field as SortField}
+				sortBy={effectiveSort.field as SortField}
 				order={
-					sortCriteria.direction === "ASC" ? "asc" : "desc"
+					effectiveSort.direction === "ASC" ? "asc" : "desc"
 				}
 				onSort={handleSort}
 				page={pagination.page}
 				totalPages={totalPages}
 				onPageChange={(p) => dispatch(setPage(p))}
+				isSection={effectiveSort.field === "paidAt"}
 			/>
 		</div>
 	);

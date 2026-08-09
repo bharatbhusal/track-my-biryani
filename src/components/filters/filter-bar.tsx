@@ -15,10 +15,8 @@ import { FilterDialog } from "./filter-dialog";
 import type { FilterOwner } from "./owner-filter-section";
 import {
 	ACTIONS,
-	defaultSort,
 	resolveSections,
 	type FilterVariant,
-	type LocalFilter,
 	type SectionFlags,
 } from "./variants";
 
@@ -28,7 +26,6 @@ type FilterBarProps = {
 	categories: CategoryItem[];
 	owners: FilterOwner[];
 	sections?: Partial<SectionFlags>;
-	local?: LocalFilter;
 };
 
 export function FilterBar({
@@ -37,13 +34,12 @@ export function FilterBar({
 	categories,
 	owners,
 	sections,
-	local,
 }: FilterBarProps) {
 	const dispatch = useAppDispatch();
 	const [open, setOpen] = useState(false);
 	const [confirmClear, setConfirmClear] = useState(false);
 	const clearAllFilters = ACTIONS[variant].clearAllFilters;
-	const canClear = local ? true : !!clearAllFilters;
+	const canClear = !!clearAllFilters;
 	const resolvedSections = resolveSections(variant, sections);
 
 	return (
@@ -64,12 +60,11 @@ export function FilterBar({
 					{resolvedSections.date ? (
 						<DateDropdown
 							variant={variant}
-							local={local}
 							onCustomOpen={() => setOpen(true)}
 						/>
 					) : null}
 					{resolvedSections.sort ? (
-						<SortDropdown variant={variant} local={local} />
+						<SortDropdown variant={variant} />
 					) : null}
 					<FilterChips
 						variant={variant}
@@ -77,7 +72,6 @@ export function FilterBar({
 						categories={categories}
 						owners={owners}
 						sections={sections}
-						local={local}
 						hideDate={resolvedSections.date}
 						hideSort={resolvedSections.sort}
 					/>
@@ -101,7 +95,6 @@ export function FilterBar({
 				open={open}
 				onClose={() => setOpen(false)}
 				sections={sections}
-				local={local}
 			/>
 
 			<ConfirmDialog
@@ -110,12 +103,7 @@ export function FilterBar({
 				subtitle="This resets every filter"
 				description="All selected buckets, categories, users, dates and sorting will be reset to their defaults."
 				onConfirm={() => {
-					if (local) {
-						local.onChange({
-							filterCriteria: { datePreset: "THIS_MONTH" },
-							sortCriteria: defaultSort(variant),
-						});
-					} else if (clearAllFilters) {
+					if (clearAllFilters) {
 						dispatch(clearAllFilters());
 					}
 					setConfirmClear(false);

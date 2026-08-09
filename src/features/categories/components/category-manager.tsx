@@ -5,7 +5,11 @@ import { FiPlus } from "react-icons/fi";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { FilterBar, useScopedOptions } from "@/components/filters";
+import {
+	FilterBar,
+	useScopedOptions,
+	sortForVariant,
+} from "@/components/filters";
 import {
 	useAppSelector,
 	useAppDispatch,
@@ -15,6 +19,7 @@ import { fetchAllBuckets } from "@/store/slices/bucketSlice";
 import { CategoryCard } from "@/features/categories/components/category-card";
 import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
 import { expensesApi } from "@/lib/api/expenses";
+import { categoryCriteria } from "@/lib/filters";
 import { formatCurrency } from "@/lib/format";
 import type { CategoryStatsSummary } from "@/types/analytics.types";
 
@@ -25,10 +30,10 @@ export function CategoryManager() {
 		useState<CategoryStatsSummary | null>(null);
 
 	const filterCriteria = useAppSelector(
-		(s) => s.categoriesFilter.filterCriteria,
+		(s) => s.filters.filterCriteria,
 	);
 	const sortCriteria = useAppSelector(
-		(s) => s.categoriesFilter.sortCriteria,
+		(s) => s.filters.sortCriteria,
 	);
 	const buckets = useAppSelector(
 		(s) => s.buckets.allBuckets,
@@ -58,7 +63,9 @@ export function CategoryManager() {
 	useEffect(() => {
 		let cancelled = false;
 		expensesApi
-			.getCategoryStatsSummary(filterCriteria)
+			.getCategoryStatsSummary(
+				categoryCriteria(filterCriteria),
+			)
 			.then((res) => {
 				if (!cancelled) setSummary(res);
 			})
@@ -71,17 +78,19 @@ export function CategoryManager() {
 	}, [filterCriteria]);
 
 	// ponytail: /categories/stats returns without an order, so amount sorting
-	// is applied here against the fetched page.
+	// is applied here against the fetched page, normalized to this page's own
+	// field set like every other consumer.
+	const effectiveSort = sortForVariant("categories", sortCriteria);
 	const items = useMemo(() => {
-		const dir = sortCriteria.direction === "ASC" ? 1 : -1;
+		const dir = effectiveSort.direction === "ASC" ? 1 : -1;
 		return categoriesWithStats
 			.slice()
 			.sort((a, b) =>
-				sortCriteria.field === "amount"
+				effectiveSort.field === "amount"
 					? (a.total - b.total) * dir
 					: a._id.localeCompare(b._id) * dir,
 			);
-	}, [categoriesWithStats, sortCriteria.field, sortCriteria.direction]);
+	}, [categoriesWithStats, effectiveSort.field, effectiveSort.direction]);
 
 	const summaryCells: Array<[string, string]> = [
 		["Total", formatCurrency(summary?.total ?? 0, currency)],
@@ -104,23 +113,18 @@ export function CategoryManager() {
 					search: false,
 				}}
 			/>
-			<Card className="flex gap-2 justify-between items-center">
-				<div className="flex flex-wrap gap-4">
-					{summaryCells.map(([label, value]) => (
-						<div key={label} className="min-w-2">
-							<p className="truncate text-xs text-[var(--color-muted)]">
-								{label}
-							</p>
-							<p className="truncate font-medium tabular-nums">
-								{value}
-							</p>
-						</div>
-					))}
-				</div>
-				<Button onClick={() => setDrawerOpen(true)}>
-					<FiPlus className="h-4 w-4" />
-				</Button>
-			</Card>
+			<div className="flex flex-wrap gap-2">
+				{summaryCells.map(([label, value]) => (
+					<Card key={label} className="min-w-[100px] flex-1">
+						<p className="truncate text-xs text-[var(--color-muted)]">
+							{label}
+						</p>
+						<p className="truncate font-medium tabular-nums">
+							{value}
+						</p>
+					</Card>
+				))}
+			</div>
 
 			<div className="grid grid-cols-1 gap-2">
 				{items.map((category) => {

@@ -19,14 +19,7 @@ import {
 	useAppDispatch,
 } from "@/store/hooks";
 import { shallowEqual } from "react-redux";
-import { DateRangeBar } from "@/components/charts/date-range-bar";
-import { FilterBar } from "@/components/filters";
-import type { FilterValue } from "@/components/filters";
-import type { GlobalDateRange } from "@/lib/date-range";
-import {
-	toIsoBounds,
-	toIsoBoundsForPreset,
-} from "@/lib/date-range";
+import { toIsoBounds } from "@/lib/date-range";
 import { expensesApi } from "@/lib/api/expenses";
 import { scopedExpenseRequest } from "@/lib/filters";
 import {
@@ -35,18 +28,12 @@ import {
 	updateExpense,
 } from "@/store/slices/expenseSlice";
 import { fetchAllBuckets } from "@/store/slices/bucketSlice";
-import { setDateRange } from "@/store/slices/uiSlice";
 import { ExpenseCard } from "@/features/expenses/components/expense-card";
 import { ExpenseTable } from "./expense-table";
 import type { ExpenseItem } from "@/types/expense.types";
 
 type ExpenseDetailViewProps = {
 	id: string;
-};
-
-const DEFAULT_RECENT_FILTER: FilterValue = {
-	filterCriteria: { datePreset: "ANY_TIME" },
-	sortCriteria: { field: "paidAt", direction: "DESC" },
 };
 
 export function ExpenseDetailView({
@@ -61,8 +48,6 @@ export function ExpenseDetailView({
 	>(null);
 	const [isMoving, setIsMoving] = useState(false);
 	const [recentPage, setRecentPage] = useState(1);
-	const [recentFilter, setRecentFilter] =
-		useState<FilterValue | null>(null);
 
 	const expense = useAppSelector(
 		(s) => s.expenses.currentExpense,
@@ -96,17 +81,12 @@ export function ExpenseDetailView({
 		}
 	}, [dispatch, buckets.length]);
 
-	// ponytail: untouched, the section follows the page-wide DateRangeBar; once
-	// the dialog is applied its range wins, ANY_TIME included.
-	const recentBounds = useMemo(() => {
-		if (!recentFilter) return toIsoBounds(localRange);
-		const { datePreset, customFrom, customTo } =
-			recentFilter.filterCriteria;
-		return (
-			toIsoBoundsForPreset(datePreset, customFrom, customTo) ??
-			{}
-		);
-	}, [recentFilter, localRange]);
+	// ponytail: the recent section follows the shared ui date range — the same
+	// filter state every FilterBar-backed view reads.
+	const recentBounds = useMemo(
+		() => toIsoBounds(localRange),
+		[localRange],
+	);
 
 	useEffect(() => {
 		if (!expense?.categoryId) return;
@@ -223,15 +203,6 @@ export function ExpenseDetailView({
 
 	return (
 		<div className="space-y-4">
-			{/* <DateRangeBar
-				title={expense.title}
-				range={localRange}
-				onRangeChange={(r: GlobalDateRange) => {
-					dispatch(setDateRange(r));
-					setRecentPage(1);
-				}}
-			/> */}
-
 			<ExpenseCard
 				expense={expense}
 				onEdit={() => router.push(`/expenses/${id}/edit`)}
@@ -283,27 +254,6 @@ export function ExpenseDetailView({
 				<p className="text-sm font-semibold px-1">
 					Recent in Category
 				</p>
-				{/* <FilterBar
-					variant="expenses"
-					buckets={[]}
-					categories={[]}
-					owners={[]}
-					sections={{
-						buckets: false,
-						categories: false,
-						owners: false,
-						additional: false,
-						search: false,
-						sort: false,
-					}}
-					local={{
-						value: recentFilter ?? DEFAULT_RECENT_FILTER,
-						onChange: (next) => {
-							setRecentFilter(next);
-							setRecentPage(1);
-						},
-					}}
-				/> */}
 				<ExpenseTable
 					items={recent.items}
 					isLoading={recent.loading}

@@ -37,6 +37,7 @@ type ExpenseTableProps = {
 	totalPages?: number;
 	onPageChange?: (page: number) => void;
 	emptyMessage?: string;
+	isSection?: boolean;
 };
 
 function groupByDate(
@@ -63,6 +64,7 @@ export function ExpenseTable({
 	totalPages,
 	onPageChange,
 	emptyMessage = "No expenses found",
+	isSection = false,
 }: Omit<ExpenseTableProps, "categoryMap">) {
 	const locale = useAppSelector((s) => s.ui.locale);
 	const timezone = useAppSelector((s) => s.ui.timezone);
@@ -88,10 +90,12 @@ export function ExpenseTable({
 			<div className="space-y-2 md:hidden">
 				{isLoading ? (
 					<>
-						<div className="flex justify-between">
-							<Skeleton className="h-5 w-16 self-center" />
-							<Skeleton className="h-5 w-16 self-center" />
-						</div>
+						{isSection && (
+							<div className="flex justify-between">
+								<Skeleton className="h-5 w-16 self-center" />
+								<Skeleton className="h-5 w-16 self-center" />
+							</div>
+						)}
 						{[...Array(3)].map((_, i) => (
 							<div
 								key={i}
@@ -105,10 +109,12 @@ export function ExpenseTable({
 								<Skeleton className="h-5 w-16 self-center" />
 							</div>
 						))}
-						<div className="flex justify-between">
-							<Skeleton className="h-5 w-16 self-center" />
-							<Skeleton className="h-5 w-16 self-center" />
-						</div>
+						{isSection && (
+							<div className="flex justify-between">
+								<Skeleton className="h-5 w-16 self-center" />
+								<Skeleton className="h-5 w-16 self-center" />
+							</div>
+						)}
 						{[...Array(3)].map((_, i) => (
 							<div
 								key={i}
@@ -128,32 +134,43 @@ export function ExpenseTable({
 						{emptyMessage}
 					</p>
 				) : (
-					Array.from(groupedItems.entries()).map(
-						([date, dayItems]) => {
-							const dayTotal = dayItems.reduce(
-								(sum, expense) => sum + expense.amount,
-								0,
-							);
-							return (
-								<div key={date} className="space-y-2">
-									<div className="flex items-center justify-between px-2 py-1">
-										<span className="text-xs font-medium text-[var(--color-muted)] uppercase tracking-wide">
-											{formatShortDate(date, locale)}
-										</span>
-										<span className="text-xs font-semibold text-[var(--color-muted)]">
-											{formatCurrency(dayTotal, currency)}
-										</span>
-									</div>
-									{dayItems.map((expense) => (
-										<ExpenseCard
-											key={expense._id}
-											expense={expense}
-										/>
-									))}
-								</div>
-							);
-						},
-					)
+					<>
+						{isSection ? (
+							Array.from(groupedItems.entries()).map(
+								([date, dayItems]) => {
+									const dayTotal = dayItems.reduce(
+										(sum, expense) => sum + expense.amount,
+										0,
+									);
+									return (
+										<div key={date} className="space-y-2">
+											<div className="flex items-center justify-between px-2 py-1">
+												<span className="text-xs font-medium text-[var(--color-muted)] uppercase tracking-wide">
+													{formatShortDate(date, locale)}
+												</span>
+												<span className="text-xs font-semibold text-[var(--color-muted)]">
+													{formatCurrency(dayTotal, currency)}
+												</span>
+											</div>
+
+											{dayItems.map((expense) => (
+												<ExpenseCard
+													key={expense._id}
+													expense={expense}
+												/>
+											))}
+										</div>
+									);
+								},
+							)
+						) : (
+							<>
+								{items.map((expense) => (
+									<ExpenseCard key={expense._id} expense={expense} />
+								))}
+							</>
+						)}
+					</>
 				)}
 			</div>
 
@@ -280,7 +297,7 @@ export function ExpenseTable({
 				totalPages !== undefined &&
 				totalPages > 1 &&
 				onPageChange && (
-					<div className="mt-3 flex items-center justify-center gap-3 text-sm">
+					<div className="mt-3 flex items-center justify-between gap-3 text-sm">
 						<Button
 							variant="outline"
 							size="icon"

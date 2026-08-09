@@ -1,7 +1,8 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type {
-	AuditFilterCriteria,
 	BucketPreset,
+	CategoryPreset,
+	ExpenseFilterCriteria,
 	FilterDatePreset,
 	OwnerPreset,
 	PaginationCriteria,
@@ -9,26 +10,31 @@ import type {
 	SortDirection,
 } from "@/types/search.types";
 
-type LogsFilterState = {
-	filterCriteria: AuditFilterCriteria;
+type FiltersState = {
+	filterCriteria: ExpenseFilterCriteria;
 	sortCriteria: SortCriteria;
 	pagination: PaginationCriteria;
 };
 
-const initialState: LogsFilterState = {
+// ponytail: one shared filter state for every page — the criteria type is the
+// expenses superset; category/audit/bucket endpoints get their subset via
+// categoryCriteria/auditCriteria/bucketCriteria at the request boundary.
+const initialState: FiltersState = {
 	filterCriteria: {
-		bucketPreset: "ALL",
+		bucketPreset: "PERSONAL",
 		bucketIds: [],
-		ownerPreset: "ALL",
+		categoryPreset: "ALL",
+		categoryIds: [],
+		ownerPreset: "ME",
 		ownerIds: [],
 		datePreset: "THIS_MONTH",
 	},
-	sortCriteria: { field: "timestamp", direction: "DESC" },
-	pagination: { page: 1, pageSize: 30 },
+	sortCriteria: { field: "paidAt", direction: "DESC" },
+	pagination: { page: 1, pageSize: 20 },
 };
 
-const logsFilterSlice = createSlice({
-	name: "logsFilter",
+const filtersSlice = createSlice({
+	name: "filters",
 	initialState,
 	reducers: {
 		setBucketFilter(
@@ -37,6 +43,14 @@ const logsFilterSlice = createSlice({
 		) {
 			state.filterCriteria.bucketPreset = action.payload.preset;
 			state.filterCriteria.bucketIds = action.payload.ids;
+			state.pagination.page = 1;
+		},
+		setCategoryFilter(
+			state,
+			action: PayloadAction<{ preset: CategoryPreset; ids: string[] }>,
+		) {
+			state.filterCriteria.categoryPreset = action.payload.preset;
+			state.filterCriteria.categoryIds = action.payload.ids;
 			state.pagination.page = 1;
 		},
 		setOwnerFilter(
@@ -70,13 +84,30 @@ const logsFilterSlice = createSlice({
 		setPage(state, action: PayloadAction<number>) {
 			state.pagination.page = action.payload;
 		},
+		setHasNotes(state, action: PayloadAction<boolean | undefined>) {
+			state.filterCriteria.hasNotes = action.payload;
+			state.pagination.page = 1;
+		},
+		setHasLocation(state, action: PayloadAction<boolean | undefined>) {
+			state.filterCriteria.hasLocation = action.payload;
+			state.pagination.page = 1;
+		},
+		setSearch(state, action: PayloadAction<string | undefined>) {
+			state.filterCriteria.q = action.payload;
+			state.pagination.page = 1;
+		},
 		clearBucketFilter(state) {
-			state.filterCriteria.bucketPreset = "ALL";
+			state.filterCriteria.bucketPreset = "PERSONAL";
 			state.filterCriteria.bucketIds = [];
 			state.pagination.page = 1;
 		},
+		clearCategoryFilter(state) {
+			state.filterCriteria.categoryPreset = "ALL";
+			state.filterCriteria.categoryIds = [];
+			state.pagination.page = 1;
+		},
 		clearOwnerFilter(state) {
-			state.filterCriteria.ownerPreset = "ALL";
+			state.filterCriteria.ownerPreset = "ME";
 			state.filterCriteria.ownerIds = [];
 			state.pagination.page = 1;
 		},
@@ -87,7 +118,12 @@ const logsFilterSlice = createSlice({
 			state.pagination.page = 1;
 		},
 		clearSort(state) {
-			state.sortCriteria = { field: "timestamp", direction: "DESC" };
+			state.sortCriteria = { field: "paidAt", direction: "DESC" };
+			state.pagination.page = 1;
+		},
+		clearAdditionalFilters(state) {
+			state.filterCriteria.hasNotes = undefined;
+			state.filterCriteria.hasLocation = undefined;
 			state.pagination.page = 1;
 		},
 		clearAllFilters() {
@@ -98,14 +134,20 @@ const logsFilterSlice = createSlice({
 
 export const {
 	setBucketFilter,
+	setCategoryFilter,
 	setOwnerFilter,
 	setDateFilter,
 	setSort,
 	setPage,
+	setHasNotes,
+	setHasLocation,
+	setSearch,
 	clearBucketFilter,
+	clearCategoryFilter,
 	clearOwnerFilter,
 	clearDateFilter,
 	clearSort,
+	clearAdditionalFilters,
 	clearAllFilters,
-} = logsFilterSlice.actions;
-export default logsFilterSlice.reducer;
+} = filtersSlice.actions;
+export default filtersSlice.reducer;

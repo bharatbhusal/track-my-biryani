@@ -20,10 +20,10 @@ import {
 	VARIANT_TITLE,
 	defaultSort,
 	resolveSections,
+	sortForVariant,
 	type DraftCriteria,
 	type FilterSliceState,
 	type FilterVariant,
-	type LocalFilter,
 	type SectionFlags,
 } from "./variants";
 import type { SortCriteria } from "@/types/search.types";
@@ -33,7 +33,6 @@ type FilterDialogProps = {
 	open: boolean;
 	onClose: () => void;
 	sections?: Partial<SectionFlags>;
-	local?: LocalFilter;
 };
 
 export function FilterDialog({
@@ -41,7 +40,6 @@ export function FilterDialog({
 	open,
 	onClose,
 	sections: sectionsOverride,
-	local,
 }: FilterDialogProps) {
 	const dispatch = useAppDispatch();
 	const actions = ACTIONS[variant];
@@ -53,7 +51,7 @@ export function FilterDialog({
 				SLICE_KEY[variant]
 			],
 	);
-	const state = local?.value ?? sliceState;
+	const state = sliceState;
 	const buckets = useAppSelector((s) => s.buckets.allBuckets);
 
 	const [confirmClear, setConfirmClear] = useState(false);
@@ -64,13 +62,13 @@ export function FilterDialog({
 	const [draft, setDraft] = useState({
 		open,
 		criteria: state.filterCriteria,
-		sort: state.sortCriteria,
+		sort: sortForVariant(variant, state.sortCriteria),
 	});
 	if (draft.open !== open) {
 		setDraft({
 			open,
 			criteria: state.filterCriteria,
-			sort: state.sortCriteria,
+			sort: sortForVariant(variant, state.sortCriteria),
 		});
 	}
 	const { criteria, sort } = draft;
@@ -91,11 +89,6 @@ export function FilterDialog({
 		setCriteria((c) => ({ ...c, ...next }));
 
 	const apply = () => {
-		if (local) {
-			local.onChange({ filterCriteria: criteria, sortCriteria: sort });
-			onClose();
-			return;
-		}
 		if (sections.buckets && actions.setBucketFilter) {
 			dispatch(
 				actions.setBucketFilter({
@@ -143,12 +136,7 @@ export function FilterDialog({
 	};
 
 	const clearAll = () => {
-		if (local) {
-			local.onChange({
-				filterCriteria: { datePreset: "ANY_TIME" },
-				sortCriteria: defaultSort(variant),
-			});
-		} else if (actions.clearAllFilters) {
+		if (actions.clearAllFilters) {
 			dispatch(actions.clearAllFilters());
 		}
 		setConfirmClear(false);

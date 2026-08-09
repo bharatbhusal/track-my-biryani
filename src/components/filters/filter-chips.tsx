@@ -13,12 +13,11 @@ import { customRangeLabel } from "./section-summary";
 import {
 	ACTIONS,
 	SLICE_KEY,
-	defaultSort,
 	resolveSections,
 	sortFieldLabel,
+	sortForVariant,
 	type FilterSliceState,
 	type FilterVariant,
-	type LocalFilter,
 	type SectionFlags,
 } from "./variants";
 
@@ -28,7 +27,6 @@ type FilterChipsProps = {
 	categories: CategoryItem[];
 	owners: FilterOwner[];
 	sections?: Partial<SectionFlags>;
-	local?: LocalFilter;
 	hideDate?: boolean;
 	hideSort?: boolean;
 };
@@ -39,7 +37,6 @@ export function FilterChips({
 	categories,
 	owners,
 	sections: sectionsOverride,
-	local,
 	hideDate,
 	hideSort,
 }: FilterChipsProps) {
@@ -56,15 +53,7 @@ export function FilterChips({
 				SLICE_KEY[variant]
 			],
 	);
-	const { filterCriteria, sortCriteria } =
-		local?.value ?? sliceState;
-
-	const patchLocal = (next: Partial<FilterSliceState>) =>
-		local?.onChange({
-			filterCriteria,
-			sortCriteria,
-			...next,
-		});
+	const { filterCriteria, sortCriteria } = sliceState;
 
 	const chips: React.ReactNode[] = [];
 
@@ -106,19 +95,9 @@ export function FilterChips({
 		datePreset !== "ANY_TIME"
 	) {
 		const isCustom = datePreset === "CUSTOM";
-		const clearDate = local
-			? () =>
-					patchLocal({
-						filterCriteria: {
-							...filterCriteria,
-							datePreset: "ANY_TIME",
-							customFrom: undefined,
-							customTo: undefined,
-						},
-					})
-			: actions.clearDateFilter
-				? () => dispatch(actions.clearDateFilter!())
-				: undefined;
+		const clearDate = actions.clearDateFilter
+			? () => dispatch(actions.clearDateFilter!())
+			: undefined;
 		chips.push(
 			<Chip
 				key="date"
@@ -249,20 +228,18 @@ export function FilterChips({
 	}
 
 	if (sections.sort && !hideSort && sortCriteria?.field) {
+		const effectiveField = sortForVariant(variant, sortCriteria).field;
 		chips.push(
 			<Chip
 				key="sort"
 				variant="muted"
-				label={`${sortFieldLabel(variant, sortCriteria.field)} ${
+				label={`${sortFieldLabel(variant, effectiveField)} ${
 					sortCriteria.direction === "ASC" ? "↑" : "↓"
 				}`}
 				onRemove={
-					local
-						? () =>
-								patchLocal({ sortCriteria: defaultSort(variant) })
-						: actions.clearSort
-							? () => dispatch(actions.clearSort!())
-							: undefined
+					actions.clearSort
+						? () => dispatch(actions.clearSort!())
+						: undefined
 				}
 			/>,
 		);
