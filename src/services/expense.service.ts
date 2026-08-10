@@ -1,12 +1,14 @@
 import { AppError } from "@/lib/errors";
 import { resolveBucketContext } from "@/lib/bucket";
 import {
+	chartOverviewSchema,
 	distributionSchema,
 	expenseFiltersSchema,
 	expenseSchema,
 	expenseSearchSchema,
 } from "@/lib/validators";
 import { toIsoBoundsForPreset } from "@/lib/date-range";
+import { buildExpenseQuery } from "@/lib/query-builders";
 import { accessibleBucketIds } from "@/lib/query-builders/membership";
 import {
 	createExpense,
@@ -283,31 +285,52 @@ export async function getContributionService(
 	return data;
 }
 
+// ponytail: overview/chart share the same parse + query-build step; both
+// aggregate on the full filter criteria (bucket/category/owner/date/search/…)
+// so the cards and chart always match what the table shows.
+async function chartOverviewContext(
+	userId: string,
+	body: unknown,
+): Promise<{
+	match: Record<string, unknown>;
+	from: Date;
+	to: Date;
+}> {
+	const parsed = chartOverviewSchema.parse(body ?? {});
+	const filters =
+		parsed.filterCriteria ??
+		defaultExpenseSearchRequest().filterCriteria;
+
+	const { query } = await buildExpenseQuery(userId, {
+		filterCriteria: filters,
+		sortCriteria: { field: "paidAt", direction: "DESC" },
+		pagination: { page: 1, pageSize: 1 },
+	});
+
+	const bounds = toIsoBoundsForPreset(
+		filters.datePreset,
+		filters.customFrom,
+		filters.customTo,
+	);
+	return {
+		match: query,
+		from: bounds?.from ? new Date(bounds.from) : new Date(0),
+		to: bounds?.to ? new Date(bounds.to) : new Date(),
+	};
+}
+
 export async function getExpenseOverviewStatsService(
 	userId: string,
-	from: string,
-	to: string,
-	bucketId?: string | null,
+	body: unknown,
 ) {
-	if (!from || !to) {
-		throw new AppError(
-			"from and to query params are required",
-			400,
-		);
-	}
-	const ctx = await resolveBucketContext(userId, bucketId);
-	const fromDate = new Date(from);
-	const toDate = new Date(to);
-	const { total } = await getExpenseOverviewStats(
+	const { match, from, to } = await chartOverviewContext(
 		userId,
-		fromDate,
-		toDate,
-		ctx.bucketId,
+		body,
 	);
+	const { total } = await getExpenseOverviewStats(match);
 
 	const dayDiff = Math.ceil(
-		(toDate.getTime() - fromDate.getTime()) /
-			(1000 * 60 * 60 * 24),
+		(to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24),
 	);
 
 	let periodCount: number;
@@ -317,10 +340,10 @@ export async function getExpenseOverviewStatsService(
 		perPeriodLabel = "spend_per_day";
 	} else {
 		periodCount =
-			toDate.getMonth() -
-			fromDate.getMonth() +
+			to.getMonth() -
+			from.getMonth() +
 			1 +
-			(toDate.getFullYear() - fromDate.getFullYear()) * 12;
+			(to.getFullYear() - from.getFullYear()) * 12;
 		perPeriodLabel = "spend_per_month";
 	}
 
@@ -348,25 +371,13 @@ export async function getExpenseOverviewStatsService(
 
 export async function getChartDataService(
 	userId: string,
-	from: string,
-	to: string,
-	categoryId?: string,
-	bucketId?: string | null,
+	body: unknown,
 ) {
-	if (!from || !to) {
-		throw new AppError(
-			"from and to query params are required",
-			400,
-		);
-	}
-	const ctx = await resolveBucketContext(userId, bucketId);
-	return getChartData(
+	const { match, from, to } = await chartOverviewContext(
 		userId,
-		new Date(from),
-		new Date(to),
-		ctx.bucketId,
-		categoryId || undefined,
+		body,
 	);
+	return getChartData(match, from, to);
 }
 
 function defaultExpenseSearchRequest(): ExpenseSearchRequest {

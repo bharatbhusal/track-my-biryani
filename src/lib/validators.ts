@@ -177,6 +177,8 @@ const bucketFilterSchema = z.object({
 	datePreset: datePresetSchema.default("THIS_MONTH"),
 	customFrom: z.string().optional(),
 	customTo: z.string().optional(),
+	ownerPreset: ownerPresetSchema.optional(),
+	ownerIds: z.array(z.string()).default([]),
 });
 
 export const expenseSearchSchema = z.object({
@@ -204,6 +206,10 @@ export const auditSearchSchema = z.object({
 });
 
 export const categoryDistributionSchema = z.object({
+	filterCriteria: expenseFilterSchema.optional(),
+});
+
+export const chartOverviewSchema = z.object({
 	filterCriteria: expenseFilterSchema.optional(),
 });
 

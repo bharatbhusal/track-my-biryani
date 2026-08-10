@@ -16,7 +16,7 @@ import {
 	acceptInvite,
 	declineInvite,
 } from "@/store/slices/bucketSlice";
-import { bucketErrorMessage } from "./bucket-settings";
+import { bucketErrorMessage } from "@/features/buckets/components/bucket-form";
 
 export function InvitationsSection() {
 	const dispatch = useAppDispatch();
@@ -74,7 +74,7 @@ export function InvitationsSection() {
 	}
 
 	return (
-		<section className="space-y-3">
+		<section className="space-y-2">
 			<div>
 				<h2 className="text-sm font-semibold tracking-tight">
 					Invitations

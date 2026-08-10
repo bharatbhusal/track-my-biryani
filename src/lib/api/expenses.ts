@@ -68,16 +68,16 @@ export const expensesApi = {
 			method: "DELETE",
 		}),
 
-	getOverviewStats: (body: { from: string; to: string }) =>
+	getOverviewStats: (body: {
+		filterCriteria: ExpenseFilterCriteria;
+	}) =>
 		apiRequest<DashboardCard[]>("/expenses/overview", {
 			method: "POST",
 			body,
 		}),
 
 	getChartData: (body: {
-		from: string;
-		to: string;
-		categoryIds?: string[];
+		filterCriteria: ExpenseFilterCriteria;
 	}) =>
 		apiRequest<ChartData>("/expenses/chart", {
 			method: "POST",

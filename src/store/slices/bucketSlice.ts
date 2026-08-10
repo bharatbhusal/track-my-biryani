@@ -4,15 +4,16 @@ import {
 	isAnyOf,
 } from "@reduxjs/toolkit";
 import { bucketsApi } from "@/lib/api/buckets";
-import { bucketCriteria } from "@/lib/filters";
 import { sortForVariant } from "@/components/filters/variants";
+import { bucketCriteria } from "@/lib/filters";
 import type { RootState } from "@/store";
-import type { BucketSummary } from "@/types/bucket.types";
+import type { BucketDetail, BucketSummary } from "@/types/bucket.types";
 
 type BucketState = {
 	buckets: BucketSummary[];
 	allBuckets: BucketSummary[];
 	invitations: BucketSummary[];
+	currentBucket: BucketDetail | null;
 	loading: boolean;
 	error: string | null;
 };
@@ -21,6 +22,7 @@ const initialState: BucketState = {
 	buckets: [],
 	allBuckets: [],
 	invitations: [],
+	currentBucket: null,
 	loading: false,
 	error: null,
 };
@@ -30,6 +32,9 @@ export const fetchBuckets = createAsyncThunk(
 	async (_, { getState }) => {
 		const state = getState() as RootState;
 		const result = await bucketsApi.searchBuckets({
+			// ponytail: the bucket list ignores date/user filters (all member
+			// buckets always show); only the per-bucket expense totals respect
+			// them, applied server-side.
 			filterCriteria: bucketCriteria(state.filters.filterCriteria),
 			sortCriteria: sortForVariant(
 				"buckets",
@@ -51,6 +56,11 @@ export const fetchAllBuckets = createAsyncThunk(
 				pagination: { page: 1, pageSize: 100 },
 			})
 			.then((r) => r.items),
+);
+
+export const fetchBucketDetail = createAsyncThunk(
+	"buckets/fetchDetail",
+	async (id: string) => bucketsApi.getBucket(id),
 );
 
 export const fetchInvitations = createAsyncThunk(
@@ -158,6 +168,7 @@ export const revokeInvite = createAsyncThunk(
 const bucketThunks = [
 	fetchBuckets,
 	fetchInvitations,
+	fetchBucketDetail,
 	createBucket,
 	updateBucket,
 	deleteBucket,
@@ -174,6 +185,9 @@ const bucketSlice = createSlice({
 	reducers: {
 		clearBucketError(state) {
 			state.error = null;
+		},
+		resetBucketDetail(state) {
+			state.currentBucket = null;
 		},
 	},
 	extraReducers: (builder) => {
@@ -204,6 +218,14 @@ const bucketSlice = createSlice({
 					state.invitations = action.payload;
 				},
 			)
+			.addCase(fetchBucketDetail.pending, (state) => {
+				state.loading = true;
+				state.error = null;
+			})
+			.addCase(fetchBucketDetail.fulfilled, (state, action) => {
+				state.loading = false;
+				state.currentBucket = action.payload;
+			})
 			.addMatcher(
 				isAnyOf(...bucketThunks.map((t) => t.rejected)),
 				(state, action) => {
@@ -216,5 +238,6 @@ const bucketSlice = createSlice({
 	},
 });
 
-export const { clearBucketError } = bucketSlice.actions;
+export const { clearBucketError, resetBucketDetail } =
+	bucketSlice.actions;
 export default bucketSlice.reducer;

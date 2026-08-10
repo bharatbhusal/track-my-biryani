@@ -48,6 +48,8 @@ export function bucketCriteria(
 		datePreset: c.datePreset,
 		customFrom: c.customFrom,
 		customTo: c.customTo,
+		ownerPreset: c.ownerPreset,
+		ownerIds: c.ownerIds,
 	};
 }
 

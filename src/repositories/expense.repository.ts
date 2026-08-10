@@ -749,6 +749,9 @@ export async function getFilteredCategoryDistribution(
 
 export async function getExpenseStatsForCategories(
 	categoryIds: Types.ObjectId[],
+	from: Date,
+	to: Date,
+	bucketId?: Record<string, unknown>,
 ): Promise<{
 	total: number;
 	min: number;
@@ -756,8 +759,14 @@ export async function getExpenseStatsForCategories(
 	avg: number;
 	expenseCount: number;
 }> {
+	const match: Record<string, unknown> = {
+		categoryId: { $in: categoryIds },
+		paidAt: { $gte: from, $lte: to },
+	};
+	if (bucketId) match.bucketId = bucketId;
+
 	const [result] = await ExpenseModel.aggregate<SummaryBucket>([
-		{ $match: { categoryId: { $in: categoryIds } } },
+		{ $match: match },
 		{
 			$group: {
 				_id: null,
@@ -780,16 +789,8 @@ export async function getExpenseStatsForCategories(
 }
 
 export async function getExpenseOverviewStats(
-	userId: string,
-	from: Date,
-	to: Date,
-	bucketId: string,
+	match: Record<string, unknown>,
 ) {
-	const match: Record<string, unknown> = {
-		bucketId: new Types.ObjectId(bucketId),
-		paidAt: { $gte: from, $lte: to },
-	};
-
 	const [result] = await ExpenseModel.aggregate([
 		{ $match: match },
 		{
@@ -808,20 +809,10 @@ export async function getExpenseOverviewStats(
 }
 
 export async function getChartData(
-	userId: string,
+	match: Record<string, unknown>,
 	from: Date,
 	to: Date,
-	bucketId: string,
-	categoryId?: string,
 ) {
-	const match: Record<string, unknown> = {
-		bucketId: new Types.ObjectId(bucketId),
-		paidAt: { $gte: from, $lte: to },
-	};
-	if (categoryId) {
-		match.categoryId = new Types.ObjectId(categoryId);
-	}
-
 	const dayDiff = Math.ceil(
 		(to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24),
 	);
@@ -853,9 +844,7 @@ export async function getChartData(
 			},
 			{ $sort: { "_id.period": 1 } },
 		]),
-		CategoryModel.find(
-			bucketId ? { bucketId } : { userId, bucketId: null },
-		).lean(),
+		CategoryModel.find({ bucketId: match.bucketId }).lean(),
 	]);
 
 	const nameById = new Map(

@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { FiPlus } from "react-icons/fi";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
 	FilterBar,
 	useScopedOptions,
@@ -28,10 +27,20 @@ export function CategoryManager() {
 	const [drawerOpen, setDrawerOpen] = useState(false);
 	const [summary, setSummary] =
 		useState<CategoryStatsSummary | null>(null);
+	const [summaryLoading, setSummaryLoading] = useState(true);
 
 	const filterCriteria = useAppSelector(
 		(s) => s.filters.filterCriteria,
 	);
+
+	// ponytail: refetching for new criteria shows the skeleton again — the
+	// render-time comparison keeps the loading flip out of an effect.
+	const [loadedFor, setLoadedFor] = useState(filterCriteria);
+	if (loadedFor !== filterCriteria) {
+		setLoadedFor(filterCriteria);
+		setSummaryLoading(true);
+	}
+
 	const sortCriteria = useAppSelector(
 		(s) => s.filters.sortCriteria,
 	);
@@ -67,10 +76,16 @@ export function CategoryManager() {
 				categoryCriteria(filterCriteria),
 			)
 			.then((res) => {
-				if (!cancelled) setSummary(res);
+				if (!cancelled) {
+					setSummary(res);
+					setSummaryLoading(false);
+				}
 			})
 			.catch(() => {
-				if (!cancelled) setSummary(null);
+				if (!cancelled) {
+					setSummary(null);
+					setSummaryLoading(false);
+				}
 			});
 		return () => {
 			cancelled = true;
@@ -114,16 +129,31 @@ export function CategoryManager() {
 				}}
 			/>
 			<div className="flex flex-wrap gap-2">
-				{summaryCells.map(([label, value]) => (
-					<Card key={label} className="min-w-[100px] flex-1">
-						<p className="truncate text-xs text-[var(--color-muted)]">
-							{label}
-						</p>
-						<p className="truncate font-medium tabular-nums">
-							{value}
-						</p>
-					</Card>
-				))}
+				{summaryLoading
+					? Array.from({ length: summaryCells.length }).map(
+							(_, i) => (
+								<Card
+									key={i}
+									className="min-w-[100px] flex-1"
+								>
+									<Skeleton className="mb-1 h-4 w-16" />
+									<Skeleton className="h-5 w-24" />
+								</Card>
+							),
+						)
+					: summaryCells.map(([label, value]) => (
+							<Card
+								key={label}
+								className="min-w-[100px] flex-1"
+							>
+								<p className="truncate text-xs text-[var(--color-muted)]">
+									{label}
+								</p>
+								<p className="truncate font-medium tabular-nums">
+									{value}
+								</p>
+							</Card>
+						))}
 			</div>
 
 			<div className="grid grid-cols-1 gap-2">

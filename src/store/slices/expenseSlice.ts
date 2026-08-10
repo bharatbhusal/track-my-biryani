@@ -138,50 +138,21 @@ export const deleteExpense = createAsyncThunk(
 
 export const fetchOverviewStats = createAsyncThunk(
 	"expenses/fetchOverviewStats",
-	async ({ from, to }: { from: string; to: string }) => {
-		return expensesApi.getOverviewStats({ from, to });
+	async (_: void, { getState }) => {
+		const state = getState() as RootState;
+		return expensesApi.getOverviewStats({
+			filterCriteria: state.filters.filterCriteria,
+		});
 	},
 );
 
 export const fetchChartData = createAsyncThunk(
 	"expenses/fetchChartData",
-	async (
-		{
-			from,
-			to,
-			categoryIds,
-		}: {
-			from: string;
-			to: string;
-			categoryIds?: string[];
-		},
-		{ getState },
-	) => {
-		const data = await expensesApi.getChartData({ from, to });
-		if (!categoryIds || categoryIds.length === 0) return data;
-
-		// ponytail: backend chart endpoint only takes a single categoryId, so
-		// fetch the full set and narrow to the selected categories client-side.
-		const categories = (getState() as RootState).categories.items;
-		const names = new Set(
-			categories
-				.filter((c) => categoryIds.includes(c._id))
-				.map((c) => c.name),
-		);
-		if (names.size === 0) return data;
-
-		return {
-			series: data.series.map((point) => {
-				const filtered: Record<string, string | number> = { name: point.name };
-				for (const [key, val] of Object.entries(point)) {
-					if (key !== "name" && names.has(key)) filtered[key] = val;
-				}
-				return filtered;
-			}),
-			categoryColors: Object.fromEntries(
-				Object.entries(data.categoryColors).filter(([name]) => names.has(name)),
-			),
-		};
+	async (_: void, { getState }) => {
+		const state = getState() as RootState;
+		return expensesApi.getChartData({
+			filterCriteria: state.filters.filterCriteria,
+		});
 	},
 );
 

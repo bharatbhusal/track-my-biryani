@@ -13,6 +13,7 @@ import {
 	expenseExistsInBucket,
 	findBucketById,
 	findUsersByIds,
+	getBucketExpenseStats,
 	listBucketsForMember,
 	listBucketsForPendingMember,
 	pullBucketMember,
@@ -111,7 +112,15 @@ export async function getBucketService(
 			"NOT_A_MEMBER",
 		);
 	}
-	return toDetail(bucket);
+	const detail = await toDetail(bucket);
+	const stats = await getBucketExpenseStats(bucketId);
+	return {
+		...detail,
+		role: member.role,
+		status: member.status,
+		totalAmount: stats.total,
+		expenseCount: stats.count,
+	};
 }
 
 export async function updateBucketService(
@@ -421,11 +430,14 @@ async function toDetail(
 		users.map((u) => [u._id.toString(), u]),
 	);
 
+	const owner = bucket.members.find((m) => m.role === "owner");
+
 	return {
 		_id: bucket._id.toString(),
 		name: bucket.name,
 		icon: bucket.icon,
 		ownerId: bucket.ownerId.toString(),
+		ownerName: owner ? userById.get(owner.userId.toString())?.name : undefined,
 		isPersonal: bucket.isPersonal,
 		memberCount: bucket.members.length,
 		members: bucket.members.map((m) => {

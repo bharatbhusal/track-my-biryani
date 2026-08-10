@@ -66,6 +66,8 @@ export interface BucketFilterCriteria {
 	datePreset: FilterDatePreset;
 	customFrom?: string;
 	customTo?: string;
+	ownerPreset?: OwnerPreset;
+	ownerIds?: string[];
 }
 
 export type SearchRequest<TFilter> = {

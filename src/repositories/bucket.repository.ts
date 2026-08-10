@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 
 import { buildBucketQuery } from "@/lib/query-builders";
+import { toIsoBoundsForPreset } from "@/lib/date-range";
 import { BucketModel } from "@/models/Bucket";
 import { ExpenseModel } from "@/models/Expense";
 import { UserModel } from "@/models/User";
@@ -165,6 +166,26 @@ export async function expenseExistsInBucket(bucketId: string) {
 	);
 }
 
+export async function getBucketExpenseStats(bucketId: string) {
+	if (!Types.ObjectId.isValid(bucketId)) {
+		return { total: 0, count: 0 };
+	}
+	const [result] = await ExpenseModel.aggregate([
+		{ $match: { bucketId: new Types.ObjectId(bucketId) } },
+		{
+			$group: {
+				_id: null,
+				total: { $sum: "$amount" },
+				count: { $sum: 1 },
+			},
+		},
+	]);
+	return {
+		total: result?.total ?? 0,
+		count: result?.count ?? 0,
+	};
+}
+
 export async function findUsersByIds(ids: string[]) {
 	return UserModel.find({ _id: { $in: ids } })
 		.select("name username")
@@ -180,6 +201,8 @@ export async function searchBuckets(
 		request,
 	);
 
+	const expenseMatch = buildExpenseMatch(userId, request.filterCriteria);
+
 	const [items, total] = await Promise.all([
 		BucketModel.aggregate([
 			{ $match: query },
@@ -187,17 +210,36 @@ export async function searchBuckets(
 			{
 				$lookup: {
 					from: "expenses",
-					localField: "_id",
-					foreignField: "bucketId",
+					let: { bucketId: "$_id" },
+					pipeline: [
+						{
+							$match: {
+								$expr: {
+									$eq: ["$bucketId", "$$bucketId"],
+								},
+								...expenseMatch,
+							},
+						},
+					],
 					as: "bucketExpenses",
+				},
+			},
+			{
+				$lookup: {
+					from: "users",
+					localField: "ownerId",
+					foreignField: "_id",
+					as: "ownerUser",
 				},
 			},
 			{
 				$addFields: {
 					totalAmount: { $sum: "$bucketExpenses.amount" },
+					expenseCount: { $size: "$bucketExpenses" },
+					ownerName: { $arrayElemAt: ["$ownerUser.name", 0] },
 				},
 			},
-			{ $project: { bucketExpenses: 0 } },
+			{ $project: { bucketExpenses: 0, ownerUser: 0 } },
 			{ $sort: sort },
 			{ $skip: skip },
 			{ $limit: limit },
@@ -210,21 +252,51 @@ export async function searchBuckets(
 			const member = bucket.members.find(
 				(m: BucketMemberDoc) => m.userId.toString() === userId,
 			);
-			return {
-				_id: bucket._id.toString(),
-				name: bucket.name,
-				icon: bucket.icon,
-				ownerId: bucket.ownerId.toString(),
-				isPersonal: bucket.isPersonal,
-				memberCount: bucket.memberCount,
-				totalAmount: bucket.totalAmount,
-				createdAt: bucket.createdAt?.toISOString(),
-				role: (member?.role ?? "member") as "owner" | "member",
-				status: (member?.status ?? "pending") as "pending" | "accepted",
-			} satisfies BucketSummary;
-		}),
-		total,
-		page: request.pagination.page,
-		totalPages: Math.ceil(total / request.pagination.pageSize) || 1,
-	};
+		return {
+			_id: bucket._id.toString(),
+			name: bucket.name,
+			icon: bucket.icon,
+			ownerId: bucket.ownerId.toString(),
+			ownerName: bucket.ownerName,
+			isPersonal: bucket.isPersonal,
+			memberCount: bucket.memberCount,
+			totalAmount: bucket.totalAmount,
+			expenseCount: bucket.expenseCount,
+			createdAt: bucket.createdAt?.toISOString(),
+			role: (member?.role ?? "member") as "owner" | "member",
+			status: (member?.status ?? "pending") as "pending" | "accepted",
+		} satisfies BucketSummary;
+	}),
+	total,
+	page: request.pagination.page,
+	totalPages: Math.ceil(total / request.pagination.pageSize) || 1,
+};
+}
+
+// ponytail: the bucket list itself ignores the date/user filters (all member
+// buckets always show); only the per-bucket expense totals respect them.
+function buildExpenseMatch(
+	userId: string,
+	filters: BucketSearchRequest["filterCriteria"],
+): Record<string, unknown> {
+	const match: Record<string, unknown> = {};
+	if (filters.ownerPreset === "ME") {
+		match.userId = new Types.ObjectId(userId);
+	} else if (filters.ownerPreset === "MULTIPLE") {
+		match.userId = {
+			$in: (filters.ownerIds ?? []).map((id) => new Types.ObjectId(id)),
+		};
+	}
+	const bounds = toIsoBoundsForPreset(
+		filters.datePreset,
+		filters.customFrom,
+		filters.customTo,
+	);
+	if (bounds) {
+		match.paidAt = {
+			...(bounds.from ? { $gte: new Date(bounds.from) } : {}),
+			...(bounds.to ? { $lte: new Date(bounds.to) } : {}),
+		};
+	}
+	return match;
 }

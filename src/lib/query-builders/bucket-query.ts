@@ -1,6 +1,5 @@
 import { Types } from "mongoose";
 
-import { toIsoBoundsForPreset } from "@/lib/date-range";
 import type { BucketSearchRequest } from "@/types/search.types";
 
 type MongoFilter = Record<string, unknown>;
@@ -15,7 +14,6 @@ export async function buildBucketQuery(
 	skip: number;
 	limit: number;
 }> {
-	const filters = request.filterCriteria;
 	const query: MongoFilter = {
 		members: {
 			$elemMatch: {
@@ -24,18 +22,6 @@ export async function buildBucketQuery(
 			},
 		},
 	};
-
-	const bounds = toIsoBoundsForPreset(
-		filters.datePreset,
-		filters.customFrom,
-		filters.customTo,
-	);
-	if (bounds) {
-		query.createdAt = {
-			...(bounds.from ? { $gte: new Date(bounds.from) } : {}),
-			...(bounds.to ? { $lte: new Date(bounds.to) } : {}),
-		};
-	}
 
 	const sort: MongoSort = {
 		[request.sortCriteria.field]:

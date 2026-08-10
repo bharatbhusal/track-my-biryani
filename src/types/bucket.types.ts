@@ -20,9 +20,11 @@ export type BucketSummary = {
 	name: string;
 	icon?: string;
 	ownerId: string;
+	ownerName?: string;
 	isPersonal?: boolean;
 	memberCount: number;
 	totalAmount?: number;
+	expenseCount?: number;
 	createdAt?: string;
 	role: BucketRole;
 	status: BucketStatus;
@@ -38,8 +40,13 @@ export type BucketDetail = {
 	name: string;
 	icon?: string;
 	ownerId: string;
+	ownerName?: string;
 	isPersonal?: boolean;
 	memberCount: number;
+	totalAmount?: number;
+	expenseCount?: number;
+	role?: BucketRole;
+	status?: BucketStatus;
 	members: BucketMemberWithName[];
 	createdAt?: string;
 	updatedAt?: string;

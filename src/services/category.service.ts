@@ -346,6 +346,14 @@ export async function getCategoryStatsSummaryService(
 		pagination: { page: 1, pageSize: 1 },
 	});
 
+	const bounds = toIsoBoundsForPreset(
+		filterCriteria.datePreset,
+		filterCriteria.customFrom,
+		filterCriteria.customTo,
+	);
+	const from = bounds?.from ? new Date(bounds.from) : new Date(0);
+	const to = bounds?.to ? new Date(bounds.to) : new Date();
+
 	const categoryIds = await listCategoryIds(query);
 	if (categoryIds.length === 0) {
 		return {
@@ -358,7 +366,12 @@ export async function getCategoryStatsSummaryService(
 		};
 	}
 
-	const stats = await getExpenseStatsForCategories(categoryIds);
+	const stats = await getExpenseStatsForCategories(
+		categoryIds,
+		from,
+		to,
+		query.bucketId as Record<string, unknown> | undefined,
+	);
 	return { ...stats, categoryCount: categoryIds.length };
 }
 

@@ -83,40 +83,11 @@ export async function getExpenseOverviewStats(
 ) {
 	const auth = await getAuthPayload();
 	const body = await request.json().catch(() => ({}));
-	const from =
-		body?.from ??
-		request.nextUrl.searchParams.get("from") ??
-		"";
-	const to =
-		body?.to ?? request.nextUrl.searchParams.get("to") ?? "";
-	const bucketId = body?.bucketId;
-	return getExpenseOverviewStatsService(
-		auth.userId,
-		from,
-		to,
-		bucketId,
-	);
+	return getExpenseOverviewStatsService(auth.userId, body);
 }
 
 export async function getChartData(request: NextRequest) {
 	const auth = await getAuthPayload();
 	const body = await request.json().catch(() => ({}));
-	const from =
-		body?.from ??
-		request.nextUrl.searchParams.get("from") ??
-		"";
-	const to =
-		body?.to ?? request.nextUrl.searchParams.get("to") ?? "";
-	const categoryId =
-		body?.categoryId ??
-		request.nextUrl.searchParams.get("categoryId") ??
-		undefined;
-	const bucketId = body?.bucketId;
-	return getChartDataService(
-		auth.userId,
-		from,
-		to,
-		categoryId,
-		bucketId,
-	);
+	return getChartDataService(auth.userId, body);
 }

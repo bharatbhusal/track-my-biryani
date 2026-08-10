@@ -26,11 +26,7 @@ import {
 	setPage,
 } from "@/store/slices/filtersSlice";
 import { getChartLabel } from "@/lib/format";
-import { toIsoBoundsForPreset } from "@/lib/date-range";
-import {
-	chartGranularity,
-	filterBounds,
-} from "@/lib/filters";
+import { chartGranularity } from "@/lib/filters";
 
 export function DashboardOverview() {
 	const dispatch = useAppDispatch();
@@ -62,24 +58,6 @@ export function DashboardOverview() {
 		(s) => s.expenses.loading,
 	);
 
-	const { from, to } = useMemo(
-		() =>
-			filterBounds(
-				toIsoBoundsForPreset(
-					filterCriteria.datePreset,
-					filterCriteria.customFrom,
-					filterCriteria.customTo,
-				),
-			),
-		[
-			filterCriteria.datePreset,
-			filterCriteria.customFrom,
-			filterCriteria.customTo,
-		],
-	);
-
-	// ponytail: chip labels need real names, so owners/categories come from the
-	// bucket members through the shared hook — same source the manager uses.
 	const { categories, owners } = useScopedOptions(
 		true,
 		buckets,
@@ -92,29 +70,12 @@ export function DashboardOverview() {
 	}, [dispatch]);
 
 	useEffect(() => {
-		dispatch(fetchOverviewStats({ from, to }));
-	}, [dispatch, from, to]);
-
-	const categoryFilterIds = useMemo(
-		() =>
-			filterCriteria.categoryPreset === "MULTIPLE"
-				? filterCriteria.categoryIds
-				: [],
-		[
-			filterCriteria.categoryPreset,
-			filterCriteria.categoryIds,
-		],
-	);
+		dispatch(fetchOverviewStats());
+	}, [dispatch, filterCriteria]);
 
 	useEffect(() => {
-		dispatch(
-			fetchChartData({
-				from,
-				to,
-				categoryIds: categoryFilterIds,
-			}),
-		);
-	}, [dispatch, from, to, categoryFilterIds]);
+		dispatch(fetchChartData());
+	}, [dispatch, filterCriteria]);
 
 	useEffect(() => {
 		dispatch(fetchExpenses());
