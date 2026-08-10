@@ -7,7 +7,10 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/modals/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FilterBar, sortForVariant } from "@/components/filters";
+import {
+	FilterBar,
+	sortForVariant,
+} from "@/components/filters";
 
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
@@ -256,7 +259,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 	}
 
 	return (
-		<div className="space-y-4">
+		<div className="space-y-2">
 			<FilterBar
 				variant="expenses"
 				buckets={[]}

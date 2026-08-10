@@ -9,7 +9,6 @@ import {
 } from "@/components/filters";
 import { ExpenseOverview } from "@/features/expenses/components/expense-overview";
 import { DashboardBarChart } from "@/components/dashboard-bar-chart";
-// import { DistributionBar } from "@/components/charts/distribution-bar";
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import type { SortField } from "@/features/expenses/components/expense-table";
 import {
@@ -26,17 +25,11 @@ import {
 	setSort,
 	setPage,
 } from "@/store/slices/filtersSlice";
-// import { expensesApi } from "@/lib/api/expenses";
-// import type { DistributionPoint } from "@/types/analytics.types";
 import { getChartLabel } from "@/lib/format";
-import {
-	// presetLabel,
-	toIsoBoundsForPreset,
-} from "@/lib/date-range";
+import { toIsoBoundsForPreset } from "@/lib/date-range";
 import {
 	chartGranularity,
 	filterBounds,
-	// personalBucketId,
 } from "@/lib/filters";
 
 export function DashboardOverview() {
@@ -68,18 +61,6 @@ export function DashboardOverview() {
 	const isLoading = useAppSelector(
 		(s) => s.expenses.loading,
 	);
-	// const authUser = useAppSelector((s) => s.auth.user);
-
-	// const [categoryDist, setCategoryDist] = useState<
-	// 	DistributionPoint[]
-	// >([]);
-	// const [ownerDist, setOwnerDist] = useState<
-	// 	DistributionPoint[]
-	// >([]);
-	// const [bucketDist, setBucketDist] = useState<
-	// 	DistributionPoint[]
-	// >([]);
-	// const [distLoading, setDistLoading] = useState(false);
 
 	const { from, to } = useMemo(
 		() =>
@@ -114,33 +95,6 @@ export function DashboardOverview() {
 		dispatch(fetchOverviewStats({ from, to }));
 	}, [dispatch, from, to]);
 
-	// useEffect(() => {
-	// 	let cancelled = false;
-	// 	setDistLoading(true);
-	// 	Promise.all([
-	// 		expensesApi.getDistribution("category", filterCriteria),
-	// 		expensesApi.getDistribution("owner", filterCriteria),
-	// 		expensesApi.getDistribution("bucket", filterCriteria),
-	// 	])
-	// 		.then(([c, o, b]) => {
-	// 			if (cancelled) return;
-	// 			setCategoryDist(c);
-	// 			setOwnerDist(o);
-	// 			setBucketDist(b);
-	// 			setDistLoading(false);
-	// 		})
-	// 		.catch(() => {
-	// 			if (!cancelled) setDistLoading(false);
-	// 		});
-	// 	return () => {
-	// 		cancelled = true;
-	// 	};
-	// }, [
-	// 	filterCriteria.datePreset,
-	// 	filterCriteria.customFrom,
-	// 	filterCriteria.customTo,
-	// ]);
-
 	const categoryFilterIds = useMemo(
 		() =>
 			filterCriteria.categoryPreset === "MULTIPLE"
@@ -173,33 +127,12 @@ export function DashboardOverview() {
 		[overviewStats],
 	);
 
-	// const selectedOwnerIds = useMemo(() => {
-	// 	if (filterCriteria.ownerPreset === "MULTIPLE")
-	// 		return filterCriteria.ownerIds;
-	// 	if (filterCriteria.ownerPreset === "ME" && authUser)
-	// 		return [authUser.id];
-	// 	return [];
-	// }, [
-	// 	filterCriteria.ownerPreset,
-	// 	filterCriteria.ownerIds,
-	// 	authUser,
-	// ]);
-
-	// const selectedBucketIds = useMemo(() => {
-	// 	if (filterCriteria.bucketPreset === "MULTIPLE")
-	// 		return filterCriteria.bucketIds;
-	// 	if (filterCriteria.bucketPreset === "PERSONAL")
-	// 		return [personalBucketId(buckets)];
-	// 	return [];
-	// }, [
-	// 	filterCriteria.bucketPreset,
-	// 	filterCriteria.bucketIds,
-	// 	buckets,
-	// ]);
-
 	// ponytail: the shared sort is a preference — normalize it to the expense
 	// fields for the table and the toggle baseline.
-	const effectiveSort = sortForVariant("expenses", sortCriteria);
+	const effectiveSort = sortForVariant(
+		"expenses",
+		sortCriteria,
+	);
 
 	const handleSort = (field: SortField) => {
 		dispatch(
@@ -222,38 +155,11 @@ export function DashboardOverview() {
 				categories={categories}
 				owners={owners}
 			/>
-			{/* <h3 className="truncate px-2 text-base font-semibold tracking-tight">
-				{presetLabel(filterCriteria.datePreset)}
-			</h3> */}
+
 			<ExpenseOverview
 				data={overviewStats}
 				isLoading={isLoading}
 			/>
-
-			{/* {categoryDist.length > 1 && (
-				<DistributionBar
-					title="Category Distribution"
-					data={categoryDist}
-					selectedIds={categoryFilterIds}
-					isLoading={distLoading}
-				/>
-			)} */}
-			{/* {ownerDist.length > 1 && (
-				<DistributionBar
-					title="Owner Distribution"
-					data={ownerDist}
-					selectedIds={selectedOwnerIds}
-					isLoading={distLoading}
-				/>
-			)}
-			{bucketDist.length > 1 && (
-				<DistributionBar
-					title="Bucket Distribution"
-					data={bucketDist}
-					selectedIds={selectedBucketIds}
-					isLoading={distLoading}
-				/>
-			)} */}
 
 			<DashboardBarChart
 				stackedSeries={chartData?.series ?? []}

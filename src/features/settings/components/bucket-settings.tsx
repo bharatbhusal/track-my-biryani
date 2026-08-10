@@ -17,7 +17,10 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ConfirmDialog, Modal } from "@/components/modals/dialog";
+import {
+	ConfirmDialog,
+	Modal,
+} from "@/components/modals/dialog";
 import { Input } from "@/components/ui/input";
 import {
 	Popover,
@@ -356,22 +359,6 @@ export function BucketSettings() {
 
 	return (
 		<section className="space-y-3">
-			<div className="flex items-center justify-between gap-3">
-				<div>
-					<h2 className="text-sm font-semibold tracking-tight">
-						Buckets
-					</h2>
-					<p className="text-xs text-[var(--color-muted)]">
-						Shared expense groups. Your own data lives in
-						Personal.
-					</p>
-				</div>
-				<Button size="sm" onClick={() => setCreateOpen(true)}>
-					<FiPlus className="mr-1.5" />
-					Create
-				</Button>
-			</div>
-
 			{loading && buckets.length === 0 ? (
 				<div className="space-y-2">
 					<Skeleton className="h-16 w-full" />
