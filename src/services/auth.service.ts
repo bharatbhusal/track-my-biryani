@@ -8,7 +8,10 @@ import {
 	createUser,
 	findUserByUsername,
 } from "@/repositories/user.repository";
-import { createBucket } from "@/repositories/bucket.repository";
+import {
+	createBucket,
+	findBucketByUserId,
+} from "@/repositories/bucket.repository";
 import { ensureCategoryInBucket } from "@/repositories/category.repository";
 import { DEFAULT_CATEGORIES } from "@/lib/constants";
 import type {
@@ -20,7 +23,12 @@ export async function registerUser(
 	input: SignupInput,
 ): Promise<{
 	token: string;
-	user: { id: string; name: string; username: string };
+	user: {
+		id: string;
+		name: string;
+		username: string;
+		bucketId: string;
+	};
 }> {
 	const existing = await findUserByUsername(input.username);
 	if (existing) {
@@ -63,6 +71,7 @@ export async function registerUser(
 	const token = signToken({
 		userId,
 		username: user.username,
+		bucketId,
 	});
 
 	return {
@@ -71,6 +80,7 @@ export async function registerUser(
 			id: userId,
 			name: user.name,
 			username: user.username,
+			bucketId,
 		},
 	};
 }
@@ -79,7 +89,12 @@ export async function loginUser(
 	input: LoginInput,
 ): Promise<{
 	token: string;
-	user: { id: string; name: string; username: string };
+	user: {
+		id: string;
+		name: string;
+		username: string;
+		bucketId: string;
+	};
 }> {
 	const user = await findUserByUsername(input.username);
 	if (!user?.password) {
@@ -102,9 +117,14 @@ export async function loginUser(
 		);
 	}
 
+	const personalBucket = await findBucketByUserId(
+		user._id.toString(),
+	);
+
 	const token = signToken({
 		userId: user._id.toString(),
 		username: user.username,
+		bucketId: personalBucket._id.toString(),
 	});
 
 	return {
@@ -113,6 +133,7 @@ export async function loginUser(
 			id: user._id.toString(),
 			name: user.name,
 			username: user.username,
+			bucketId: personalBucket._id.toString(),
 		},
 	};
 }

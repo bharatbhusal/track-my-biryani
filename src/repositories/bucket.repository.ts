@@ -5,7 +5,10 @@ import { toIsoBoundsForPreset } from "@/lib/date-range";
 import { BucketModel } from "@/models/Bucket";
 import { ExpenseModel } from "@/models/Expense";
 import { UserModel } from "@/models/User";
-import type { BucketSearchRequest, SearchResult } from "@/types/search.types";
+import type {
+	BucketSearchRequest,
+	SearchResult,
+} from "@/types/search.types";
 import type { BucketSummary } from "@/types/bucket.types";
 
 export type BucketMemberDoc = {
@@ -49,7 +52,9 @@ export async function listBucketsForMember(userId: string) {
 	return buckets as unknown as BucketDoc[];
 }
 
-export async function listBucketsForPendingMember(userId: string) {
+export async function listBucketsForPendingMember(
+	userId: string,
+) {
 	const buckets = await BucketModel.find({
 		members: {
 			$elemMatch: {
@@ -143,19 +148,28 @@ export async function acceptBucketMember(
 	return (bucket as unknown as BucketDoc | null) ?? null;
 }
 
-export async function pullBucketMember(id: string, userId: string) {
+export async function pullBucketMember(
+	id: string,
+	userId: string,
+) {
 	if (!Types.ObjectId.isValid(id)) {
 		return null;
 	}
 	const bucket = await BucketModel.findByIdAndUpdate(
 		id,
-		{ $pull: { members: { userId: new Types.ObjectId(userId) } } },
+		{
+			$pull: {
+				members: { userId: new Types.ObjectId(userId) },
+			},
+		},
 		{ new: true, lean: true },
 	);
 	return (bucket as unknown as BucketDoc | null) ?? null;
 }
 
-export async function expenseExistsInBucket(bucketId: string) {
+export async function expenseExistsInBucket(
+	bucketId: string,
+) {
 	if (!Types.ObjectId.isValid(bucketId)) {
 		return false;
 	}
@@ -166,7 +180,9 @@ export async function expenseExistsInBucket(bucketId: string) {
 	);
 }
 
-export async function getBucketExpenseStats(bucketId: string) {
+export async function getBucketExpenseStats(
+	bucketId: string,
+) {
 	if (!Types.ObjectId.isValid(bucketId)) {
 		return { total: 0, count: 0 };
 	}
@@ -192,16 +208,21 @@ export async function findUsersByIds(ids: string[]) {
 		.lean();
 }
 
+export async function findBucketByUserId(userId: string) {
+	return BucketModel.findOne({ ownerId: userId }).lean();
+}
+
 export async function searchBuckets(
 	userId: string,
 	request: BucketSearchRequest,
 ): Promise<SearchResult<BucketSummary>> {
-	const { query, sort, skip, limit } = await buildBucketQuery(
-		userId,
-		request,
-	);
+	const { query, sort, skip, limit } =
+		await buildBucketQuery(userId, request);
 
-	const expenseMatch = buildExpenseMatch(userId, request.filterCriteria);
+	const expenseMatch = buildExpenseMatch(
+		userId,
+		request.filterCriteria,
+	);
 
 	const [items, total] = await Promise.all([
 		BucketModel.aggregate([
@@ -252,25 +273,28 @@ export async function searchBuckets(
 			const member = bucket.members.find(
 				(m: BucketMemberDoc) => m.userId.toString() === userId,
 			);
-		return {
-			_id: bucket._id.toString(),
-			name: bucket.name,
-			icon: bucket.icon,
-			ownerId: bucket.ownerId.toString(),
-			ownerName: bucket.ownerName,
-			isPersonal: bucket.isPersonal,
-			memberCount: bucket.memberCount,
-			totalAmount: bucket.totalAmount,
-			expenseCount: bucket.expenseCount,
-			createdAt: bucket.createdAt?.toISOString(),
-			role: (member?.role ?? "member") as "owner" | "member",
-			status: (member?.status ?? "pending") as "pending" | "accepted",
-		} satisfies BucketSummary;
-	}),
-	total,
-	page: request.pagination.page,
-	totalPages: Math.ceil(total / request.pagination.pageSize) || 1,
-};
+			return {
+				_id: bucket._id.toString(),
+				name: bucket.name,
+				icon: bucket.icon,
+				ownerId: bucket.ownerId.toString(),
+				ownerName: bucket.ownerName,
+				isPersonal: bucket.isPersonal,
+				memberCount: bucket.memberCount,
+				totalAmount: bucket.totalAmount,
+				expenseCount: bucket.expenseCount,
+				createdAt: bucket.createdAt?.toISOString(),
+				role: (member?.role ?? "member") as "owner" | "member",
+				status: (member?.status ?? "pending") as
+					| "pending"
+					| "accepted",
+			} satisfies BucketSummary;
+		}),
+		total,
+		page: request.pagination.page,
+		totalPages:
+			Math.ceil(total / request.pagination.pageSize) || 1,
+	};
 }
 
 // ponytail: the bucket list itself ignores the date/user filters (all member
@@ -284,7 +308,9 @@ function buildExpenseMatch(
 		match.userId = new Types.ObjectId(userId);
 	} else if (filters.ownerPreset === "MULTIPLE") {
 		match.userId = {
-			$in: (filters.ownerIds ?? []).map((id) => new Types.ObjectId(id)),
+			$in: (filters.ownerIds ?? []).map(
+				(id) => new Types.ObjectId(id),
+			),
 		};
 	}
 	const bounds = toIsoBoundsForPreset(
