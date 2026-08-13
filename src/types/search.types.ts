@@ -13,7 +13,6 @@ export type FilterDatePreset =
 	| "LAST_6_MONTHS"
 	| "THIS_YEAR"
 	| "LAST_YEAR"
-	| "ANY_TIME"
 	| "CUSTOM";
 
 export interface PaginationCriteria {
@@ -83,12 +82,19 @@ export interface SearchResult<T> {
 	totalPages: number;
 }
 
-export type ExpenseSearchRequest = SearchRequest<ExpenseFilterCriteria>;
-export type CategorySearchRequest = SearchRequest<CategoryFilterCriteria>;
-export type BucketSearchRequest = SearchRequest<BucketFilterCriteria>;
-export type AuditSearchRequest = SearchRequest<AuditFilterCriteria>;
+export type ExpenseSearchRequest =
+	SearchRequest<ExpenseFilterCriteria>;
+export type CategorySearchRequest =
+	SearchRequest<CategoryFilterCriteria>;
+export type BucketSearchRequest =
+	SearchRequest<BucketFilterCriteria>;
+export type AuditSearchRequest =
+	SearchRequest<AuditFilterCriteria>;
 
-export type DistributionDimension = "category" | "owner" | "bucket";
+export type DistributionDimension =
+	| "category"
+	| "owner"
+	| "bucket";
 
 export type DistributionRequest = {
 	dimension: DistributionDimension;

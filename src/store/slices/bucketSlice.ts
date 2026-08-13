@@ -7,7 +7,10 @@ import { bucketsApi } from "@/lib/api/buckets";
 import { sortForVariant } from "@/components/filters/variants";
 import { bucketCriteria } from "@/lib/filters";
 import type { RootState } from "@/store";
-import type { BucketDetail, BucketSummary } from "@/types/bucket.types";
+import type {
+	BucketDetail,
+	BucketSummary,
+} from "@/types/bucket.types";
 
 type BucketState = {
 	buckets: BucketSummary[];
@@ -35,7 +38,9 @@ export const fetchBuckets = createAsyncThunk(
 			// ponytail: the bucket list ignores date/user filters (all member
 			// buckets always show); only the per-bucket expense totals respect
 			// them, applied server-side.
-			filterCriteria: bucketCriteria(state.filters.filterCriteria),
+			filterCriteria: bucketCriteria(
+				state.filters.filterCriteria,
+			),
 			sortCriteria: sortForVariant(
 				"buckets",
 				state.filters.sortCriteria,
@@ -51,7 +56,7 @@ export const fetchAllBuckets = createAsyncThunk(
 	() =>
 		bucketsApi
 			.searchBuckets({
-				filterCriteria: { datePreset: "ANY_TIME" },
+				filterCriteria: { datePreset: "THIS_MONTH" },
 				sortCriteria: { field: "createdAt", direction: "DESC" },
 				pagination: { page: 1, pageSize: 100 },
 			})
@@ -65,11 +70,16 @@ export const fetchBucketDetail = createAsyncThunk(
 
 export const fetchInvitations = createAsyncThunk(
 	"buckets/fetchInvitations",
-	() => bucketsApi.searchBuckets({
-		filterCriteria: { datePreset: "ANY_TIME" },
-		sortCriteria: { field: "createdAt", direction: "DESC" },
-		pagination: { page: 1, pageSize: 100 },
-	}).then((r) => r.items.filter((b) => b.status === "pending")),
+	() =>
+		bucketsApi
+			.searchBuckets({
+				filterCriteria: { datePreset: "THIS_MONTH" },
+				sortCriteria: { field: "createdAt", direction: "DESC" },
+				pagination: { page: 1, pageSize: 100 },
+			})
+			.then((r) =>
+				r.items.filter((b) => b.status === "pending"),
+			),
 );
 
 export const createBucket = createAsyncThunk(
@@ -114,10 +124,9 @@ export const inviteUser = createAsyncThunk(
 		payload: { id: string; username: string },
 		{ dispatch },
 	) => {
-		const bucket = await bucketsApi.inviteUser(
-			payload.id,
-			{ username: payload.username },
-		);
+		const bucket = await bucketsApi.inviteUser(payload.id, {
+			username: payload.username,
+		});
 		dispatch(fetchBuckets());
 		return bucket;
 	},
@@ -199,8 +208,12 @@ const bucketSlice = createSlice({
 			.addCase(fetchBuckets.fulfilled, (state, action) => {
 				state.loading = false;
 				const items = action.payload;
-				state.buckets = items.filter((b) => b.status === "accepted");
-				state.invitations = items.filter((b) => b.status === "pending");
+				state.buckets = items.filter(
+					(b) => b.status === "accepted",
+				);
+				state.invitations = items.filter(
+					(b) => b.status === "pending",
+				);
 			})
 			.addCase(fetchAllBuckets.fulfilled, (state, action) => {
 				state.allBuckets = action.payload.filter(
@@ -211,28 +224,27 @@ const bucketSlice = createSlice({
 				state.loading = true;
 				state.error = null;
 			})
-			.addCase(
-				fetchInvitations.fulfilled,
-				(state, action) => {
-					state.loading = false;
-					state.invitations = action.payload;
-				},
-			)
+			.addCase(fetchInvitations.fulfilled, (state, action) => {
+				state.loading = false;
+				state.invitations = action.payload;
+			})
 			.addCase(fetchBucketDetail.pending, (state) => {
 				state.loading = true;
 				state.error = null;
 			})
-			.addCase(fetchBucketDetail.fulfilled, (state, action) => {
-				state.loading = false;
-				state.currentBucket = action.payload;
-			})
+			.addCase(
+				fetchBucketDetail.fulfilled,
+				(state, action) => {
+					state.loading = false;
+					state.currentBucket = action.payload;
+				},
+			)
 			.addMatcher(
 				isAnyOf(...bucketThunks.map((t) => t.rejected)),
 				(state, action) => {
 					state.loading = false;
 					state.error =
-						action.error.message ??
-						"Failed to fetch buckets";
+						action.error.message ?? "Failed to fetch buckets";
 				},
 			);
 	},

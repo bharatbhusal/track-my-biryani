@@ -21,7 +21,6 @@ export const PRESETS: FilterDatePreset[] = [
 	"LAST_6_MONTHS",
 	"THIS_YEAR",
 	"LAST_YEAR",
-	"ANY_TIME",
 	"CUSTOM",
 ];
 
@@ -60,7 +59,10 @@ export function DateFilterSection({
 	// ponytail: the datetime-local value is a bare "2026-01-05T14:30" that the
 	// browser treats as local — new Date() keeps it local, so toISOString()
 	// lands on the right UTC instant with no day shift.
-	const setBound = (key: "customFrom" | "customTo", value: string) =>
+	const setBound = (
+		key: "customFrom" | "customTo",
+		value: string,
+	) =>
 		onChange({
 			preset,
 			customFrom,
@@ -104,19 +106,27 @@ export function DateFilterSection({
 				{isCustom ? (
 					<div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-2">
 						<label className="space-y-1">
-							<span className="text-xs text-[var(--color-muted)]">From</span>
+							<span className="text-xs text-[var(--color-muted)]">
+								From
+							</span>
 							<Input
 								type="datetime-local"
 								value={toInputValue(customFrom)}
-								onChange={(e) => setBound("customFrom", e.target.value)}
+								onChange={(e) =>
+									setBound("customFrom", e.target.value)
+								}
 							/>
 						</label>
 						<label className="space-y-1">
-							<span className="text-xs text-[var(--color-muted)]">To</span>
+							<span className="text-xs text-[var(--color-muted)]">
+								To
+							</span>
 							<Input
 								type="datetime-local"
 								value={toInputValue(customTo)}
-								onChange={(e) => setBound("customTo", e.target.value)}
+								onChange={(e) =>
+									setBound("customTo", e.target.value)
+								}
 							/>
 						</label>
 					</div>

@@ -7,7 +7,10 @@ import type { FilterOwner } from "./owner-filter-section";
 import type { FilterVariant } from "./variants";
 import { sortFieldLabel } from "./variants";
 
-export function customRangeLabel(from?: string, to?: string): string {
+export function customRangeLabel(
+	from?: string,
+	to?: string,
+): string {
 	const fmt = formatShortDateTime;
 	if (from && to) return `${fmt(from)} – ${fmt(to)}`;
 	if (from) return `From ${fmt(from)}`;
@@ -20,8 +23,8 @@ export function dateSummary(
 	customFrom?: string,
 	customTo?: string,
 ): string {
-	if (preset === "ANY_TIME") return "Any Time";
-	if (preset === "CUSTOM") return customRangeLabel(customFrom, customTo);
+	if (preset === "CUSTOM")
+		return customRangeLabel(customFrom, customTo);
 	return presetLabel(preset);
 }
 
@@ -33,7 +36,10 @@ export function bucketSummary(
 	if (preset === "PERSONAL") return "Personal";
 	if (preset === "ALL") return "All buckets";
 	return ids
-		.map((id) => buckets.find((b) => b._id === id)?.name ?? "Bucket")
+		.map(
+			(id) =>
+				buckets.find((b) => b._id === id)?.name ?? "Bucket",
+		)
 		.join(", ");
 }
 
@@ -44,7 +50,11 @@ export function categorySummary(
 ): string {
 	if (preset === "ALL") return "All categories";
 	return ids
-		.map((id) => categories.find((c) => c._id === id)?.name ?? "Category")
+		.map(
+			(id) =>
+				categories.find((c) => c._id === id)?.name ??
+				"Category",
+		)
 		.join(", ");
 }
 
@@ -80,7 +90,8 @@ export function additionalSummary(
 	hasLocation?: boolean,
 ): string {
 	const parts: string[] = [];
-	if (hasNotes !== undefined) parts.push(hasNotes ? "Has notes" : "No notes");
+	if (hasNotes !== undefined)
+		parts.push(hasNotes ? "Has notes" : "No notes");
 	if (hasLocation !== undefined)
 		parts.push(hasLocation ? "Has location" : "No location");
 	return parts.join(", ") || "Any";

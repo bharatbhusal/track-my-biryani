@@ -1,4 +1,4 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextRequest } from "next/server";
 
 import {
 	errorResponse,
@@ -6,13 +6,6 @@ import {
 } from "@/lib/api-response";
 import { connectToDatabase } from "@/lib/db";
 import { createExpense } from "@/controllers/expense.controller";
-
-export async function GET() {
-	return NextResponse.json(
-		{ success: false, error: { message: "Not found", code: "NOT_FOUND" } },
-		{ status: 404 },
-	);
-}
 
 export async function POST(request: NextRequest) {
 	try {

@@ -84,7 +84,7 @@ export async function loginUser(
 	const user = await findUserByUsername(input.username);
 	if (!user?.password) {
 		throw new AppError(
-			"Invalid username or password",
+			"User doesn't exist",
 			401,
 			"INVALID_CREDENTIALS",
 		);
@@ -96,7 +96,7 @@ export async function loginUser(
 	);
 	if (!isValid) {
 		throw new AppError(
-			"Invalid username or password",
+			"Incorrect username or password",
 			401,
 			"INVALID_CREDENTIALS",
 		);

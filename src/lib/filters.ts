@@ -54,7 +54,6 @@ export function bucketCriteria(
 }
 
 // ponytail: the stats/chart/distribution endpoints still demand a concrete
-// from/to pair, so ANY_TIME (and a half-open custom range) widen to epoch..now.
 export function filterBounds(
 	bounds: { from?: string; to?: string } | null,
 ): { from: string; to: string } {
@@ -64,13 +63,12 @@ export function filterBounds(
 	};
 }
 
-export function chartGranularity(preset: FilterDatePreset): string {
-	if (preset === "TODAY" || preset === "YESTERDAY") return "day";
-	if (
-		preset === "THIS_YEAR" ||
-		preset === "LAST_YEAR" ||
-		preset === "ANY_TIME"
-	)
+export function chartGranularity(
+	preset: FilterDatePreset,
+): string {
+	if (preset === "TODAY" || preset === "YESTERDAY")
+		return "day";
+	if (preset === "THIS_YEAR" || preset === "LAST_YEAR")
 		return "year";
 	return "month";
 }
@@ -94,7 +92,7 @@ export function scopedCategoryRequest(
 			bucketIds: [bucketId],
 			ownerPreset: "ALL",
 			ownerIds: [],
-			datePreset: "ANY_TIME",
+			datePreset: "THIS_MONTH",
 		},
 		sortCriteria: { field: "createdAt", direction: "DESC" },
 		pagination: { page: 1, pageSize: 100 },
@@ -126,7 +124,7 @@ export function scopedExpenseRequest({
 			categoryIds: [categoryId],
 			ownerPreset: "ALL",
 			ownerIds: [],
-			datePreset: from || to ? "CUSTOM" : "ANY_TIME",
+			datePreset: from || to ? "CUSTOM" : "THIS_MONTH",
 			customFrom: from,
 			customTo: to,
 		},

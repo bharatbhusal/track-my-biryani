@@ -2,9 +2,15 @@
 
 import { useState } from "react";
 
-import { ConfirmDialog, Modal } from "@/components/modals/dialog";
+import {
+	ConfirmDialog,
+	Modal,
+} from "@/components/modals/dialog";
 import { Button } from "@/components/ui/button";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import {
+	useAppDispatch,
+	useAppSelector,
+} from "@/store/hooks";
 import { AdditionalFiltersSection } from "./additional-filters-section";
 import { BucketFilterSection } from "./bucket-filter-section";
 import { CategoryFilterSection } from "./category-filter-section";
@@ -43,7 +49,10 @@ export function FilterDialog({
 }: FilterDialogProps) {
 	const dispatch = useAppDispatch();
 	const actions = ACTIONS[variant];
-	const sections = resolveSections(variant, sectionsOverride);
+	const sections = resolveSections(
+		variant,
+		sectionsOverride,
+	);
 
 	const sliceState = useAppSelector(
 		(s) =>
@@ -52,7 +61,9 @@ export function FilterDialog({
 			],
 	);
 	const state = sliceState;
-	const buckets = useAppSelector((s) => s.buckets.allBuckets);
+	const buckets = useAppSelector(
+		(s) => s.buckets.allBuckets,
+	);
 
 	const [confirmClear, setConfirmClear] = useState(false);
 
@@ -74,7 +85,11 @@ export function FilterDialog({
 	const { criteria, sort } = draft;
 	const setCriteria = (
 		updater: (c: DraftCriteria) => DraftCriteria,
-	) => setDraft((d) => ({ ...d, criteria: updater(d.criteria) }));
+	) =>
+		setDraft((d) => ({
+			...d,
+			criteria: updater(d.criteria),
+		}));
 	const setSort = (next: SortCriteria) =>
 		setDraft((d) => ({ ...d, sort: next }));
 
@@ -131,7 +146,8 @@ export function FilterDialog({
 			if (actions.setHasLocation)
 				dispatch(actions.setHasLocation(criteria.hasLocation));
 		}
-		if (sections.sort && actions.setSort) dispatch(actions.setSort(sort));
+		if (sections.sort && actions.setSort)
+			dispatch(actions.setSort(sort));
 		onClose();
 	};
 
@@ -204,7 +220,9 @@ export function FilterDialog({
 							onChange={({ preset, ids }) =>
 								patch({ ownerPreset: preset, ownerIds: ids })
 							}
-							onClear={() => patch({ ownerPreset: "ME", ownerIds: [] })}
+							onClear={() =>
+								patch({ ownerPreset: "ME", ownerIds: [] })
+							}
 							defaultOpen={false}
 						/>
 					) : null}
@@ -225,7 +243,7 @@ export function FilterDialog({
 							onClear={() =>
 								setCriteria((c) => ({
 									...c,
-									datePreset: "ANY_TIME",
+									datePreset: "THIS_MONTH",
 									customFrom: undefined,
 									customTo: undefined,
 								}))
@@ -250,7 +268,11 @@ export function FilterDialog({
 							hasNotes={criteria.hasNotes}
 							hasLocation={criteria.hasLocation}
 							onChange={({ hasNotes, hasLocation }) =>
-								setCriteria((c) => ({ ...c, hasNotes, hasLocation }))
+								setCriteria((c) => ({
+									...c,
+									hasNotes,
+									hasLocation,
+								}))
 							}
 							onClear={() =>
 								setCriteria((c) => ({

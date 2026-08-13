@@ -400,11 +400,19 @@ export async function searchExpensesService(
 	userId: string,
 	searchRequest: unknown,
 ) {
-	const parsed = expenseSearchSchema.parse(searchRequest ?? {});
+	const parsed = expenseSearchSchema.parse(
+		searchRequest ?? {},
+	);
 	const request: ExpenseSearchRequest = {
-		filterCriteria: parsed.filterCriteria ?? defaultExpenseSearchRequest().filterCriteria,
-		sortCriteria: parsed.sortCriteria ?? defaultExpenseSearchRequest().sortCriteria,
-		pagination: parsed.pagination ?? defaultExpenseSearchRequest().pagination,
+		filterCriteria:
+			parsed.filterCriteria ??
+			defaultExpenseSearchRequest().filterCriteria,
+		sortCriteria:
+			parsed.sortCriteria ??
+			defaultExpenseSearchRequest().sortCriteria,
+		pagination:
+			parsed.pagination ??
+			defaultExpenseSearchRequest().pagination,
 	};
 	return searchExpenses(userId, request);
 }

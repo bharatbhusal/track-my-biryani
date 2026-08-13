@@ -79,9 +79,9 @@ export async function createExpense(data: {
 	categoryId: string;
 	notes?: string;
 	images: string[];
-	location: {
-		latitude: number;
-		longitude: number;
+	location?: {
+		latitude?: number;
+		longitude?: number;
 		address?: string;
 	};
 	currency: string;
@@ -163,15 +163,16 @@ export async function listExpenses(
 	]);
 
 	const transformedItems = items.map((item) => {
-		const posterName = (
-			item.userId as { username?: string } | undefined
-		)?.username ?? "";
+		const posterName =
+			(item.userId as { username?: string } | undefined)
+				?.username ?? "";
 		return {
 			...item,
 			...(posterName !== "" ? { posterName } : {}),
 			userId:
-				(item.userId as { _id?: Types.ObjectId } | undefined)
-					?._id?.toString() ?? "",
+				(
+					item.userId as { _id?: Types.ObjectId } | undefined
+				)?._id?.toString() ?? "",
 			categoryColor: item.categoryId?.color ?? "",
 			categoryEmoji: item.categoryId?.emoji ?? "",
 			categoryId:
@@ -637,7 +638,10 @@ export async function getExpenseContribution(
 	} satisfies ExpenseContribution;
 }
 
-const DISTRIBUTION_FIELD: Record<DistributionDimension, string> = {
+const DISTRIBUTION_FIELD: Record<
+	DistributionDimension,
+	string
+> = {
 	category: "$categoryId",
 	owner: "$userId",
 	bucket: "$bucketId",
@@ -664,7 +668,12 @@ export async function getDistribution(
 		value: number;
 	}>([
 		{ $match: match },
-		{ $group: { _id: DISTRIBUTION_FIELD[dimension], value: { $sum: "$amount" } } },
+		{
+			$group: {
+				_id: DISTRIBUTION_FIELD[dimension],
+				value: { $sum: "$amount" },
+			},
+		},
 	]);
 
 	const ids = totals
@@ -685,7 +694,10 @@ export async function getDistribution(
 						.lean();
 
 	const byId = new Map(
-		docs.map((d) => [(d._id as Types.ObjectId).toString(), d]),
+		docs.map((d) => [
+			(d._id as Types.ObjectId).toString(),
+			d,
+		]),
 	);
 
 	return totals
@@ -706,7 +718,9 @@ export async function getDistribution(
 				...(dimension === "category"
 					? { color: doc?.color ?? "#6b7280" }
 					: {}),
-				...(dimension === "bucket" ? { icon: doc?.icon ?? "📁" } : {}),
+				...(dimension === "bucket"
+					? { icon: doc?.icon ?? "📁" }
+					: {}),
 			};
 		})
 		.sort((a, b) => b.value - a.value);
@@ -720,13 +734,20 @@ export async function getFilteredCategoryDistribution(
 		value: number;
 	}>([
 		{ $match: query },
-		{ $group: { _id: "$categoryId", value: { $sum: "$amount" } } },
+		{
+			$group: {
+				_id: "$categoryId",
+				value: { $sum: "$amount" },
+			},
+		},
 	]);
 
 	const ids = totals
 		.map((t) => t._id)
 		.filter((id): id is Types.ObjectId => id !== null);
-	const categories = await CategoryModel.find({ _id: { $in: ids } })
+	const categories = await CategoryModel.find({
+		_id: { $in: ids },
+	})
 		.select("name color")
 		.lean();
 	const byId = new Map(
@@ -765,19 +786,20 @@ export async function getExpenseStatsForCategories(
 	};
 	if (bucketId) match.bucketId = bucketId;
 
-	const [result] = await ExpenseModel.aggregate<SummaryBucket>([
-		{ $match: match },
-		{
-			$group: {
-				_id: null,
-				total: { $sum: "$amount" },
-				count: { $sum: 1 },
-				avg: { $avg: "$amount" },
-				min: { $min: "$amount" },
-				max: { $max: "$amount" },
+	const [result] =
+		await ExpenseModel.aggregate<SummaryBucket>([
+			{ $match: match },
+			{
+				$group: {
+					_id: null,
+					total: { $sum: "$amount" },
+					count: { $sum: 1 },
+					avg: { $avg: "$amount" },
+					min: { $min: "$amount" },
+					max: { $max: "$amount" },
+				},
 			},
-		},
-	]);
+		]);
 
 	return {
 		total: result?.total ?? 0,
@@ -920,16 +942,16 @@ export async function searchExpenses(
 	userId: string,
 	request: ExpenseSearchRequest,
 ): Promise<SearchResult<ExpenseItem>> {
-	const { query, sort, skip, limit } = await buildExpenseQuery(
-		userId,
-		request,
-	);
+	const { query, sort, skip, limit } =
+		await buildExpenseQuery(userId, request);
 
 	const [items, total] = await Promise.all([
 		ExpenseModel.find(query)
 			.populate("userId", "name username")
 			.populate("categoryId", "emoji color")
-			.select("title amount paidAt currency notes images location bucketId userId createdAt updatedAt")
+			.select(
+				"title amount paidAt currency notes images location bucketId userId createdAt updatedAt",
+			)
 			.sort(sort)
 			.skip(skip)
 			.limit(limit)
@@ -938,9 +960,9 @@ export async function searchExpenses(
 	]);
 
 	const transformedItems = items.map((item) => {
-		const posterName = (
-			item.userId as { username?: string } | undefined
-		)?.username ?? "";
+		const posterName =
+			(item.userId as { username?: string } | undefined)
+				?.username ?? "";
 		return {
 			_id: (item._id as Types.ObjectId).toString(),
 			title: item.title,
@@ -948,8 +970,9 @@ export async function searchExpenses(
 			currency: item.currency,
 			paidAt: item.paidAt.toISOString(),
 			categoryId:
-				(item.categoryId as { _id?: Types.ObjectId } | undefined)
-					?._id?.toString() ?? "",
+				(
+					item.categoryId as { _id?: Types.ObjectId } | undefined
+				)?._id?.toString() ?? "",
 			categoryColor:
 				(item.categoryId as { color?: string } | undefined)
 					?.color ?? "",
@@ -961,8 +984,9 @@ export async function searchExpenses(
 			location: item.location,
 			bucketId: (item.bucketId as Types.ObjectId).toString(),
 			userId:
-				(item.userId as { _id?: Types.ObjectId } | undefined)
-					?._id?.toString() ?? "",
+				(
+					item.userId as { _id?: Types.ObjectId } | undefined
+				)?._id?.toString() ?? "",
 			...(posterName ? { posterName } : {}),
 			createdAt: item.createdAt?.toISOString(),
 			updatedAt: item.updatedAt?.toISOString(),
@@ -973,6 +997,7 @@ export async function searchExpenses(
 		items: transformedItems,
 		total,
 		page: request.pagination.page,
-		totalPages: Math.ceil(total / request.pagination.pageSize) || 1,
+		totalPages:
+			Math.ceil(total / request.pagination.pageSize) || 1,
 	};
 }

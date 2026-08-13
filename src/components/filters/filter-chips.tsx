@@ -89,11 +89,7 @@ export function FilterChips({
 
 	const { datePreset, customFrom, customTo } =
 		filterCriteria;
-	if (
-		sections.date &&
-		!hideDate &&
-		datePreset !== "ANY_TIME"
-	) {
+	if (sections.date && !hideDate) {
 		const isCustom = datePreset === "CUSTOM";
 		const clearDate = actions.clearDateFilter
 			? () => dispatch(actions.clearDateFilter!())
@@ -228,7 +224,10 @@ export function FilterChips({
 	}
 
 	if (sections.sort && !hideSort && sortCriteria?.field) {
-		const effectiveField = sortForVariant(variant, sortCriteria).field;
+		const effectiveField = sortForVariant(
+			variant,
+			sortCriteria,
+		).field;
 		chips.push(
 			<Chip
 				key="sort"
