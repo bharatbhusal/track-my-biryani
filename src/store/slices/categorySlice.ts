@@ -153,7 +153,22 @@ const categorySlice = createSlice({
 				fetchCategoriesWithStats.fulfilled,
 				(state, action) => {
 					state.loading = false;
-					state.itemsWithStats = action.payload;
+					const payload = action.payload ?? {
+						items: [],
+						stats: {},
+					};
+					state.itemsWithStats = {
+						...payload,
+						stats: {
+							...payload.stats,
+							total: payload.stats?.total ?? 0,
+							count: payload.stats?.count ?? 0,
+							expenseCount: payload.stats?.expenseCount ?? 0,
+							min: payload.stats?.min ?? 0,
+							max: payload.stats?.max ?? 0,
+							avg: payload.stats?.avg ?? 0,
+						},
+					};
 				},
 			)
 			.addCase(

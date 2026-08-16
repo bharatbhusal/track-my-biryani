@@ -70,38 +70,38 @@ export function CategoryManager() {
 		[
 			"Total",
 			formatCurrency(
-				categoriesWithStats?.stats.total ?? 0,
+				categoriesWithStats?.stats?.total ?? 0,
 				currency,
 			),
 		],
 		[
 			"Avg",
 			formatCurrency(
-				categoriesWithStats?.stats.avg ?? 0,
+				categoriesWithStats?.stats?.avg ?? 0,
 				currency,
 			),
 		],
 		[
 			"Min",
 			formatCurrency(
-				categoriesWithStats?.stats.min ?? 0,
+				categoriesWithStats?.stats?.min ?? 0,
 				currency,
 			),
 		],
 		[
 			"Max",
 			formatCurrency(
-				categoriesWithStats?.stats.max ?? 0,
+				categoriesWithStats?.stats?.max ?? 0,
 				currency,
 			),
 		],
 		[
 			"Categories",
-			String(categoriesWithStats?.stats.count ?? 0),
+			String(categoriesWithStats?.stats?.count ?? 0),
 		],
 		[
 			"Expenses",
-			String(categoriesWithStats?.stats.expenseCount ?? 0),
+			String(categoriesWithStats?.stats?.expenseCount ?? 0),
 		],
 	];
 
