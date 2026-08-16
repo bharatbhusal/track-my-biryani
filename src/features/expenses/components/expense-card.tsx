@@ -109,14 +109,14 @@ export function ExpenseCard({
 										options={menuOptions}
 										onValueChange={handleMenu}
 										aria-label="Expense actions"
-										className="h-8 w-8 cursor-pointer"
+										className="h-8 w-8 cursor-pointer shrink-0"
 										onClick={(e) => e.stopPropagation()}
 									/>
 								) : (
 									<Button
 										variant="ghost"
 										size="icon"
-										className="h-8 w-8 cursor-pointer"
+										className="h-8 w-8 cursor-pointer shrink-0"
 										aria-label="Share expense"
 										onClick={(e) => {
 											e.stopPropagation();

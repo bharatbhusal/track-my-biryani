@@ -20,7 +20,7 @@ export default function MainLayout({
 				}}
 			/>
 			<div
-				className="h-full min-h-0 overflow-y-auto"
+				className="h-full min-h-0 overflow-y-auto overflow-x-hidden"
 				style={{
 					paddingTop:
 						"calc(env(safe-area-inset-top, 0px) + 1rem)",

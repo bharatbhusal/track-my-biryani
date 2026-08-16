@@ -87,7 +87,7 @@ export function CategoryCard({
 									options={menuOptions}
 									onValueChange={handleMenu}
 									aria-label="Category actions"
-									className="h-8 w-8 cursor-pointer"
+									className="h-8 w-8 cursor-pointer shrink-0"
 									onClick={(e) => {
 										e.preventDefault();
 										e.stopPropagation();
@@ -97,7 +97,7 @@ export function CategoryCard({
 								<Button
 									variant="ghost"
 									size="icon"
-									className="h-8 w-8 cursor-pointer"
+									className="h-8 w-8 cursor-pointer shrink-0"
 									aria-label="Share category"
 									onClick={(e) => {
 										e.preventDefault();
