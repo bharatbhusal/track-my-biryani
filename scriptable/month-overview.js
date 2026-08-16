@@ -31,7 +31,7 @@ const theme = importModule("lib/theme")
 const moneyLib = importModule("lib/money")
 const date = importModule("lib/date")
 
-const { footer } = components
+const { footer, expenseBar } = components
 const { t } = theme
 const { font } = layout
 const { moneyShort, compact } = moneyLib
@@ -104,101 +104,6 @@ function bar(parent, {
 
 
 // ─────────────────────────────────────────────
-// Expense row
-// ─────────────────────────────────────────────
-
-function expenseRow(parent, expense) {
-	const row = parent.addStack()
-
-	row.layoutHorizontally()
-	row.centerAlignContent()
-
-
-	// Category emoji
-	const emoji =
-		row.addText(
-			expense.categoryEmoji || "💸"
-		)
-
-	emoji.font =
-		font("regular", 15)
-
-
-	row.addSpacer(7)
-
-
-	// Category color indicator
-	const indicator =
-		row.addStack()
-
-	indicator.size =
-		new Size(5, 22)
-
-	indicator.cornerRadius = 2.5
-
-	indicator.backgroundColor =
-		new Color(
-			expense.categoryColor ||
-			"#999999"
-		)
-
-
-	row.addSpacer(7)
-
-
-	// Expense title
-	const title =
-		row.addText(
-			expense.title || "Expense"
-		)
-
-	title.font =
-		font("regular", 11)
-
-	title.textColor =
-		t("text")
-
-	title.lineLimit = 1
-
-
-	row.addSpacer()
-	
-	// PaidAt
-	const paidAt =
-		row.addText(
-			relativeDay(expense.paidAt)
-		)
-
-	paidAt.font =
-		font("regular", 10)
-
-	paidAt.textColor =
-		t("muted")
-	
-  row.addSpacer(8)
-
-	// Amount
-	const amount =
-		row.addText(
-			moneyShort(
-				Number(expense.amount) || 0
-			)
-		)
-
-	amount.font =
-		font("semibold", 11)
-
-	amount.textColor =
-		t("text")
-
-	amount.rightAlignText()
-
-
-	return row
-}
-
-
-// ─────────────────────────────────────────────
 // Widget
 // ─────────────────────────────────────────────
 
@@ -247,6 +152,7 @@ bootstrap.run(async () => {
 
 	// ─────────────────────────────────────────
 	// Fetch bucket details
+	// ─────────────────────────────────────────
 	//
 	// We only have /buckets currently,
 	// so fetch the list and find our bucket.
@@ -565,7 +471,7 @@ bootstrap.run(async () => {
 			i < latest.length;
 			i++
 		) {
-			expenseRow(
+			expenseBar(
 				widget,
 				latest[i]
 			)

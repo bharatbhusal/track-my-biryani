@@ -45,7 +45,7 @@ const theme = importModule("lib/theme")
 const moneyLib = importModule("lib/money")
 const date = importModule("lib/date")
 
-const { footer } = components
+const { footer, stackedCategoryBar, categoryBar, categoryCompactBar } = components
 const { t } = theme
 const { font } = layout
 const { moneyShort, compact } = moneyLib
@@ -58,309 +58,6 @@ const { currentMonthRange } = date
 
 const bucketId =
 	String(args.widgetParameter || "").trim()
-
-
-// ─────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────
-
-function safeColor(value) {
-	try {
-		return new Color(
-			value || "#999999"
-		)
-	} catch {
-		return new Color("#999999")
-	}
-}
-
-
-function normalizeCategories(items) {
-	if (!Array.isArray(items)) {
-		return []
-	}
-
-	return items
-		.map((item) => ({
-			name: item.name || "Other",
-			emoji: item.emoji || "💸",
-			color: item.color || "#999999",
-			total: Number(item.total) || 0,
-			pct: Number(item.pct) || 0,
-			count: Number(item.count) || 0,
-		}))
-		.filter(
-			(item) =>
-				item.total > 0 &&
-				item.pct > 0
-		)
-		.sort(
-			(a, b) =>
-				b.total - a.total
-		)
-}
-
-
-// ─────────────────────────────────────────────
-// Stacked category bar
-// ─────────────────────────────────────────────
-
-function stackedBar(parent, categories) {
-	const row = parent.addStack()
-
-	row.layoutHorizontally()
-
-	row.size =
-		new Size(0, 10)
-
-	row.cornerRadius = 5
-
-
-	if (!categories.length) {
-		row.backgroundColor =
-			t("border")
-
-		return row
-	}
-
-
-	const totalPct =
-		categories.reduce(
-			(sum, category) =>
-				sum + category.pct,
-			0
-		)
-
-
-	for (
-		let i = 0;
-		i < categories.length;
-		i++
-	) {
-		const category =
-			categories[i]
-
-		const segment =
-			row.addStack()
-
-
-		// Calculate width from percentage.
-		//
-		// Scriptable doesn't support percentage
-		// widths, so use a fixed reference width.
-		const width =
-			Math.max(
-				1,
-				Math.round(
-					300 *
-					(
-						category.pct /
-						Math.max(totalPct, 1)
-					)
-				)
-			)
-
-
-		segment.size =
-			new Size(
-				width,
-				10
-			)
-
-		segment.backgroundColor =
-			safeColor(category.color)
-
-
-		// Round the outside edges only.
-		if (
-			i === 0 ||
-			i === categories.length - 1
-		) {
-			segment.cornerRadius = 5
-		}
-	}
-
-
-	return row
-}
-
-
-// ─────────────────────────────────────────────
-// Category row
-// ─────────────────────────────────────────────
-
-function categoryRow(
-	parent,
-	category,
-	showAmount = true
-) {
-	const row =
-		parent.addStack()
-
-	row.layoutHorizontally()
-	row.centerAlignContent()
-
-
-	// Emoji
-	const emoji =
-		row.addText(
-			category.emoji
-		)
-
-	emoji.font =
-		font("regular", 14)
-
-
-	row.addSpacer(6)
-
-
-	// Category color indicator
-	const indicator =
-		row.addStack()
-
-	indicator.size =
-		new Size(4, 18)
-
-	indicator.cornerRadius = 2
-
-	indicator.backgroundColor =
-		safeColor(category.color)
-
-
-	row.addSpacer(7)
-
-
-	// Category name
-	const name =
-		row.addText(
-			category.name
-		)
-
-	name.font =
-		font("regular", 10)
-
-	name.textColor =
-		t("text")
-
-	name.lineLimit = 1
-
-
-	row.addSpacer()
-
-
-	// Amount
-	if (showAmount) {
-		const amount =
-			row.addText(
-				moneyShort(
-					category.total
-				)
-			)
-
-		amount.font =
-			font("regular", 10)
-
-		amount.textColor =
-			t("muted")
-
-
-		row.addSpacer(8)
-	}
-
-
-	// Percentage
-	const pct =
-		row.addText(
-			`${category.pct}%`
-		)
-
-	pct.font =
-		font("semibold", 10)
-
-	pct.textColor =
-		t("text")
-
-	pct.rightAlignText()
-
-
-	return row
-}
-
-
-// ─────────────────────────────────────────────
-// Accessory category row
-// ─────────────────────────────────────────────
-
-function categoryCompactRow(
-	parent,
-	category
-) {
-	const row =
-		parent.addStack()
-
-	row.layoutHorizontally()
-	row.centerAlignContent()
-
-
-	const emoji =
-		row.addText(
-			category.emoji
-		)
-
-	emoji.font =
-		font("regular", 13)
-
-
-	row.addSpacer(5)
-
-
-	// Small color indicator
-	const indicator =
-		row.addStack()
-
-	indicator.size =
-		new Size(3, 14)
-
-	indicator.cornerRadius = 1.5
-
-	indicator.backgroundColor =
-		safeColor(category.color)
-
-
-	row.addSpacer(5)
-
-
-	const name =
-		row.addText(
-			category.name
-		)
-
-	name.font =
-		font("regular", 9)
-
-	name.textColor =
-		t("text")
-
-	name.lineLimit = 1
-
-
-	row.addSpacer()
-
-
-	const pct =
-		row.addText(
-			`${category.pct}%`
-		)
-
-	pct.font =
-		font("semibold", 9)
-
-	pct.textColor =
-		safeColor(category.color)
-
-
-	return row
-}
 
 
 // ─────────────────────────────────────────────
@@ -510,23 +207,8 @@ bootstrap.run(async () => {
 		})
 
 
-	// endpoints.categoriesWithStats()
-	// returns the unwrapped `data` array.
-	//
-	// [
-	//   {
-	//     name: "Internet",
-	//     color: "#FF6B6B",
-	//     emoji: "🛜",
-	//     total: 1945,
-	//     pct: 63
-	//   }
-	// ]
-
 	const categories =
-		normalizeCategories(
-			response
-		)
+		response || []
 
 
 	// ─────────────────────────────────────────
@@ -561,7 +243,7 @@ bootstrap.run(async () => {
 			i < top.length;
 			i++
 		) {
-			categoryCompactRow(
+			categoryCompactBar(
 				widget,
 				top[i]
 			)
@@ -679,7 +361,7 @@ bootstrap.run(async () => {
 	widget.addSpacer(9)
 
 
-	stackedBar(
+	stackedCategoryBar(
 		widget,
 		categories
 	)
@@ -697,7 +379,7 @@ bootstrap.run(async () => {
 		i < visibleCategories.length;
 		i++
 	) {
-		categoryRow(
+		categoryBar(
 			widget,
 			visibleCategories[i],
 			true
