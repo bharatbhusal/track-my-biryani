@@ -40,7 +40,10 @@ export function FilterBar({
 	const [confirmClear, setConfirmClear] = useState(false);
 	const clearAllFilters = ACTIONS[variant].clearAllFilters;
 	const canClear = !!clearAllFilters;
-	const resolvedSections = resolveSections(variant, sections);
+	const resolvedSections = resolveSections(
+		variant,
+		sections,
+	);
 
 	return (
 		<>
