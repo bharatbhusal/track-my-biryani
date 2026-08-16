@@ -1,4 +1,7 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import {
+	createSlice,
+	createAsyncThunk,
+} from "@reduxjs/toolkit";
 import { expensesApi } from "@/lib/api/expenses";
 import type { CategoryItem } from "@/types/expense.types";
 import type {
@@ -6,16 +9,14 @@ import type {
 	CategoryRangeStats,
 	CategoryWithStats,
 } from "@/types/analytics.types";
-import {
-	categoryCriteria,
-} from "@/lib/filters";
+import { categoryCriteria } from "@/lib/filters";
 import { sortForVariant } from "@/components/filters/variants";
 import type { ExpenseFilterCriteria } from "@/types/search.types";
 import type { RootState } from "@/store";
 
 type CategoryState = {
 	items: CategoryItem[];
-	itemsWithStats: CategoryWithStats[];
+	itemsWithStats: CategoryWithStats | null;
 	currentCategory: CategoryItem | null;
 	stats: CategoryRangeStats | null;
 	distribution: CategoryBreakdownPoint[];
@@ -25,7 +26,7 @@ type CategoryState = {
 
 const initialState: CategoryState = {
 	items: [],
-	itemsWithStats: [],
+	itemsWithStats: null,
 	currentCategory: null,
 	stats: null,
 	distribution: [],
@@ -38,7 +39,9 @@ export const fetchCategories = createAsyncThunk(
 	async (_: void, { getState }) => {
 		const state = getState() as RootState;
 		const result = await expensesApi.searchCategories({
-			filterCriteria: categoryCriteria(state.filters.filterCriteria),
+			filterCriteria: categoryCriteria(
+				state.filters.filterCriteria,
+			),
 			sortCriteria: sortForVariant(
 				"categories",
 				state.filters.sortCriteria,
@@ -67,7 +70,15 @@ export const fetchCategoryDetail = createAsyncThunk(
 
 export const fetchCategoryStats = createAsyncThunk(
 	"categories/fetchStats",
-	async ({ id, from, to }: { id: string; from: string; to: string }) => {
+	async ({
+		id,
+		from,
+		to,
+	}: {
+		id: string;
+		from: string;
+		to: string;
+	}) => {
 		return expensesApi.getCategoryStats(id, from, to);
 	},
 );
@@ -83,7 +94,8 @@ export const createCategory = createAsyncThunk(
 		},
 		{ dispatch },
 	) => {
-		const category = await expensesApi.createCategory(payload);
+		const category =
+			await expensesApi.createCategory(payload);
 		dispatch(fetchCategories());
 		return category;
 	},
@@ -96,7 +108,12 @@ export const updateCategory = createAsyncThunk(
 		payload,
 	}: {
 		id: string;
-		payload: { name: string; color?: string; emoji?: string; bucketId?: string };
+		payload: {
+			name: string;
+			color?: string;
+			emoji?: string;
+			bucketId?: string;
+		};
 	}) => {
 		return expensesApi.updateCategory(id, payload);
 	},
@@ -112,7 +129,9 @@ export const deleteCategory = createAsyncThunk(
 export const fetchCategoryDistribution = createAsyncThunk(
 	"categories/fetchDistribution",
 	async (filterCriteria: ExpenseFilterCriteria) => {
-		return expensesApi.getCategoryDistribution(filterCriteria);
+		return expensesApi.getCategoryDistribution(
+			filterCriteria,
+		);
 	},
 );
 
@@ -149,33 +168,49 @@ const categorySlice = createSlice({
 				state.loading = true;
 				state.error = null;
 			})
-			.addCase(fetchCategoriesWithStats.fulfilled, (state, action) => {
-				state.loading = false;
-				state.itemsWithStats = action.payload;
-			})
-			.addCase(fetchCategoriesWithStats.rejected, (state, action) => {
-				state.loading = false;
-				state.error =
-					action.error.message ?? "Failed to fetch categories with stats";
-			})
+			.addCase(
+				fetchCategoriesWithStats.fulfilled,
+				(state, action) => {
+					state.loading = false;
+					state.itemsWithStats = action.payload;
+				},
+			)
+			.addCase(
+				fetchCategoriesWithStats.rejected,
+				(state, action) => {
+					state.loading = false;
+					state.error =
+						action.error.message ??
+						"Failed to fetch categories with stats";
+				},
+			)
 			// fetchCategoryDetail
 			.addCase(fetchCategoryDetail.pending, (state) => {
 				state.loading = true;
 				state.error = null;
 			})
-			.addCase(fetchCategoryDetail.fulfilled, (state, action) => {
-				state.loading = false;
-				state.currentCategory = action.payload;
-			})
-			.addCase(fetchCategoryDetail.rejected, (state, action) => {
-				state.loading = false;
-				state.error =
-					action.error.message ?? "Failed to fetch category";
-			})
+			.addCase(
+				fetchCategoryDetail.fulfilled,
+				(state, action) => {
+					state.loading = false;
+					state.currentCategory = action.payload;
+				},
+			)
+			.addCase(
+				fetchCategoryDetail.rejected,
+				(state, action) => {
+					state.loading = false;
+					state.error =
+						action.error.message ?? "Failed to fetch category";
+				},
+			)
 			// fetchCategoryStats
-			.addCase(fetchCategoryStats.fulfilled, (state, action) => {
-				state.stats = action.payload;
-			})
+			.addCase(
+				fetchCategoryStats.fulfilled,
+				(state, action) => {
+					state.stats = action.payload;
+				},
+			)
 			// createCategory
 			.addCase(createCategory.rejected, (state, action) => {
 				state.error =
@@ -202,9 +237,12 @@ const categorySlice = createSlice({
 				}
 			})
 			// fetchCategoryDistribution
-			.addCase(fetchCategoryDistribution.fulfilled, (state, action) => {
-				state.distribution = action.payload;
-			});
+			.addCase(
+				fetchCategoryDistribution.fulfilled,
+				(state, action) => {
+					state.distribution = action.payload;
+				},
+			);
 	},
 });
 

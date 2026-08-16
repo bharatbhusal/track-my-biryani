@@ -76,7 +76,9 @@ export async function listCategoriesWithStatsService(
 	userId: string,
 	body: unknown,
 ) {
-	const parsed = categoryStatsSummarySchema.parse(body ?? {});
+	const parsed = categoryStatsSummarySchema.parse(
+		body ?? {},
+	);
 	const filterCriteria =
 		parsed.filterCriteria ??
 		defaultCategorySearchRequest().filterCriteria;
@@ -104,7 +106,9 @@ export async function listCategoriesWithStatsService(
 		filterCriteria.customFrom,
 		filterCriteria.customTo,
 	);
-	const from = bounds?.from ? new Date(bounds.from) : new Date(0);
+	const from = bounds?.from
+		? new Date(bounds.from)
+		: new Date(0);
 	const to = bounds?.to ? new Date(bounds.to) : new Date();
 
 	return listCategoriesWithStats(categoryQuery, from, to);
@@ -152,7 +156,10 @@ export async function getCategoryService(
 	categoryId: string,
 	bucketId?: string | null,
 ) {
-	const category = await getCategoryById(categoryId, bucketId);
+	const category = await getCategoryById(
+		categoryId,
+		bucketId,
+	);
 	if (!category) {
 		throw new AppError(
 			"Category not found",
@@ -250,7 +257,10 @@ export async function deleteCategoryService(
 	bucketId: string | null | undefined,
 	categoryId: string,
 ) {
-	const existing = await getCategoryById(categoryId, bucketId);
+	const existing = await getCategoryById(
+		categoryId,
+		bucketId,
+	);
 	if (!existing) {
 		throw new AppError(
 			"Category not found",
@@ -321,7 +331,9 @@ export async function getCategoryDistributionService(
 	userId: string,
 	body: unknown,
 ) {
-	const parsed = categoryDistributionSchema.parse(body ?? {});
+	const parsed = categoryDistributionSchema.parse(
+		body ?? {},
+	);
 	const filterCriteria =
 		parsed.filterCriteria ?? defaultExpenseFilterCriteria();
 	const { query } = await buildExpenseQuery(userId, {
@@ -336,14 +348,16 @@ export async function getCategoryStatsSummaryService(
 	userId: string,
 	body: unknown,
 ): Promise<CategoryStatsSummary> {
-	const parsed = categoryStatsSummarySchema.parse(body ?? {});
+	const parsed = categoryStatsSummarySchema.parse(
+		body ?? {},
+	);
 	const filterCriteria =
 		parsed.filterCriteria ??
 		defaultCategorySearchRequest().filterCriteria;
 	const { query } = await buildCategoryQuery(userId, {
 		filterCriteria,
 		sortCriteria: { field: "createdAt", direction: "DESC" },
-		pagination: { page: 1, pageSize: 1 },
+		pagination: { page: 1, pageSize: 100 },
 	});
 
 	const bounds = toIsoBoundsForPreset(
@@ -351,7 +365,9 @@ export async function getCategoryStatsSummaryService(
 		filterCriteria.customFrom,
 		filterCriteria.customTo,
 	);
-	const from = bounds?.from ? new Date(bounds.from) : new Date(0);
+	const from = bounds?.from
+		? new Date(bounds.from)
+		: new Date(0);
 	const to = bounds?.to ? new Date(bounds.to) : new Date();
 
 	const categoryIds = await listCategoryIds(query);
@@ -405,11 +421,19 @@ export async function searchCategoriesService(
 	userId: string,
 	searchRequest: unknown,
 ) {
-	const parsed = categorySearchSchema.parse(searchRequest ?? {});
+	const parsed = categorySearchSchema.parse(
+		searchRequest ?? {},
+	);
 	const request: CategorySearchRequest = {
-		filterCriteria: parsed.filterCriteria ?? defaultCategorySearchRequest().filterCriteria,
-		sortCriteria: parsed.sortCriteria ?? defaultCategorySearchRequest().sortCriteria,
-		pagination: parsed.pagination ?? defaultCategorySearchRequest().pagination,
+		filterCriteria:
+			parsed.filterCriteria ??
+			defaultCategorySearchRequest().filterCriteria,
+		sortCriteria:
+			parsed.sortCriteria ??
+			defaultCategorySearchRequest().sortCriteria,
+		pagination:
+			parsed.pagination ??
+			defaultCategorySearchRequest().pagination,
 	};
 	return searchCategories(userId, request);
 }

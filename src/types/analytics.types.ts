@@ -53,19 +53,37 @@ export type CategoryRangeStats = {
 	trend: TrendPoint[];
 };
 
-export type CategoryWithStats = {
-	_id: string;
-	name: string;
-	color: string;
-	emoji?: string;
-	userId?: string;
-	bucketId?: string;
+export type ExpenseStat = {
 	total: number;
 	count: number;
 	min: number;
 	max: number;
 	avg: number;
 	pct: number;
+};
+
+export type CategoryItem = {
+	_id: string;
+	name: string;
+	color: string;
+	emoji?: string;
+	userId?: string;
+	bucketId?: string;
+	stats: ExpenseStat;
+};
+
+export type CategoryStat = {
+	total: number;
+	count: number;
+	min: number;
+	max: number;
+	avg: number;
+	expenseCount: number;
+};
+
+export type CategoryWithStats = {
+	items: CategoryItem[];
+	stats: CategoryStat;
 };
 
 export type DistributionPoint = {

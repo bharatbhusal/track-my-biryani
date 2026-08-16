@@ -25,21 +25,31 @@ import type {
 
 export const expensesApi = {
 	searchExpenses: (request: ExpenseSearchRequest) =>
-		apiRequest<SearchResult<ExpenseItem>>("/expenses/search", {
-			method: "POST",
-			body: request,
-		}),
+		apiRequest<SearchResult<ExpenseItem>>(
+			"/expenses/search",
+			{
+				method: "POST",
+				body: request,
+			},
+		),
 
 	searchCategories: (request: CategorySearchRequest) =>
-		apiRequest<SearchResult<CategoryItem>>("/categories/search", {
-			method: "POST",
-			body: request,
-		}),
+		apiRequest<SearchResult<CategoryItem>>(
+			"/categories/search",
+			{
+				method: "POST",
+				body: request,
+			},
+		),
 
 	getExpenseById: (id: string) =>
 		apiRequest<ExpenseItem>(`/expenses/${id}`),
 
-	getExpenseContribution: (id: string, from?: string, to?: string) => {
+	getExpenseContribution: (
+		id: string,
+		from?: string,
+		to?: string,
+	) => {
 		const params = new URLSearchParams();
 		if (from) params.set("from", from);
 		if (to) params.set("to", to);
@@ -122,7 +132,9 @@ export const expensesApi = {
 			`/categories/${id}/stats?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
 		),
 
-	getCategoryDistribution: (filterCriteria: ExpenseFilterCriteria) =>
+	getCategoryDistribution: (
+		filterCriteria: ExpenseFilterCriteria,
+	) =>
 		apiRequest<CategoryBreakdownPoint[]>(
 			"/categories/distribution",
 			{ method: "POST", body: { filterCriteria } },
@@ -132,10 +144,13 @@ export const expensesApi = {
 		dimension: DistributionDimension,
 		filterCriteria: ExpenseFilterCriteria,
 	) =>
-		apiRequest<DistributionPoint[]>("/expenses/distribution", {
-			method: "POST",
-			body: { dimension, filterCriteria },
-		}),
+		apiRequest<DistributionPoint[]>(
+			"/expenses/distribution",
+			{
+				method: "POST",
+				body: { dimension, filterCriteria },
+			},
+		),
 
 	getCategoryStatsSummary: (
 		filterCriteria: CategoryFilterCriteria,
@@ -145,8 +160,10 @@ export const expensesApi = {
 			{ method: "POST", body: { filterCriteria } },
 		),
 
-	listCategoriesWithStats: (filterCriteria: CategoryFilterCriteria) =>
-		apiRequest<CategoryWithStats[]>("/categories/stats", {
+	listCategoriesWithStats: (
+		filterCriteria: CategoryFilterCriteria,
+	) =>
+		apiRequest<CategoryWithStats>("/categories/stats", {
 			method: "POST",
 			body: { filterCriteria },
 		}),

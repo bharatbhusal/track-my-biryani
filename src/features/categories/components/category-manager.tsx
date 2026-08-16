@@ -17,17 +17,11 @@ import { fetchCategoriesWithStats } from "@/store/slices/categorySlice";
 import { fetchAllBuckets } from "@/store/slices/bucketSlice";
 import { CategoryCard } from "@/features/categories/components/category-card";
 import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
-import { expensesApi } from "@/lib/api/expenses";
-import { categoryCriteria } from "@/lib/filters";
 import { formatCurrency } from "@/lib/format";
-import type { CategoryStatsSummary } from "@/types/analytics.types";
 
 export function CategoryManager() {
 	const dispatch = useAppDispatch();
 	const [drawerOpen, setDrawerOpen] = useState(false);
-	const [summary, setSummary] =
-		useState<CategoryStatsSummary | null>(null);
-	const [summaryLoading, setSummaryLoading] = useState(true);
 
 	const filterCriteria = useAppSelector(
 		(s) => s.filters.filterCriteria,
@@ -38,7 +32,6 @@ export function CategoryManager() {
 	const [loadedFor, setLoadedFor] = useState(filterCriteria);
 	if (loadedFor !== filterCriteria) {
 		setLoadedFor(filterCriteria);
-		setSummaryLoading(true);
 	}
 
 	const sortCriteria = useAppSelector(
@@ -69,51 +62,66 @@ export function CategoryManager() {
 		dispatch(fetchCategoriesWithStats(filterCriteria));
 	}, [dispatch, filterCriteria]);
 
-	useEffect(() => {
-		let cancelled = false;
-		expensesApi
-			.getCategoryStatsSummary(
-				categoryCriteria(filterCriteria),
-			)
-			.then((res) => {
-				if (!cancelled) {
-					setSummary(res);
-					setSummaryLoading(false);
-				}
-			})
-			.catch(() => {
-				if (!cancelled) {
-					setSummary(null);
-					setSummaryLoading(false);
-				}
-			});
-		return () => {
-			cancelled = true;
-		};
-	}, [filterCriteria]);
-
 	// ponytail: /categories/stats returns without an order, so amount sorting
 	// is applied here against the fetched page, normalized to this page's own
 	// field set like every other consumer.
-	const effectiveSort = sortForVariant("categories", sortCriteria);
+	const effectiveSort = sortForVariant(
+		"categories",
+		sortCriteria,
+	);
 	const items = useMemo(() => {
 		const dir = effectiveSort.direction === "ASC" ? 1 : -1;
-		return categoriesWithStats
+
+		return categoriesWithStats?.items
 			.slice()
 			.sort((a, b) =>
 				effectiveSort.field === "amount"
-					? (a.total - b.total) * dir
+					? ((a.stats?.total ?? 0) - (b.stats?.total ?? 0)) * dir
 					: a._id.localeCompare(b._id) * dir,
 			);
-	}, [categoriesWithStats, effectiveSort.field, effectiveSort.direction]);
+	}, [
+		categoriesWithStats,
+		effectiveSort.field,
+		effectiveSort.direction,
+	]);
 
 	const summaryCells: Array<[string, string]> = [
-		["Total", formatCurrency(summary?.total ?? 0, currency)],
-		["Avg", formatCurrency(summary?.avg ?? 0, currency)],
-		["Min", formatCurrency(summary?.min ?? 0, currency)],
-		["Max", formatCurrency(summary?.max ?? 0, currency)],
-		["Categories", String(summary?.categoryCount ?? 0)],
-		["Expenses", String(summary?.expenseCount ?? 0)],
+		[
+			"Total",
+			formatCurrency(
+				categoriesWithStats?.stats.total ?? 0,
+				currency,
+			),
+		],
+		[
+			"Avg",
+			formatCurrency(
+				categoriesWithStats?.stats.avg ?? 0,
+				currency,
+			),
+		],
+		[
+			"Min",
+			formatCurrency(
+				categoriesWithStats?.stats.min ?? 0,
+				currency,
+			),
+		],
+		[
+			"Max",
+			formatCurrency(
+				categoriesWithStats?.stats.max ?? 0,
+				currency,
+			),
+		],
+		[
+			"Categories",
+			String(categoriesWithStats?.stats.count ?? 0),
+		],
+		[
+			"Expenses",
+			String(categoriesWithStats?.stats.expenseCount ?? 0),
+		],
 	];
 
 	return (
@@ -129,23 +137,17 @@ export function CategoryManager() {
 				}}
 			/>
 			<div className="flex flex-wrap gap-2">
-				{summaryLoading
+				{!categoriesWithStats
 					? Array.from({ length: summaryCells.length }).map(
 							(_, i) => (
-								<Card
-									key={i}
-									className="min-w-[100px] flex-1"
-								>
+								<Card key={i} className="min-w-[100px] flex-1">
 									<Skeleton className="mb-1 h-4 w-16" />
 									<Skeleton className="h-5 w-24" />
 								</Card>
 							),
 						)
 					: summaryCells.map(([label, value]) => (
-							<Card
-								key={label}
-								className="min-w-[100px] flex-1"
-							>
+							<Card key={label} className="min-w-[100px] flex-1">
 								<p className="truncate text-xs text-[var(--color-muted)]">
 									{label}
 								</p>
@@ -157,14 +159,14 @@ export function CategoryManager() {
 			</div>
 
 			<div className="grid grid-cols-1 gap-2">
-				{items.map((category) => {
+				{items?.map((category) => {
 					return (
 						<div key={category._id}>
 							<CategoryCard category={category} />
 						</div>
 					);
 				})}
-				{items.length === 0 && (
+				{items?.length === 0 && (
 					<p className="col-span-full text-center text-sm text-[var(--color-muted)] py-8">
 						No categories found
 					</p>

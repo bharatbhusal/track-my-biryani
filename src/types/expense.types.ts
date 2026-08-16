@@ -49,4 +49,3 @@ export type CreateExpensePayload = {
 	notes?: string;
 	bucketId?: string;
 };
-

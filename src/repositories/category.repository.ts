@@ -4,7 +4,10 @@ import { buildCategoryQuery } from "@/lib/query-builders";
 import { CategoryModel } from "@/models/Category";
 import { ExpenseModel } from "@/models/Expense";
 import { AppError } from "@/lib/errors";
-import type { CategorySearchRequest, SearchResult } from "@/types/search.types";
+import type {
+	CategorySearchRequest,
+	SearchResult,
+} from "@/types/search.types";
 import type { CategoryItem } from "@/types/expense.types";
 
 export async function createCategory(data: {
@@ -63,7 +66,9 @@ export async function listCategories(bucketId: string) {
 		.lean();
 }
 
-export async function deleteCategoriesByBucket(bucketId: string) {
+export async function deleteCategoriesByBucket(
+	bucketId: string,
+) {
 	return CategoryModel.deleteMany({
 		bucketId: new Types.ObjectId(bucketId),
 	});
@@ -74,15 +79,22 @@ export async function listCategoriesWithStats(
 	from: Date,
 	to: Date,
 ) {
-	const categories = await CategoryModel.find(categoryQuery).lean();
+	const categories =
+		await CategoryModel.find(categoryQuery).lean();
 
 	const match: Record<string, unknown> = {
 		categoryId: {
 			$in: categories.map((c) => c._id as Types.ObjectId),
 		},
-		paidAt: { $gte: from, $lte: to },
+		paidAt: {
+			$gte: from,
+			$lte: to,
+		},
 	};
-	if (categoryQuery.bucketId) match.bucketId = categoryQuery.bucketId;
+
+	if (categoryQuery.bucketId) {
+		match.bucketId = categoryQuery.bucketId;
+	}
 
 	const categoryStats = await ExpenseModel.aggregate([
 		{ $match: match },
@@ -90,7 +102,7 @@ export async function listCategoriesWithStats(
 			$group: {
 				_id: "$categoryId",
 				total: { $sum: "$amount" },
-				count: { $sum: 1 },
+				expenseCount: { $sum: 1 },
 				min: { $min: "$amount" },
 				max: { $max: "$amount" },
 				avg: { $avg: "$amount" },
@@ -102,25 +114,64 @@ export async function listCategoriesWithStats(
 		categoryStats.map((s) => [s._id.toString(), s]),
 	);
 
-	const totalSum = categoryStats.reduce(
+	// Overall expense statistics
+	const total = categoryStats.reduce(
 		(acc, s) => acc + s.total,
 		0,
 	);
 
-	return categories.map((cat) => {
-		const stats = statsById.get(cat._id.toString());
-		const total = stats?.total ?? 0;
+	const expenseCount = categoryStats.reduce(
+		(acc, s) => acc + s.expenseCount,
+		0,
+	);
+
+	const min = categoryStats.length
+		? Math.min(...categoryStats.map((s) => s.min))
+		: 0;
+
+	const max = categoryStats.length
+		? Math.max(...categoryStats.map((s) => s.max))
+		: 0;
+
+	const avg = expenseCount > 0 ? total / expenseCount : 0;
+
+	const items = categories.map((category) => {
+		const categoryStat = statsById.get(
+			category._id.toString(),
+		);
+
+		const categoryTotal = categoryStat?.total ?? 0;
+
 		return {
-			...cat,
-			total,
-			count: stats?.count ?? 0,
-			min: stats?.min ?? 0,
-			max: stats?.max ?? 0,
-			avg: stats?.avg ?? 0,
-			pct:
-				totalSum > 0 ? Math.round((total / totalSum) * 100) : 0,
+			...category,
+			stats: {
+				total: categoryTotal,
+				count: categoryStat?.expenseCount ?? 0,
+				expenseCount: categoryStat?.expenseCount ?? 0,
+				min: categoryStat?.min ?? 0,
+				max: categoryStat?.max ?? 0,
+				avg: categoryStat?.avg ?? 0,
+				pct:
+					total > 0
+						? Math.round((categoryTotal / total) * 100)
+						: 0,
+			},
 		};
 	});
+
+	const stats = {
+		total,
+		count: categories.length,
+		expenseCount,
+		min,
+		max,
+		avg,
+	};
+
+	return {
+		items,
+		stats,
+	};
 }
 
 export async function updateCategory(
@@ -154,7 +205,9 @@ export async function getCategoryById(
 
 	return CategoryModel.findOne({
 		_id: categoryId,
-		...(bucketId ? { bucketId: new Types.ObjectId(bucketId) } : {}),
+		...(bucketId
+			? { bucketId: new Types.ObjectId(bucketId) }
+			: {}),
 	}).lean();
 }
 
@@ -197,10 +250,8 @@ export async function searchCategories(
 	userId: string,
 	request: CategorySearchRequest,
 ): Promise<SearchResult<CategoryItem>> {
-	const { query, sort, skip, limit } = await buildCategoryQuery(
-		userId,
-		request,
-	);
+	const { query, sort, skip, limit } =
+		await buildCategoryQuery(userId, request);
 
 	const [items, total] = await Promise.all([
 		CategoryModel.find(query)
@@ -217,11 +268,16 @@ export async function searchCategories(
 			name: item.name,
 			color: item.color,
 			emoji: item.emoji,
-			userId: (item.userId as Types.ObjectId | undefined)?.toString(),
-			bucketId: (item.bucketId as Types.ObjectId | undefined)?.toString(),
+			userId: (
+				item.userId as Types.ObjectId | undefined
+			)?.toString(),
+			bucketId: (
+				item.bucketId as Types.ObjectId | undefined
+			)?.toString(),
 		})),
 		total,
 		page: request.pagination.page,
-		totalPages: Math.ceil(total / request.pagination.pageSize) || 1,
+		totalPages:
+			Math.ceil(total / request.pagination.pageSize) || 1,
 	};
 }
