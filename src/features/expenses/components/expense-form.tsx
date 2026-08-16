@@ -38,8 +38,7 @@ import {
 	useAppSelector,
 	useAppDispatch,
 } from "@/store/hooks";
-import { fetchCategories } from "@/store/slices/categorySlice";
-import { fetchBuckets } from "@/store/slices/bucketSlice";
+import { fetchAllBuckets } from "@/store/slices/bucketSlice";
 import { fetchExpenseDetail, createExpense, updateExpense } from "@/store/slices/expenseSlice";
 import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
 import { AddBucketDialog } from "@/features/settings/components/add-bucket-dialog";
@@ -47,7 +46,15 @@ import {
 	setDraftExpense,
 	clearDraftExpense,
 } from "@/store/slices/uiSlice";
-import type { CreateExpensePayload } from "@/types/expense.types";
+import { expensesApi } from "@/lib/api/expenses";
+import {
+	personalBucketId,
+	scopedCategoryRequest,
+} from "@/lib/filters";
+import type {
+	CategoryItem,
+	CreateExpensePayload,
+} from "@/types/expense.types";
 
 const schema = z.object({
 	title: z.string().min(1),
@@ -71,13 +78,11 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 	const locale = useAppSelector((s) => s.ui.locale);
 	const isEditing = Boolean(id);
 
-	const categories = useAppSelector(
-		(s) => s.categories.items,
+	const [categories, setCategories] = useState<CategoryItem[]>(
+		[],
 	);
-	const buckets = useAppSelector((s) => s.buckets.buckets);
-	const activeBucketId = useAppSelector(
-		(s) => s.ui.activeBucketId,
-	);
+	const buckets = useAppSelector((s) => s.buckets.allBuckets);
+	const defaultBucketId = personalBucketId(buckets);
 	const currentExpense = useAppSelector(
 		(s) => s.expenses.currentExpense,
 	);
@@ -103,20 +108,15 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 
 	useEffect(() => {
 		if (buckets.length === 0) {
-			dispatch(fetchBuckets());
+			dispatch(fetchAllBuckets());
 		}
 	}, [dispatch, buckets.length]);
 
 	useEffect(() => {
 		if (isEditing && id) {
-			dispatch(
-				fetchExpenseDetail({
-					id,
-					bucketId: activeBucketId,
-				}),
-			);
+			dispatch(fetchExpenseDetail(id));
 		}
-	}, [dispatch, isEditing, id, activeBucketId]);
+	}, [dispatch, isEditing, id]);
 
 	const defaultValues = useCallback(() => {
 		if (isEditing)
@@ -126,7 +126,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				categoryId: "",
 				paidAt: "",
 				notes: "",
-				bucketId: activeBucketId ?? "",
+				bucketId: "",
 			};
 		if (
 			draftExpense &&
@@ -140,7 +140,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				paidAt:
 					draftExpense.paidAt ?? getLocalDateTimeInputValue(),
 				notes: draftExpense.notes ?? "",
-				bucketId: activeBucketId ?? "",
+				bucketId: "",
 			};
 		}
 		return {
@@ -149,9 +149,9 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 			categoryId: "",
 			paidAt: getLocalDateTimeInputValue(),
 			notes: "",
-			bucketId: activeBucketId ?? "",
+			bucketId: "",
 		};
-	}, [isEditing, draftExpense, activeBucketId]);
+	}, [isEditing, draftExpense]);
 
 	const form = useForm<FormValues>({
 		resolver: zodResolver(schema),
@@ -168,9 +168,23 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 		name: "bucketId",
 	});
 
+	// ponytail: form categories are fetched locally per selected bucket so the
+	// page's shared category slice keeps whatever the filters chose.
+	const loadCategories = useCallback((bucketId: string) => {
+		if (!bucketId) return;
+		expensesApi
+			.searchCategories(scopedCategoryRequest(bucketId))
+			.then((r) => setCategories(r.items))
+			.catch(() => setCategories([]));
+	}, []);
+
 	useEffect(() => {
-		dispatch(fetchCategories(watchedBucketId || null));
-	}, [dispatch, watchedBucketId]);
+		if (!watchedBucketId) {
+			if (defaultBucketId) setValue("bucketId", defaultBucketId);
+			return;
+		}
+		loadCategories(watchedBucketId);
+	}, [watchedBucketId, defaultBucketId, setValue, loadCategories]);
 
 	useEffect(() => {
 		if (!isEditing && allValues?.title) {
@@ -483,9 +497,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 			<AddCategoryDialog
 				open={addCategoryOpen}
 				onClose={() => setAddCategoryOpen(false)}
-				onCreated={() => {
-					dispatch(fetchCategories(watchedBucketId || null));
-				}}
+				onCreated={() => loadCategories(watchedBucketId ?? "")}
 			/>
 			<AddBucketDialog
 				open={addBucketOpen}

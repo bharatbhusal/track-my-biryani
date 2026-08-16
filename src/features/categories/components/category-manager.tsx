@@ -1,137 +1,144 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
-import {
-	FiPlus,
-	FiSearch,
-	FiArrowUp,
-	FiArrowDown,
-	FiTag,
-} from "react-icons/fi";
+import { useState, useEffect } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+	FilterBar,
+	useScopedOptions,
+} from "@/components/filters";
 import {
 	useAppSelector,
 	useAppDispatch,
 } from "@/store/hooks";
 import { fetchCategoriesWithStats } from "@/store/slices/categorySlice";
-import { setDateRange } from "@/store/slices/uiSlice";
-import { useDebouncedValue } from "@/hooks/use-debounce";
-import { Input } from "@/components/ui/input";
-import { DateRangeBar } from "@/components/charts/date-range-bar";
 import { CategoryCard } from "@/features/categories/components/category-card";
 import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
-import { toIsoBounds } from "@/lib/date-range";
+import { formatCurrency } from "@/lib/format";
 
 export function CategoryManager() {
 	const dispatch = useAppDispatch();
-	const [query, setQuery] = useState("");
-	const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
-		"desc",
-	);
 	const [drawerOpen, setDrawerOpen] = useState(false);
 
-	const range = useAppSelector((s) => s.ui.dateRange);
-	const activeBucketId = useAppSelector(
-		(s) => s.ui.activeBucketId,
+	const filterCriteria = useAppSelector(
+		(s) => s.filters.filterCriteria,
 	);
-	const rangeBounds = useMemo(
-		() => toIsoBounds(range),
-		[range.preset, range.offset],
+
+	// ponytail: refetching for new criteria shows the skeleton again — the
+	// render-time comparison keeps the loading flip out of an effect.
+	const [loadedFor, setLoadedFor] = useState(filterCriteria);
+	if (loadedFor !== filterCriteria) {
+		setLoadedFor(filterCriteria);
+	}
+
+	const sortCriteria = useAppSelector(
+		(s) => s.filters.sortCriteria,
 	);
+	const buckets = useAppSelector(
+		(s) => s.buckets.allBuckets,
+	);
+	const currency = useAppSelector((s) => s.ui.currency);
 	const categoriesWithStats = useAppSelector(
 		(s) => s.categories.itemsWithStats,
 	);
 
-	const debouncedQuery = useDebouncedValue(query, 300);
+	// ponytail: owners come from bucket members through the shared hook, so the
+	// user filter can list everyone in the selected buckets.
+	const { owners } = useScopedOptions(
+		true,
+		buckets,
+		filterCriteria.bucketPreset,
+		filterCriteria.bucketIds,
+	);
 
 	useEffect(() => {
-		if (!rangeBounds.from || !rangeBounds.to) return;
-		dispatch(
-			fetchCategoriesWithStats({
-				from: rangeBounds.from,
-				to: rangeBounds.to,
-				bucketId: activeBucketId ?? undefined,
-			}),
-		);
-	}, [
-		dispatch,
-		rangeBounds.from,
-		rangeBounds.to,
-		activeBucketId,
-	]);
+		dispatch(fetchCategoriesWithStats({ filterCriteria }));
+	}, [dispatch, filterCriteria, sortCriteria]);
 
-	const items = useMemo(
-		() =>
-			categoriesWithStats
-				.filter((item) =>
-					item.name
-						.toLowerCase()
-						.includes(debouncedQuery.toLowerCase()),
-				)
-				.sort((a, b) => {
-					if (sortOrder === "asc") return a.total - b.total;
-					return b.total - a.total;
-				}),
-		[categoriesWithStats, debouncedQuery, sortOrder],
-	);
+	const summaryCells: Array<[string, string]> = [
+		[
+			"Total",
+			formatCurrency(
+				categoriesWithStats?.stats?.total ?? 0,
+				currency,
+			),
+		],
+		[
+			"Avg",
+			formatCurrency(
+				categoriesWithStats?.stats?.avg ?? 0,
+				currency,
+			),
+		],
+		[
+			"Min",
+			formatCurrency(
+				categoriesWithStats?.stats?.min ?? 0,
+				currency,
+			),
+		],
+		[
+			"Max",
+			formatCurrency(
+				categoriesWithStats?.stats?.max ?? 0,
+				currency,
+			),
+		],
+		[
+			"Categories",
+			String(categoriesWithStats?.stats?.count ?? 0),
+		],
+		[
+			"Expenses",
+			String(categoriesWithStats?.stats?.expenseCount ?? 0),
+		],
+	];
 
 	return (
 		<div className="flex gap-2 flex-col">
-			<DateRangeBar
-				range={range}
-				onRangeChange={(r) => dispatch(setDateRange(r))}
+			<FilterBar
+				variant="categories"
+				buckets={buckets}
+				categories={[]}
+				owners={owners}
+				sections={{
+					categories: false,
+					search: false,
+					sort: false,
+				}}
 			/>
-			<Card>
-				<div className="flex items-center justify-between mb-4">
-					<CardTitle>
-						<FiTag className="inline mr-1.5 h-4 w-4" />
-						Categories
-					</CardTitle>
-				</div>
-
-				<div className="grid grid-cols-1 gap-2">
-					<div className="relative">
-						<FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-muted)]" />
-						<Input
-							value={query}
-							onChange={(e) => setQuery(e.target.value)}
-							placeholder="Search categories"
-							className="pl-9"
-						/>
-					</div>
-					<div className="flex w-full items-center justify-between">
-						<Button
-							variant="outline"
-							onClick={() =>
-								setSortOrder((c) => (c === "asc" ? "desc" : "asc"))
-							}
-						>
-							{sortOrder === "asc" ? (
-								<FiArrowUp className="mr-1.5 h-4 w-4" />
-							) : (
-								<FiArrowDown className="mr-1.5 h-4 w-4" />
-							)}
-							Sort {sortOrder === "asc" ? "Lowest" : "Highest"}
-						</Button>
-						<Button onClick={() => setDrawerOpen(true)}>
-							<FiPlus className="mr-1.5 h-4 w-4" />
-							Add Category
-						</Button>
-					</div>
-				</div>
-			</Card>
+			<div className="flex flex-wrap gap-2">
+				{!categoriesWithStats
+					? Array.from({ length: summaryCells.length }).map(
+							(_, i) => (
+								<Card key={i} className="min-w-[100px] flex-1">
+									<Skeleton className="mb-1 h-4 w-16" />
+									<Skeleton className="h-5 w-24" />
+								</Card>
+							),
+						)
+					: summaryCells.map(([label, value]) => (
+							<Card key={label} className="min-w-[100px] flex-1">
+								<p className="truncate text-xs text-[var(--color-muted)]">
+									{label}
+								</p>
+								<p className="truncate font-medium tabular-nums">
+									{value}
+								</p>
+							</Card>
+						))}
+			</div>
 
 			<div className="grid grid-cols-1 gap-2">
-				{items.map((category) => {
+				{categoriesWithStats?.items?.map((category) => {
 					return (
 						<div key={category._id}>
 							<CategoryCard category={category} />
 						</div>
 					);
 				})}
-				{items.length === 0 && (
+				{categoriesWithStats?.items?.length === 0 && (
 					<p className="col-span-full text-center text-sm text-[var(--color-muted)] py-8">
 						No categories found
 					</p>

@@ -1,30 +1,17 @@
-import { NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
 import {
 	errorResponse,
 	successResponse,
 } from "@/lib/api-response";
 import { connectToDatabase } from "@/lib/db";
-import {
-	createCategory,
-	listCategories,
-	listCategoriesWithStats,
-} from "@/controllers/category.controller";
+import { createCategory } from "@/controllers/category.controller";
 
-export async function GET(request: NextRequest) {
-	try {
-		await connectToDatabase();
-		const from = request.nextUrl.searchParams.get("from");
-		const to = request.nextUrl.searchParams.get("to");
-		if (from && to) {
-			const data = await listCategoriesWithStats(request);
-			return successResponse(data);
-		}
-		const data = await listCategories(request);
-		return successResponse(data);
-	} catch (error) {
-		return errorResponse(error);
-	}
+export async function GET() {
+	return NextResponse.json(
+		{ success: false, error: { message: "Not found", code: "NOT_FOUND" } },
+		{ status: 404 },
+	);
 }
 
 export async function POST(request: NextRequest) {

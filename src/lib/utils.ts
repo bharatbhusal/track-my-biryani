@@ -7,6 +7,10 @@ export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
 }
 
+export function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export function randomHexColor(): `#${string}` {
   const color = Math.floor(Math.random() * MAX_HEX_COLOR)
     .toString(16)

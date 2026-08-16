@@ -14,7 +14,6 @@ import {
 } from "react-icons/fi";
 import { toast } from "sonner";
 
-import { BucketSwitcher } from "@/components/layout/bucket-switcher";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/modals/dialog";
@@ -88,23 +87,6 @@ export function SettingsPage() {
 					)}
 				</div>
 			</div>
-
-			<Card>
-				<div className="space-y-2">
-					<div>
-						<p className="text-sm font-medium">Active bucket</p>
-						<p className="text-xs text-[var(--color-muted)]">
-							Choose which bucket expenses are shown for.
-							Management happens on the Buckets page.
-						</p>
-					</div>
-					{!authLoading ? (
-						<BucketSwitcher />
-					) : (
-						<Skeleton className="h-8 w-32 rounded-full" />
-					)}
-				</div>
-			</Card>
 
 			<Card>
 				<Link

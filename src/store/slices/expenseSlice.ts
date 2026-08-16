@@ -5,8 +5,6 @@ import {
 import { expensesApi } from "@/lib/api/expenses";
 import type {
 	ExpenseItem,
-	ExpenseListQuery,
-	ExpensesListPayload,
 	CreateExpensePayload,
 } from "@/types/expense.types";
 import type {
@@ -16,6 +14,8 @@ import type {
 } from "@/types/analytics.types";
 import type { GlobalDateRange } from "@/lib/date-range";
 import { toIsoBounds } from "@/lib/date-range";
+import { sortForVariant } from "@/components/filters/variants";
+import type { RootState } from "@/store";
 
 type ExpenseState = {
 	items: ExpenseItem[];
@@ -44,21 +44,24 @@ const initialState: ExpenseState = {
 };
 
 export const fetchExpenses = createAsyncThunk(
-	"expenses/fetchList",
-	async (filters: ExpenseListQuery = {}) => {
-		return expensesApi.listExpenses(filters);
+	"expenses/search",
+	async (_: void, { getState }) => {
+		const state = getState() as RootState;
+		return expensesApi.searchExpenses({
+			filterCriteria: state.filters.filterCriteria,
+			sortCriteria: sortForVariant(
+				"expenses",
+				state.filters.sortCriteria,
+			),
+			pagination: state.filters.pagination,
+		});
 	},
 );
 
 export const fetchExpensesInRange = createAsyncThunk(
 	"expenses/fetchInRange",
-	async ({
-		range,
-		bucketId,
-	}: {
-		range: GlobalDateRange;
-		bucketId?: string | null;
-	}) => {
+	async (range: GlobalDateRange, { getState }) => {
+		const state = getState() as RootState;
 		const { from, to } = toIsoBounds(range);
 		if (!from || !to) {
 			return {
@@ -68,24 +71,26 @@ export const fetchExpensesInRange = createAsyncThunk(
 				totalPages: null,
 			};
 		}
-		return expensesApi.listExpenses({
-			from,
-			to,
-			bucketId: bucketId ?? undefined,
+		return expensesApi.searchExpenses({
+			filterCriteria: {
+				...state.filters.filterCriteria,
+				datePreset: "CUSTOM",
+				customFrom: from,
+				customTo: to,
+			},
+			sortCriteria: sortForVariant(
+				"expenses",
+				state.filters.sortCriteria,
+			),
+			pagination: { page: 1, pageSize: state.filters.pagination.pageSize },
 		});
 	},
 );
 
 export const fetchExpenseDetail = createAsyncThunk(
 	"expenses/fetchDetail",
-	async ({
-		id,
-		bucketId,
-	}: {
-		id: string;
-		bucketId?: string | null;
-	}) => {
-		return expensesApi.getExpenseById(id, bucketId);
+	async (id: string) => {
+		return expensesApi.getExpenseById(id);
 	},
 );
 
@@ -95,19 +100,12 @@ export const fetchExpenseContribution = createAsyncThunk(
 		id,
 		from,
 		to,
-		bucketId,
 	}: {
 		id: string;
 		from?: string;
 		to?: string;
-		bucketId?: string | null;
 	}) => {
-		return expensesApi.getExpenseContribution(
-			id,
-			from,
-			to,
-			bucketId,
-		);
+		return expensesApi.getExpenseContribution(id, from, to);
 	},
 );
 
@@ -133,51 +131,28 @@ export const updateExpense = createAsyncThunk(
 
 export const deleteExpense = createAsyncThunk(
 	"expenses/delete",
-	async ({
-		id,
-		bucketId,
-	}: {
-		id: string;
-		bucketId?: string | null;
-	}) => {
-		return expensesApi.deleteExpense(id, bucketId);
+	async (id: string) => {
+		return expensesApi.deleteExpense(id);
 	},
 );
 
 export const fetchOverviewStats = createAsyncThunk(
 	"expenses/fetchOverviewStats",
-	async ({
-		from,
-		to,
-		bucketId,
-	}: {
-		from: string;
-		to: string;
-		bucketId?: string | null;
-	}) => {
-		return expensesApi.getOverviewStats(from, to, bucketId);
+	async (_: void, { getState }) => {
+		const state = getState() as RootState;
+		return expensesApi.getOverviewStats({
+			filterCriteria: state.filters.filterCriteria,
+		});
 	},
 );
 
 export const fetchChartData = createAsyncThunk(
 	"expenses/fetchChartData",
-	async ({
-		from,
-		to,
-		categoryId,
-		bucketId,
-	}: {
-		from: string;
-		to: string;
-		categoryId?: string;
-		bucketId?: string | null;
-	}) => {
-		return expensesApi.getChartData(
-			from,
-			to,
-			categoryId,
-			bucketId,
-		);
+	async (_: void, { getState }) => {
+		const state = getState() as RootState;
+		return expensesApi.getChartData({
+			filterCriteria: state.filters.filterCriteria,
+		});
 	},
 );
 
@@ -202,7 +177,7 @@ const expenseSlice = createSlice({
 			})
 			.addCase(fetchExpenses.fulfilled, (state, action) => {
 				state.loading = false;
-				const data = action.payload as ExpensesListPayload;
+				const data = action.payload;
 				state.items = data.items ?? [];
 				state.total = data.total ?? 0;
 				state.totalPages = data.totalPages ?? 0;
@@ -222,7 +197,7 @@ const expenseSlice = createSlice({
 				fetchExpensesInRange.fulfilled,
 				(state, action) => {
 					state.loading = false;
-					const data = action.payload as ExpensesListPayload;
+					const data = action.payload;
 					state.items = data.items ?? [];
 					state.total = data.total ?? 0;
 					state.totalPages = data.totalPages ?? 0;
@@ -281,7 +256,7 @@ const expenseSlice = createSlice({
 			})
 			// deleteExpense
 			.addCase(deleteExpense.fulfilled, (state, action) => {
-				const id = action.meta.arg.id;
+				const id = action.meta.arg;
 				state.items = state.items.filter((e) => e._id !== id);
 				state.total = Math.max(0, state.total - 1);
 				if (state.currentExpense?._id === id) {

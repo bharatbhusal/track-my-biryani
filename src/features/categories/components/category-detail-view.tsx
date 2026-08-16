@@ -7,7 +7,10 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/modals/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DateRangeBar } from "@/components/charts/date-range-bar";
+import {
+	FilterBar,
+	sortForVariant,
+} from "@/components/filters";
 
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
@@ -21,13 +24,16 @@ import {
 	fetchCategoryStats,
 	deleteCategory,
 } from "@/store/slices/categorySlice";
-import { fetchExpenses } from "@/store/slices/expenseSlice";
-import { setDateRange } from "@/store/slices/uiSlice";
-import { toIsoBounds } from "@/lib/date-range";
-import type { ExpenseListQuery } from "@/types";
+import { toIsoBoundsForPreset } from "@/lib/date-range";
+import { expensesApi } from "@/lib/api/expenses";
+import {
+	filterBounds,
+	scopedExpenseRequest,
+} from "@/lib/filters";
 import { CashFlowChart } from "@/components/cash-flow-chart";
 import { ChartSkeleton } from "@/components/charts/chart-skeleton";
 import type { CategoryWithStats } from "@/types/analytics.types";
+import type { ExpenseItem } from "@/types/expense.types";
 
 export function CategoryDetailView({ id }: { id: string }) {
 	const router = useRouter();
@@ -37,87 +43,124 @@ export function CategoryDetailView({ id }: { id: string }) {
 		useState(false);
 	const [page, setPage] = useState(1);
 
-	const dateRange = useAppSelector((s) => s.ui.dateRange);
-	const activeBucketId = useAppSelector(
-		(s) => s.ui.activeBucketId,
+	const filterCriteria = useAppSelector(
+		(s) => s.filters.filterCriteria,
 	);
-	const currentUserId = useAppSelector(
-		(s) => s.auth.user?.id,
+	const sortCriteria = useAppSelector(
+		(s) => s.filters.sortCriteria,
 	);
 
 	const category = useAppSelector(
 		(s) => s.categories.currentCategory,
 	);
 	const stats = useAppSelector((s) => s.categories.stats);
-	const expenses = useAppSelector((s) => s.expenses.items);
-	const expensesLoading = useAppSelector(
-		(s) => s.expenses.loading,
+	// ponytail: memoized on the raw slice reference (stable across unrelated
+	// renders) so the normalized sort is a stable dependency for the effect.
+	const effectiveSort = useMemo(
+		() => sortForVariant("expenses", sortCriteria),
+		[sortCriteria],
 	);
-	const expensesTotalPages = useAppSelector(
-		(s) => s.expenses.totalPages,
+	const [expenseList, setExpenseList] = useState<{
+		items: ExpenseItem[];
+		totalPages: number;
+		loading: boolean;
+	}>({ items: [], totalPages: 0, loading: true });
+	const {
+		items: expenses,
+		totalPages: expensesTotalPages,
+		loading: expensesLoading,
+	} = expenseList;
+
+	// ponytail: the persisted filters slice drives the card, the chart and
+	// the list — no local copy, so the selection survives navigation.
+	const bounds = useMemo(
+		() =>
+			filterBounds(
+				toIsoBoundsForPreset(
+					filterCriteria.datePreset,
+					filterCriteria.customFrom,
+					filterCriteria.customTo,
+				),
+			),
+		[
+			filterCriteria.datePreset,
+			filterCriteria.customFrom,
+			filterCriteria.customTo,
+		],
 	);
 
-	const isCreator =
-		!!category &&
-		!!currentUserId &&
-		category.userId === currentUserId;
-
-	const rangeBounds = useMemo(
-		() => toIsoBounds(dateRange),
-		[dateRange],
-	);
+	// ponytail: when the shared filter changes, drop back to page one — the
+	// documented "adjust state while rendering" pattern (store the previous
+	// value in state, compare during render), same as the filter dialog draft.
+	const filterKey = JSON.stringify([
+		filterCriteria,
+		sortCriteria,
+	]);
+	const [prevFilterKey, setPrevFilterKey] =
+		useState(filterKey);
+	if (prevFilterKey !== filterKey) {
+		setPrevFilterKey(filterKey);
+		setPage(1);
+	}
 
 	useEffect(() => {
-		dispatch(
-			fetchCategoryDetail({
-				id,
-				bucketId: activeBucketId ?? undefined,
-			}),
-		)
+		dispatch(fetchCategoryDetail(id))
 			.unwrap()
 			.catch(() =>
 				router.replace("/unauthorized?type=category"),
 			);
-	}, [dispatch, id, activeBucketId, router]);
+	}, [dispatch, id, router]);
 
 	useEffect(() => {
-		if (rangeBounds.from && rangeBounds.to) {
-			dispatch(
-				fetchCategoryStats({
-					id,
-					from: rangeBounds.from,
-					to: rangeBounds.to,
-					bucketId: activeBucketId ?? undefined,
+		dispatch(
+			fetchCategoryStats({
+				id,
+				from: bounds.from,
+				to: bounds.to,
+			}),
+		);
+	}, [dispatch, id, bounds.from, bounds.to]);
+
+	useEffect(() => {
+		let cancelled = false;
+		expensesApi
+			.searchExpenses({
+				...scopedExpenseRequest({
+					bucketId: category?.bucketId,
+					categoryId: id,
+					page,
+					from: bounds.from,
+					to: bounds.to,
 				}),
-			);
-		}
-	}, [
-		dispatch,
-		id,
-		rangeBounds.from,
-		rangeBounds.to,
-		activeBucketId,
-	]);
-
-	useEffect(() => {
-		const params: ExpenseListQuery = {
-			page,
-			limit: 20,
-			categoryId: id,
-			from: rangeBounds.from,
-			to: rangeBounds.to,
-			sortBy: "paidAt",
-			order: "desc",
-			bucketId: activeBucketId ?? undefined,
+				sortCriteria: effectiveSort,
+			})
+			.then((res) => {
+				if (cancelled) return;
+				setExpenseList({
+					items: res.items,
+					totalPages: res.totalPages,
+					loading: false,
+				});
+			})
+			.catch(() => {
+				if (!cancelled)
+					setExpenseList({
+						items: [],
+						totalPages: 0,
+						loading: false,
+					});
+			});
+		return () => {
+			cancelled = true;
 		};
-		dispatch(fetchExpenses(params));
 	}, [
-		dispatch,
 		id,
 		page,
-		rangeBounds.from,
-		rangeBounds.to,
-		activeBucketId,
+		bounds.from,
+		bounds.to,
+		sortCriteria,
+		effectiveSort,
+		category?.bucketId,
 	]);
 
 	const chartTrend = useMemo(() => {
@@ -163,54 +206,20 @@ export function CategoryDetailView({ id }: { id: string }) {
 		[category?.name, category?.color],
 	);
 
-	const categoryWithStats =
-		useMemo((): CategoryWithStats | null => {
-			if (!category || !stats) return null;
-			return {
-				...category,
-				bucketId: category.bucketId,
-				total: stats.total,
-				count: stats.count,
-				min: stats.min,
-				max: stats.max,
-				avg: stats.avg,
-				pct: stats.pct,
-			};
-		}, [category, stats]);
-
-	const routeUrl = useMemo(() => {
-		if (expenses.length < 1) return null;
-
-		const points = expenses
-			.slice(0, 5)
-			.filter(
-				(item) =>
-					item.location?.latitude && item.location?.longitude,
-			);
-
-		if (points.length < 2) return null;
-
-		const origin = `${points[0].location.latitude},${points[0].location.longitude}`;
-		const destination = `${points[points.length - 1].location.latitude},${points[points.length - 1].location.longitude}`;
-
-		const waypoints = points
-			.slice(1, -1)
-			.map(
-				(item) =>
-					`${item.location.latitude},${item.location.longitude}`,
-			)
-			.join("|");
-
-		return (
-			`https://www.google.com/maps/dir/?api=1` +
-			`&origin=${origin}` +
-			`&destination=${destination}` +
-			(waypoints
-				? `&waypoints=${encodeURIComponent(waypoints)}`
-				: "") +
-			`&travelmode=driving`
-		);
-	}, [expenses]);
+	// const categoryWithStats =
+	// 	useMemo((): CategoryWithStats | null => {
+	// 		if (!category || !stats) return null;
+	// 		return {
+	// 			...category,
+	// 			bucketId: category.bucketId,
+	// 			total: stats.total,
+	// 			count: stats.count,
+	// 			min: stats.min,
+	// 			max: stats.max,
+	// 			avg: stats.avg,
+	// 			pct: stats.pct,
+	// 		};
+	// 	}, [category, stats]);
 
 	if (!category) {
 		return (
@@ -250,22 +259,28 @@ export function CategoryDetailView({ id }: { id: string }) {
 	}
 
 	return (
-		<div className="space-y-4">
-			<DateRangeBar
-				title={category?.name ?? "Category"}
-				range={dateRange}
-				onRangeChange={(r) => {
-					dispatch(setDateRange(r));
-					setPage(1);
+		<div className="space-y-2 overflow-x-hidden">
+			<FilterBar
+				variant="expenses"
+				buckets={[]}
+				categories={[]}
+				owners={[]}
+				sections={{
+					buckets: false,
+					categories: false,
+					owners: false,
+					additional: false,
+					search: false,
+					sort: true,
 				}}
 			/>
-			{categoryWithStats && (
-				<CategoryCard
-					category={categoryWithStats}
-					onEdit={() => setEditDrawerOpen(true)}
-					onDelete={() => setDeleteOpen(true)}
-				/>
-			)}
+			{/* {categoryWithStats && ( */}
+			<CategoryCard
+				category={category}
+				onEdit={() => setEditDrawerOpen(true)}
+				onDelete={() => setDeleteOpen(true)}
+			/>
+			{/* )} */}
 			<CashFlowChart
 				title="Trend"
 				stackedSeries={chartStackedSeries}
@@ -281,6 +296,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 					page={page}
 					totalPages={expensesTotalPages}
 					onPageChange={setPage}
+					isSection={effectiveSort.field === "paidAt"}
 				/>
 			)}
 
@@ -298,12 +314,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 				onCancel={() => setDeleteOpen(false)}
 				onConfirm={async () => {
 					try {
-						await dispatch(
-							deleteCategory({
-								id,
-								bucketId: category?.bucketId,
-							}),
-						).unwrap();
+						await dispatch(deleteCategory(id)).unwrap();
 						toast.success("Category deleted");
 						router.replace("/categories");
 					} catch (error) {

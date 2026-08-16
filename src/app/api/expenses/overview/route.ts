@@ -6,7 +6,7 @@ import {
 import { connectToDatabase } from "@/lib/db";
 import { getExpenseOverviewStats } from "@/controllers/expense.controller";
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
 	try {
 		await connectToDatabase();
 		const data = await getExpenseOverviewStats(request);

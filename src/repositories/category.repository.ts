@@ -1,8 +1,15 @@
 import { Types } from "mongoose";
 
+import { buildCategoryQuery } from "@/lib/query-builders";
 import { CategoryModel } from "@/models/Category";
 import { ExpenseModel } from "@/models/Expense";
 import { AppError } from "@/lib/errors";
+import type {
+	CategorySearchRequest,
+	SearchResult,
+	SortCriteria,
+} from "@/types/search.types";
+import type { CategoryItem } from "@/types/expense.types";
 
 export async function createCategory(data: {
 	userId: string;
@@ -60,21 +67,35 @@ export async function listCategories(bucketId: string) {
 		.lean();
 }
 
-export async function deleteCategoriesByBucket(bucketId: string) {
+export async function deleteCategoriesByBucket(
+	bucketId: string,
+) {
 	return CategoryModel.deleteMany({
 		bucketId: new Types.ObjectId(bucketId),
 	});
 }
-
 export async function listCategoriesWithStats(
-	bucketId: string,
+	categoryQuery: Record<string, unknown>,
 	from: Date,
 	to: Date,
+	filter: SortCriteria,
 ) {
+	const categories =
+		await CategoryModel.find(categoryQuery).lean();
+
 	const match: Record<string, unknown> = {
-		bucketId: new Types.ObjectId(bucketId),
-		paidAt: { $gte: from, $lte: to },
+		categoryId: {
+			$in: categories.map((c) => c._id as Types.ObjectId),
+		},
+		paidAt: {
+			$gte: from,
+			$lte: to,
+		},
 	};
+
+	if (categoryQuery.bucketId) {
+		match.bucketId = categoryQuery.bucketId;
+	}
 
 	const categoryStats = await ExpenseModel.aggregate([
 		{ $match: match },
@@ -82,7 +103,7 @@ export async function listCategoriesWithStats(
 			$group: {
 				_id: "$categoryId",
 				total: { $sum: "$amount" },
-				count: { $sum: 1 },
+				expenseCount: { $sum: 1 },
 				min: { $min: "$amount" },
 				max: { $max: "$amount" },
 				avg: { $avg: "$amount" },
@@ -90,33 +111,123 @@ export async function listCategoriesWithStats(
 		},
 	]);
 
-	const categories = await CategoryModel.find({
-		bucketId,
-	}).lean();
-
 	const statsById = new Map(
 		categoryStats.map((s) => [s._id.toString(), s]),
 	);
 
-	const totalSum = categoryStats.reduce(
+	// Overall expense statistics
+	const total = categoryStats.reduce(
 		(acc, s) => acc + s.total,
 		0,
 	);
 
-	return categories.map((cat) => {
-		const stats = statsById.get(cat._id.toString());
-		const total = stats?.total ?? 0;
+	const expenseCount = categoryStats.reduce(
+		(acc, s) => acc + s.expenseCount,
+		0,
+	);
+
+	const min = categoryStats.length
+		? Math.min(...categoryStats.map((s) => s.min))
+		: 0;
+
+	const max = categoryStats.length
+		? Math.max(...categoryStats.map((s) => s.max))
+		: 0;
+
+	const avg = expenseCount > 0 ? total / expenseCount : 0;
+
+	const items = categories.map((category) => {
+		const categoryStat = statsById.get(
+			category._id.toString(),
+		);
+
+		const categoryTotal = categoryStat?.total ?? 0;
+
 		return {
-			...cat,
-			total,
-			count: stats?.count ?? 0,
-			min: stats?.min ?? 0,
-			max: stats?.max ?? 0,
-			avg: stats?.avg ?? 0,
-			pct:
-				totalSum > 0 ? Math.round((total / totalSum) * 100) : 0,
+			...category,
+			stats: {
+				total: categoryTotal,
+				count: categoryStat?.expenseCount ?? 0,
+				expenseCount: categoryStat?.expenseCount ?? 0,
+				min: categoryStat?.min ?? 0,
+				max: categoryStat?.max ?? 0,
+				avg: categoryStat?.avg ?? 0,
+				pct:
+					total > 0
+						? Math.round((categoryTotal / total) * 100)
+						: 0,
+			},
 		};
 	});
+
+	// Apply sorting
+	const direction = filter.direction === "ASC" ? 1 : -1;
+
+	items.sort((a, b) => {
+		let comparison = 0;
+
+		switch (filter.field) {
+			case "amount":
+			case "total":
+				comparison =
+					(a.stats.total ?? 0) - (b.stats.total ?? 0);
+				break;
+
+			case "count":
+			case "expenseCount":
+				comparison =
+					(a.stats.expenseCount ?? 0) -
+					(b.stats.expenseCount ?? 0);
+				break;
+
+			case "min":
+				comparison = (a.stats.min ?? 0) - (b.stats.min ?? 0);
+				break;
+
+			case "max":
+				comparison = (a.stats.max ?? 0) - (b.stats.max ?? 0);
+				break;
+
+			case "avg":
+				comparison = (a.stats.avg ?? 0) - (b.stats.avg ?? 0);
+				break;
+
+			case "pct":
+				comparison = (a.stats.pct ?? 0) - (b.stats.pct ?? 0);
+				break;
+
+			case "name":
+				comparison = a.name.localeCompare(b.name);
+				break;
+
+			case "createdAt":
+				comparison =
+					new Date(a.createdAt).getTime() -
+					new Date(b.createdAt).getTime();
+				break;
+
+			default:
+				comparison = a._id
+					.toString()
+					.localeCompare(b._id.toString());
+				break;
+		}
+
+		return comparison * direction;
+	});
+
+	const stats = {
+		total,
+		count: categories.length,
+		expenseCount,
+		min,
+		max,
+		avg,
+	};
+	return {
+		items,
+		stats,
+	};
 }
 
 export async function updateCategory(
@@ -142,7 +253,7 @@ export async function updateCategory(
 
 export async function getCategoryById(
 	categoryId: string,
-	bucketId: string,
+	bucketId?: string | null,
 ) {
 	if (!Types.ObjectId.isValid(categoryId)) {
 		return null;
@@ -150,7 +261,9 @@ export async function getCategoryById(
 
 	return CategoryModel.findOne({
 		_id: categoryId,
-		bucketId,
+		...(bucketId
+			? { bucketId: new Types.ObjectId(bucketId) }
+			: {}),
 	}).lean();
 }
 
@@ -178,4 +291,49 @@ export async function deleteCategory(
 		_id: categoryId,
 		bucketId,
 	}).lean();
+}
+
+export async function listCategoryIds(
+	query: Record<string, unknown>,
+): Promise<Types.ObjectId[]> {
+	const docs = await CategoryModel.find(query)
+		.select("_id")
+		.lean();
+	return docs.map((d) => d._id as Types.ObjectId);
+}
+
+export async function searchCategories(
+	userId: string,
+	request: CategorySearchRequest,
+): Promise<SearchResult<CategoryItem>> {
+	const { query, sort, skip, limit } =
+		await buildCategoryQuery(userId, request);
+
+	const [items, total] = await Promise.all([
+		CategoryModel.find(query)
+			.sort(sort)
+			.skip(skip)
+			.limit(limit)
+			.lean(),
+		CategoryModel.countDocuments(query),
+	]);
+
+	return {
+		items: items.map((item) => ({
+			_id: (item._id as Types.ObjectId).toString(),
+			name: item.name,
+			color: item.color,
+			emoji: item.emoji,
+			userId: (
+				item.userId as Types.ObjectId | undefined
+			)?.toString(),
+			bucketId: (
+				item.bucketId as Types.ObjectId | undefined
+			)?.toString(),
+		})),
+		total,
+		page: request.pagination.page,
+		totalPages:
+			Math.ceil(total / request.pagination.pageSize) || 1,
+	};
 }

@@ -1,10 +1,7 @@
 import { apiRequest } from "@/lib/api/client";
 
 export const analyticsApi = {
-	exportData: (
-		type?: "all" | "expenses" | "categories",
-		bucketId?: string | null,
-	) =>
+	exportData: (type?: "all" | "expenses" | "categories") =>
 		apiRequest<{
 			data: string;
 			filename: string;
@@ -12,6 +9,5 @@ export const analyticsApi = {
 			exportedAt: string;
 		}>(
 			`/export?format=json${type ? `&type=${encodeURIComponent(type)}` : ""}`,
-			{ bucketId },
 		),
 };

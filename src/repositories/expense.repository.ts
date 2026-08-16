@@ -1,10 +1,21 @@
 import { Types } from "mongoose";
 
+import { buildExpenseQuery } from "@/lib/query-builders";
+import { escapeRegex } from "@/lib/utils";
 import { ExpenseModel } from "@/models/Expense";
 import { CategoryModel } from "@/models/Category";
+import { BucketModel } from "@/models/Bucket";
+import { UserModel } from "@/models/User";
+import type {
+	DistributionDimension,
+	ExpenseSearchRequest,
+	SearchResult,
+} from "@/types/search.types";
+import type { ExpenseItem } from "@/types/expense.types";
 import type {
 	ExpenseContribution,
 	CategoryBreakdownPoint,
+	DistributionPoint,
 	TrendPoint,
 } from "@/types/analytics.types";
 
@@ -68,9 +79,9 @@ export async function createExpense(data: {
 	categoryId: string;
 	notes?: string;
 	images: string[];
-	location: {
-		latitude: number;
-		longitude: number;
+	location?: {
+		latitude?: number;
+		longitude?: number;
 		address?: string;
 	};
 	currency: string;
@@ -91,10 +102,7 @@ export async function listExpenses(
 		// Use case-insensitive substring search across title and notes
 		const q = filters.q.trim();
 		if (q.length > 0) {
-			const regex = new RegExp(
-				q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-				"i",
-			);
+			const regex = new RegExp(escapeRegex(q), "i");
 			query.$or = [
 				{ title: { $regex: regex } },
 				{ notes: { $regex: regex } },
@@ -155,15 +163,16 @@ export async function listExpenses(
 	]);
 
 	const transformedItems = items.map((item) => {
-		const posterName = (
-			item.userId as { username?: string } | undefined
-		)?.username ?? "";
+		const posterName =
+			(item.userId as { username?: string } | undefined)
+				?.username ?? "";
 		return {
 			...item,
 			...(posterName !== "" ? { posterName } : {}),
 			userId:
-				(item.userId as { _id?: Types.ObjectId } | undefined)
-					?._id?.toString() ?? "",
+				(
+					item.userId as { _id?: Types.ObjectId } | undefined
+				)?._id?.toString() ?? "",
 			categoryColor: item.categoryId?.color ?? "",
 			categoryEmoji: item.categoryId?.emoji ?? "",
 			categoryId:
@@ -629,59 +638,181 @@ export async function getExpenseContribution(
 	} satisfies ExpenseContribution;
 }
 
-export async function getCategoryDistribution(
-	userId: string,
-	from: Date,
-	to: Date,
-	bucketId: string,
-): Promise<CategoryBreakdownPoint[]> {
-	const match: Record<string, unknown> = {
-		bucketId: new Types.ObjectId(bucketId),
-		paidAt: { $gte: from, $lte: to },
-	};
+const DISTRIBUTION_FIELD: Record<
+	DistributionDimension,
+	string
+> = {
+	category: "$categoryId",
+	owner: "$userId",
+	bucket: "$bucketId",
+};
 
-	const [categoryTotals, categories] = await Promise.all([
-		ExpenseModel.aggregate([
-			{ $match: match },
-			{
-				$group: {
-					_id: "$categoryId",
-					value: { $sum: "$amount" },
-				},
+export async function getDistribution(
+	bucketIds: Types.ObjectId[],
+	dimension: DistributionDimension,
+	from?: Date,
+	to?: Date,
+): Promise<DistributionPoint[]> {
+	const match: Record<string, unknown> = {
+		bucketId: { $in: bucketIds },
+	};
+	if (from || to) {
+		match.paidAt = {
+			...(from ? { $gte: from } : {}),
+			...(to ? { $lte: to } : {}),
+		};
+	}
+
+	const totals = await ExpenseModel.aggregate<{
+		_id: Types.ObjectId | null;
+		value: number;
+	}>([
+		{ $match: match },
+		{
+			$group: {
+				_id: DISTRIBUTION_FIELD[dimension],
+				value: { $sum: "$amount" },
 			},
-		]),
-		CategoryModel.find({ bucketId }).lean(),
+		},
 	]);
 
-	const nameById = new Map(
-		categories.map((c) => [c._id.toString(), c.name]),
+	const ids = totals
+		.map((t) => t._id)
+		.filter((id): id is Types.ObjectId => id !== null);
+
+	const docs =
+		dimension === "category"
+			? await CategoryModel.find({ _id: { $in: ids } })
+					.select("name color")
+					.lean()
+			: dimension === "owner"
+				? await UserModel.find({ _id: { $in: ids } })
+						.select("name username")
+						.lean()
+				: await BucketModel.find({ _id: { $in: ids } })
+						.select("name icon")
+						.lean();
+
+	const byId = new Map(
+		docs.map((d) => [
+			(d._id as Types.ObjectId).toString(),
+			d,
+		]),
 	);
 
-	const colorById = new Map(
-		categories.map((c) => [c._id.toString(), c.color]),
-	);
-
-	return categoryTotals
-		.map((b) => ({
-			name: nameById.get(b._id.toString()) ?? "Uncategorized",
-			value: b.value,
-			color: colorById.get(b._id.toString()) ?? "#6b7280",
-			categoryId: b._id.toString(),
-		}))
+	return totals
+		.map((t) => {
+			const id = t._id?.toString() ?? "";
+			const doc = byId.get(id) as
+				| {
+						name?: string;
+						username?: string;
+						color?: string;
+						icon?: string;
+				  }
+				| undefined;
+			return {
+				id,
+				name: doc?.name ?? doc?.username ?? "Unknown",
+				value: t.value,
+				...(dimension === "category"
+					? { color: doc?.color ?? "#6b7280" }
+					: {}),
+				...(dimension === "bucket"
+					? { icon: doc?.icon ?? "📁" }
+					: {}),
+			};
+		})
 		.sort((a, b) => b.value - a.value);
 }
 
-export async function getExpenseOverviewStats(
-	userId: string,
+export async function getFilteredCategoryDistribution(
+	query: Record<string, unknown>,
+): Promise<CategoryBreakdownPoint[]> {
+	const totals = await ExpenseModel.aggregate<{
+		_id: Types.ObjectId | null;
+		value: number;
+	}>([
+		{ $match: query },
+		{
+			$group: {
+				_id: "$categoryId",
+				value: { $sum: "$amount" },
+			},
+		},
+	]);
+
+	const ids = totals
+		.map((t) => t._id)
+		.filter((id): id is Types.ObjectId => id !== null);
+	const categories = await CategoryModel.find({
+		_id: { $in: ids },
+	})
+		.select("name color")
+		.lean();
+	const byId = new Map(
+		categories.map((c) => [c._id.toString(), c]),
+	);
+
+	return totals
+		.map((t) => {
+			const id = t._id?.toString() ?? "";
+			const cat = byId.get(id);
+			return {
+				categoryId: id,
+				name: cat?.name ?? "Uncategorized",
+				value: t.value,
+				color: cat?.color ?? "#6b7280",
+			};
+		})
+		.sort((a, b) => b.value - a.value);
+}
+
+export async function getExpenseStatsForCategories(
+	categoryIds: Types.ObjectId[],
 	from: Date,
 	to: Date,
-	bucketId: string,
-) {
+	bucketId?: Record<string, unknown>,
+): Promise<{
+	total: number;
+	min: number;
+	max: number;
+	avg: number;
+	expenseCount: number;
+}> {
 	const match: Record<string, unknown> = {
-		bucketId: new Types.ObjectId(bucketId),
+		categoryId: { $in: categoryIds },
 		paidAt: { $gte: from, $lte: to },
 	};
+	if (bucketId) match.bucketId = bucketId;
 
+	const [result] =
+		await ExpenseModel.aggregate<SummaryBucket>([
+			{ $match: match },
+			{
+				$group: {
+					_id: null,
+					total: { $sum: "$amount" },
+					count: { $sum: 1 },
+					avg: { $avg: "$amount" },
+					min: { $min: "$amount" },
+					max: { $max: "$amount" },
+				},
+			},
+		]);
+
+	return {
+		total: result?.total ?? 0,
+		min: result?.min ?? 0,
+		max: result?.max ?? 0,
+		avg: result?.avg ?? 0,
+		expenseCount: result?.count ?? 0,
+	};
+}
+
+export async function getExpenseOverviewStats(
+	match: Record<string, unknown>,
+) {
 	const [result] = await ExpenseModel.aggregate([
 		{ $match: match },
 		{
@@ -700,20 +831,10 @@ export async function getExpenseOverviewStats(
 }
 
 export async function getChartData(
-	userId: string,
+	match: Record<string, unknown>,
 	from: Date,
 	to: Date,
-	bucketId: string,
-	categoryId?: string,
 ) {
-	const match: Record<string, unknown> = {
-		bucketId: new Types.ObjectId(bucketId),
-		paidAt: { $gte: from, $lte: to },
-	};
-	if (categoryId) {
-		match.categoryId = new Types.ObjectId(categoryId);
-	}
-
 	const dayDiff = Math.ceil(
 		(to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24),
 	);
@@ -745,9 +866,7 @@ export async function getChartData(
 			},
 			{ $sort: { "_id.period": 1 } },
 		]),
-		CategoryModel.find(
-			bucketId ? { bucketId } : { userId, bucketId: null },
-		).lean(),
+		CategoryModel.find({ bucketId: match.bucketId }).lean(),
 	]);
 
 	const nameById = new Map(
@@ -817,4 +936,68 @@ function formatPeriodLabel(
 		}).format(date);
 	}
 	return String(id);
+}
+
+export async function searchExpenses(
+	userId: string,
+	request: ExpenseSearchRequest,
+): Promise<SearchResult<ExpenseItem>> {
+	const { query, sort, skip, limit } =
+		await buildExpenseQuery(userId, request);
+
+	const [items, total] = await Promise.all([
+		ExpenseModel.find(query)
+			.populate("userId", "name username")
+			.populate("categoryId", "emoji color")
+			.select(
+				"title amount paidAt currency notes images location bucketId userId createdAt updatedAt",
+			)
+			.sort(sort)
+			.skip(skip)
+			.limit(limit)
+			.lean(),
+		ExpenseModel.countDocuments(query),
+	]);
+
+	const transformedItems = items.map((item) => {
+		const posterName =
+			(item.userId as { username?: string } | undefined)
+				?.username ?? "";
+		return {
+			_id: (item._id as Types.ObjectId).toString(),
+			title: item.title,
+			amount: item.amount,
+			currency: item.currency,
+			paidAt: item.paidAt.toISOString(),
+			categoryId:
+				(
+					item.categoryId as { _id?: Types.ObjectId } | undefined
+				)?._id?.toString() ?? "",
+			categoryColor:
+				(item.categoryId as { color?: string } | undefined)
+					?.color ?? "",
+			categoryEmoji:
+				(item.categoryId as { emoji?: string } | undefined)
+					?.emoji ?? "",
+			notes: item.notes,
+			images: item.images ?? [],
+			location: item.location,
+			bucketId: (item.bucketId as Types.ObjectId).toString(),
+			userId:
+				(
+					item.userId as { _id?: Types.ObjectId } | undefined
+				)?._id?.toString() ?? "",
+			...(posterName ? { posterName } : {}),
+			createdAt: item.createdAt?.toISOString(),
+			updatedAt: item.updatedAt?.toISOString(),
+		} satisfies ExpenseItem;
+	});
+
+	return {
+		items: transformedItems,
+		total,
+		page: request.pagination.page,
+		totalPages:
+			Math.ceil(total / request.pagination.pageSize) || 1,
+	};
 }

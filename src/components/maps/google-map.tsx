@@ -15,7 +15,11 @@ export default function GoogleMap({
 	address,
 	height = 320,
 }: Props) {
-	if (!latitude || !longitude) return null;
+	// ponytail: 0 is a legitimate coordinate — guard on finiteness, and on the
+	// {0,0} "no location" sentinel, not on falsiness.
+	if (!Number.isFinite(latitude) || !Number.isFinite(longitude))
+		return null;
+	if (latitude === 0 && longitude === 0) return null;
 
 	const zoom = 14;
 	const src = `https://www.google.com/maps?q=${latitude},${longitude}&z=${zoom}&output=embed&t=k`;

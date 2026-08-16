@@ -1,17 +1,25 @@
 import { AppError } from "@/lib/errors";
 import { resolveBucketContext } from "@/lib/bucket";
 import {
+	chartOverviewSchema,
+	distributionSchema,
 	expenseFiltersSchema,
 	expenseSchema,
+	expenseSearchSchema,
 } from "@/lib/validators";
+import { toIsoBoundsForPreset } from "@/lib/date-range";
+import { buildExpenseQuery } from "@/lib/query-builders";
+import { accessibleBucketIds } from "@/lib/query-builders/membership";
 import {
 	createExpense,
 	deleteExpense,
+	getDistribution,
 	getExpenseById,
 	getExpenseContribution,
 	getExpenseOverviewStats,
 	getChartData,
 	listExpenses,
+	searchExpenses,
 	updateExpense,
 } from "@/repositories/expense.repository";
 import {
@@ -21,6 +29,7 @@ import {
 import { findBucketById } from "@/repositories/bucket.repository";
 import { findUserById } from "@/repositories/user.repository";
 import { logAuditEvent } from "@/services/audit.service";
+import type { ExpenseSearchRequest } from "@/types/search.types";
 
 export async function listExpensesService(
 	userId: string,
@@ -94,14 +103,14 @@ export async function getExpenseService(
 	expenseId: string,
 	bucketId?: string | null,
 ) {
-	const ctx = await resolveBucketContext(userId, bucketId);
-	const expense = await getExpenseById(
-		expenseId,
-		ctx.bucketId,
-	);
+	const expense = await getExpenseById(expenseId);
 	if (!expense) {
 		throw new AppError("Expense not found", 404, "NOT_FOUND");
 	}
+	await resolveBucketContext(
+		userId,
+		bucketId ?? expense.bucketId?.toString(),
+	);
 	return expense;
 }
 
@@ -219,7 +228,14 @@ export async function deleteExpenseService(
 	expenseId: string,
 	bucketId?: string | null,
 ) {
-	const ctx = await resolveBucketContext(userId, bucketId);
+	const existing = await getExpenseById(expenseId);
+	if (!existing) {
+		throw new AppError("Expense not found", 404, "NOT_FOUND");
+	}
+	const ctx = await resolveBucketContext(
+		userId,
+		bucketId ?? existing.bucketId?.toString(),
+	);
 	const deleted = await deleteExpense(
 		userId,
 		expenseId,
@@ -248,7 +264,14 @@ export async function getContributionService(
 	from?: string,
 	to?: string,
 ) {
-	const ctx = await resolveBucketContext(userId, bucketId);
+	const existing = await getExpenseById(expenseId);
+	if (!existing) {
+		throw new AppError("Expense not found", 404, "NOT_FOUND");
+	}
+	const ctx = await resolveBucketContext(
+		userId,
+		bucketId ?? existing.bucketId?.toString(),
+	);
 	const data = await getExpenseContribution(
 		userId,
 		expenseId,
@@ -262,31 +285,52 @@ export async function getContributionService(
 	return data;
 }
 
+// ponytail: overview/chart share the same parse + query-build step; both
+// aggregate on the full filter criteria (bucket/category/owner/date/search/…)
+// so the cards and chart always match what the table shows.
+async function chartOverviewContext(
+	userId: string,
+	body: unknown,
+): Promise<{
+	match: Record<string, unknown>;
+	from: Date;
+	to: Date;
+}> {
+	const parsed = chartOverviewSchema.parse(body ?? {});
+	const filters =
+		parsed.filterCriteria ??
+		defaultExpenseSearchRequest().filterCriteria;
+
+	const { query } = await buildExpenseQuery(userId, {
+		filterCriteria: filters,
+		sortCriteria: { field: "paidAt", direction: "DESC" },
+		pagination: { page: 1, pageSize: 1 },
+	});
+
+	const bounds = toIsoBoundsForPreset(
+		filters.datePreset,
+		filters.customFrom,
+		filters.customTo,
+	);
+	return {
+		match: query,
+		from: bounds?.from ? new Date(bounds.from) : new Date(0),
+		to: bounds?.to ? new Date(bounds.to) : new Date(),
+	};
+}
+
 export async function getExpenseOverviewStatsService(
 	userId: string,
-	from: string,
-	to: string,
-	bucketId?: string | null,
+	body: unknown,
 ) {
-	if (!from || !to) {
-		throw new AppError(
-			"from and to query params are required",
-			400,
-		);
-	}
-	const ctx = await resolveBucketContext(userId, bucketId);
-	const fromDate = new Date(from);
-	const toDate = new Date(to);
-	const { total } = await getExpenseOverviewStats(
+	const { match, from, to } = await chartOverviewContext(
 		userId,
-		fromDate,
-		toDate,
-		ctx.bucketId,
+		body,
 	);
+	const { total } = await getExpenseOverviewStats(match);
 
 	const dayDiff = Math.ceil(
-		(toDate.getTime() - fromDate.getTime()) /
-			(1000 * 60 * 60 * 24),
+		(to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24),
 	);
 
 	let periodCount: number;
@@ -296,10 +340,10 @@ export async function getExpenseOverviewStatsService(
 		perPeriodLabel = "spend_per_day";
 	} else {
 		periodCount =
-			toDate.getMonth() -
-			fromDate.getMonth() +
+			to.getMonth() -
+			from.getMonth() +
 			1 +
-			(toDate.getFullYear() - fromDate.getFullYear()) * 12;
+			(to.getFullYear() - from.getFullYear()) * 12;
 		perPeriodLabel = "spend_per_month";
 	}
 
@@ -327,23 +371,75 @@ export async function getExpenseOverviewStatsService(
 
 export async function getChartDataService(
 	userId: string,
-	from: string,
-	to: string,
-	categoryId?: string,
-	bucketId?: string | null,
+	body: unknown,
 ) {
-	if (!from || !to) {
-		throw new AppError(
-			"from and to query params are required",
-			400,
-		);
-	}
-	const ctx = await resolveBucketContext(userId, bucketId);
-	return getChartData(
+	const { match, from, to } = await chartOverviewContext(
 		userId,
-		new Date(from),
-		new Date(to),
-		ctx.bucketId,
-		categoryId || undefined,
+		body,
+	);
+	return getChartData(match, from, to);
+}
+
+function defaultExpenseSearchRequest(): ExpenseSearchRequest {
+	return {
+		filterCriteria: {
+			bucketPreset: "PERSONAL",
+			bucketIds: [],
+			categoryPreset: "ALL",
+			categoryIds: [],
+			ownerPreset: "ME",
+			ownerIds: [],
+			datePreset: "THIS_MONTH",
+		},
+		sortCriteria: { field: "paidAt", direction: "DESC" },
+		pagination: { page: 1, pageSize: 20 },
+	};
+}
+
+export async function searchExpensesService(
+	userId: string,
+	searchRequest: unknown,
+) {
+	const parsed = expenseSearchSchema.parse(
+		searchRequest ?? {},
+	);
+	const request: ExpenseSearchRequest = {
+		filterCriteria:
+			parsed.filterCriteria ??
+			defaultExpenseSearchRequest().filterCriteria,
+		sortCriteria:
+			parsed.sortCriteria ??
+			defaultExpenseSearchRequest().sortCriteria,
+		pagination:
+			parsed.pagination ??
+			defaultExpenseSearchRequest().pagination,
+	};
+	return searchExpenses(userId, request);
+}
+
+// Distributions intentionally apply only the date range plus membership scope:
+// the UI shows the whole picture and highlights the current selection, so the
+// data must not be pre-narrowed by bucket/category/owner/q/hasNotes/hasLocation.
+export async function getDistributionService(
+	userId: string,
+	body: unknown,
+) {
+	const parsed = distributionSchema.parse(body ?? {});
+	const filters =
+		parsed.filterCriteria ??
+		defaultExpenseSearchRequest().filterCriteria;
+
+	const bucketIds = await accessibleBucketIds(userId);
+	const bounds = toIsoBoundsForPreset(
+		filters.datePreset,
+		filters.customFrom,
+		filters.customTo,
+	);
+
+	return getDistribution(
+		bucketIds,
+		parsed.dimension,
+		bounds?.from ? new Date(bounds.from) : undefined,
+		bounds?.to ? new Date(bounds.to) : undefined,
 	);
 }

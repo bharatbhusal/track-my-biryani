@@ -13,7 +13,9 @@ export default async function UnauthorizedPage({
 			? "expense"
 			: type === "category"
 				? "category"
-				: "item";
+				: type === "bucket"
+					? "bucket"
+					: "item";
 
 	return (
 		<div className="mx-auto mt-20 max-w-md text-center">

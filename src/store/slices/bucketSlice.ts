@@ -4,50 +4,82 @@ import {
 	isAnyOf,
 } from "@reduxjs/toolkit";
 import { bucketsApi } from "@/lib/api/buckets";
-import { setActiveBucketId } from "@/store/slices/uiSlice";
+import { sortForVariant } from "@/components/filters/variants";
+import { bucketCriteria } from "@/lib/filters";
 import type { RootState } from "@/store";
-import type { BucketSummary } from "@/types/bucket.types";
+import type {
+	BucketDetail,
+	BucketSummary,
+} from "@/types/bucket.types";
 
 type BucketState = {
 	buckets: BucketSummary[];
+	allBuckets: BucketSummary[];
 	invitations: BucketSummary[];
+	currentBucket: BucketDetail | null;
 	loading: boolean;
 	error: string | null;
 };
 
 const initialState: BucketState = {
 	buckets: [],
+	allBuckets: [],
 	invitations: [],
+	currentBucket: null,
 	loading: false,
 	error: null,
 };
 
 export const fetchBuckets = createAsyncThunk(
-	"buckets/fetchList",
-	async (_, { dispatch, getState }) => {
-		const data = await bucketsApi.fetchBuckets();
-		const { activeBucketId } = (getState() as RootState).ui;
-		const stale =
-			activeBucketId !== null &&
-			!data.items.some((b) => b._id === activeBucketId);
-		if ((!activeBucketId || stale) && data.items.length > 0) {
-			const personal =
-				data.items.find((b) => b.isPersonal) ??
-				data.items[0];
-			if (personal) {
-				dispatch(setActiveBucketId(personal._id));
-			}
-		}
-		return data;
+	"buckets/search",
+	async (_, { getState }) => {
+		const state = getState() as RootState;
+		const result = await bucketsApi.searchBuckets({
+			// ponytail: the bucket list ignores date/user filters (all member
+			// buckets always show); only the per-bucket expense totals respect
+			// them, applied server-side.
+			filterCriteria: bucketCriteria(
+				state.filters.filterCriteria,
+			),
+			sortCriteria: sortForVariant(
+				"buckets",
+				state.filters.sortCriteria,
+			),
+			pagination: state.filters.pagination,
+		});
+		return result.items;
 	},
+);
+
+export const fetchAllBuckets = createAsyncThunk(
+	"buckets/searchAll",
+	() =>
+		bucketsApi
+			.searchBuckets({
+				filterCriteria: { datePreset: "THIS_MONTH" },
+				sortCriteria: { field: "createdAt", direction: "DESC" },
+				pagination: { page: 1, pageSize: 100 },
+			})
+			.then((r) => r.items),
+);
+
+export const fetchBucketDetail = createAsyncThunk(
+	"buckets/fetchDetail",
+	async (id: string) => bucketsApi.getBucket(id),
 );
 
 export const fetchInvitations = createAsyncThunk(
 	"buckets/fetchInvitations",
-	async () => {
-		const data = await bucketsApi.fetchBuckets();
-		return data.invitations;
-	},
+	() =>
+		bucketsApi
+			.searchBuckets({
+				filterCriteria: { datePreset: "THIS_MONTH" },
+				sortCriteria: { field: "createdAt", direction: "DESC" },
+				pagination: { page: 1, pageSize: 100 },
+			})
+			.then((r) =>
+				r.items.filter((b) => b.status === "pending"),
+			),
 );
 
 export const createBucket = createAsyncThunk(
@@ -92,10 +124,9 @@ export const inviteUser = createAsyncThunk(
 		payload: { id: string; username: string },
 		{ dispatch },
 	) => {
-		const bucket = await bucketsApi.inviteUser(
-			payload.id,
-			{ username: payload.username },
-		);
+		const bucket = await bucketsApi.inviteUser(payload.id, {
+			username: payload.username,
+		});
 		dispatch(fetchBuckets());
 		return bucket;
 	},
@@ -146,6 +177,7 @@ export const revokeInvite = createAsyncThunk(
 const bucketThunks = [
 	fetchBuckets,
 	fetchInvitations,
+	fetchBucketDetail,
 	createBucket,
 	updateBucket,
 	deleteBucket,
@@ -163,6 +195,9 @@ const bucketSlice = createSlice({
 		clearBucketError(state) {
 			state.error = null;
 		},
+		resetBucketDetail(state) {
+			state.currentBucket = null;
+		},
 	},
 	extraReducers: (builder) => {
 		builder
@@ -172,18 +207,39 @@ const bucketSlice = createSlice({
 			})
 			.addCase(fetchBuckets.fulfilled, (state, action) => {
 				state.loading = false;
-				state.buckets = action.payload.items;
-				state.invitations = action.payload.invitations;
+				const items = action.payload;
+				state.buckets = items.filter(
+					(b) => b.status === "accepted",
+				);
+				state.invitations = items.filter(
+					(b) => b.status === "pending",
+				);
+			})
+			.addCase(fetchAllBuckets.fulfilled, (state, action) => {
+				state.allBuckets = action.payload.filter(
+					(b) => b.status === "accepted",
+				);
+				state.invitations = action.payload.filter(
+					(b) => b.status === "pending",
+				);
 			})
 			.addCase(fetchInvitations.pending, (state) => {
 				state.loading = true;
 				state.error = null;
 			})
+			.addCase(fetchInvitations.fulfilled, (state, action) => {
+				state.loading = false;
+				state.invitations = action.payload;
+			})
+			.addCase(fetchBucketDetail.pending, (state) => {
+				state.loading = true;
+				state.error = null;
+			})
 			.addCase(
-				fetchInvitations.fulfilled,
+				fetchBucketDetail.fulfilled,
 				(state, action) => {
 					state.loading = false;
-					state.invitations = action.payload;
+					state.currentBucket = action.payload;
 				},
 			)
 			.addMatcher(
@@ -191,12 +247,12 @@ const bucketSlice = createSlice({
 				(state, action) => {
 					state.loading = false;
 					state.error =
-						action.error.message ??
-						"Failed to fetch buckets";
+						action.error.message ?? "Failed to fetch buckets";
 				},
 			);
 	},
 });
 
-export const { clearBucketError } = bucketSlice.actions;
+export const { clearBucketError, resetBucketDetail } =
+	bucketSlice.actions;
 export default bucketSlice.reducer;

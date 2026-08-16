@@ -2,6 +2,7 @@ import { DEFAULT_CATEGORIES } from "@/lib/constants";
 import { AppError } from "@/lib/errors";
 import {
 	bucketSchema,
+	bucketSearchSchema,
 	inviteSchema,
 } from "@/lib/validators";
 import {
@@ -12,9 +13,11 @@ import {
 	expenseExistsInBucket,
 	findBucketById,
 	findUsersByIds,
+	getBucketExpenseStats,
 	listBucketsForMember,
 	listBucketsForPendingMember,
 	pullBucketMember,
+	searchBuckets,
 	updateBucketName,
 	type BucketDoc,
 } from "@/repositories/bucket.repository";
@@ -29,6 +32,7 @@ import type {
 	BucketsListPayload,
 	BucketSummary,
 } from "@/types/bucket.types";
+import type { BucketSearchRequest } from "@/types/search.types";
 
 export async function listBucketsService(
 	userId: string,
@@ -108,7 +112,15 @@ export async function getBucketService(
 			"NOT_A_MEMBER",
 		);
 	}
-	return toDetail(bucket);
+	const detail = await toDetail(bucket);
+	const stats = await getBucketExpenseStats(bucketId);
+	return {
+		...detail,
+		role: member.role,
+		status: member.status,
+		totalAmount: stats.total,
+		expenseCount: stats.count,
+	};
 }
 
 export async function updateBucketService(
@@ -418,11 +430,18 @@ async function toDetail(
 		users.map((u) => [u._id.toString(), u]),
 	);
 
+	const owner = bucket.members.find(
+		(m) => m.role === "owner",
+	);
+
 	return {
 		_id: bucket._id.toString(),
 		name: bucket.name,
 		icon: bucket.icon,
 		ownerId: bucket.ownerId.toString(),
+		ownerName: owner
+			? userById.get(owner.userId.toString())?.name
+			: undefined,
 		isPersonal: bucket.isPersonal,
 		memberCount: bucket.members.length,
 		members: bucket.members.map((m) => {
@@ -441,4 +460,37 @@ async function toDetail(
 		createdAt: bucket.createdAt?.toISOString(),
 		updatedAt: bucket.updatedAt?.toISOString(),
 	};
+}
+
+function defaultBucketSearchRequest(): BucketSearchRequest {
+	return {
+		filterCriteria: {
+			datePreset: "THIS_MONTH",
+			ownerPreset: "ALL",
+		},
+		sortCriteria: { field: "createdAt", direction: "DESC" },
+		pagination: { page: 1, pageSize: 20 },
+	};
+}
+
+export async function searchBucketsService(
+	userId: string,
+	searchRequest: unknown,
+) {
+	const parsed = bucketSearchSchema.parse(
+		searchRequest ?? {},
+	);
+	console.log(parsed);
+	const request: BucketSearchRequest = {
+		filterCriteria:
+			parsed.filterCriteria ??
+			defaultBucketSearchRequest().filterCriteria,
+		sortCriteria:
+			parsed.sortCriteria ??
+			defaultBucketSearchRequest().sortCriteria,
+		pagination:
+			parsed.pagination ??
+			defaultBucketSearchRequest().pagination,
+	};
+	return searchBuckets(userId, request);
 }

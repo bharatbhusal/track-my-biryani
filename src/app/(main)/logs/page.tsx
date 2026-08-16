@@ -1,61 +1,95 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { BucketSwitcher } from "@/components/layout/bucket-switcher";
+import { FilterBar, useScopedOptions } from "@/components/filters";
+import { sortForVariant } from "@/components/filters/variants";
 import { LogsTable } from "@/features/logs/components/logs-table";
 import type { SortField } from "@/features/logs/components/logs-table";
 import { auditApi } from "@/lib/api/audit";
 import type { AuditLogItem } from "@/lib/api/audit";
-import { useAppSelector } from "@/store/hooks";
+import { auditCriteria } from "@/lib/filters";
+import { fetchAllBuckets } from "@/store/slices/bucketSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { setPage, setSort } from "@/store/slices/filtersSlice";
 
 export default function LogsPage() {
-	const activeBucketId = useAppSelector((s) => s.ui.activeBucketId);
-	const [items, setItems] = useState<AuditLogItem[]>([]);
-	const [page, setPage] = useState(1);
-	const [totalPages, setTotalPages] = useState(0);
-	const [sortBy, setSortBy] = useState<SortField>("timestamp");
-	const [order, setOrder] = useState<"asc" | "desc">("desc");
-	const [isLoading, setIsLoading] = useState(true);
+	const dispatch = useAppDispatch();
+	const [result, setResult] = useState<{
+		key: string | null;
+		items: AuditLogItem[];
+		totalPages: number;
+	}>({ key: null, items: [], totalPages: 0 });
 
-	const [prevBucketId, setPrevBucketId] = useState(activeBucketId);
-	if (prevBucketId !== activeBucketId) {
-		setPrevBucketId(activeBucketId);
-		setPage(1);
-	}
+	const { filterCriteria, sortCriteria, pagination } =
+		useAppSelector((s) => s.filters);
+	const buckets = useAppSelector((s) => s.buckets.allBuckets);
+
+	// ponytail: the dialog already resolves owners from bucket members through
+	// this hook — reused rather than a second derivation, at the cost of the
+	// category fetch it also does.
+	const { owners } = useScopedOptions(
+		true,
+		buckets,
+		filterCriteria.bucketPreset,
+		filterCriteria.bucketIds,
+	);
+
+	useEffect(() => {
+		dispatch(fetchAllBuckets());
+	}, [dispatch]);
+
+	const requestKey = JSON.stringify({
+		filterCriteria,
+		sortCriteria,
+		pagination,
+	});
+
+	// ponytail: the shared sort is a preference — the audit endpoint only
+	// accepts its own fields, so normalize before both the request and the
+	// table/toggle rendering. Memoized on the raw sort so identity stays stable
+	// across renders (the normalizer builds a fresh object when it falls back).
+	const effectiveSort = useMemo(
+		() => sortForVariant("logs", sortCriteria),
+		[sortCriteria],
+	);
 
 	useEffect(() => {
 		let cancelled = false;
 		auditApi
-			.listLogs({
-				page,
-				limit: 30,
-				bucketId: activeBucketId ?? undefined,
-				sortBy,
-				order,
+			.searchLogs({
+				filterCriteria: auditCriteria(filterCriteria),
+				sortCriteria: effectiveSort,
+				pagination,
 			})
 			.then((res) => {
 				if (cancelled) return;
-				setItems(res.items);
-				setTotalPages(res.totalPages);
+				setResult({
+					key: requestKey,
+					items: res.items,
+					totalPages: res.totalPages,
+				});
 			})
-			.catch(() => {})
-			.finally(() => {
-				if (!cancelled) setIsLoading(false);
+			.catch(() => {
+				if (!cancelled)
+					setResult({ key: requestKey, items: [], totalPages: 0 });
 			});
 		return () => {
 			cancelled = true;
 		};
-	}, [page, activeBucketId, sortBy, order]);
+	}, [requestKey, filterCriteria, effectiveSort, pagination]);
 
 	const handleSort = (field: SortField) => {
-		if (sortBy === field) {
-			setOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-		} else {
-			setSortBy(field);
-			setOrder("desc");
-		}
-		setPage(1);
+		dispatch(
+			setSort({
+				field,
+				direction:
+					effectiveSort.field === field &&
+					effectiveSort.direction === "DESC"
+						? "ASC"
+						: "DESC",
+			}),
+		);
 	};
 
 	return (
@@ -64,17 +98,22 @@ export default function LogsPage() {
 				<h3 className="text-base font-semibold tracking-tight">
 					Activity Logs
 				</h3>
-				<BucketSwitcher />
 			</div>
+			<FilterBar
+				variant="logs"
+				buckets={buckets}
+				categories={[]}
+				owners={owners}
+			/>
 			<LogsTable
-				items={items}
-				isLoading={isLoading}
-				sortBy={sortBy}
-				order={order}
+				items={result.items}
+				isLoading={result.key !== requestKey}
+				sortBy={effectiveSort.field as SortField}
+				order={effectiveSort.direction === "ASC" ? "asc" : "desc"}
 				onSort={handleSort}
-				page={page}
-				totalPages={totalPages}
-				onPageChange={setPage}
+				page={pagination.page}
+				totalPages={result.totalPages}
+				onPageChange={(p) => dispatch(setPage(p))}
 			/>
 		</div>
 	);

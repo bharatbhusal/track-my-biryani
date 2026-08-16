@@ -1,4 +1,3 @@
-import { BUCKET_ID_HEADER } from '@/lib/constants';
 import type { ApiRequestOptions, ApiResponse } from '@/types/api.types';
 
 class ApiClientError extends Error {
@@ -47,7 +46,6 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
     credentials: 'include',
     headers: {
       ...(rawBody ? {} : { 'Content-Type': 'application/json' }),
-      ...(options.bucketId ? { [BUCKET_ID_HEADER]: options.bucketId } : {}),
       ...(options.headers ?? {}),
     },
     body: toRequestBody(body, hasBody),

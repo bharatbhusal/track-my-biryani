@@ -49,17 +49,3 @@ export type CreateExpensePayload = {
 	notes?: string;
 	bucketId?: string;
 };
-
-export type ExpenseListQuery = {
-	page?: number;
-	limit?: number;
-	q?: string;
-	categoryId?: string;
-	from?: string;
-	to?: string;
-	amountMin?: number;
-	amountMax?: number;
-	sortBy?: "paidAt" | "amount" | "title";
-	order?: "asc" | "desc";
-	bucketId?: string;
-};

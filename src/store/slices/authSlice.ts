@@ -1,6 +1,13 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import {
+	createSlice,
+	createAsyncThunk,
+} from "@reduxjs/toolkit";
 import { authApi } from "@/lib/api/auth";
-import type { AuthUser, LoginPayload, SignupPayload } from "@/types/auth.types";
+import type {
+	AuthUser,
+	LoginPayload,
+	SignupPayload,
+} from "@/types/auth.types";
 
 type AuthState = {
 	user: AuthUser | null;
@@ -14,9 +21,12 @@ const initialState: AuthState = {
 	error: null,
 };
 
-export const fetchMe = createAsyncThunk("auth/fetchMe", async () => {
-	return authApi.me();
-});
+export const fetchMe = createAsyncThunk(
+	"auth/fetchMe",
+	async () => {
+		return authApi.me();
+	},
+);
 
 export const loginUser = createAsyncThunk(
 	"auth/login",
@@ -32,9 +42,12 @@ export const signupUser = createAsyncThunk(
 	},
 );
 
-export const logoutUser = createAsyncThunk("auth/logout", async () => {
-	return authApi.logout();
-});
+export const logoutUser = createAsyncThunk(
+	"auth/logout",
+	async () => {
+		return authApi.logout();
+	},
+);
 
 const authSlice = createSlice({
 	name: "auth",
@@ -70,8 +83,7 @@ const authSlice = createSlice({
 			})
 			.addCase(loginUser.rejected, (state, action) => {
 				state.loading = false;
-				state.error =
-					action.error.message ?? "Login failed";
+				state.error = action.error.message ?? "Login failed";
 			})
 			// signupUser
 			.addCase(signupUser.pending, (state) => {
@@ -84,8 +96,7 @@ const authSlice = createSlice({
 			})
 			.addCase(signupUser.rejected, (state, action) => {
 				state.loading = false;
-				state.error =
-					action.error.message ?? "Signup failed";
+				state.error = action.error.message ?? "Signup failed";
 			})
 			// logoutUser
 			.addCase(logoutUser.fulfilled, (state) => {

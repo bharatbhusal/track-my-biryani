@@ -11,8 +11,15 @@ import {
 	leaveBucketService,
 	listBucketsService,
 	revokeInviteService,
+	searchBucketsService,
 	updateBucketService,
 } from "@/services/bucket.service";
+
+export async function searchBuckets(request: NextRequest) {
+	const auth = await getAuthPayload();
+	const body = await request.json();
+	return searchBucketsService(auth.userId, body);
+}
 
 export async function listBuckets() {
 	const auth = await getAuthPayload();

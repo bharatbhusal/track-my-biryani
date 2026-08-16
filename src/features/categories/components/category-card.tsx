@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DropdownList } from "@/components/ui/dropdown-list";
 import { shareLink } from "@/lib/share";
-import type { CategoryWithStats } from "@/types/analytics.types";
+import type { CategoryItem } from "@/types/analytics.types";
 
 type CategoryCardProps = {
-	category: CategoryWithStats;
+	category: CategoryItem;
 	onEdit?: () => void;
 	onDelete?: () => void;
 };
@@ -46,9 +46,7 @@ export function CategoryCard({
 
 	const menuOptions = [
 		{ value: "share", label: "Share" },
-		...(onEdit
-			? [{ value: "edit", label: "Edit" }]
-			: []),
+		...(onEdit ? [{ value: "edit", label: "Edit" }] : []),
 		...(onDelete
 			? [{ value: "delete", label: "Delete" }]
 			: []),
@@ -67,13 +65,16 @@ export function CategoryCard({
 							{category.name}
 						</p>
 						<p className="text-xs text-[var(--color-muted)]">
-							{category.count} expense
-							{category.count !== 1 ? "s" : ""}
+							{category.stats?.count} expense
+							{category.stats?.count !== 1 ? "s" : ""}
 						</p>
 					</div>
 					<div className="text-right shrink-0">
 						<p className="font-semibold">
-							{formatCurrency(category.total, currency)}
+							{formatCurrency(
+								category.stats?.total ?? 0,
+								currency,
+							)}
 						</p>
 					</div>
 					{hasActions && (
@@ -82,13 +83,11 @@ export function CategoryCard({
 								<DropdownList
 									value=""
 									placeholder="Actions"
-									trigger={
-										<FiMoreVertical className="h-4 w-4" />
-									}
+									trigger={<FiMoreVertical className="h-4 w-4" />}
 									options={menuOptions}
 									onValueChange={handleMenu}
 									aria-label="Category actions"
-									className="h-8 w-8 cursor-pointer"
+									className="h-8 w-8 cursor-pointer shrink-0"
 									onClick={(e) => {
 										e.preventDefault();
 										e.stopPropagation();
@@ -98,7 +97,7 @@ export function CategoryCard({
 								<Button
 									variant="ghost"
 									size="icon"
-									className="h-8 w-8 cursor-pointer"
+									className="h-8 w-8 cursor-pointer shrink-0"
 									aria-label="Share category"
 									onClick={(e) => {
 										e.preventDefault();
@@ -112,40 +111,40 @@ export function CategoryCard({
 						</>
 					)}
 				</div>
-				{category.pct > 0 && (
+				{category?.stats?.pct > 0 && (
 					<div className="mt-2 flex items-center gap-2">
 						<div className="flex-1 h-1.5 rounded-full bg-[var(--color-surface-muted)] overflow-hidden">
 							<div
 								className="h-full rounded-full transition-all"
 								style={{
-									width: `${Math.min(category.pct, 100)}%`,
+									width: `${Math.min(category.stats?.pct, 100)}%`,
 									backgroundColor: category.color,
 								}}
 							/>
 						</div>
 						<span className="text-xs text-[var(--color-muted)] tabular-nums w-10 text-right">
-							{category.pct.toFixed(1)}%
+							{category.stats?.pct.toFixed(1)}%
 						</span>
 					</div>
 				)}
-				{category.count >= 2 && (
+				{category.stats?.count >= 2 && (
 					<div className="mt-2 flex justify-between gap-2 text-sm">
 						<div className="flex gap-1 items-center">
 							<p className="text-[var(--color-muted)]">Avg:</p>
 							<p className="font-medium">
-								{formatCurrency(category.avg, currency)}
+								{formatCurrency(category.stats?.avg, currency)}
 							</p>
 						</div>
 						<div className="flex gap-1 items-center">
 							<p className="text-[var(--color-muted)]">Min:</p>
 							<p className="font-medium">
-								{formatCurrency(category.min, currency)}
+								{formatCurrency(category.stats?.min, currency)}
 							</p>
 						</div>
 						<div className="flex gap-1 items-center">
 							<p className="text-[var(--color-muted)]">Max:</p>
 							<p className="font-medium">
-								{formatCurrency(category.max, currency)}
+								{formatCurrency(category.stats?.max, currency)}
 							</p>
 						</div>
 					</div>

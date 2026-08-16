@@ -10,9 +10,5 @@ export default async function CategoryDetailPage({
 	params: Promise<{ id: string }>;
 }) {
 	const { id } = await params;
-	return (
-		<section className="space-y-4 py-4">
-			<CategoryDetailView id={id} />
-		</section>
-	);
+	return <CategoryDetailView id={id} />;
 }

@@ -28,8 +28,8 @@ import {
 	updateCategory,
 	fetchCategoryDetail,
 } from "@/store/slices/categorySlice";
-import { fetchBuckets } from "@/store/slices/bucketSlice";
-import { setActiveBucketId } from "@/store/slices/uiSlice";
+import { fetchAllBuckets } from "@/store/slices/bucketSlice";
+import { personalBucketId } from "@/lib/filters";
 
 const EmojiPicker = dynamic(
 	() => import("emoji-picker-react"),
@@ -62,44 +62,34 @@ export function CategoryForm({
 }: CategoryFormProps) {
 	const router = useRouter();
 	const dispatch = useAppDispatch();
-	const activeBucketId = useAppSelector(
-		(s) => s.ui.activeBucketId,
-	);
-	const buckets = useAppSelector((s) => s.buckets.buckets);
+	const buckets = useAppSelector((s) => s.buckets.allBuckets);
 	const category = useAppSelector(
 		(s) => s.categories.currentCategory,
 	);
 	const { resolvedTheme } = useTheme();
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [selectedBucketId, setSelectedBucketId] = useState(
-		() => activeBucketId ?? "",
-	);
+	const [selectedBucketId, setSelectedBucketId] = useState("");
 
 	const isEditing = Boolean(id);
 	const categoryLoaded = isEditing && category?._id === id;
 
 	useEffect(() => {
 		if (buckets.length === 0) {
-			dispatch(fetchBuckets());
+			dispatch(fetchAllBuckets());
 		}
 	}, [dispatch, buckets.length]);
 
 	useEffect(() => {
 		if (!selectedBucketId && buckets.length > 0) {
-			setSelectedBucketId(activeBucketId ?? buckets[0]._id);
+			setSelectedBucketId(personalBucketId(buckets));
 		}
-	}, [selectedBucketId, buckets, activeBucketId]);
+	}, [selectedBucketId, buckets]);
 
 	useEffect(() => {
 		if (isEditing && id) {
-			dispatch(
-				fetchCategoryDetail({
-					id,
-					bucketId: activeBucketId ?? undefined,
-				}),
-			);
+			dispatch(fetchCategoryDetail(id));
 		}
-	}, [dispatch, isEditing, id, activeBucketId]);
+	}, [dispatch, isEditing, id]);
 
 	const emojiPickerTheme =
 		resolvedTheme === "dark" ? Theme.DARK : Theme.LIGHT;
@@ -125,9 +115,7 @@ export function CategoryForm({
 					color: loaded.color ?? randomColor(),
 					emoji: loaded.emoji ?? "🏷️",
 				});
-				setSelectedBucketId(
-					loaded.bucketId ?? activeBucketId ?? "",
-				);
+				setSelectedBucketId(loaded.bucketId ?? "");
 			}
 		} else {
 			reset({
@@ -158,17 +146,9 @@ export function CategoryForm({
 							color: values.color,
 							bucketId: selectedBucketId || undefined,
 						},
-						bucketId:
-							category?.bucketId ?? activeBucketId ?? undefined,
 					}),
 				).unwrap();
 				toast.success("Category updated");
-				if (
-					selectedBucketId &&
-					selectedBucketId !== category?.bucketId
-				) {
-					dispatch(setActiveBucketId(selectedBucketId));
-				}
 				if (onSuccess) {
 					onSuccess();
 				} else {
@@ -177,15 +157,10 @@ export function CategoryForm({
 			} else {
 				await dispatch(
 					createCategory({
-						payload: {
-							name: values.name.trim(),
-							emoji: values.emoji || "🏷️",
-							color: values.color,
-						},
-						bucketId:
-							selectedBucketId ||
-							activeBucketId ||
-							undefined,
+						name: values.name.trim(),
+						emoji: values.emoji || "🏷️",
+						color: values.color,
+						bucketId: selectedBucketId || undefined,
 					}),
 				).unwrap();
 				toast.success("Category created");

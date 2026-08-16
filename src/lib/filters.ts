@@ -1,0 +1,134 @@
+import type { BucketSummary } from "@/types/bucket.types";
+import type {
+	AuditFilterCriteria,
+	BucketFilterCriteria,
+	CategoryFilterCriteria,
+	CategorySearchRequest,
+	ExpenseFilterCriteria,
+	ExpenseSearchRequest,
+	FilterDatePreset,
+} from "@/types/search.types";
+
+// ponytail: one shared criteria (the expenses superset) drives every page; the
+// category/audit/bucket endpoints take narrower shapes, so the request boundary
+// trims the shared criteria to exactly what each schema expects.
+export function categoryCriteria(
+	c: ExpenseFilterCriteria,
+): CategoryFilterCriteria {
+	return {
+		bucketPreset: c.bucketPreset,
+		bucketIds: c.bucketIds,
+		ownerPreset: c.ownerPreset,
+		ownerIds: c.ownerIds,
+		datePreset: c.datePreset,
+		customFrom: c.customFrom,
+		customTo: c.customTo,
+		q: c.q,
+	};
+}
+
+export function auditCriteria(
+	c: ExpenseFilterCriteria,
+): AuditFilterCriteria {
+	return {
+		bucketPreset: c.bucketPreset,
+		bucketIds: c.bucketIds,
+		ownerPreset: c.ownerPreset,
+		ownerIds: c.ownerIds,
+		datePreset: c.datePreset,
+		customFrom: c.customFrom,
+		customTo: c.customTo,
+	};
+}
+
+export function bucketCriteria(
+	c: ExpenseFilterCriteria,
+): BucketFilterCriteria {
+	return {
+		datePreset: c.datePreset,
+		customFrom: c.customFrom,
+		customTo: c.customTo,
+		ownerPreset: c.ownerPreset,
+		ownerIds: c.ownerIds,
+	};
+}
+
+// ponytail: the stats/chart/distribution endpoints still demand a concrete
+export function filterBounds(
+	bounds: { from?: string; to?: string } | null,
+): { from: string; to: string } {
+	return {
+		from: bounds?.from ?? new Date(0).toISOString(),
+		to: bounds?.to ?? new Date().toISOString(),
+	};
+}
+
+export function chartGranularity(
+	preset: FilterDatePreset,
+): string {
+	if (preset === "TODAY" || preset === "YESTERDAY")
+		return "day";
+	if (preset === "THIS_YEAR" || preset === "LAST_YEAR")
+		return "year";
+	return "month";
+}
+
+export function personalBucketId(
+	buckets: BucketSummary[],
+): string {
+	return (
+		buckets.find((b) => b.isPersonal)?._id ??
+		buckets[0]?._id ??
+		""
+	);
+}
+
+export function scopedCategoryRequest(
+	bucketId: string,
+): CategorySearchRequest {
+	return {
+		filterCriteria: {
+			bucketPreset: "MULTIPLE",
+			bucketIds: [bucketId],
+			ownerPreset: "ALL",
+			ownerIds: [],
+			datePreset: "THIS_MONTH",
+		},
+		sortCriteria: { field: "createdAt", direction: "DESC" },
+		pagination: { page: 1, pageSize: 100 },
+	};
+}
+
+// ponytail: detail views need "other expenses in this category", which is not
+// what the page-wide filter state describes — so they build their own request.
+export function scopedExpenseRequest({
+	bucketId,
+	categoryId,
+	page,
+	pageSize = 20,
+	from,
+	to,
+}: {
+	bucketId?: string;
+	categoryId: string;
+	page: number;
+	pageSize?: number;
+	from?: string;
+	to?: string;
+}): ExpenseSearchRequest {
+	return {
+		filterCriteria: {
+			bucketPreset: bucketId ? "MULTIPLE" : "ALL",
+			bucketIds: bucketId ? [bucketId] : [],
+			categoryPreset: "MULTIPLE",
+			categoryIds: [categoryId],
+			ownerPreset: "ALL",
+			ownerIds: [],
+			datePreset: from || to ? "CUSTOM" : "THIS_MONTH",
+			customFrom: from,
+			customTo: to,
+		},
+		sortCriteria: { field: "paidAt", direction: "DESC" },
+		pagination: { page, pageSize },
+	};
+}

@@ -25,8 +25,8 @@ const expenseSchema = new Schema(
 		notes: { type: String },
 		images: { type: [String], default: [] },
 		location: {
-			latitude: { type: Number, required: true },
-			longitude: { type: Number, required: true },
+			latitude: { type: Number },
+			longitude: { type: Number },
 			address: { type: String },
 		},
 		currency: { type: String, default: "INR" },
