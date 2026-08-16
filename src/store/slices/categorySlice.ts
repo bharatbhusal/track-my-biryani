@@ -11,7 +11,11 @@ import type {
 } from "@/types/analytics.types";
 import { categoryCriteria } from "@/lib/filters";
 import { sortForVariant } from "@/components/filters/variants";
-import type { ExpenseFilterCriteria } from "@/types/search.types";
+import type {
+	CategoryFilterCriteria,
+	ExpenseFilterCriteria,
+	SortCriteria,
+} from "@/types/search.types";
 import type { RootState } from "@/store";
 import { CategoryItem } from "@/types";
 
@@ -55,10 +59,17 @@ export const fetchCategories = createAsyncThunk(
 
 export const fetchCategoriesWithStats = createAsyncThunk(
 	"categories/fetchListWithStats",
-	async (filterCriteria: ExpenseFilterCriteria) => {
-		return expensesApi.listCategoriesWithStats(
-			categoryCriteria(filterCriteria),
-		);
+	async ({
+		filterCriteria,
+		sortCriteria,
+	}: {
+		filterCriteria: CategoryFilterCriteria;
+		sortCriteria: SortCriteria;
+	}) => {
+		return expensesApi.listCategoriesWithStats({
+			filterCriteria,
+			sortCriteria,
+		});
 	},
 );
 

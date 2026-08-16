@@ -7,6 +7,7 @@ import { AppError } from "@/lib/errors";
 import type {
 	CategorySearchRequest,
 	SearchResult,
+	SortCriteria,
 } from "@/types/search.types";
 import type { CategoryItem } from "@/types/expense.types";
 
@@ -73,11 +74,11 @@ export async function deleteCategoriesByBucket(
 		bucketId: new Types.ObjectId(bucketId),
 	});
 }
-
 export async function listCategoriesWithStats(
 	categoryQuery: Record<string, unknown>,
 	from: Date,
 	to: Date,
+	filter: SortCriteria,
 ) {
 	const categories =
 		await CategoryModel.find(categoryQuery).lean();
@@ -159,6 +160,62 @@ export async function listCategoriesWithStats(
 		};
 	});
 
+	// Apply sorting
+	const direction = filter.direction === "ASC" ? 1 : -1;
+
+	items.sort((a, b) => {
+		let comparison = 0;
+
+		switch (filter.field) {
+			case "amount":
+			case "total":
+				comparison =
+					(a.stats.total ?? 0) - (b.stats.total ?? 0);
+				break;
+
+			case "count":
+			case "expenseCount":
+				comparison =
+					(a.stats.expenseCount ?? 0) -
+					(b.stats.expenseCount ?? 0);
+				break;
+
+			case "min":
+				comparison = (a.stats.min ?? 0) - (b.stats.min ?? 0);
+				break;
+
+			case "max":
+				comparison = (a.stats.max ?? 0) - (b.stats.max ?? 0);
+				break;
+
+			case "avg":
+				comparison = (a.stats.avg ?? 0) - (b.stats.avg ?? 0);
+				break;
+
+			case "pct":
+				comparison = (a.stats.pct ?? 0) - (b.stats.pct ?? 0);
+				break;
+
+			case "name":
+				comparison = a.name.localeCompare(b.name);
+				break;
+
+			case "createdAt":
+				comparison =
+					new Date(a.createdAt).getTime() -
+					new Date(b.createdAt).getTime();
+				break;
+
+			default:
+				comparison = a._id
+					.toString()
+					.localeCompare(b._id.toString());
+				break;
+		}
+
+		return comparison * direction;
+	});
+
 	const stats = {
 		total,
 		count: categories.length,
@@ -167,7 +224,6 @@ export async function listCategoriesWithStats(
 		max,
 		avg,
 	};
-
 	return {
 		items,
 		stats,

@@ -22,6 +22,7 @@ import type {
 	ExpenseFilterCriteria,
 	ExpenseSearchRequest,
 	SearchResult,
+	SortCriteria,
 } from "@/types/search.types";
 
 export const expensesApi = {
@@ -161,11 +162,15 @@ export const expensesApi = {
 			{ method: "POST", body: { filterCriteria } },
 		),
 
-	listCategoriesWithStats: (
-		filterCriteria: CategoryFilterCriteria,
-	) =>
+	listCategoriesWithStats: ({
+		filterCriteria,
+		sortCriteria,
+	}: {
+		filterCriteria: CategoryFilterCriteria;
+		sortCriteria: SortCriteria;
+	}) =>
 		apiRequest<CategoryWithStats>("/categories/stats", {
 			method: "POST",
-			body: { filterCriteria },
+			body: { filterCriteria, sortCriteria },
 		}),
 };

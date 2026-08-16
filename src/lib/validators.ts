@@ -104,6 +104,11 @@ const sortSchema = z.object({
 	direction: sortDirectionSchema.default("DESC"),
 });
 
+const categorySortSchema = z.object({
+	field: z.string().default("amount"),
+	direction: sortDirectionSchema.default("DESC"),
+});
+
 const expenseFilterSchema = z.object({
 	bucketPreset: bucketPresetSchema.default("PERSONAL"),
 	bucketIds: z.array(z.string()).default([]),
@@ -194,6 +199,7 @@ export const distributionSchema = z.object({
 
 export const categoryStatsSummarySchema = z.object({
 	filterCriteria: categoryFilterSchema.optional(),
+	sortCriteria: categorySortSchema.optional(),
 });
 
 export type SignupInput = z.infer<typeof signupSchema>;

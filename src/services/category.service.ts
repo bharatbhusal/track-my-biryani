@@ -71,7 +71,6 @@ export async function listCategoriesService(
 	const ctx = await resolveBucketContext(userId, bucketId);
 	return listCategories(ctx.bucketId);
 }
-
 export async function listCategoriesWithStatsService(
 	userId: string,
 	body: unknown,
@@ -79,9 +78,14 @@ export async function listCategoriesWithStatsService(
 	const parsed = categoryStatsSummarySchema.parse(
 		body ?? {},
 	);
+
 	const filterCriteria =
 		parsed.filterCriteria ??
 		defaultCategorySearchRequest().filterCriteria;
+
+	const sortCriteria =
+		parsed.sortCriteria ??
+		defaultCategorySearchRequest().sortCriteria;
 
 	const categoryQuery: Record<string, unknown> = {
 		bucketId: await resolveBucketScope(
@@ -106,12 +110,19 @@ export async function listCategoriesWithStatsService(
 		filterCriteria.customFrom,
 		filterCriteria.customTo,
 	);
+
 	const from = bounds?.from
 		? new Date(bounds.from)
 		: new Date(0);
+
 	const to = bounds?.to ? new Date(bounds.to) : new Date();
 
-	return listCategoriesWithStats(categoryQuery, from, to);
+	return listCategoriesWithStats(
+		categoryQuery,
+		from,
+		to,
+		sortCriteria,
+	);
 }
 
 export async function createCategoryService(

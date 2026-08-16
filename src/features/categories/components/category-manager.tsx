@@ -1,13 +1,12 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	FilterBar,
 	useScopedOptions,
-	sortForVariant,
 } from "@/components/filters";
 import {
 	useAppSelector,
@@ -59,31 +58,13 @@ export function CategoryManager() {
 	}, [dispatch]);
 
 	useEffect(() => {
-		dispatch(fetchCategoriesWithStats(filterCriteria));
-	}, [dispatch, filterCriteria]);
-
-	// ponytail: /categories/stats returns without an order, so amount sorting
-	// is applied here against the fetched page, normalized to this page's own
-	// field set like every other consumer.
-	const effectiveSort = sortForVariant(
-		"categories",
-		sortCriteria,
-	);
-	const items = useMemo(() => {
-		const dir = effectiveSort.direction === "ASC" ? 1 : -1;
-
-		return categoriesWithStats?.items
-			.slice()
-			.sort((a, b) =>
-				effectiveSort.field === "amount"
-					? ((a.stats?.total ?? 0) - (b.stats?.total ?? 0)) * dir
-					: a._id.localeCompare(b._id) * dir,
-			);
-	}, [
-		categoriesWithStats,
-		effectiveSort.field,
-		effectiveSort.direction,
-	]);
+		dispatch(
+			fetchCategoriesWithStats({
+				filterCriteria,
+				sortCriteria,
+			}),
+		);
+	}, [dispatch, filterCriteria, sortCriteria]);
 
 	const summaryCells: Array<[string, string]> = [
 		[
@@ -159,14 +140,14 @@ export function CategoryManager() {
 			</div>
 
 			<div className="grid grid-cols-1 gap-2">
-				{items?.map((category) => {
+				{categoriesWithStats?.items?.map((category) => {
 					return (
 						<div key={category._id}>
 							<CategoryCard category={category} />
 						</div>
 					);
 				})}
-				{items?.length === 0 && (
+				{categoriesWithStats?.items?.length === 0 && (
 					<p className="col-span-full text-center text-sm text-[var(--color-muted)] py-8">
 						No categories found
 					</p>
