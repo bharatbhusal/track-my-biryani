@@ -9,18 +9,14 @@ import type {
 	CategoryItem as CategoryItemAanlytics,
 	CategoryWithStats,
 } from "@/types/analytics.types";
-import { categoryCriteria } from "@/lib/filters";
-import { sortForVariant } from "@/components/filters/variants";
 import type {
 	CategoryFilterCriteria,
 	ExpenseFilterCriteria,
 	SortCriteria,
 } from "@/types/search.types";
 import type { RootState } from "@/store";
-import { CategoryItem } from "@/types";
 
 type CategoryState = {
-	items: CategoryItem[];
 	itemsWithStats: CategoryWithStats | null;
 	currentCategory: CategoryItemAanlytics | null;
 	stats: CategoryRangeStats | null;
@@ -30,7 +26,6 @@ type CategoryState = {
 };
 
 const initialState: CategoryState = {
-	items: [],
 	itemsWithStats: null,
 	currentCategory: null,
 	stats: null,
@@ -38,24 +33,6 @@ const initialState: CategoryState = {
 	loading: false,
 	error: null,
 };
-
-export const fetchCategories = createAsyncThunk(
-	"categories/search",
-	async (_: void, { getState }) => {
-		const state = getState() as RootState;
-		const result = await expensesApi.searchCategories({
-			filterCriteria: categoryCriteria(
-				state.filters.filterCriteria,
-			),
-			sortCriteria: sortForVariant(
-				"categories",
-				state.filters.sortCriteria,
-			),
-			pagination: state.filters.pagination,
-		});
-		return result.items;
-	},
-);
 
 export const fetchCategoriesWithStats = createAsyncThunk(
 	"categories/fetchListWithStats",
@@ -104,11 +81,17 @@ export const createCategory = createAsyncThunk(
 			emoji?: string;
 			bucketId?: string;
 		},
-		{ dispatch },
+		{ dispatch, getState },
 	) => {
+		const state = getState() as RootState;
 		const category =
 			await expensesApi.createCategory(payload);
-		dispatch(fetchCategories());
+		dispatch(
+			fetchCategoriesWithStats({
+				filterCriteria: state.filters.filterCriteria,
+				sortCriteria: state.filters.sortCriteria,
+			}),
+		);
 		return category;
 	},
 );
@@ -161,20 +144,6 @@ const categorySlice = createSlice({
 	},
 	extraReducers: (builder) => {
 		builder
-			// fetchCategories
-			.addCase(fetchCategories.pending, (state) => {
-				state.loading = true;
-				state.error = null;
-			})
-			.addCase(fetchCategories.fulfilled, (state, action) => {
-				state.loading = false;
-				state.items = action.payload;
-			})
-			.addCase(fetchCategories.rejected, (state, action) => {
-				state.loading = false;
-				state.error =
-					action.error.message ?? "Failed to fetch categories";
-			})
 			// fetchCategoriesWithStats
 			.addCase(fetchCategoriesWithStats.pending, (state) => {
 				state.loading = true;
@@ -227,26 +196,6 @@ const categorySlice = createSlice({
 			.addCase(createCategory.rejected, (state, action) => {
 				state.error =
 					action.error.message ?? "Failed to create category";
-			})
-			// updateCategory
-			.addCase(updateCategory.fulfilled, (state, action) => {
-				const idx = state.items.findIndex(
-					(c) => c._id === action.payload._id,
-				);
-				if (idx !== -1) state.items[idx] = action.payload;
-				if (state.currentCategory?._id === action.payload._id) {
-					state.currentCategory = action.payload;
-				}
-			})
-			// deleteCategory
-			.addCase(deleteCategory.fulfilled, (state, action) => {
-				const deletedId = action.meta.arg;
-				state.items = state.items.filter(
-					(c) => c._id !== deletedId,
-				);
-				if (state.currentCategory?._id === deletedId) {
-					state.currentCategory = null;
-				}
 			})
 			// fetchCategoryDistribution
 			.addCase(
