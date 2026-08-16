@@ -206,20 +206,20 @@ export function CategoryDetailView({ id }: { id: string }) {
 		[category?.name, category?.color],
 	);
 
-	const categoryWithStats =
-		useMemo((): CategoryWithStats | null => {
-			if (!category || !stats) return null;
-			return {
-				...category,
-				bucketId: category.bucketId,
-				total: stats.total,
-				count: stats.count,
-				min: stats.min,
-				max: stats.max,
-				avg: stats.avg,
-				pct: stats.pct,
-			};
-		}, [category, stats]);
+	// const categoryWithStats =
+	// 	useMemo((): CategoryWithStats | null => {
+	// 		if (!category || !stats) return null;
+	// 		return {
+	// 			...category,
+	// 			bucketId: category.bucketId,
+	// 			total: stats.total,
+	// 			count: stats.count,
+	// 			min: stats.min,
+	// 			max: stats.max,
+	// 			avg: stats.avg,
+	// 			pct: stats.pct,
+	// 		};
+	// 	}, [category, stats]);
 
 	if (!category) {
 		return (
@@ -274,13 +274,13 @@ export function CategoryDetailView({ id }: { id: string }) {
 					sort: true,
 				}}
 			/>
-			{categoryWithStats && (
-				<CategoryCard
-					category={categoryWithStats}
-					onEdit={() => setEditDrawerOpen(true)}
-					onDelete={() => setDeleteOpen(true)}
-				/>
-			)}
+			{/* {categoryWithStats && ( */}
+			<CategoryCard
+				category={category}
+				onEdit={() => setEditDrawerOpen(true)}
+				onDelete={() => setDeleteOpen(true)}
+			/>
+			{/* )} */}
 			<CashFlowChart
 				title="Trend"
 				stackedSeries={chartStackedSeries}

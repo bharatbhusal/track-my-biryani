@@ -3,21 +3,22 @@ import {
 	createAsyncThunk,
 } from "@reduxjs/toolkit";
 import { expensesApi } from "@/lib/api/expenses";
-import type { CategoryItem } from "@/types/expense.types";
 import type {
 	CategoryBreakdownPoint,
 	CategoryRangeStats,
+	CategoryItem as CategoryItemAanlytics,
 	CategoryWithStats,
 } from "@/types/analytics.types";
 import { categoryCriteria } from "@/lib/filters";
 import { sortForVariant } from "@/components/filters/variants";
 import type { ExpenseFilterCriteria } from "@/types/search.types";
 import type { RootState } from "@/store";
+import { CategoryItem } from "@/types";
 
 type CategoryState = {
 	items: CategoryItem[];
 	itemsWithStats: CategoryWithStats | null;
-	currentCategory: CategoryItem | null;
+	currentCategory: CategoryItemAanlytics | null;
 	stats: CategoryRangeStats | null;
 	distribution: CategoryBreakdownPoint[];
 	loading: boolean;

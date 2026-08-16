@@ -13,6 +13,7 @@ import type {
 	DashboardCard,
 	DistributionPoint,
 	ExpenseContribution,
+	CategoryItem as CategoryItemAanlytics,
 } from "@/types/analytics.types";
 import type {
 	CategoryFilterCriteria,
@@ -106,7 +107,7 @@ export const expensesApi = {
 		}),
 
 	getCategoryById: (id: string) =>
-		apiRequest<CategoryItem>(`/categories/${id}`),
+		apiRequest<CategoryItemAanlytics>(`/categories/${id}`),
 
 	updateCategory: (
 		id: string,
@@ -117,7 +118,7 @@ export const expensesApi = {
 			bucketId?: string;
 		},
 	) =>
-		apiRequest<CategoryItem>(`/categories/${id}`, {
+		apiRequest<CategoryItemAanlytics>(`/categories/${id}`, {
 			method: "PUT",
 			body: payload,
 		}),
