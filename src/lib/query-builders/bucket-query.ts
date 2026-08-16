@@ -18,7 +18,7 @@ export async function buildBucketQuery(
 		members: {
 			$elemMatch: {
 				userId: new Types.ObjectId(userId),
-				status: "accepted",
+				status: { $in: ["accepted", "pending"] },
 			},
 		},
 	};

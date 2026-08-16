@@ -156,7 +156,7 @@ const bucketFilterSchema = z.object({
 	datePreset: datePresetSchema.default("THIS_MONTH"),
 	customFrom: z.string().optional(),
 	customTo: z.string().optional(),
-	ownerPreset: ownerPresetSchema.optional(),
+	ownerPreset: ownerPresetSchema.default("ALL"),
 	ownerIds: z.array(z.string()).default([]),
 });
 

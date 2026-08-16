@@ -430,14 +430,18 @@ async function toDetail(
 		users.map((u) => [u._id.toString(), u]),
 	);
 
-	const owner = bucket.members.find((m) => m.role === "owner");
+	const owner = bucket.members.find(
+		(m) => m.role === "owner",
+	);
 
 	return {
 		_id: bucket._id.toString(),
 		name: bucket.name,
 		icon: bucket.icon,
 		ownerId: bucket.ownerId.toString(),
-		ownerName: owner ? userById.get(owner.userId.toString())?.name : undefined,
+		ownerName: owner
+			? userById.get(owner.userId.toString())?.name
+			: undefined,
 		isPersonal: bucket.isPersonal,
 		memberCount: bucket.members.length,
 		members: bucket.members.map((m) => {
@@ -462,6 +466,7 @@ function defaultBucketSearchRequest(): BucketSearchRequest {
 	return {
 		filterCriteria: {
 			datePreset: "THIS_MONTH",
+			ownerPreset: "ALL",
 		},
 		sortCriteria: { field: "createdAt", direction: "DESC" },
 		pagination: { page: 1, pageSize: 20 },
@@ -472,11 +477,20 @@ export async function searchBucketsService(
 	userId: string,
 	searchRequest: unknown,
 ) {
-	const parsed = bucketSearchSchema.parse(searchRequest ?? {});
+	const parsed = bucketSearchSchema.parse(
+		searchRequest ?? {},
+	);
+	console.log(parsed);
 	const request: BucketSearchRequest = {
-		filterCriteria: parsed.filterCriteria ?? defaultBucketSearchRequest().filterCriteria,
-		sortCriteria: parsed.sortCriteria ?? defaultBucketSearchRequest().sortCriteria,
-		pagination: parsed.pagination ?? defaultBucketSearchRequest().pagination,
+		filterCriteria:
+			parsed.filterCriteria ??
+			defaultBucketSearchRequest().filterCriteria,
+		sortCriteria:
+			parsed.sortCriteria ??
+			defaultBucketSearchRequest().sortCriteria,
+		pagination:
+			parsed.pagination ??
+			defaultBucketSearchRequest().pagination,
 	};
 	return searchBuckets(userId, request);
 }

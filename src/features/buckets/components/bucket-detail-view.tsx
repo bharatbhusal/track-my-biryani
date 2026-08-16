@@ -163,15 +163,13 @@ export function BucketDetailView({ id }: { id: string }) {
 
 	const chartColorMap = useMemo(
 		() =>
-			new Map(
-				Object.entries(chartData?.categoryColors ?? {}),
-			),
+			new Map(Object.entries(chartData?.categoryColors ?? {})),
 		[chartData],
 	);
 
 	if (!currentBucket) {
 		return (
-			<div className="space-y-4">
+			<div className="space-y-4 overflow-x-hidden">
 				<Skeleton className="h-10 w-52" />
 				<Card>
 					<div className="flex justify-between mb-4">

@@ -259,7 +259,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 	}
 
 	return (
-		<div className="space-y-2">
+		<div className="space-y-2 overflow-x-hidden">
 			<FilterBar
 				variant="expenses"
 				buckets={[]}

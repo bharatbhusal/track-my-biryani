@@ -37,13 +37,15 @@ type RootReducerState = ReturnType<typeof rootReducer>;
 const persistConfig: PersistConfig<RootReducerState> = {
 	key: "root",
 	storage,
-	stateReconciler: autoMergeLevel2 as PersistConfig<RootReducerState>["stateReconciler"],
+	stateReconciler:
+		autoMergeLevel2 as PersistConfig<RootReducerState>["stateReconciler"],
 	whitelist: [
 		"auth",
 		"ui",
 		"expenses",
 		"categories",
 		"filters",
+		"buckets",
 	],
 };
 

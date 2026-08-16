@@ -202,7 +202,7 @@ export function ExpenseDetailView({
 	}
 
 	return (
-		<div className="space-y-4">
+		<div className="space-y-4 overflow-x-hidden">
 			<ExpenseCard
 				expense={expense}
 				onEdit={() => router.push(`/expenses/${id}/edit`)}

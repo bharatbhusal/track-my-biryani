@@ -219,6 +219,9 @@ const bucketSlice = createSlice({
 				state.allBuckets = action.payload.filter(
 					(b) => b.status === "accepted",
 				);
+				state.invitations = action.payload.filter(
+					(b) => b.status === "pending",
+				);
 			})
 			.addCase(fetchInvitations.pending, (state) => {
 				state.loading = true;
