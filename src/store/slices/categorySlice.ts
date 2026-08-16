@@ -41,7 +41,7 @@ export const fetchCategoriesWithStats = createAsyncThunk(
 		sortCriteria,
 	}: {
 		filterCriteria: CategoryFilterCriteria;
-		sortCriteria: SortCriteria;
+		sortCriteria?: SortCriteria;
 	}) => {
 		return expensesApi.listCategoriesWithStats({
 			filterCriteria,

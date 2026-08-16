@@ -167,7 +167,7 @@ export const expensesApi = {
 		sortCriteria,
 	}: {
 		filterCriteria: CategoryFilterCriteria;
-		sortCriteria: SortCriteria;
+		sortCriteria?: SortCriteria;
 	}) =>
 		apiRequest<CategoryWithStats>("/categories/stats", {
 			method: "POST",

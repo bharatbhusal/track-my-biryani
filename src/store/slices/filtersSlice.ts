@@ -1,4 +1,7 @@
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import {
+	createSlice,
+	type PayloadAction,
+} from "@reduxjs/toolkit";
 import type {
 	BucketPreset,
 	CategoryPreset,
@@ -21,11 +24,11 @@ type FiltersState = {
 // categoryCriteria/auditCriteria/bucketCriteria at the request boundary.
 const initialState: FiltersState = {
 	filterCriteria: {
-		bucketPreset: "PERSONAL",
+		bucketPreset: "ALL",
 		bucketIds: [],
 		categoryPreset: "ALL",
 		categoryIds: [],
-		ownerPreset: "ME",
+		ownerPreset: "ALL",
 		ownerIds: [],
 		datePreset: "THIS_MONTH",
 	},
@@ -39,23 +42,34 @@ const filtersSlice = createSlice({
 	reducers: {
 		setBucketFilter(
 			state,
-			action: PayloadAction<{ preset: BucketPreset; ids: string[] }>,
+			action: PayloadAction<{
+				preset: BucketPreset;
+				ids: string[];
+			}>,
 		) {
-			state.filterCriteria.bucketPreset = action.payload.preset;
+			state.filterCriteria.bucketPreset =
+				action.payload.preset;
 			state.filterCriteria.bucketIds = action.payload.ids;
 			state.pagination.page = 1;
 		},
 		setCategoryFilter(
 			state,
-			action: PayloadAction<{ preset: CategoryPreset; ids: string[] }>,
+			action: PayloadAction<{
+				preset: CategoryPreset;
+				ids: string[];
+			}>,
 		) {
-			state.filterCriteria.categoryPreset = action.payload.preset;
+			state.filterCriteria.categoryPreset =
+				action.payload.preset;
 			state.filterCriteria.categoryIds = action.payload.ids;
 			state.pagination.page = 1;
 		},
 		setOwnerFilter(
 			state,
-			action: PayloadAction<{ preset: OwnerPreset; ids: string[] }>,
+			action: PayloadAction<{
+				preset: OwnerPreset;
+				ids: string[];
+			}>,
 		) {
 			state.filterCriteria.ownerPreset = action.payload.preset;
 			state.filterCriteria.ownerIds = action.payload.ids;
@@ -70,13 +84,17 @@ const filtersSlice = createSlice({
 			}>,
 		) {
 			state.filterCriteria.datePreset = action.payload.preset;
-			state.filterCriteria.customFrom = action.payload.customFrom;
+			state.filterCriteria.customFrom =
+				action.payload.customFrom;
 			state.filterCriteria.customTo = action.payload.customTo;
 			state.pagination.page = 1;
 		},
 		setSort(
 			state,
-			action: PayloadAction<{ field: string; direction: SortDirection }>,
+			action: PayloadAction<{
+				field: string;
+				direction: SortDirection;
+			}>,
 		) {
 			state.sortCriteria = action.payload;
 			state.pagination.page = 1;
@@ -84,15 +102,24 @@ const filtersSlice = createSlice({
 		setPage(state, action: PayloadAction<number>) {
 			state.pagination.page = action.payload;
 		},
-		setHasNotes(state, action: PayloadAction<boolean | undefined>) {
+		setHasNotes(
+			state,
+			action: PayloadAction<boolean | undefined>,
+		) {
 			state.filterCriteria.hasNotes = action.payload;
 			state.pagination.page = 1;
 		},
-		setHasLocation(state, action: PayloadAction<boolean | undefined>) {
+		setHasLocation(
+			state,
+			action: PayloadAction<boolean | undefined>,
+		) {
 			state.filterCriteria.hasLocation = action.payload;
 			state.pagination.page = 1;
 		},
-		setSearch(state, action: PayloadAction<string | undefined>) {
+		setSearch(
+			state,
+			action: PayloadAction<string | undefined>,
+		) {
 			state.filterCriteria.q = action.payload;
 			state.pagination.page = 1;
 		},
@@ -118,7 +145,10 @@ const filtersSlice = createSlice({
 			state.pagination.page = 1;
 		},
 		clearSort(state) {
-			state.sortCriteria = { field: "paidAt", direction: "DESC" };
+			state.sortCriteria = {
+				field: "paidAt",
+				direction: "DESC",
+			};
 			state.pagination.page = 1;
 		},
 		clearAdditionalFilters(state) {

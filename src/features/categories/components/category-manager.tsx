@@ -13,7 +13,6 @@ import {
 	useAppDispatch,
 } from "@/store/hooks";
 import { fetchCategoriesWithStats } from "@/store/slices/categorySlice";
-import { fetchAllBuckets } from "@/store/slices/bucketSlice";
 import { CategoryCard } from "@/features/categories/components/category-card";
 import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
 import { formatCurrency } from "@/lib/format";
@@ -54,16 +53,7 @@ export function CategoryManager() {
 	);
 
 	useEffect(() => {
-		dispatch(fetchAllBuckets());
-	}, [dispatch]);
-
-	useEffect(() => {
-		dispatch(
-			fetchCategoriesWithStats({
-				filterCriteria,
-				sortCriteria,
-			}),
-		);
+		dispatch(fetchCategoriesWithStats({ filterCriteria }));
 	}, [dispatch, filterCriteria, sortCriteria]);
 
 	const summaryCells: Array<[string, string]> = [
@@ -115,6 +105,7 @@ export function CategoryManager() {
 				sections={{
 					categories: false,
 					search: false,
+					sort: false,
 				}}
 			/>
 			<div className="flex flex-wrap gap-2">

@@ -110,11 +110,11 @@ const categorySortSchema = z.object({
 });
 
 const expenseFilterSchema = z.object({
-	bucketPreset: bucketPresetSchema.default("PERSONAL"),
+	bucketPreset: bucketPresetSchema.default("ALL"),
 	bucketIds: z.array(z.string()).default([]),
 	categoryPreset: categoryPresetSchema.default("ALL"),
 	categoryIds: z.array(z.string()).default([]),
-	ownerPreset: ownerPresetSchema.default("ME"),
+	ownerPreset: ownerPresetSchema.default("ALL"),
 	ownerIds: z.array(z.string()).default([]),
 	datePreset: datePresetSchema.default("THIS_MONTH"),
 	customFrom: z.string().optional(),
@@ -125,9 +125,9 @@ const expenseFilterSchema = z.object({
 });
 
 const categoryFilterSchema = z.object({
-	bucketPreset: bucketPresetSchema.default("PERSONAL"),
+	bucketPreset: bucketPresetSchema.default("ALL"),
 	bucketIds: z.array(z.string()).default([]),
-	ownerPreset: ownerPresetSchema.default("ME"),
+	ownerPreset: ownerPresetSchema.default("ALL"),
 	ownerIds: z.array(z.string()).default([]),
 	datePreset: datePresetSchema.default("THIS_MONTH"),
 	customFrom: z.string().optional(),
