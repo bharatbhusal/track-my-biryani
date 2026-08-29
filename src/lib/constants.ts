@@ -17,4 +17,6 @@ export const PROTECTED_ROUTES = [
 	"/expenses",
 	"/categories",
 	"/logs",
+	"/buckets",
+	"/settings",
 ];

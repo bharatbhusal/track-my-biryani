@@ -140,6 +140,8 @@ export function SettingsPage() {
 				onConfirm={async () => {
 					try {
 						await dispatch(logoutUser()).unwrap();
+						// ponytail: slices already reset via rootReducerWithReset on auth/logout/fulfilled;
+						// persisted storage is overwritten with cleared state — no manual PURGE needed
 						toast.success("Logged out");
 						router.replace("/auth/login");
 						router.refresh();

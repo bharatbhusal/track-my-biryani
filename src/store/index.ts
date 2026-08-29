@@ -68,9 +68,22 @@ const persistedReducer = persistReducer<
 	UnknownAction
 >(persistConfig, rootReducer);
 
+// ponytail: logout clears every slice (memory + persisted) — one place fixes
+// the stale-data after logout without touching each slice; purge follows via persist
+const rootReducerWithReset = (
+	state: Parameters<typeof persistedReducer>[0],
+	action: Parameters<typeof persistedReducer>[1],
+): ReturnType<typeof persistedReducer> => {
+	if ((action as UnknownAction).type === "auth/logout/fulfilled") {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		state = undefined as any;
+	}
+	return persistedReducer(state, action);
+};
+
 export const makeStore = () =>
 	configureStore({
-		reducer: persistedReducer,
+		reducer: rootReducerWithReset,
 		middleware: (getDefaultMiddleware) =>
 			getDefaultMiddleware({
 				serializableCheck: {
