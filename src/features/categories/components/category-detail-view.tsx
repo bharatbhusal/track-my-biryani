@@ -21,7 +21,6 @@ import {
 } from "@/store/hooks";
 import {
 	fetchCategoryDetail,
-	fetchCategoryStats,
 	deleteCategory,
 } from "@/store/slices/categorySlice";
 import { toIsoBoundsForPreset } from "@/lib/date-range";
@@ -32,7 +31,6 @@ import {
 } from "@/lib/filters";
 import { CashFlowChart } from "@/components/cash-flow-chart";
 import { ChartSkeleton } from "@/components/charts/chart-skeleton";
-import type { CategoryWithStats } from "@/types/analytics.types";
 import type { ExpenseItem } from "@/types/expense.types";
 
 export function CategoryDetailView({ id }: { id: string }) {
@@ -53,7 +51,6 @@ export function CategoryDetailView({ id }: { id: string }) {
 	const category = useAppSelector(
 		(s) => s.categories.currentCategory,
 	);
-	const stats = useAppSelector((s) => s.categories.stats);
 	// ponytail: memoized on the raw slice reference (stable across unrelated
 	// renders) so the normalized sort is a stable dependency for the effect.
 	const effectiveSort = useMemo(
@@ -104,22 +101,18 @@ export function CategoryDetailView({ id }: { id: string }) {
 	}
 
 	useEffect(() => {
-		dispatch(fetchCategoryDetail(id))
-			.unwrap()
-			.catch(() =>
-				router.replace("/unauthorized?type=category"),
-			);
-	}, [dispatch, id, router]);
-
-	useEffect(() => {
 		dispatch(
-			fetchCategoryStats({
+			fetchCategoryDetail({
 				id,
 				from: bounds.from,
 				to: bounds.to,
 			}),
-		);
-	}, [dispatch, id, bounds.from, bounds.to]);
+		)
+			.unwrap()
+			.catch(() =>
+				router.replace("/unauthorized?type=category"),
+			);
+	}, [dispatch, id, bounds.from, bounds.to, router]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -164,7 +157,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 	]);
 
 	const chartTrend = useMemo(() => {
-		const raw = stats?.trend ?? [];
+		const raw = category?.trend ?? [];
 		if (raw.length === 0) return [];
 
 		const isDaily = raw[0].name.length === 10;
@@ -184,7 +177,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 				total: point.total,
 			};
 		});
-	}, [stats?.trend]);
+	}, [category?.trend]);
 
 	const chartStackedSeries = useMemo(
 		() =>
@@ -205,21 +198,6 @@ export function CategoryDetailView({ id }: { id: string }) {
 			]),
 		[category?.name, category?.color],
 	);
-
-	// const categoryWithStats =
-	// 	useMemo((): CategoryWithStats | null => {
-	// 		if (!category || !stats) return null;
-	// 		return {
-	// 			...category,
-	// 			bucketId: category.bucketId,
-	// 			total: stats.total,
-	// 			count: stats.count,
-	// 			min: stats.min,
-	// 			max: stats.max,
-	// 			avg: stats.avg,
-	// 			pct: stats.pct,
-	// 		};
-	// 	}, [category, stats]);
 
 	if (!category) {
 		return (

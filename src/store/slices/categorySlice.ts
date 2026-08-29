@@ -5,7 +5,6 @@ import {
 import { expensesApi } from "@/lib/api/expenses";
 import type {
 	CategoryBreakdownPoint,
-	CategoryRangeStats,
 	CategoryItem as CategoryItemAanlytics,
 	CategoryWithStats,
 } from "@/types/analytics.types";
@@ -19,7 +18,6 @@ import type { RootState } from "@/store";
 type CategoryState = {
 	itemsWithStats: CategoryWithStats | null;
 	currentCategory: CategoryItemAanlytics | null;
-	stats: CategoryRangeStats | null;
 	distribution: CategoryBreakdownPoint[];
 	loading: boolean;
 	error: string | null;
@@ -28,7 +26,6 @@ type CategoryState = {
 const initialState: CategoryState = {
 	itemsWithStats: null,
 	currentCategory: null,
-	stats: null,
 	distribution: [],
 	loading: false,
 	error: null,
@@ -52,13 +49,6 @@ export const fetchCategoriesWithStats = createAsyncThunk(
 
 export const fetchCategoryDetail = createAsyncThunk(
 	"categories/fetchDetail",
-	async (id: string) => {
-		return expensesApi.getCategoryById(id);
-	},
-);
-
-export const fetchCategoryStats = createAsyncThunk(
-	"categories/fetchStats",
 	async ({
 		id,
 		from,
@@ -68,7 +58,7 @@ export const fetchCategoryStats = createAsyncThunk(
 		from: string;
 		to: string;
 	}) => {
-		return expensesApi.getCategoryStats(id, from, to);
+		return expensesApi.getCategoryById(id, from, to);
 	},
 );
 
@@ -139,7 +129,6 @@ const categorySlice = createSlice({
 		},
 		resetCategoryDetail(state) {
 			state.currentCategory = null;
-			state.stats = null;
 		},
 	},
 	extraReducers: (builder) => {
@@ -198,13 +187,6 @@ const categorySlice = createSlice({
 					state.loading = false;
 					state.error =
 						action.error.message ?? "Failed to fetch category";
-				},
-			)
-			// fetchCategoryStats
-			.addCase(
-				fetchCategoryStats.fulfilled,
-				(state, action) => {
-					state.stats = action.payload;
 				},
 			)
 			// createCategory
