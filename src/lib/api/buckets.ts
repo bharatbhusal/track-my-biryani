@@ -1,6 +1,6 @@
 import { apiRequest } from "@/lib/api/client";
 import type { BucketDetail, BucketSummary } from "@/types/bucket.types";
-import type { BucketSearchRequest, SearchResult } from "@/types/search.types";
+import type { BucketSearchRequest, ExpenseFilterCriteria, SearchResult } from "@/types/search.types";
 
 export const bucketsApi = {
 	searchBuckets: (request: BucketSearchRequest) =>
@@ -13,8 +13,11 @@ export const bucketsApi = {
 			method: "POST",
 			body: payload,
 		}),
-	getBucket: (id: string) =>
-		apiRequest<BucketDetail>(`/buckets/${encodeURIComponent(id)}`),
+	getBucketStats: (id: string, filterCriteria?: ExpenseFilterCriteria) =>
+		apiRequest<BucketDetail>(`/buckets/${encodeURIComponent(id)}/stats`, {
+			method: "POST",
+			body: { filterCriteria },
+		}),
 	updateBucket: (
 		id: string,
 		payload: { name: string; icon?: string },

@@ -1,8 +1,13 @@
+import { Types } from "mongoose";
+
 import { DEFAULT_CATEGORIES } from "@/lib/constants";
+import { toIsoBoundsForPreset } from "@/lib/date-range";
 import { AppError } from "@/lib/errors";
+import { escapeRegex } from "@/lib/utils";
 import {
 	bucketSchema,
 	bucketSearchSchema,
+	bucketStatsSchema,
 	inviteSchema,
 } from "@/lib/validators";
 import {
@@ -13,7 +18,7 @@ import {
 	expenseExistsInBucket,
 	findBucketById,
 	findUsersByIds,
-	getBucketExpenseStats,
+	getFilteredBucketExpenseStats,
 	listBucketsForMember,
 	listBucketsForPendingMember,
 	pullBucketMember,
@@ -94,10 +99,14 @@ export async function createBucketService(
 	return toDetail(bucket);
 }
 
-export async function getBucketService(
+
+
+export async function getBucketStatsService(
 	userId: string,
 	bucketId: string,
+	body: unknown,
 ): Promise<BucketDetail> {
+	const parsed = bucketStatsSchema.parse(body ?? {});
 	const bucket = await findBucketById(bucketId);
 	if (!bucket) {
 		throw new AppError("Bucket not found", 404, "NOT_FOUND");
@@ -106,14 +115,18 @@ export async function getBucketService(
 		(m) => m.userId.toString() === userId,
 	);
 	if (!member || member.status !== "accepted") {
-		throw new AppError(
-			"Not a member of this bucket",
-			403,
-			"NOT_A_MEMBER",
-		);
+		throw new AppError("Not a member of this bucket", 403, "NOT_A_MEMBER");
 	}
 	const detail = await toDetail(bucket);
-	const stats = await getBucketExpenseStats(bucketId);
+	const f = parsed.filterCriteria ?? {
+		categoryPreset: "ALL" as const,
+		categoryIds: [] as string[],
+		ownerPreset: "ALL" as const,
+		ownerIds: [] as string[],
+		datePreset: "THIS_MONTH" as const,
+	};
+	const expenseMatch = buildBucketStatsExpenseMatch(userId, f);
+	const stats = await getFilteredBucketExpenseStats(bucketId, expenseMatch);
 	return {
 		...detail,
 		role: member.role,
@@ -121,6 +134,55 @@ export async function getBucketService(
 		totalAmount: stats.total,
 		expenseCount: stats.count,
 	};
+}
+
+function buildBucketStatsExpenseMatch(
+	userId: string,
+	filters: {
+		categoryPreset: "ALL" | "MULTIPLE";
+		categoryIds: string[];
+		ownerPreset: "ME" | "ALL" | "MULTIPLE";
+		ownerIds: string[];
+		datePreset: string;
+		customFrom?: string;
+		customTo?: string;
+		hasNotes?: boolean;
+		hasLocation?: boolean;
+		q?: string;
+	},
+): Record<string, unknown> {
+	const match: Record<string, unknown> = {};
+	if (filters.categoryPreset === "MULTIPLE") {
+		const ids = filters.categoryIds.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+		if (ids.length > 0) match.categoryId = { $in: ids };
+	}
+	if (filters.ownerPreset === "ME") {
+		match.userId = new Types.ObjectId(userId);
+	} else if (filters.ownerPreset === "MULTIPLE") {
+		const ids = filters.ownerIds.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+		if (ids.length > 0) match.userId = { $in: ids };
+	}
+	const bounds = toIsoBoundsForPreset(filters.datePreset as any, filters.customFrom, filters.customTo);
+	if (bounds) {
+		match.paidAt = {
+			...(bounds.from ? { $gte: new Date(bounds.from) } : {}),
+			...(bounds.to ? { $lte: new Date(bounds.to) } : {}),
+		};
+	}
+	const and: Record<string, unknown>[] = [];
+	const q = filters.q?.trim();
+	if (q) {
+		const regex = new RegExp(escapeRegex(q), "i");
+		and.push({ $or: [{ title: regex }, { notes: regex }] } as any);
+	}
+	if (filters.hasNotes !== undefined) {
+		and.push(filters.hasNotes ? { notes: { $exists: true, $nin: ["", null] } } : { $or: [{ notes: { $exists: false } }, { notes: { $in: ["", null] } }] } as any);
+	}
+	if (filters.hasLocation !== undefined) {
+		and.push(filters.hasLocation ? { $or: [{ "location.latitude": { $exists: true, $ne: 0 } }, { "location.longitude": { $exists: true, $ne: 0 } }] } : { $or: [{ "location.latitude": { $exists: false } }, { "location.latitude": 0, "location.longitude": 0 }] } as any);
+	}
+	if (and.length > 0) (match as any).$and = and;
+	return match;
 }
 
 export async function updateBucketService(

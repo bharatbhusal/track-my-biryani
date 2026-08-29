@@ -67,7 +67,7 @@ export function BucketCard({
 		if (!bucket._id) return;
 		setMembersLoading(true);
 		try {
-			const detail = await bucketsApi.getBucket(bucket._id);
+			const detail = await bucketsApi.getBucketStats(bucket._id);
 			setMembers(detail.members);
 		} catch (err) {
 			toast.error(

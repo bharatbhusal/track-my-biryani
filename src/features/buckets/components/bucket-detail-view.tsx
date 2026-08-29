@@ -59,7 +59,7 @@ export function BucketDetailView({ id }: { id: string }) {
 		dispatch(fetchBucketDetail(id))
 			.unwrap()
 			.catch(() => router.replace("/unauthorized?type=bucket"));
-	}, [dispatch, id, router]);
+	}, [dispatch, id, router, filterCriteria]);
 
 	useEffect(() => {
 		let cancelled = false;

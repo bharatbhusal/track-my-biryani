@@ -58,7 +58,11 @@ export const fetchAllBuckets = createAsyncThunk(
 
 export const fetchBucketDetail = createAsyncThunk(
 	"buckets/fetchDetail",
-	async (id: string) => bucketsApi.getBucket(id),
+	async (id: string, { getState }) => {
+		const state = getState() as RootState;
+		const fc = (state.filters as any).bucket?.filterCriteria;
+		return bucketsApi.getBucketStats(id, fc);
+	},
 );
 
 export const fetchInvitations = createAsyncThunk(

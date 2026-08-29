@@ -6,7 +6,7 @@ import {
 	createBucketService,
 	declineInviteService,
 	deleteBucketService,
-	getBucketService,
+	getBucketStatsService,
 	inviteUserService,
 	leaveBucketService,
 	listBucketsService,
@@ -32,13 +32,14 @@ export async function createBucket(request: NextRequest) {
 	return createBucketService(auth.userId, body);
 }
 
-export async function getBucket(
-	_request: NextRequest,
+export async function getBucketStats(
+	request: NextRequest,
 	context: { params: Promise<{ id: string }> },
 ) {
 	const auth = await getAuthPayload();
 	const { id } = await context.params;
-	return getBucketService(auth.userId, id);
+	const body = await request.json().catch(() => ({}));
+	return getBucketStatsService(auth.userId, id, body);
 }
 
 export async function updateBucket(
