@@ -32,31 +32,23 @@ export function DashboardOverview() {
 	const dispatch = useAppDispatch();
 
 	const filterCriteria = useAppSelector(
-		(s) => s.filters.filterCriteria,
+		(s) => s.filters.expenses.filterCriteria,
 	);
 	const sortCriteria = useAppSelector(
-		(s) => s.filters.sortCriteria,
+		(s) => s.filters.expenses.sortCriteria,
 	);
 	const pagination = useAppSelector(
-		(s) => s.filters.pagination,
+		(s) => s.filters.expenses.pagination,
 	);
 
-	const buckets = useAppSelector(
-		(s) => s.buckets.allBuckets,
-	);
+	const buckets = useAppSelector((s) => s.buckets.allBuckets);
 	const overviewStats = useAppSelector(
 		(s) => s.expenses.overviewStats,
 	);
-	const chartData = useAppSelector(
-		(s) => s.expenses.chartData,
-	);
+	const chartData = useAppSelector((s) => s.expenses.chartData);
 	const items = useAppSelector((s) => s.expenses.items);
-	const totalPages = useAppSelector(
-		(s) => s.expenses.totalPages,
-	);
-	const isLoading = useAppSelector(
-		(s) => s.expenses.loading,
-	);
+	const totalPages = useAppSelector((s) => s.expenses.totalPages);
+	const isLoading = useAppSelector((s) => s.expenses.loading);
 
 	const { categories, owners } = useScopedOptions(
 		true,
@@ -88,16 +80,12 @@ export function DashboardOverview() {
 		[overviewStats],
 	);
 
-	// ponytail: the shared sort is a preference — normalize it to the expense
-	// fields for the table and the toggle baseline.
-	const effectiveSort = sortForVariant(
-		"expenses",
-		sortCriteria,
-	);
+	const effectiveSort = sortForVariant("expenses", sortCriteria);
 
 	const handleSort = (field: SortField) => {
 		dispatch(
 			setSort({
+				variant: "expenses",
 				field,
 				direction:
 					effectiveSort.field === field &&
@@ -117,10 +105,7 @@ export function DashboardOverview() {
 				owners={owners}
 			/>
 
-			<ExpenseOverview
-				data={overviewStats}
-				isLoading={isLoading}
-			/>
+			<ExpenseOverview data={overviewStats} isLoading={isLoading} />
 
 			<DashboardBarChart
 				stackedSeries={chartData?.series ?? []}
@@ -137,13 +122,13 @@ export function DashboardOverview() {
 				items={items}
 				isLoading={isLoading}
 				sortBy={effectiveSort.field as SortField}
-				order={
-					effectiveSort.direction === "ASC" ? "asc" : "desc"
-				}
+				order={effectiveSort.direction === "ASC" ? "asc" : "desc"}
 				onSort={handleSort}
 				page={pagination.page}
 				totalPages={totalPages}
-				onPageChange={(p) => dispatch(setPage(p))}
+				onPageChange={(p) =>
+					dispatch(setPage({ variant: "expenses", page: p }))
+				}
 				isSection={effectiveSort.field === "paidAt"}
 			/>
 		</div>

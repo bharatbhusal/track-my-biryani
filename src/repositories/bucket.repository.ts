@@ -180,14 +180,19 @@ export async function expenseExistsInBucket(
 	);
 }
 
-export async function getBucketExpenseStats(
+export async function getFilteredBucketExpenseStats(
 	bucketId: string,
+	expenseMatch: Record<string, unknown>,
 ) {
 	if (!Types.ObjectId.isValid(bucketId)) {
 		return { total: 0, count: 0 };
 	}
+	const match = {
+		bucketId: new Types.ObjectId(bucketId),
+		...expenseMatch,
+	};
 	const [result] = await ExpenseModel.aggregate([
-		{ $match: { bucketId: new Types.ObjectId(bucketId) } },
+		{ $match: match },
 		{
 			$group: {
 				_id: null,

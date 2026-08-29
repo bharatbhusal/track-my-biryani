@@ -73,7 +73,7 @@ export function useScopedOptions(
 			Promise.all(
 				ids.map((id) =>
 					bucketsApi
-						.getBucket(id)
+						.getBucketStats(id)
 						.then((d) => d.members)
 						.catch((): BucketMemberWithName[] => []),
 				),

@@ -327,13 +327,30 @@ export async function getCategoryStatsService(
 		);
 	}
 	const ctx = await resolveBucketContext(userId, bucketId);
-	return getCategoryRangeStats(
+	const category = await getCategoryService(
+		userId,
+		categoryId,
+		ctx.bucketId,
+	);
+	const range = await getCategoryRangeStats(
 		userId,
 		categoryId,
 		new Date(from),
 		new Date(to),
 		ctx.bucketId,
 	);
+	return {
+		stats: {
+			total: range.total,
+			count: range.count,
+			avg: range.avg,
+			min: range.min,
+			max: range.max,
+			pct: range.pct,
+		},
+		trend: range.trend,
+		...category,
+	};
 }
 
 // Full expense filter criteria so the distribution respects bucket/owner/

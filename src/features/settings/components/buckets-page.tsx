@@ -41,7 +41,6 @@ export function BucketsPage() {
 				buckets={allBuckets}
 				categories={[]}
 				owners={owners}
-				sections={{ owners: true }}
 			/>
 			<BucketSettings />
 			<InvitationsSection />

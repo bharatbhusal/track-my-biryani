@@ -6,42 +6,75 @@ module.exports = {
 	categoriesWithStats,
 	distribution,
 	expenses,
-	chart,
 	buckets,
-	audit,
 };
 
-// ponytail: no URLSearchParams in Scriptable, build the query string manually
-function queryString(params) {
-	const parts = Object.keys(params)
-		.filter((k) => params[k] !== undefined)
-		.map((k) => `${k}=${encodeURIComponent(params[k])}`);
-	return parts.length ? "?" + parts.join("&") : "";
-}
-
 function overview({ from, to, bucketId } = {}) {
-	return request(
-		`/expenses/overview${queryString({ from, to })}`,
-		{ bucketId },
-	);
+	const body = {
+		filterCriteria: {
+			datePreset: "CUSTOM",
+			customFrom: from,
+			customTo: to,
+			bucketPreset: bucketId ? "MULTIPLE" : "PERSONAL",
+			bucketIds: bucketId ? [bucketId] : [],
+		},
+	};
+	return request("/expenses/overview", { method: "POST", body, bucketId });
 }
 
 function categories({ bucketId } = {}) {
-	return request("/categories", { bucketId });
+	const body = {
+		filterCriteria: {
+			bucketPreset: bucketId ? "MULTIPLE" : "PERSONAL",
+			bucketIds: bucketId ? [bucketId] : [],
+		},
+		sortCriteria: { field: "createdAt", direction: "DESC" },
+		pagination: { page: 1, pageSize: 50 },
+	};
+	return request("/categories/search", { method: "POST", body, bucketId });
 }
 
 function categoriesWithStats({ from, to, bucketId } = {}) {
-	return request(
-		`/categories/stats${queryString({ from, to })}`,
-		{ bucketId },
-	);
+	const body = {
+		filterCriteria: {
+			datePreset: from && to ? "CUSTOM" : "THIS_MONTH",
+			customFrom: from,
+			customTo: to,
+			bucketPreset: bucketId ? "MULTIPLE" : "PERSONAL",
+			bucketIds: bucketId ? [bucketId] : [],
+		},
+		sortCriteria: { field: "amount", direction: "DESC" },
+	};
+	const response = request("/categories/stats", { method: "POST", body, bucketId });
+
+	return response.then((res) => {
+		if (!res?.items) return [];
+		return res.items
+			.map((item) => ({
+				name: item.name || "Other",
+				emoji: item.emoji || "💸",
+				color: item.color || "#999999",
+				total: Number(item.stats?.total) || 0,
+				pct: Number(item.stats?.pct) || 0,
+				count: Number(item.stats?.count) || 0,
+			}))
+			.filter((item) => item.total > 0 && item.pct > 0)
+			.sort((a, b) => b.total - a.total);
+	});
 }
 
 function distribution({ from, to, bucketId } = {}) {
-	return request(
-		`/categories/distribution${queryString({ from, to })}`,
-		{ bucketId },
-	);
+	const body = {
+		dimension: "category",
+		filterCriteria: {
+			datePreset: from && to ? "CUSTOM" : "THIS_MONTH",
+			customFrom: from,
+			customTo: to,
+			bucketPreset: bucketId ? "MULTIPLE" : "PERSONAL",
+			bucketIds: bucketId ? [bucketId] : [],
+		},
+	};
+	return request("/categories/distribution", { method: "POST", body, bucketId });
 }
 
 function expenses({
@@ -53,23 +86,25 @@ function expenses({
 	sortBy = "paidAt",
 	order = "desc",
 } = {}) {
-	return request(
-		`/expenses${queryString({ limit, page, from, to, sortBy, order })}`,
-		{ bucketId },
-	);
-}
-
-function chart({ from, to, bucketId } = {}) {
-	return request(
-		`/expenses/chart${queryString({ from, to })}`,
-		{ bucketId },
-	);
+	const body = {
+		filterCriteria: {
+			datePreset: from && to ? "CUSTOM" : "THIS_MONTH",
+			customFrom: from,
+			customTo: to,
+			bucketPreset: bucketId ? "MULTIPLE" : "PERSONAL",
+			bucketIds: bucketId ? [bucketId] : [],
+		},
+		sortCriteria: { field: sortBy, direction: order.toUpperCase() },
+		pagination: { page, pageSize: limit },
+	};
+	return request("/expenses/search", { method: "POST", body, bucketId });
 }
 
 function buckets() {
-	return request("/buckets");
-}
-
-function audit({ limit = 10 } = {}) {
-	return request(`/audit${queryString({ limit })}`);
+	const body = {
+		filterCriteria: { datePreset: "THIS_MONTH" },
+		sortCriteria: { field: "createdAt", direction: "DESC" },
+		pagination: { page: 1, pageSize: 20 },
+	};
+	return request("/buckets/search", { method: "POST", body });
 }

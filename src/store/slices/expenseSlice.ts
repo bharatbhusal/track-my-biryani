@@ -15,6 +15,7 @@ import type {
 import type { GlobalDateRange } from "@/lib/date-range";
 import { toIsoBounds } from "@/lib/date-range";
 import { sortForVariant } from "@/components/filters/variants";
+import { expenseCriteriaForVariant } from "@/lib/filters";
 import type { RootState } from "@/store";
 
 type ExpenseState = {
@@ -47,13 +48,11 @@ export const fetchExpenses = createAsyncThunk(
 	"expenses/search",
 	async (_: void, { getState }) => {
 		const state = getState() as RootState;
+		const v = state.filters.expenses;
 		return expensesApi.searchExpenses({
-			filterCriteria: state.filters.filterCriteria,
-			sortCriteria: sortForVariant(
-				"expenses",
-				state.filters.sortCriteria,
-			),
-			pagination: state.filters.pagination,
+			filterCriteria: expenseCriteriaForVariant("expenses", v.filterCriteria),
+			sortCriteria: sortForVariant("expenses", v.sortCriteria),
+			pagination: v.pagination,
 		});
 	},
 );
@@ -71,18 +70,16 @@ export const fetchExpensesInRange = createAsyncThunk(
 				totalPages: null,
 			};
 		}
+		const v = state.filters.expenses;
 		return expensesApi.searchExpenses({
 			filterCriteria: {
-				...state.filters.filterCriteria,
+				...expenseCriteriaForVariant("expenses", v.filterCriteria),
 				datePreset: "CUSTOM",
 				customFrom: from,
 				customTo: to,
 			},
-			sortCriteria: sortForVariant(
-				"expenses",
-				state.filters.sortCriteria,
-			),
-			pagination: { page: 1, pageSize: state.filters.pagination.pageSize },
+			sortCriteria: sortForVariant("expenses", v.sortCriteria),
+			pagination: { page: 1, pageSize: v.pagination.pageSize },
 		});
 	},
 );
@@ -141,7 +138,10 @@ export const fetchOverviewStats = createAsyncThunk(
 	async (_: void, { getState }) => {
 		const state = getState() as RootState;
 		return expensesApi.getOverviewStats({
-			filterCriteria: state.filters.filterCriteria,
+			filterCriteria: expenseCriteriaForVariant(
+				"expenses",
+				state.filters.expenses.filterCriteria,
+			),
 		});
 	},
 );
@@ -151,7 +151,10 @@ export const fetchChartData = createAsyncThunk(
 	async (_: void, { getState }) => {
 		const state = getState() as RootState;
 		return expensesApi.getChartData({
-			filterCriteria: state.filters.filterCriteria,
+			filterCriteria: expenseCriteriaForVariant(
+				"expenses",
+				state.filters.expenses.filterCriteria,
+			),
 		});
 	},
 );

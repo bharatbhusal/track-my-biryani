@@ -8,49 +8,103 @@ import type {
 	ExpenseSearchRequest,
 	FilterDatePreset,
 } from "@/types/search.types";
+import { SECTIONS, type FilterVariant } from "@/components/filters/variants";
 
-// ponytail: one shared criteria (the expenses superset) drives every page; the
-// category/audit/bucket endpoints take narrower shapes, so the request boundary
-// trims the shared criteria to exactly what each schema expects.
-export function categoryCriteria(
+// per-variant omit disabled sections before API — disabled bucket/category/owner/search/additional fields are not sent
+export function stripCriteriaForVariant(
+	variant: FilterVariant,
+	criteria: Record<string, unknown>,
+): Record<string, unknown> {
+	const flags = SECTIONS[variant];
+	const out: Record<string, unknown> = { ...criteria };
+	if (!flags.buckets) {
+		delete out.bucketPreset;
+		delete out.bucketIds;
+	}
+	if (!flags.categories) {
+		delete out.categoryPreset;
+		delete out.categoryIds;
+	}
+	if (!flags.owners) {
+		delete out.ownerPreset;
+		delete out.ownerIds;
+	}
+	if (!flags.search) delete out.q;
+	if (!flags.additional) {
+		delete out.hasNotes;
+		delete out.hasLocation;
+	}
+	if (!flags.date) {
+		delete out.datePreset;
+		delete out.customFrom;
+		delete out.customTo;
+	}
+	return out;
+}
+
+export function expenseCriteriaForVariant(
+	variant: FilterVariant,
 	c: ExpenseFilterCriteria,
+): ExpenseFilterCriteria {
+	const stripped = stripCriteriaForVariant(variant, c as unknown as Record<string, unknown>);
+	return stripped as unknown as ExpenseFilterCriteria;
+}
+
+export function categoryCriteria(
+	c: ExpenseFilterCriteria | CategoryFilterCriteria,
+	variant: FilterVariant = "categories",
 ): CategoryFilterCriteria {
-	return {
-		bucketPreset: c.bucketPreset,
-		bucketIds: c.bucketIds,
-		ownerPreset: c.ownerPreset,
-		ownerIds: c.ownerIds,
+	const base: CategoryFilterCriteria = {
+		bucketPreset: (c as any).bucketPreset ?? "ALL",
+		bucketIds: (c as any).bucketIds ?? [],
+		ownerPreset: (c as any).ownerPreset ?? "ALL",
+		ownerIds: (c as any).ownerIds ?? [],
 		datePreset: c.datePreset,
 		customFrom: c.customFrom,
 		customTo: c.customTo,
-		q: c.q,
+		q: (c as any).q,
 	};
+	const stripped = stripCriteriaForVariant(variant, base as unknown as Record<string, unknown>);
+	return stripped as unknown as CategoryFilterCriteria;
 }
 
 export function auditCriteria(
-	c: ExpenseFilterCriteria,
+	c: ExpenseFilterCriteria | AuditFilterCriteria,
+	variant: FilterVariant = "logs",
 ): AuditFilterCriteria {
-	return {
-		bucketPreset: c.bucketPreset,
-		bucketIds: c.bucketIds,
-		ownerPreset: c.ownerPreset,
-		ownerIds: c.ownerIds,
+	const base: AuditFilterCriteria = {
+		bucketPreset: (c as any).bucketPreset ?? "ALL",
+		bucketIds: (c as any).bucketIds ?? [],
+		ownerPreset: (c as any).ownerPreset ?? "ALL",
+		ownerIds: (c as any).ownerIds ?? [],
 		datePreset: c.datePreset,
 		customFrom: c.customFrom,
 		customTo: c.customTo,
 	};
+	const stripped = stripCriteriaForVariant(variant, base as unknown as Record<string, unknown>);
+	return stripped as unknown as AuditFilterCriteria;
 }
 
 export function bucketCriteria(
-	c: ExpenseFilterCriteria,
+	c: ExpenseFilterCriteria | BucketFilterCriteria,
+	variant: FilterVariant = "buckets",
 ): BucketFilterCriteria {
-	return {
+	const base: BucketFilterCriteria = {
 		datePreset: c.datePreset,
 		customFrom: c.customFrom,
 		customTo: c.customTo,
-		ownerPreset: c.ownerPreset,
-		ownerIds: c.ownerIds,
+		ownerPreset: (c as any).ownerPreset,
+		ownerIds: (c as any).ownerIds,
 	};
+	const stripped = stripCriteriaForVariant(variant, base as unknown as Record<string, unknown>);
+	delete (stripped as any).bucketPreset;
+	delete (stripped as any).bucketIds;
+	delete (stripped as any).categoryPreset;
+	delete (stripped as any).categoryIds;
+	delete (stripped as any).hasNotes;
+	delete (stripped as any).hasLocation;
+	delete (stripped as any).q;
+	return stripped as unknown as BucketFilterCriteria;
 }
 
 // ponytail: the stats/chart/distribution endpoints still demand a concrete
@@ -63,29 +117,17 @@ export function filterBounds(
 	};
 }
 
-export function chartGranularity(
-	preset: FilterDatePreset,
-): string {
-	if (preset === "TODAY" || preset === "YESTERDAY")
-		return "day";
-	if (preset === "THIS_YEAR" || preset === "LAST_YEAR")
-		return "year";
+export function chartGranularity(preset: FilterDatePreset): string {
+	if (preset === "TODAY" || preset === "YESTERDAY") return "day";
+	if (preset === "THIS_YEAR" || preset === "LAST_YEAR") return "year";
 	return "month";
 }
 
-export function personalBucketId(
-	buckets: BucketSummary[],
-): string {
-	return (
-		buckets.find((b) => b.isPersonal)?._id ??
-		buckets[0]?._id ??
-		""
-	);
+export function personalBucketId(buckets: BucketSummary[]): string {
+	return buckets.find((b) => b.isPersonal)?._id ?? buckets[0]?._id ?? "";
 }
 
-export function scopedCategoryRequest(
-	bucketId: string,
-): CategorySearchRequest {
+export function scopedCategoryRequest(bucketId: string): CategorySearchRequest {
 	return {
 		filterCriteria: {
 			bucketPreset: "MULTIPLE",

@@ -107,8 +107,14 @@ export const expensesApi = {
 			body: payload,
 		}),
 
-	getCategoryById: (id: string) =>
-		apiRequest<CategoryItemAanlytics>(`/categories/${id}`),
+	getCategoryById: (
+		id: string,
+		from: string,
+		to: string,
+	) =>
+		apiRequest<CategoryItemAanlytics>(
+			`/categories/${id}/stats?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+		),
 
 	updateCategory: (
 		id: string,

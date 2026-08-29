@@ -70,6 +70,7 @@ export type CategoryItem = {
 	userId?: string;
 	bucketId?: string;
 	stats: ExpenseStat;
+	trend?: TrendPoint[];
 };
 
 export type CategoryStat = {

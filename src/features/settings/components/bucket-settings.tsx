@@ -4,22 +4,15 @@ import { useEffect } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { BucketCard } from "@/features/buckets/components/bucket-card";
-import {
-	useAppDispatch,
-	useAppSelector,
-} from "@/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchBuckets } from "@/store/slices/bucketSlice";
 
 export function BucketSettings() {
 	const dispatch = useAppDispatch();
-	const { buckets, loading } = useAppSelector(
-		(s) => s.buckets,
-	);
-	const sortCriteria = useAppSelector(
-		(s) => s.filters.sortCriteria,
-	);
+	const { buckets, loading } = useAppSelector((s) => s.buckets);
+	const sortCriteria = useAppSelector((s) => s.filters.buckets.sortCriteria);
 	const filterCriteria = useAppSelector(
-		(s) => s.filters.filterCriteria,
+		(s) => s.filters.buckets.filterCriteria,
 	);
 
 	useEffect(() => {
@@ -36,9 +29,7 @@ export function BucketSettings() {
 					<Skeleton className="h-16 w-full" />
 				</div>
 			) : (
-				buckets.map((bucket) => (
-					<BucketCard key={bucket._id} bucket={bucket} />
-				))
+				buckets.map((bucket) => <BucketCard key={bucket._id} bucket={bucket} />)
 			)}
 		</section>
 	);

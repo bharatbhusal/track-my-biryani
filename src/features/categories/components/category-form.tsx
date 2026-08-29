@@ -30,6 +30,7 @@ import {
 } from "@/store/slices/categorySlice";
 import { fetchAllBuckets } from "@/store/slices/bucketSlice";
 import { personalBucketId } from "@/lib/filters";
+import { toIsoBoundsForPreset } from "@/lib/date-range";
 
 const EmojiPicker = dynamic(
 	() => import("emoji-picker-react"),
@@ -87,7 +88,18 @@ export function CategoryForm({
 
 	useEffect(() => {
 		if (isEditing && id) {
-			dispatch(fetchCategoryDetail(id));
+			const bounds = toIsoBoundsForPreset(
+				"THIS_YEAR",
+				undefined,
+				undefined,
+			);
+			dispatch(
+				fetchCategoryDetail({
+					id,
+					from: bounds?.from ?? "",
+					to: bounds?.to ?? "",
+				}),
+			);
 		}
 	}, [dispatch, isEditing, id]);
 

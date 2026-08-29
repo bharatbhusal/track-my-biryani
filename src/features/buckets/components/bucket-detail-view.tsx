@@ -5,24 +5,15 @@ import { useRouter } from "next/navigation";
 
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-	FilterBar,
-	useScopedOptions,
-	sortForVariant,
-} from "@/components/filters";
+import { FilterBar, useScopedOptions, sortForVariant } from "@/components/filters";
 import { CashFlowChart } from "@/components/cash-flow-chart";
 import { ChartSkeleton } from "@/components/charts/chart-skeleton";
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import { BucketCard } from "@/features/buckets/components/bucket-card";
-import {
-	useAppSelector,
-	useAppDispatch,
-} from "@/store/hooks";
-import {
-	fetchAllBuckets,
-	fetchBucketDetail,
-} from "@/store/slices/bucketSlice";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { fetchAllBuckets, fetchBucketDetail } from "@/store/slices/bucketSlice";
 import { expensesApi } from "@/lib/api/expenses";
+import { expenseCriteriaForVariant } from "@/lib/filters";
 import type { ChartData } from "@/types/analytics.types";
 import type { ExpenseItem } from "@/types/expense.types";
 import type { BucketSummary } from "@/types/bucket.types";
@@ -32,56 +23,33 @@ export function BucketDetailView({ id }: { id: string }) {
 	const dispatch = useAppDispatch();
 	const [page, setPage] = useState(1);
 
-	const sortCriteria = useAppSelector(
-		(s) => s.filters.sortCriteria,
-	);
-	const filterCriteria = useAppSelector(
-		(s) => s.filters.filterCriteria,
-	);
-	const buckets = useAppSelector(
-		(s) => s.buckets.allBuckets,
-	);
-	const currentBucket = useAppSelector(
-		(s) => s.buckets.currentBucket,
-	);
+	const sortCriteria = useAppSelector((s) => s.filters.bucket.sortCriteria);
+	const filterCriteria = useAppSelector((s) => s.filters.bucket.filterCriteria);
+	const buckets = useAppSelector((s) => s.buckets.allBuckets);
+	const currentBucket = useAppSelector((s) => s.buckets.currentBucket);
 
-	// ponytail: owners come from bucket members through the shared hook, so the
-	// user filter can list everyone in the selected buckets.
-	const { categories, owners } = useScopedOptions(
-		true,
-		buckets,
-		"MULTIPLE",
-		[id],
-	);
+	const { categories, owners } = useScopedOptions(true, buckets, "MULTIPLE", [id]);
 
-	const scopedCriteria = useMemo(
-		() => ({
-			...filterCriteria,
+	const scopedCriteria = useMemo(() => {
+		const base = expenseCriteriaForVariant("bucket", filterCriteria as unknown as any) as unknown as Record<string, unknown>;
+		return {
+			...base,
 			bucketPreset: "MULTIPLE" as const,
 			bucketIds: [id],
-		}),
-		[filterCriteria, id],
-	);
+		} as unknown as typeof filterCriteria & { bucketPreset: "MULTIPLE"; bucketIds: string[] };
+	}, [filterCriteria, id]);
 
 	const [expenseList, setExpenseList] = useState<{
 		items: ExpenseItem[];
 		totalPages: number;
 		loading: boolean;
 	}>({ items: [], totalPages: 0, loading: true });
-	const {
-		items: expenses,
-		totalPages: expensesTotalPages,
-		loading: expensesLoading,
-	} = expenseList;
+	const { items: expenses, totalPages: expensesTotalPages, loading: expensesLoading } = expenseList;
 
-	const [chartData, setChartData] =
-		useState<ChartData | null>(null);
+	const [chartData, setChartData] = useState<ChartData | null>(null);
 	const [chartLoading, setChartLoading] = useState(true);
 
-	const effectiveSort = useMemo(
-		() => sortForVariant("expenses", sortCriteria),
-		[sortCriteria],
-	);
+	const effectiveSort = useMemo(() => sortForVariant("bucket", sortCriteria), [sortCriteria]);
 
 	useEffect(() => {
 		dispatch(fetchAllBuckets());
@@ -90,17 +58,13 @@ export function BucketDetailView({ id }: { id: string }) {
 	useEffect(() => {
 		dispatch(fetchBucketDetail(id))
 			.unwrap()
-			.catch(() =>
-				router.replace("/unauthorized?type=bucket"),
-			);
-	}, [dispatch, id, router]);
+			.catch(() => router.replace("/unauthorized?type=bucket"));
+	}, [dispatch, id, router, filterCriteria]);
 
 	useEffect(() => {
 		let cancelled = false;
 		expensesApi
-			.getChartData({
-				filterCriteria: scopedCriteria,
-			})
+			.getChartData({ filterCriteria: scopedCriteria as any })
 			.then((data) => {
 				if (cancelled) return;
 				setChartData(data);
@@ -118,25 +82,16 @@ export function BucketDetailView({ id }: { id: string }) {
 		let cancelled = false;
 		expensesApi
 			.searchExpenses({
-				filterCriteria: scopedCriteria,
+				filterCriteria: scopedCriteria as any,
 				sortCriteria: effectiveSort,
 				pagination: { page, pageSize: 20 },
 			})
 			.then((res) => {
 				if (cancelled) return;
-				setExpenseList({
-					items: res.items,
-					totalPages: res.totalPages,
-					loading: false,
-				});
+				setExpenseList({ items: res.items, totalPages: res.totalPages, loading: false });
 			})
 			.catch(() => {
-				if (!cancelled)
-					setExpenseList({
-						items: [],
-						totalPages: 0,
-						loading: false,
-					});
+				if (!cancelled) setExpenseList({ items: [], totalPages: 0, loading: false });
 			});
 		return () => {
 			cancelled = true;
@@ -161,11 +116,7 @@ export function BucketDetailView({ id }: { id: string }) {
 		};
 	}, [currentBucket]);
 
-	const chartColorMap = useMemo(
-		() =>
-			new Map(Object.entries(chartData?.categoryColors ?? {})),
-		[chartData],
-	);
+	const chartColorMap = useMemo(() => new Map(Object.entries(chartData?.categoryColors ?? {})), [chartData]);
 
 	if (!currentBucket) {
 		return (
@@ -205,26 +156,11 @@ export function BucketDetailView({ id }: { id: string }) {
 
 	return (
 		<div className="space-y-2">
-			<FilterBar
-				variant="expenses"
-				buckets={buckets}
-				categories={categories}
-				owners={owners}
-				sections={{ buckets: false }}
-			/>
+			<FilterBar variant="bucket" buckets={buckets} categories={categories} owners={owners} />
 			{bucketSummary && (
-				<BucketCard
-					bucket={bucketSummary}
-					onDelete={() => router.replace("/buckets")}
-					onLeave={() => router.replace("/buckets")}
-				/>
+				<BucketCard bucket={bucketSummary} onDelete={() => router.replace("/buckets")} onLeave={() => router.replace("/buckets")} />
 			)}
-			<CashFlowChart
-				title="Trend"
-				stackedSeries={chartData?.series ?? []}
-				categoryColorMap={chartColorMap}
-				isLoading={chartLoading}
-			/>
+			<CashFlowChart title="Trend" stackedSeries={chartData?.series ?? []} categoryColorMap={chartColorMap} isLoading={chartLoading} />
 
 			{expenses.length > 0 && (
 				<ExpenseTable

@@ -1,8 +1,8 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
-// icon-color: deep-gray; icon-glyph: magic;
-// Track My Biryani — monthly overview
-// Current month spend + daily average + latest expenses.
+// icon-color: purple; icon-glyph: magic;
+// Track My Biryani — category spending breakdown
+// Shows monthly spending distribution by category.
 //
 // ─────────────────────────────────────────────
 // WIDGET PARAMETER
@@ -15,11 +15,25 @@
 //
 // 6a73518db8201292042ce736
 //
-// The widget will automatically fetch the
-// bucket name using the /buckets API.
+// The widget automatically resolves the bucket
+// name using the /buckets API.
 //
 // No bucket IDs or names are hardcoded here.
-// This makes the widget reusable for anyone.
+//
+// ─────────────────────────────────────────────
+//
+// Large:
+//   Header
+//   Stacked category bar
+//   Category legend/list
+//
+// Medium:
+//   Header
+//   Stacked category bar
+//   Top categories
+//
+// Accessory:
+//   Compact category summary
 //
 // ─────────────────────────────────────────────
 
@@ -31,76 +45,19 @@ const theme = importModule("lib/theme")
 const moneyLib = importModule("lib/money")
 const date = importModule("lib/date")
 
-const { footer, expenseBar } = components
+const { footer, stackedCategoryBar, categoryBar, categoryCompactBar } = components
 const { t } = theme
 const { font } = layout
 const { moneyShort, compact } = moneyLib
-const { currentMonthRange, currentMonthProgress, relativeDay } = date
+const { currentMonthRange } = date
 
 
 // ─────────────────────────────────────────────
-// Bucket ID from Scriptable widget parameter
+// Widget parameter
 // ─────────────────────────────────────────────
 
 const bucketId =
 	String(args.widgetParameter || "").trim()
-
-
-// ─────────────────────────────────────────────
-// Progress bar
-// ─────────────────────────────────────────────
-
-function bar(parent, {
-	value,
-	color,
-	trackColor,
-}) {
-	const row = parent.addStack()
-
-	row.layoutHorizontally()
-
-	const total = 300
-
-	const progress =
-		Math.max(
-			0,
-			Math.min(1, value)
-		)
-
-	const fill =
-		Math.round(
-			total * progress
-		)
-
-
-	const filled =
-		row.addStack()
-
-	filled.size =
-		new Size(fill, 6)
-
-	filled.cornerRadius = 3
-
-	filled.backgroundColor =
-		color || t("accent")
-
-
-	const track =
-		row.addStack()
-
-	track.size =
-		new Size(
-			total - fill,
-			6
-		)
-
-	track.cornerRadius = 3
-
-	track.backgroundColor =
-		trackColor || t("border")
-
-	return row
-}
 
 
 // ─────────────────────────────────────────────
@@ -115,11 +72,25 @@ bootstrap.run(async () => {
 		theme.background()
 
 
+	const family =
+		layout.family()
+
+	const isLarge =
+		family === "large"
+
+	const isMedium =
+		family === "medium"
+
+	const isAccessory =
+		layout.isAccessory()
+
+
 	// ─────────────────────────────────────────
-	// Validate widget parameter
+	// Validate bucket parameter
 	// ─────────────────────────────────────────
 
 	if (!bucketId) {
+
 		const title =
 			widget.addText(
 				"Track My Biryani"
@@ -153,13 +124,10 @@ bootstrap.run(async () => {
 	// ─────────────────────────────────────────
 	// Fetch bucket details
 	// ─────────────────────────────────────────
-	//
-	// We only have /buckets currently,
-	// so fetch the list and find our bucket.
-	// ─────────────────────────────────────────
 
 	const bucketsResponse =
 		await endpoints.buckets()
+
 
 	const buckets =
 		Array.isArray(bucketsResponse?.items)
@@ -180,6 +148,7 @@ bootstrap.run(async () => {
 	// ─────────────────────────────────────────
 
 	if (!bucket) {
+
 		const title =
 			widget.addText(
 				"Bucket Not Found"
@@ -217,7 +186,7 @@ bootstrap.run(async () => {
 
 
 	// ─────────────────────────────────────────
-	// Date range
+	// Date
 	// ─────────────────────────────────────────
 
 	const {
@@ -226,63 +195,70 @@ bootstrap.run(async () => {
 	} = currentMonthRange()
 
 
-	const month =
-		currentMonthProgress()
-
-
 	// ─────────────────────────────────────────
-	// Fetch bucket expenses
+	// API
 	// ─────────────────────────────────────────
 
 	const response =
-		await endpoints.expenses({
-			page: 1,
-			limit: 50,
+		await endpoints.categoriesWithStats({
 			from,
 			to,
 			bucketId,
-			sortBy: "paidAt",
-			order: "desc",
 		})
 
 
-	// endpoints.expenses() returns the
-	// unwrapped `data` object:
-	//
-	// {
-	//   items: [...],
-	//   total: 5,
-	//   page: 1,
-	//   totalPages: 1
-	// }
-
-	const data =
-		response || {}
-
-	const expenses =
-		Array.isArray(data.items)
-			? data.items
-			: []
+	const categories =
+		response || []
 
 
 	// ─────────────────────────────────────────
-	// Calculate monthly statistics
+	// Accessory widgets
 	// ─────────────────────────────────────────
 
-	const totalSpend =
-		expenses.reduce(
-			(sum, expense) =>
-				sum +
-				(Number(expense.amount) || 0),
-			0
-		)
+	if (isAccessory) {
+
+		if (!categories.length) {
+
+			const empty =
+				widget.addText(
+					"No spending"
+				)
+
+			empty.font =
+				font("regular", 10)
+
+			empty.textColor =
+				t("muted")
+
+			return widget
+		}
 
 
-	const perDay =
-		month.currentDay > 0
-			? totalSpend /
-				month.currentDay
-			: 0
+		const top =
+			categories.slice(0, 3)
+
+
+		for (
+			let i = 0;
+			i < top.length;
+			i++
+		) {
+			categoryCompactBar(
+				widget,
+				top[i]
+			)
+
+
+			if (
+				i < top.length - 1
+			) {
+				widget.addSpacer(4)
+			}
+		}
+
+
+		return widget
+	}
 
 
 	// ─────────────────────────────────────────
@@ -298,11 +274,14 @@ bootstrap.run(async () => {
 
 	const title =
 		header.addText(
-			`This Month · ${bucketName}`
+			`Where It Went · ${bucketName}`
 		)
 
 	title.font =
-		font("semibold", 15)
+		font(
+			"semibold",
+			isLarge ? 15 : 14
+		)
 
 	title.textColor =
 		t("text")
@@ -313,143 +292,30 @@ bootstrap.run(async () => {
 	header.addSpacer()
 
 
-	const day =
+	const subtitle =
 		header.addText(
-			`Day ${month.currentDay}/${month.daysInMonth}`
+			"This Month"
 		)
 
-	day.font =
-		font("regular", 10)
-
-	day.textColor =
-		t("muted")
-
-	day.rightAlignText()
-
-
-	widget.addSpacer(8)
-
-
-	// ─────────────────────────────────────────
-	// Statistics
-	// ─────────────────────────────────────────
-
-	const stats =
-		widget.addStack()
-
-	stats.layoutHorizontally()
-
-
-	// Total Spent
-	const totalStack =
-		stats.addStack()
-
-	totalStack.layoutVertically()
-
-
-	const totalLabel =
-		totalStack.addText(
-			"Total Spent"
-		)
-
-	totalLabel.font =
+	subtitle.font =
 		font("regular", 9)
 
-	totalLabel.textColor =
+	subtitle.textColor =
 		t("muted")
 
 
-	const totalValue =
-		totalStack.addText(
-			compact(totalSpend)
-		)
-
-	totalValue.font =
-		font("semibold", 15)
-
-	totalValue.textColor =
-		t("primary")
-
-
-	// Push Per Day to right edge
-	stats.addSpacer()
-
-
-	// Per Day
-	const perDayStack =
-		stats.addStack()
-
-	perDayStack.layoutVertically()
-
-
-	const perDayLabel =
-		perDayStack.addText(
-			"Per Day"
-		)
-
-	perDayLabel.font =
-		font("regular", 9)
-
-	perDayLabel.textColor =
-		t("muted")
-
-	perDayLabel.rightAlignText()
-
-
-	const perDayValue =
-		perDayStack.addText(
-			moneyShort(perDay)
-		)
-
-	perDayValue.font =
-		font("semibold", 15)
-
-	perDayValue.textColor =
-		t("text")
-
-	perDayValue.rightAlignText()
-
-
-	widget.addSpacer(7)
-
-
 	// ─────────────────────────────────────────
-	// Month progress
+	// Empty state
 	// ─────────────────────────────────────────
 
-	bar(widget, {
-		value: month.progress,
-		color: t("accent"),
-	})
+	if (!categories.length) {
 
+		widget.addSpacer(10)
 
-	widget.addSpacer(10)
-
-
-	// ─────────────────────────────────────────
-	// Latest expenses
-	// ─────────────────────────────────────────
-
-	const section =
-		widget.addText(
-			"Latest Expenses"
-		)
-
-	section.font =
-		font("semibold", 11)
-
-	section.textColor =
-		t("text")
-
-
-	widget.addSpacer(6)
-
-
-	if (expenses.length === 0) {
 
 		const empty =
 			widget.addText(
-				"No expenses this month"
+				"No category spending yet"
 			)
 
 		empty.font =
@@ -458,44 +324,132 @@ bootstrap.run(async () => {
 		empty.textColor =
 			t("muted")
 
+
+		widget.addSpacer()
+
+
+		footer(widget, {
+			left: bucketName,
+			right: "₹0",
+		})
+
+
+		return widget
+	}
+
+
+	// ─────────────────────────────────────────
+	// Category selection
+	// ─────────────────────────────────────────
+
+	let visibleCategories
+
+
+	if (isLarge) {
+		visibleCategories =
+			categories.slice(0, 10)
 	} else {
-
-		// API is sorted by paidAt descending,
-		// so the first six are the latest.
-		const latest =
-			expenses.slice(0,6)
+		visibleCategories =
+			categories.slice(0, 4)
+	}
 
 
-		for (
-			let i = 0;
-			i < latest.length;
-			i++
+	// ─────────────────────────────────────────
+	// Stacked bar
+	// ─────────────────────────────────────────
+
+	widget.addSpacer(9)
+
+
+	stackedCategoryBar(
+		widget,
+		categories
+	)
+
+
+	widget.addSpacer(10)
+
+
+	// ─────────────────────────────────────────
+	// Category list
+	// ─────────────────────────────────────────
+
+	for (
+		let i = 0;
+		i < visibleCategories.length;
+		i++
+	) {
+		categoryBar(
+			widget,
+			visibleCategories[i],
+			true
+		)
+
+
+		if (
+			i <
+			visibleCategories.length - 1
 		) {
-			expenseBar(
-				widget,
-				latest[i]
+			widget.addSpacer(
+				isLarge ? 6 : 5
 			)
-
-
-			if (
-				i < latest.length - 1
-			) {
-				widget.addSpacer(7)
-			}
 		}
 	}
 
 
-	widget.addSpacer()
+	// ─────────────────────────────────────────
+	// More categories
+	// ─────────────────────────────────────────
+
+	const remaining =
+		categories.length -
+		visibleCategories.length
+
+
+	if (remaining > 0) {
+
+		widget.addSpacer(5)
+
+
+		const more =
+			widget.addText(
+				`+${remaining} more categor${
+					remaining === 1
+						? "y"
+						: "ies"
+				}`
+			)
+
+		more.font =
+			font("regular", 8)
+
+		more.textColor =
+			t("muted")
+	}
 
 
 	// ─────────────────────────────────────────
 	// Footer
 	// ─────────────────────────────────────────
 
+	widget.addSpacer()
+
+
+	const totalSpend =
+		categories.reduce(
+			(sum, category) =>
+				sum + category.total,
+			0
+		)
+
+
 	footer(widget, {
 		left:
-			`${data.total ?? expenses.length} expenses`,
+			`${categories.length} categor${
+				categories.length === 1
+					? "y"
+					: "ies"
+			}`,
 
 		right:
 			moneyShort(totalSpend),
