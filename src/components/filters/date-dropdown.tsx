@@ -5,27 +5,17 @@ import { presetLabel } from "@/lib/date-range";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import type { FilterDatePreset } from "@/types/search.types";
 import { PRESETS } from "./date-filter-section";
-import type { FilterSliceState, FilterVariant } from "./variants";
-import { ACTIONS, SLICE_KEY } from "./variants";
+import type { FilterVariant } from "./variants";
+import { ACTIONS } from "./variants";
 
 type DateDropdownProps = {
 	variant: FilterVariant;
 	onCustomOpen: () => void;
 };
 
-// ponytail: a quick preset picker for the bar; Custom routes into the dialog
-// where the from/to inputs already live — no duplicate range UI here.
-export function DateDropdown({
-	variant,
-	onCustomOpen,
-}: DateDropdownProps) {
+export function DateDropdown({ variant, onCustomOpen }: DateDropdownProps) {
 	const dispatch = useAppDispatch();
-	const sliceState = useAppSelector(
-		(s) =>
-			(s as unknown as Record<string, FilterSliceState>)[
-				SLICE_KEY[variant]
-			],
-	);
+	const sliceState = useAppSelector((s) => (s.filters as Record<string, any>)[variant]);
 	const filterCriteria = sliceState.filterCriteria;
 
 	const setPreset = (preset: FilterDatePreset) => {

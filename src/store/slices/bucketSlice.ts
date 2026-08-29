@@ -34,18 +34,11 @@ export const fetchBuckets = createAsyncThunk(
 	"buckets/search",
 	async (_, { getState }) => {
 		const state = getState() as RootState;
+		const v = state.filters.buckets;
 		const result = await bucketsApi.searchBuckets({
-			// ponytail: the bucket list ignores date/user filters (all member
-			// buckets always show); only the per-bucket expense totals respect
-			// them, applied server-side.
-			filterCriteria: bucketCriteria(
-				state.filters.filterCriteria,
-			),
-			sortCriteria: sortForVariant(
-				"buckets",
-				state.filters.sortCriteria,
-			),
-			pagination: state.filters.pagination,
+			filterCriteria: bucketCriteria(v.filterCriteria, "buckets"),
+			sortCriteria: sortForVariant("buckets", v.sortCriteria),
+			pagination: v.pagination,
 		});
 		return result.items;
 	},

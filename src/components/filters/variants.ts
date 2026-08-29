@@ -15,8 +15,11 @@ import type { SortField } from "./sort-section";
 
 export type FilterVariant =
 	| "expenses"
+	| "expense"
 	| "categories"
+	| "category"
 	| "buckets"
+	| "bucket"
 	| "logs";
 
 export type DraftCriteria =
@@ -67,22 +70,60 @@ type FilterActions = {
 	clearAllFilters?: () => UnknownAction;
 };
 
-export const SLICE_KEY = {
+// per-variant isolated — SLICE_KEY kept for backward imports but state is s.filters[variant]
+export const SLICE_KEY: Record<FilterVariant, string> = {
 	expenses: "filters",
+	expense: "filters",
 	categories: "filters",
+	category: "filters",
 	buckets: "filters",
+	bucket: "filters",
 	logs: "filters",
-} as const;
+};
 
-// ponytail: every variant reads and writes the one shared filters slice, so a
-// date picked on the dashboard is the same date everywhere else.
-export const ACTIONS: Record<FilterVariant, FilterActions> =
-	{
-		expenses: filtersSlice,
-		categories: filtersSlice,
-		buckets: filtersSlice,
-		logs: filtersSlice,
+function makeActions(variant: FilterVariant): FilterActions {
+	return {
+		setBucketFilter: (p) =>
+			filtersSlice.setBucketFilter({ variant, ...p }),
+		setCategoryFilter: (p) =>
+			filtersSlice.setCategoryFilter({ variant, ...p }),
+		setOwnerFilter: (p) =>
+			filtersSlice.setOwnerFilter({ variant, ...p }),
+		setDateFilter: (p) =>
+			filtersSlice.setDateFilter({ variant, ...p }),
+		setSort: (p) =>
+			filtersSlice.setSort({ variant, ...p }),
+		setSearch: (p) =>
+			filtersSlice.setSearch({ variant, q: p }),
+		setHasNotes: (p) =>
+			filtersSlice.setHasNotes({ variant, value: p }),
+		setHasLocation: (p) =>
+			filtersSlice.setHasLocation({ variant, value: p }),
+		clearBucketFilter: () =>
+			filtersSlice.clearBucketFilter({ variant }),
+		clearCategoryFilter: () =>
+			filtersSlice.clearCategoryFilter({ variant }),
+		clearOwnerFilter: () =>
+			filtersSlice.clearOwnerFilter({ variant }),
+		clearDateFilter: () =>
+			filtersSlice.clearDateFilter({ variant }),
+		clearSort: () => filtersSlice.clearSort({ variant }),
+		clearAdditionalFilters: () =>
+			filtersSlice.clearAdditionalFilters({ variant }),
+		clearAllFilters: () =>
+			filtersSlice.clearAllFilters({ variant }),
 	};
+}
+
+export const ACTIONS: Record<FilterVariant, FilterActions> = {
+	expenses: makeActions("expenses"),
+	expense: makeActions("expense"),
+	categories: makeActions("categories"),
+	category: makeActions("category"),
+	buckets: makeActions("buckets"),
+	bucket: makeActions("bucket"),
+	logs: makeActions("logs"),
+};
 
 export type SectionName =
 	| "buckets"
@@ -95,45 +136,71 @@ export type SectionName =
 
 export type SectionFlags = Record<SectionName, boolean>;
 
-export const SECTIONS: Record<FilterVariant, SectionFlags> =
-	{
-		expenses: {
-			buckets: true,
-			categories: true,
-			owners: false,
-			additional: false,
-			search: true,
-			date: true,
-			sort: true,
-		},
-		categories: {
-			buckets: true,
-			categories: false,
-			owners: false,
-			additional: false,
-			search: false,
-			date: true,
-			sort: false,
-		},
-		buckets: {
-			buckets: false,
-			categories: false,
-			owners: false,
-			additional: false,
-			search: false,
-			date: true,
-			sort: true,
-		},
-		logs: {
-			buckets: true,
-			categories: false,
-			owners: false,
-			additional: false,
-			search: false,
-			date: true,
-			sort: true,
-		},
-	};
+export const SECTIONS: Record<FilterVariant, SectionFlags> = {
+	expenses: {
+		buckets: true,
+		categories: true,
+		owners: false,
+		additional: false,
+		search: true,
+		date: true,
+		sort: true,
+	},
+	expense: {
+		buckets: true,
+		categories: true,
+		owners: false,
+		additional: false,
+		search: true,
+		date: true,
+		sort: true,
+	},
+	categories: {
+		buckets: true,
+		categories: false,
+		owners: false,
+		additional: false,
+		search: false,
+		date: true,
+		sort: false,
+	},
+	category: {
+		buckets: false,
+		categories: false,
+		owners: true,
+		additional: true,
+		search: true,
+		date: true,
+		sort: true,
+	},
+	buckets: {
+		buckets: false,
+		categories: false,
+		owners: false,
+		additional: false,
+		search: false,
+		date: true,
+		sort: true,
+	},
+	bucket: {
+		buckets: false,
+		categories: true,
+		owners: true,
+		additional: true,
+		search: true,
+		date: true,
+		sort: true,
+	},
+	logs: {
+		buckets: true,
+		categories: false,
+		owners: false,
+		additional: false,
+		search: false,
+		date: true,
+		sort: true,
+	},
+};
 
 export function resolveSections(
 	variant: FilterVariant,
@@ -142,36 +209,28 @@ export function resolveSections(
 	return { ...SECTIONS[variant], ...override };
 }
 
-export function defaultSort(
-	variant: FilterVariant,
-): SortCriteria {
+export function defaultSort(variant: FilterVariant): SortCriteria {
 	return {
 		field: SORT_FIELDS[variant][0].value,
 		direction: "DESC",
 	};
 }
 
-// ponytail: the one shared sortCriteria is a preference every page interprets
-// within its own field set — a sort picked on logs ("timestamp") is meaningless
-// on the expenses list, so consumers normalize before use. Only the audit
-// endpoint rejects unknown fields, but the others would silently sort by a
-// nonexistent field, so the normalization happens at every boundary.
 export function sortForVariant(
 	variant: FilterVariant,
 	sort: SortCriteria,
 ): SortCriteria {
-	return SORT_FIELDS[variant].some(
-		(f) => f.value === sort.field,
-	)
+	return SORT_FIELDS[variant].some((f) => f.value === sort.field)
 		? sort
 		: defaultSort(variant);
 }
 
-export const SORT_FIELDS: Record<
-	FilterVariant,
-	SortField[]
-> = {
+export const SORT_FIELDS: Record<FilterVariant, SortField[]> = {
 	expenses: [
+		{ value: "paidAt", label: "Paid At" },
+		{ value: "amount", label: "Amount" },
+	],
+	expense: [
 		{ value: "paidAt", label: "Paid At" },
 		{ value: "amount", label: "Amount" },
 	],
@@ -179,10 +238,18 @@ export const SORT_FIELDS: Record<
 		{ value: "amount", label: "Amount" },
 		{ value: "createdAt", label: "Created At" },
 	],
+	category: [
+		{ value: "paidAt", label: "Paid At" },
+		{ value: "amount", label: "Amount" },
+	],
 	buckets: [
 		{ value: "totalAmount", label: "Total Amount" },
 		{ value: "memberCount", label: "Members" },
 		{ value: "createdAt", label: "Created At" },
+	],
+	bucket: [
+		{ value: "paidAt", label: "Paid At" },
+		{ value: "amount", label: "Amount" },
 	],
 	logs: [
 		{ value: "timestamp", label: "Date" },
@@ -191,20 +258,19 @@ export const SORT_FIELDS: Record<
 	],
 };
 
-export const VARIANT_TITLE: Record<FilterVariant, string> =
-	{
-		expenses: "Filter expenses",
-		categories: "Filter categories",
-		buckets: "Filter buckets",
-		logs: "Filter logs",
-	};
+export const VARIANT_TITLE: Record<FilterVariant, string> = {
+	expenses: "Filter expenses",
+	expense: "Filter expense",
+	categories: "Filter categories",
+	category: "Filter category expenses",
+	buckets: "Filter buckets",
+	bucket: "Filter bucket expenses",
+	logs: "Filter logs",
+};
 
 export function sortFieldLabel(
 	variant: FilterVariant,
 	field: string,
 ): string {
-	return (
-		SORT_FIELDS[variant].find((f) => f.value === field)
-			?.label ?? field
-	);
+	return SORT_FIELDS[variant].find((f) => f.value === field)?.label ?? field;
 }

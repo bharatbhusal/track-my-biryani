@@ -2,15 +2,9 @@
 
 import { useState } from "react";
 
-import {
-	ConfirmDialog,
-	Modal,
-} from "@/components/modals/dialog";
+import { ConfirmDialog, Modal } from "@/components/modals/dialog";
 import { Button } from "@/components/ui/button";
-import {
-	useAppDispatch,
-	useAppSelector,
-} from "@/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { AdditionalFiltersSection } from "./additional-filters-section";
 import { BucketFilterSection } from "./bucket-filter-section";
 import { CategoryFilterSection } from "./category-filter-section";
@@ -21,14 +15,12 @@ import { SortSection } from "./sort-section";
 import { useScopedOptions } from "./use-scoped-options";
 import {
 	ACTIONS,
-	SLICE_KEY,
 	SORT_FIELDS,
 	VARIANT_TITLE,
 	defaultSort,
 	resolveSections,
 	sortForVariant,
 	type DraftCriteria,
-	type FilterSliceState,
 	type FilterVariant,
 	type SectionFlags,
 } from "./variants";
@@ -49,82 +41,62 @@ export function FilterDialog({
 }: FilterDialogProps) {
 	const dispatch = useAppDispatch();
 	const actions = ACTIONS[variant];
-	const sections = resolveSections(
-		variant,
-		sectionsOverride,
-	);
+	const sections = resolveSections(variant, sectionsOverride);
 
-	const sliceState = useAppSelector(
-		(s) =>
-			(s as unknown as Record<string, FilterSliceState>)[
-				SLICE_KEY[variant]
-			],
-	);
+	const sliceState = useAppSelector((s) => (s.filters as Record<string, any>)[variant]);
 	const state = sliceState;
-	const buckets = useAppSelector(
-		(s) => s.buckets.allBuckets,
-	);
+	const buckets = useAppSelector((s) => s.buckets.allBuckets);
 
 	const [confirmClear, setConfirmClear] = useState(false);
 
-	// ponytail: draft resets during render when `open` flips, the documented
-	// "adjust state while rendering" pattern — cheaper than an effect and it
-	// avoids a frame of stale filters.
 	const [draft, setDraft] = useState({
 		open,
-		criteria: state.filterCriteria,
+		criteria: state.filterCriteria as DraftCriteria,
 		sort: sortForVariant(variant, state.sortCriteria),
 	});
 	if (draft.open !== open) {
 		setDraft({
 			open,
-			criteria: state.filterCriteria,
+			criteria: state.filterCriteria as DraftCriteria,
 			sort: sortForVariant(variant, state.sortCriteria),
 		});
 	}
 	const { criteria, sort } = draft;
-	const setCriteria = (
-		updater: (c: DraftCriteria) => DraftCriteria,
-	) =>
-		setDraft((d) => ({
-			...d,
-			criteria: updater(d.criteria),
-		}));
-	const setSort = (next: SortCriteria) =>
-		setDraft((d) => ({ ...d, sort: next }));
+	const setCriteria = (updater: (c: DraftCriteria) => DraftCriteria) =>
+		setDraft((d) => ({ ...d, criteria: updater(d.criteria) }));
+	const setSort = (next: SortCriteria) => setDraft((d) => ({ ...d, sort: next }));
 
 	const scoped = useScopedOptions(
 		open && (sections.categories || sections.owners),
 		buckets,
-		criteria.bucketPreset,
-		criteria.bucketIds,
+		criteria.bucketPreset as any,
+		criteria.bucketIds as any,
 	);
 
-	const patch = (next: Partial<DraftCriteria>) =>
-		setCriteria((c) => ({ ...c, ...next }));
+	const patch = (next: Partial<DraftCriteria>) => setCriteria((c) => ({ ...c, ...next }));
 
 	const apply = () => {
 		if (sections.buckets && actions.setBucketFilter) {
 			dispatch(
 				actions.setBucketFilter({
-					preset: criteria.bucketPreset ?? "PERSONAL",
-					ids: criteria.bucketIds ?? [],
+					preset: (criteria.bucketPreset as any) ?? "PERSONAL",
+					ids: (criteria.bucketIds as any) ?? [],
 				}),
 			);
 		}
 		if (sections.categories && actions.setCategoryFilter) {
 			dispatch(
 				actions.setCategoryFilter({
-					preset: criteria.categoryPreset ?? "ALL",
-					ids: criteria.categoryIds ?? [],
+					preset: (criteria.categoryPreset as any) ?? "ALL",
+					ids: (criteria.categoryIds as any) ?? [],
 				}),
 			);
 		}
 		if (sections.owners && actions.setOwnerFilter) {
 			dispatch(
 				actions.setOwnerFilter({
-					preset: criteria.ownerPreset ?? "ME",
-					ids: criteria.ownerIds ?? [],
+					preset: (criteria.ownerPreset as any) ?? "ME",
+					ids: (criteria.ownerIds as any) ?? [],
 				}),
 			);
 		}
@@ -141,13 +113,10 @@ export function FilterDialog({
 			dispatch(actions.setSearch(criteria.q));
 		}
 		if (sections.additional) {
-			if (actions.setHasNotes)
-				dispatch(actions.setHasNotes(criteria.hasNotes));
-			if (actions.setHasLocation)
-				dispatch(actions.setHasLocation(criteria.hasLocation));
+			if (actions.setHasNotes) dispatch(actions.setHasNotes(criteria.hasNotes));
+			if (actions.setHasLocation) dispatch(actions.setHasLocation(criteria.hasLocation));
 		}
-		if (sections.sort && actions.setSort)
-			dispatch(actions.setSort(sort));
+		if (sections.sort && actions.setSort) dispatch(actions.setSort(sort));
 		onClose();
 	};
 
@@ -161,68 +130,46 @@ export function FilterDialog({
 
 	return (
 		<>
-			<Modal
-				open={open}
-				title={VARIANT_TITLE[variant]}
-				subtitle="Narrow down what you see"
-				onClose={onClose}
-			>
+			<Modal open={open} title={VARIANT_TITLE[variant]} subtitle="Narrow down what you see" onClose={onClose}>
 				<div className="space-y-5">
 					{sections.search ? (
 						<SearchSection
 							q={criteria.q ?? ""}
-							onChange={(q) =>
-								setCriteria((c) => ({
-									...c,
-									q: q || undefined,
-								}))
-							}
+							onChange={(q) => setCriteria((c) => ({ ...c, q: q || undefined }))}
 						/>
 					) : null}
 
 					{sections.buckets ? (
 						<BucketFilterSection
-							preset={criteria.bucketPreset ?? "PERSONAL"}
-							bucketIds={criteria.bucketIds ?? []}
+							preset={(criteria.bucketPreset as any) ?? "PERSONAL"}
+							bucketIds={(criteria.bucketIds as any) ?? []}
 							buckets={buckets}
-							onChange={({ preset, ids }) =>
-								patch({ bucketPreset: preset, bucketIds: ids })
-							}
-							onClear={() =>
-								patch({ bucketPreset: "PERSONAL", bucketIds: [] })
-							}
+							onChange={({ preset, ids }) => patch({ bucketPreset: preset as any, bucketIds: ids as any })}
+							onClear={() => patch({ bucketPreset: "PERSONAL" as any, bucketIds: [] as any })}
 							defaultOpen={false}
 						/>
 					) : null}
 
 					{sections.categories ? (
 						<CategoryFilterSection
-							preset={criteria.categoryPreset ?? "ALL"}
-							categoryIds={criteria.categoryIds ?? []}
+							preset={(criteria.categoryPreset as any) ?? "ALL"}
+							categoryIds={(criteria.categoryIds as any) ?? []}
 							categories={scoped.categories}
 							isLoading={scoped.isLoading}
-							onChange={({ preset, ids }) =>
-								patch({ categoryPreset: preset, categoryIds: ids })
-							}
-							onClear={() =>
-								patch({ categoryPreset: "ALL", categoryIds: [] })
-							}
+							onChange={({ preset, ids }) => patch({ categoryPreset: preset as any, categoryIds: ids as any })}
+							onClear={() => patch({ categoryPreset: "ALL" as any, categoryIds: [] as any })}
 							defaultOpen={false}
 						/>
 					) : null}
 
 					{sections.owners ? (
 						<OwnerFilterSection
-							preset={criteria.ownerPreset ?? "ME"}
-							ownerIds={criteria.ownerIds ?? []}
+							preset={(criteria.ownerPreset as any) ?? "ME"}
+							ownerIds={(criteria.ownerIds as any) ?? []}
 							owners={scoped.owners}
 							isLoading={scoped.isLoading}
-							onChange={({ preset, ids }) =>
-								patch({ ownerPreset: preset, ownerIds: ids })
-							}
-							onClear={() =>
-								patch({ ownerPreset: "ME", ownerIds: [] })
-							}
+							onChange={({ preset, ids }) => patch({ ownerPreset: preset as any, ownerIds: ids as any })}
+							onClear={() => patch({ ownerPreset: "ME" as any, ownerIds: [] as any })}
 							defaultOpen={false}
 						/>
 					) : null}
@@ -233,12 +180,7 @@ export function FilterDialog({
 							customFrom={criteria.customFrom}
 							customTo={criteria.customTo}
 							onChange={({ preset, customFrom, customTo }) =>
-								setCriteria((c) => ({
-									...c,
-									datePreset: preset,
-									customFrom,
-									customTo,
-								}))
+								setCriteria((c) => ({ ...c, datePreset: preset, customFrom, customTo }))
 							}
 							onClear={() =>
 								setCriteria((c) => ({
@@ -268,29 +210,15 @@ export function FilterDialog({
 							hasNotes={criteria.hasNotes}
 							hasLocation={criteria.hasLocation}
 							onChange={({ hasNotes, hasLocation }) =>
-								setCriteria((c) => ({
-									...c,
-									hasNotes,
-									hasLocation,
-								}))
+								setCriteria((c) => ({ ...c, hasNotes, hasLocation }))
 							}
-							onClear={() =>
-								setCriteria((c) => ({
-									...c,
-									hasNotes: undefined,
-									hasLocation: undefined,
-								}))
-							}
+							onClear={() => setCriteria((c) => ({ ...c, hasNotes: undefined, hasLocation: undefined }))}
 							defaultOpen={false}
 						/>
 					) : null}
 
 					<div className="flex justify-end gap-2 border-t pt-4">
-						<Button
-							type="button"
-							variant="ghost"
-							onClick={() => setConfirmClear(true)}
-						>
+						<Button type="button" variant="ghost" onClick={() => setConfirmClear(true)}>
 							Clear all
 						</Button>
 						<Button type="button" onClick={apply}>

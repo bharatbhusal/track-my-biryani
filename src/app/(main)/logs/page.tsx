@@ -2,10 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import {
-	FilterBar,
-	useScopedOptions,
-} from "@/components/filters";
+import { FilterBar, useScopedOptions } from "@/components/filters";
 import { sortForVariant } from "@/components/filters/variants";
 import { LogsTable } from "@/features/logs/components/logs-table";
 import type { SortField } from "@/features/logs/components/logs-table";
@@ -13,14 +10,8 @@ import { auditApi } from "@/lib/api/audit";
 import type { AuditLogItem } from "@/lib/api/audit";
 import { auditCriteria } from "@/lib/filters";
 import { fetchAllBuckets } from "@/store/slices/bucketSlice";
-import {
-	useAppDispatch,
-	useAppSelector,
-} from "@/store/hooks";
-import {
-	setPage,
-	setSort,
-} from "@/store/slices/filtersSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { setPage, setSort } from "@/store/slices/filtersSlice";
 
 export default function LogsPage() {
 	const dispatch = useAppDispatch();
@@ -30,15 +21,11 @@ export default function LogsPage() {
 		totalPages: number;
 	}>({ key: null, items: [], totalPages: 0 });
 
-	const { filterCriteria, sortCriteria, pagination } =
-		useAppSelector((s) => s.filters);
-	const buckets = useAppSelector(
-		(s) => s.buckets.allBuckets,
+	const { filterCriteria, sortCriteria, pagination } = useAppSelector(
+		(s) => s.filters.logs,
 	);
+	const buckets = useAppSelector((s) => s.buckets.allBuckets);
 
-	// ponytail: the dialog already resolves owners from bucket members through
-	// this hook — reused rather than a second derivation, at the cost of the
-	// category fetch it also does.
 	const { owners } = useScopedOptions(
 		true,
 		buckets,
@@ -56,10 +43,6 @@ export default function LogsPage() {
 		pagination,
 	});
 
-	// ponytail: the shared sort is a preference — the audit endpoint only
-	// accepts its own fields, so normalize before both the request and the
-	// table/toggle rendering. Memoized on the raw sort so identity stays stable
-	// across renders (the normalizer builds a fresh object when it falls back).
 	const effectiveSort = useMemo(
 		() => sortForVariant("logs", sortCriteria),
 		[sortCriteria],
@@ -69,43 +52,29 @@ export default function LogsPage() {
 		let cancelled = false;
 		auditApi
 			.searchLogs({
-				filterCriteria: auditCriteria(filterCriteria),
+				filterCriteria: auditCriteria(filterCriteria, "logs"),
 				sortCriteria: effectiveSort,
 				pagination,
 			})
 			.then((res) => {
 				if (cancelled) return;
-				setResult({
-					key: requestKey,
-					items: res.items,
-					totalPages: res.totalPages,
-				});
+				setResult({ key: requestKey, items: res.items, totalPages: res.totalPages });
 			})
 			.catch(() => {
-				if (!cancelled)
-					setResult({
-						key: requestKey,
-						items: [],
-						totalPages: 0,
-					});
+				if (!cancelled) setResult({ key: requestKey, items: [], totalPages: 0 });
 			});
 		return () => {
 			cancelled = true;
 		};
-	}, [
-		requestKey,
-		filterCriteria,
-		effectiveSort,
-		pagination,
-	]);
+	}, [requestKey, filterCriteria, effectiveSort, pagination]);
 
 	const handleSort = (field: SortField) => {
 		dispatch(
 			setSort({
+				variant: "logs",
 				field,
 				direction:
-					effectiveSort.field === field &&
-					effectiveSort.direction === "DESC"
+					effectiveSort.field === field && effectiveSort.direction === "DESC"
 						? "ASC"
 						: "DESC",
 			}),
@@ -115,27 +84,18 @@ export default function LogsPage() {
 	return (
 		<div className="space-y-2">
 			<div className="flex items-center justify-between px-2">
-				<h3 className="text-base font-semibold tracking-tight">
-					Activity Logs
-				</h3>
+				<h3 className="text-base font-semibold tracking-tight">Activity Logs</h3>
 			</div>
-			<FilterBar
-				variant="logs"
-				buckets={buckets}
-				categories={[]}
-				owners={owners}
-			/>
+			<FilterBar variant="logs" buckets={buckets} categories={[]} owners={owners} />
 			<LogsTable
 				items={result.items}
 				isLoading={result.key !== requestKey}
 				sortBy={effectiveSort.field as SortField}
-				order={
-					effectiveSort.direction === "ASC" ? "asc" : "desc"
-				}
+				order={effectiveSort.direction === "ASC" ? "asc" : "desc"}
 				onSort={handleSort}
 				page={pagination.page}
 				totalPages={result.totalPages}
-				onPageChange={(p) => dispatch(setPage(p))}
+				onPageChange={(p) => dispatch(setPage({ variant: "logs", page: p }))}
 			/>
 		</div>
 	);

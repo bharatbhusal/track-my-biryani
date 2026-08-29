@@ -78,8 +78,8 @@ export const createCategory = createAsyncThunk(
 			await expensesApi.createCategory(payload);
 		dispatch(
 			fetchCategoriesWithStats({
-				filterCriteria: state.filters.filterCriteria,
-				sortCriteria: state.filters.sortCriteria,
+				filterCriteria: state.filters.categories.filterCriteria,
+				sortCriteria: state.filters.categories.sortCriteria,
 			}),
 		);
 		return category;

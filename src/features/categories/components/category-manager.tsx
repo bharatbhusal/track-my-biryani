@@ -4,47 +4,34 @@ import { useState, useEffect } from "react";
 
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-	FilterBar,
-	useScopedOptions,
-} from "@/components/filters";
-import {
-	useAppSelector,
-	useAppDispatch,
-} from "@/store/hooks";
+import { FilterBar, useScopedOptions } from "@/components/filters";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { fetchCategoriesWithStats } from "@/store/slices/categorySlice";
 import { CategoryCard } from "@/features/categories/components/category-card";
 import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
 import { formatCurrency } from "@/lib/format";
+import { categoryCriteria } from "@/lib/filters";
+import { sortForVariant } from "@/components/filters/variants";
 
 export function CategoryManager() {
 	const dispatch = useAppDispatch();
 	const [drawerOpen, setDrawerOpen] = useState(false);
 
-	const filterCriteria = useAppSelector(
-		(s) => s.filters.filterCriteria,
-	);
+	const filterState = useAppSelector((s) => s.filters.categories);
+	const filterCriteria = filterState.filterCriteria;
+	const sortCriteria = filterState.sortCriteria;
 
-	// ponytail: refetching for new criteria shows the skeleton again — the
-	// render-time comparison keeps the loading flip out of an effect.
 	const [loadedFor, setLoadedFor] = useState(filterCriteria);
 	if (loadedFor !== filterCriteria) {
 		setLoadedFor(filterCriteria);
 	}
 
-	const sortCriteria = useAppSelector(
-		(s) => s.filters.sortCriteria,
-	);
-	const buckets = useAppSelector(
-		(s) => s.buckets.allBuckets,
-	);
+	const buckets = useAppSelector((s) => s.buckets.allBuckets);
 	const currency = useAppSelector((s) => s.ui.currency);
 	const categoriesWithStats = useAppSelector(
 		(s) => s.categories.itemsWithStats,
 	);
 
-	// ponytail: owners come from bucket members through the shared hook, so the
-	// user filter can list everyone in the selected buckets.
 	const { owners } = useScopedOptions(
 		true,
 		buckets,
@@ -53,46 +40,21 @@ export function CategoryManager() {
 	);
 
 	useEffect(() => {
-		dispatch(fetchCategoriesWithStats({ filterCriteria }));
+		dispatch(
+			fetchCategoriesWithStats({
+				filterCriteria: categoryCriteria(filterCriteria, "categories"),
+				sortCriteria: sortForVariant("categories", sortCriteria),
+			}),
+		);
 	}, [dispatch, filterCriteria, sortCriteria]);
 
 	const summaryCells: Array<[string, string]> = [
-		[
-			"Total",
-			formatCurrency(
-				categoriesWithStats?.stats?.total ?? 0,
-				currency,
-			),
-		],
-		[
-			"Avg",
-			formatCurrency(
-				categoriesWithStats?.stats?.avg ?? 0,
-				currency,
-			),
-		],
-		[
-			"Min",
-			formatCurrency(
-				categoriesWithStats?.stats?.min ?? 0,
-				currency,
-			),
-		],
-		[
-			"Max",
-			formatCurrency(
-				categoriesWithStats?.stats?.max ?? 0,
-				currency,
-			),
-		],
-		[
-			"Categories",
-			String(categoriesWithStats?.stats?.count ?? 0),
-		],
-		[
-			"Expenses",
-			String(categoriesWithStats?.stats?.expenseCount ?? 0),
-		],
+		["Total", formatCurrency(categoriesWithStats?.stats?.total ?? 0, currency)],
+		["Avg", formatCurrency(categoriesWithStats?.stats?.avg ?? 0, currency)],
+		["Min", formatCurrency(categoriesWithStats?.stats?.min ?? 0, currency)],
+		["Max", formatCurrency(categoriesWithStats?.stats?.max ?? 0, currency)],
+		["Categories", String(categoriesWithStats?.stats?.count ?? 0)],
+		["Expenses", String(categoriesWithStats?.stats?.expenseCount ?? 0)],
 	];
 
 	return (
@@ -105,22 +67,16 @@ export function CategoryManager() {
 			/>
 			<div className="flex flex-wrap gap-2">
 				{!categoriesWithStats
-					? Array.from({ length: summaryCells.length }).map(
-							(_, i) => (
-								<Card key={i} className="min-w-[100px] flex-1">
-									<Skeleton className="mb-1 h-4 w-16" />
-									<Skeleton className="h-5 w-24" />
-								</Card>
-							),
-						)
+					? Array.from({ length: summaryCells.length }).map((_, i) => (
+							<Card key={i} className="min-w-[100px] flex-1">
+								<Skeleton className="mb-1 h-4 w-16" />
+								<Skeleton className="h-5 w-24" />
+							</Card>
+						))
 					: summaryCells.map(([label, value]) => (
 							<Card key={label} className="min-w-[100px] flex-1">
-								<p className="truncate text-xs text-[var(--color-muted)]">
-									{label}
-								</p>
-								<p className="truncate font-medium tabular-nums">
-									{value}
-								</p>
+								<p className="truncate text-xs text-[var(--color-muted)]">{label}</p>
+								<p className="truncate font-medium tabular-nums">{value}</p>
 							</Card>
 						))}
 			</div>
@@ -140,10 +96,7 @@ export function CategoryManager() {
 				)}
 			</div>
 
-			<AddCategoryDialog
-				open={drawerOpen}
-				onClose={() => setDrawerOpen(false)}
-			/>
+			<AddCategoryDialog open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 		</div>
 	);
 }
