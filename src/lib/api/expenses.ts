@@ -111,9 +111,10 @@ export const expensesApi = {
 		id: string,
 		from: string,
 		to: string,
+		bucketId?: string,
 	) =>
 		apiRequest<CategoryItemAanlytics>(
-			`/categories/${id}/stats?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+			`/categories/${id}/stats?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}${bucketId ? `&bucketId=${bucketId}` : ""}`,
 		),
 
 	updateCategory: (

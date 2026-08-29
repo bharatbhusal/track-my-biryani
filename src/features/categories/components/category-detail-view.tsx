@@ -62,7 +62,14 @@ export function CategoryDetailView({ id }: { id: string }) {
 	}
 
 	useEffect(() => {
-		dispatch(fetchCategoryDetail({ id, from: bounds.from, to: bounds.to }))
+		dispatch(
+			fetchCategoryDetail({
+				id,
+				from: bounds.from,
+				to: bounds.to,
+				bucketId: category?.bucketId,
+			}),
+		)
 			.unwrap()
 			.catch(() => router.replace("/unauthorized?type=category"));
 	}, [dispatch, id, bounds.from, bounds.to, router]);
