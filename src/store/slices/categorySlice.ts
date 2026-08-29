@@ -53,12 +53,19 @@ export const fetchCategoryDetail = createAsyncThunk(
 		id,
 		from,
 		to,
+		bucketId,
 	}: {
 		id: string;
 		from: string;
 		to: string;
+		bucketId?: string;
 	}) => {
-		return expensesApi.getCategoryById(id, from, to);
+		return expensesApi.getCategoryById(
+			id,
+			from,
+			to,
+			bucketId,
+		);
 	},
 );
 
