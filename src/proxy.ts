@@ -87,7 +87,9 @@ export function proxy(request: NextRequest) {
 				new URL("/dashboard", request.url),
 			);
 		}
-		return NextResponse.redirect(new URL("/home", request.url));
+		return NextResponse.redirect(
+			new URL("/home", request.url),
+		);
 	}
 
 	// Home page — public, no auth required
@@ -149,5 +151,7 @@ export const config = {
 		"/categories/:path*",
 		"/logs",
 		"/auth/:path*",
+		"/settings",
+		"/buckets/:path*",
 	],
 };

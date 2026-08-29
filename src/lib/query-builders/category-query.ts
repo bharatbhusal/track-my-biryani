@@ -41,7 +41,6 @@ export async function buildCategoryQuery(
 		filters.customFrom,
 		filters.customTo,
 	);
-	console.log(bounds);
 	if (bounds) {
 		query.createdAt = {
 			...(bounds.from ? { $gte: new Date(bounds.from) } : {}),

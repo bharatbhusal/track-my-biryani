@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { useEffect, useRef } from "react";
 
 type MultiSelectProps = {
 	options: { value: string; label: string; icon?: string }[];
@@ -24,20 +24,41 @@ export function MultiSelect({
 	onAllChange,
 	emptyLabel = "Nothing to select",
 }: MultiSelectProps) {
+	const allValues = options.map((o) => o.value);
+	const isAllChecked =
+		isAll || (allValues.length > 0 && selected.length === allValues.length);
+	const isIndeterminate =
+		!isAllChecked && selected.length > 0 && selected.length < allValues.length;
+
+	const allRef = useRef<HTMLInputElement>(null);
+	useEffect(() => {
+		if (allRef.current) allRef.current.indeterminate = isIndeterminate;
+	}, [isIndeterminate]);
+
 	const toggle = (value: string) => {
-		onChange(
-			selected.includes(value)
-				? selected.filter((v) => v !== value)
-				: [...selected, value],
-		);
+		if (isAllChecked) {
+			// All was checked → uncheck All and keep N-1
+			onAllChange(false);
+			onChange(allValues.filter((v) => v !== value));
+			return;
+		}
+		const next = selected.includes(value)
+			? selected.filter((v) => v !== value)
+			: [...selected, value];
+		if (next.length === allValues.length && allValues.length > 0) {
+			onAllChange(true);
+		} else {
+			onChange(next);
+		}
 	};
 
 	return (
 		<div className="max-h-56 space-y-0.5 overflow-y-auto rounded-xl border border-[var(--color-border)] p-1">
 			<label className={rowClass}>
 				<input
+					ref={allRef}
 					type="checkbox"
-					checked={isAll}
+					checked={isAllChecked}
 					onChange={(e) => onAllChange(e.target.checked)}
 					className="h-4 w-4 shrink-0 accent-[var(--color-primary)]"
 				/>
@@ -49,14 +70,10 @@ export function MultiSelect({
 				</p>
 			) : null}
 			{options.map((o) => (
-				<label
-					key={o.value}
-					className={cn(rowClass, isAll && "opacity-50")}
-				>
+				<label key={o.value} className={rowClass}>
 					<input
 						type="checkbox"
-						checked={!isAll && selected.includes(o.value)}
-						disabled={isAll}
+						checked={isAllChecked || selected.includes(o.value)}
 						onChange={() => toggle(o.value)}
 						className="h-4 w-4 shrink-0 accent-[var(--color-primary)]"
 					/>
