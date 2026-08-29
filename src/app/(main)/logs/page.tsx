@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { FilterBar, useScopedOptions } from "@/components/filters";
+import {
+	FilterBar,
+	useScopedOptions,
+} from "@/components/filters";
 import { sortForVariant } from "@/components/filters/variants";
 import { LogsTable } from "@/features/logs/components/logs-table";
 import type { SortField } from "@/features/logs/components/logs-table";
@@ -10,8 +13,14 @@ import { auditApi } from "@/lib/api/audit";
 import type { AuditLogItem } from "@/lib/api/audit";
 import { auditCriteria } from "@/lib/filters";
 import { fetchAllBuckets } from "@/store/slices/bucketSlice";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { setPage, setSort } from "@/store/slices/filtersSlice";
+import {
+	useAppDispatch,
+	useAppSelector,
+} from "@/store/hooks";
+import {
+	setPage,
+	setSort,
+} from "@/store/slices/filtersSlice";
 
 export default function LogsPage() {
 	const dispatch = useAppDispatch();
@@ -23,7 +32,9 @@ export default function LogsPage() {
 
 	const { filterCriteria, sortCriteria, pagination } =
 		useAppSelector((s) => s.filters);
-	const buckets = useAppSelector((s) => s.buckets.allBuckets);
+	const buckets = useAppSelector(
+		(s) => s.buckets.allBuckets,
+	);
 
 	// ponytail: the dialog already resolves owners from bucket members through
 	// this hook — reused rather than a second derivation, at the cost of the
@@ -72,12 +83,21 @@ export default function LogsPage() {
 			})
 			.catch(() => {
 				if (!cancelled)
-					setResult({ key: requestKey, items: [], totalPages: 0 });
+					setResult({
+						key: requestKey,
+						items: [],
+						totalPages: 0,
+					});
 			});
 		return () => {
 			cancelled = true;
 		};
-	}, [requestKey, filterCriteria, effectiveSort, pagination]);
+	}, [
+		requestKey,
+		filterCriteria,
+		effectiveSort,
+		pagination,
+	]);
 
 	const handleSort = (field: SortField) => {
 		dispatch(
@@ -109,7 +129,9 @@ export default function LogsPage() {
 				items={result.items}
 				isLoading={result.key !== requestKey}
 				sortBy={effectiveSort.field as SortField}
-				order={effectiveSort.direction === "ASC" ? "asc" : "desc"}
+				order={
+					effectiveSort.direction === "ASC" ? "asc" : "desc"
+				}
 				onSort={handleSort}
 				page={pagination.page}
 				totalPages={result.totalPages}

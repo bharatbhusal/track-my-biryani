@@ -102,11 +102,6 @@ export function CategoryManager() {
 				buckets={buckets}
 				categories={[]}
 				owners={owners}
-				sections={{
-					categories: false,
-					search: false,
-					sort: false,
-				}}
 			/>
 			<div className="flex flex-wrap gap-2">
 				{!categoriesWithStats

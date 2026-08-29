@@ -13,11 +13,16 @@ import type {
 } from "@/types/search.types";
 import type { SortField } from "./sort-section";
 
-export type FilterVariant = "expenses" | "categories" | "buckets" | "logs";
+export type FilterVariant =
+	| "expenses"
+	| "categories"
+	| "buckets"
+	| "logs";
 
-export type DraftCriteria = Partial<ExpenseFilterCriteria> & {
-	datePreset: FilterDatePreset;
-};
+export type DraftCriteria =
+	Partial<ExpenseFilterCriteria> & {
+		datePreset: FilterDatePreset;
+	};
 
 export type FilterValue = {
 	filterCriteria: DraftCriteria;
@@ -71,12 +76,13 @@ export const SLICE_KEY = {
 
 // ponytail: every variant reads and writes the one shared filters slice, so a
 // date picked on the dashboard is the same date everywhere else.
-export const ACTIONS: Record<FilterVariant, FilterActions> = {
-	expenses: filtersSlice,
-	categories: filtersSlice,
-	buckets: filtersSlice,
-	logs: filtersSlice,
-};
+export const ACTIONS: Record<FilterVariant, FilterActions> =
+	{
+		expenses: filtersSlice,
+		categories: filtersSlice,
+		buckets: filtersSlice,
+		logs: filtersSlice,
+	};
 
 export type SectionName =
 	| "buckets"
@@ -89,44 +95,45 @@ export type SectionName =
 
 export type SectionFlags = Record<SectionName, boolean>;
 
-export const SECTIONS: Record<FilterVariant, SectionFlags> = {
-	expenses: {
-		buckets: true,
-		categories: true,
-		owners: true,
-		additional: true,
-		search: true,
-		date: true,
-		sort: true,
-	},
-	categories: {
-		buckets: true,
-		categories: false,
-		owners: true,
-		additional: false,
-		search: true,
-		date: true,
-		sort: true,
-	},
-	buckets: {
-		buckets: false,
-		categories: false,
-		owners: false,
-		additional: false,
-		search: false,
-		date: true,
-		sort: true,
-	},
-	logs: {
-		buckets: true,
-		categories: false,
-		owners: true,
-		additional: false,
-		search: false,
-		date: true,
-		sort: true,
-	},
-};
+export const SECTIONS: Record<FilterVariant, SectionFlags> =
+	{
+		expenses: {
+			buckets: true,
+			categories: true,
+			owners: false,
+			additional: false,
+			search: true,
+			date: true,
+			sort: true,
+		},
+		categories: {
+			buckets: true,
+			categories: false,
+			owners: false,
+			additional: false,
+			search: false,
+			date: true,
+			sort: false,
+		},
+		buckets: {
+			buckets: false,
+			categories: false,
+			owners: false,
+			additional: false,
+			search: false,
+			date: true,
+			sort: true,
+		},
+		logs: {
+			buckets: true,
+			categories: false,
+			owners: false,
+			additional: false,
+			search: false,
+			date: true,
+			sort: true,
+		},
+	};
 
 export function resolveSections(
 	variant: FilterVariant,
@@ -135,8 +142,13 @@ export function resolveSections(
 	return { ...SECTIONS[variant], ...override };
 }
 
-export function defaultSort(variant: FilterVariant): SortCriteria {
-	return { field: SORT_FIELDS[variant][0].value, direction: "DESC" };
+export function defaultSort(
+	variant: FilterVariant,
+): SortCriteria {
+	return {
+		field: SORT_FIELDS[variant][0].value,
+		direction: "DESC",
+	};
 }
 
 // ponytail: the one shared sortCriteria is a preference every page interprets
@@ -148,12 +160,17 @@ export function sortForVariant(
 	variant: FilterVariant,
 	sort: SortCriteria,
 ): SortCriteria {
-	return SORT_FIELDS[variant].some((f) => f.value === sort.field)
+	return SORT_FIELDS[variant].some(
+		(f) => f.value === sort.field,
+	)
 		? sort
 		: defaultSort(variant);
 }
 
-export const SORT_FIELDS: Record<FilterVariant, SortField[]> = {
+export const SORT_FIELDS: Record<
+	FilterVariant,
+	SortField[]
+> = {
 	expenses: [
 		{ value: "paidAt", label: "Paid At" },
 		{ value: "amount", label: "Amount" },
@@ -174,19 +191,20 @@ export const SORT_FIELDS: Record<FilterVariant, SortField[]> = {
 	],
 };
 
-export const VARIANT_TITLE: Record<FilterVariant, string> = {
-	expenses: "Filter expenses",
-	categories: "Filter categories",
-	buckets: "Filter buckets",
-	logs: "Filter logs",
-};
+export const VARIANT_TITLE: Record<FilterVariant, string> =
+	{
+		expenses: "Filter expenses",
+		categories: "Filter categories",
+		buckets: "Filter buckets",
+		logs: "Filter logs",
+	};
 
 export function sortFieldLabel(
 	variant: FilterVariant,
 	field: string,
 ): string {
 	return (
-		SORT_FIELDS[variant].find((f) => f.value === field)?.label ??
-		field
+		SORT_FIELDS[variant].find((f) => f.value === field)
+			?.label ?? field
 	);
 }

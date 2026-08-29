@@ -210,7 +210,6 @@ export function BucketDetailView({ id }: { id: string }) {
 				buckets={buckets}
 				categories={categories}
 				owners={owners}
-				sections={{ buckets: false }}
 			/>
 			{bucketSummary && (
 				<BucketCard
