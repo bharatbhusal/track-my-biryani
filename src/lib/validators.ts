@@ -193,5 +193,19 @@ export const bucketStatsSchema = z.object({
   filterCriteria: expenseFilterSchema.optional(),
 });
 
+export const budgetSchema = z.object({
+  bucketId: z.string().min(1),
+  categoryId: z.string().nullable().optional(),
+  amount: roundedAmountSchema,
+  period: z.enum(["weekly", "monthly", "yearly"]),
+});
+
+export const budgetUpdateSchema = z.object({
+  bucketId: z.string().min(1).optional(),
+  categoryId: z.string().nullable().optional(),
+  amount: roundedAmountSchema.optional(),
+  period: z.enum(["weekly", "monthly", "yearly"]).optional(),
+});
+
 export type SignupInput = z.infer<typeof signupSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

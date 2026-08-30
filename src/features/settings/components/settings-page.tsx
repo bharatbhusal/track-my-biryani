@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FiFileText, FiLogOut, FiMoon, FiSun, FiUsers } from "react-icons/fi";
+import { FiFileText, FiLogOut, FiMoon, FiPieChart, FiSun, FiUsers } from "react-icons/fi";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -81,6 +81,20 @@ export function SettingsPage() {
 
           <Button variant="ghost" size="icon" aria-label="View buckets">
             <FiUsers className="h-4 w-4" />
+          </Button>
+        </Link>
+      </Card>
+      <Card>
+        <Link href="/budgets" className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">Budgets</p>
+            <p className="truncate text-xs text-[var(--color-muted)]">
+              Budgets per bucket and category
+            </p>
+          </div>
+
+          <Button variant="ghost" size="icon" aria-label="View budgets">
+            <FiPieChart className="h-4 w-4" />
           </Button>
         </Link>
       </Card>

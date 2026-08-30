@@ -138,6 +138,17 @@ function endOfWeek(date: Date): Date {
   return endOfDay(d);
 }
 
+export function boundsForBudgetPeriod(period: "weekly" | "monthly" | "yearly"): {
+  from: Date;
+  to: Date;
+} {
+  const now = new Date();
+  if (period === "weekly") return { from: startOfWeek(now), to: now };
+  if (period === "monthly")
+    return { from: startOfMonth(now.getFullYear(), now.getMonth()), to: now };
+  return { from: startOfMonth(now.getFullYear(), 0), to: now };
+}
+
 function startOfMonth(year: number, month: number): Date {
   return new Date(year, month, 1);
 }
