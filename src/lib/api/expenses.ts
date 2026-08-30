@@ -100,21 +100,16 @@ export const expensesApi = {
 		name: string;
 		color?: string;
 		emoji?: string;
-		bucketId?: string;
+		bucketId: string;
 	}) =>
 		apiRequest<CategoryItem>("/categories", {
 			method: "POST",
 			body: payload,
 		}),
 
-	getCategoryById: (
-		id: string,
-		from: string,
-		to: string,
-		bucketId?: string,
-	) =>
+	getCategoryById: (id: string, from: string, to: string) =>
 		apiRequest<CategoryItemAanlytics>(
-			`/categories/${id}/stats?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}${bucketId ? `&bucketId=${bucketId}` : ""}`,
+			`/categories/${id}/stats?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
 		),
 
 	updateCategory: (
@@ -123,7 +118,7 @@ export const expensesApi = {
 			name: string;
 			color?: string;
 			emoji?: string;
-			bucketId?: string;
+			bucketId: string;
 		},
 	) =>
 		apiRequest<CategoryItemAanlytics>(`/categories/${id}`, {

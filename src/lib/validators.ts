@@ -29,7 +29,7 @@ export const expenseSchema = z.object({
 	title: z.string().min(1).max(120),
 	amount: roundedAmountSchema,
 	categoryId: z.string().min(1),
-	bucketId: z.string().optional(),
+	bucketId: z.string().min(1),
 	notes: z.string().max(400).optional(),
 	images: z.array(z.string()).max(5).default([]),
 	location: z

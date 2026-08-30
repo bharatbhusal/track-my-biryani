@@ -39,7 +39,11 @@ import {
 	useAppDispatch,
 } from "@/store/hooks";
 import { fetchAllBuckets } from "@/store/slices/bucketSlice";
-import { fetchExpenseDetail, createExpense, updateExpense } from "@/store/slices/expenseSlice";
+import {
+	fetchExpenseDetail,
+	createExpense,
+	updateExpense,
+} from "@/store/slices/expenseSlice";
 import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
 import { AddBucketDialog } from "@/features/settings/components/add-bucket-dialog";
 import {
@@ -62,7 +66,7 @@ const schema = z.object({
 	categoryId: z.string().min(1),
 	paidAt: z.string().min(1),
 	notes: z.string().optional(),
-	bucketId: z.string().optional(),
+	bucketId: z.string().min(1, "Bucket is required"),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -78,10 +82,12 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 	const locale = useAppSelector((s) => s.ui.locale);
 	const isEditing = Boolean(id);
 
-	const [categories, setCategories] = useState<CategoryItem[]>(
-		[],
+	const [categories, setCategories] = useState<
+		CategoryItem[]
+	>([]);
+	const buckets = useAppSelector(
+		(s) => s.buckets.allBuckets,
 	);
-	const buckets = useAppSelector((s) => s.buckets.allBuckets);
 	const defaultBucketId = personalBucketId(buckets);
 	const currentExpense = useAppSelector(
 		(s) => s.expenses.currentExpense,
@@ -94,7 +100,8 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 	);
 
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [addCategoryOpen, setAddCategoryOpen] = useState(false);
+	const [addCategoryOpen, setAddCategoryOpen] =
+		useState(false);
 	const [addBucketOpen, setAddBucketOpen] = useState(false);
 	const amountRef = useRef<HTMLInputElement>(null);
 
@@ -180,11 +187,17 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 
 	useEffect(() => {
 		if (!watchedBucketId) {
-			if (defaultBucketId) setValue("bucketId", defaultBucketId);
+			if (defaultBucketId)
+				setValue("bucketId", defaultBucketId);
 			return;
 		}
 		loadCategories(watchedBucketId);
-	}, [watchedBucketId, defaultBucketId, setValue, loadCategories]);
+	}, [
+		watchedBucketId,
+		defaultBucketId,
+		setValue,
+		loadCategories,
+	]);
 
 	useEffect(() => {
 		if (!isEditing && allValues?.title) {
@@ -215,14 +228,12 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 				title: values.title,
 				amount: values.amount,
 				categoryId: values.categoryId,
+				bucketId: values.bucketId,
 				paidAt: toUtcIsoString(values.paidAt),
 				currency,
 				images: [],
 				location: { latitude: 0, longitude: 0 },
 				notes: values.notes,
-				...(values.bucketId
-					? { bucketId: values.bucketId }
-					: {}),
 			};
 
 			if (isEditing && id) {
@@ -373,17 +384,13 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 													field.onChange(value);
 													setValue("categoryId", "");
 												}}
-												options={availableBuckets.map(
-													(b) => ({
-														value: b._id as string,
-														label: b.name,
-														icon: b.icon ?? "📁",
-													}),
-												)}
+												options={availableBuckets.map((b) => ({
+													value: b._id as string,
+													label: b.name,
+													icon: b.icon ?? "📁",
+												}))}
 												addLabel="Add new bucket"
-												onAddNew={() =>
-													setAddBucketOpen(true)
-												}
+												onAddNew={() => setAddBucketOpen(true)}
 											/>
 										</FormControl>
 									</FormItem>
@@ -400,18 +407,14 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
 												aria-label="Category"
 												value={field.value}
 												onValueChange={field.onChange}
-												options={categories.map(
-													(category) => ({
-														value: category._id,
-														label: category.name,
-														icon: category.emoji,
-													}),
-												)}
+												options={categories.map((category) => ({
+													value: category._id,
+													label: category.name,
+													icon: category.emoji,
+												}))}
 												placeholder="Category"
 												addLabel="Add new category"
-												onAddNew={() =>
-													setAddCategoryOpen(true)
-												}
+												onAddNew={() => setAddCategoryOpen(true)}
 											/>
 										</FormControl>
 									</FormItem>

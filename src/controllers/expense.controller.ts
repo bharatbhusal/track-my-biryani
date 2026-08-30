@@ -19,7 +19,9 @@ export async function searchExpenses(request: NextRequest) {
 	return searchExpensesService(auth.userId, body);
 }
 
-export async function getDistribution(request: NextRequest) {
+export async function getDistribution(
+	request: NextRequest,
+) {
 	const auth = await getAuthPayload();
 	const body = await request.json().catch(() => ({}));
 	return getDistributionService(auth.userId, body);
@@ -28,7 +30,7 @@ export async function getDistribution(request: NextRequest) {
 export async function createExpense(request: NextRequest) {
 	const auth = await getAuthPayload();
 	const body = await request.json();
-	return createExpenseService(auth.userId, body.bucketId, body);
+	return createExpenseService(auth.userId, body);
 }
 
 export async function getExpense(
@@ -47,7 +49,7 @@ export async function updateExpense(
 	const auth = await getAuthPayload();
 	const { id } = await context.params;
 	const body = await request.json();
-	return updateExpenseService(auth.userId, body.bucketId, id, body);
+	return updateExpenseService(auth.userId, id, body);
 }
 
 export async function deleteExpense(
@@ -69,13 +71,7 @@ export async function getContribution(
 		request.nextUrl.searchParams.get("from") ?? undefined;
 	const to =
 		request.nextUrl.searchParams.get("to") ?? undefined;
-	return getContributionService(
-		auth.userId,
-		id,
-		undefined,
-		from,
-		to,
-	);
+	return getContributionService(auth.userId, id, from, to);
 }
 
 export async function getExpenseOverviewStats(

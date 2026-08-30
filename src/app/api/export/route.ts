@@ -1,18 +1,15 @@
 import { NextRequest } from "next/server";
 
 import { getAuthPayload } from "@/lib/auth";
-import { resolveBucketContext } from "@/lib/bucket";
 import {
 	errorResponse,
 	successResponse,
 } from "@/lib/api-response";
 import { connectToDatabase } from "@/lib/db";
 import { buildTimestampedFilename } from "@/lib/naming";
-import { listCategories } from "@/repositories/category.repository";
-import {
-	listExpenses,
-	listExpensesForRange,
-} from "@/repositories/expense.repository";
+import { getValidBuckets } from "@/lib/query-builders/membership";
+import { CategoryModel } from "@/models/Category";
+import { ExpenseModel } from "@/models/Expense";
 
 type ExportPayload = {
 	exportedAt: string;
@@ -45,14 +42,9 @@ type ExportPayload = {
 export async function GET(request: NextRequest) {
 	try {
 		await connectToDatabase();
-	const auth = await getAuthPayload();
-	const bucketId =
-		request.nextUrl.searchParams.get("bucketId") ?? undefined;
-	const ctx = await resolveBucketContext(
-		auth.userId,
-		bucketId,
-	);
-	const type = request.nextUrl.searchParams.get("type");
+		const auth = await getAuthPayload();
+		const validBuckets = await getValidBuckets(auth.userId);
+		const type = request.nextUrl.searchParams.get("type");
 		const now = new Date();
 		const monthStart = new Date(
 			now.getFullYear(),
@@ -62,23 +54,17 @@ export async function GET(request: NextRequest) {
 
 		const [categories, expenses, monthlyExpenses] =
 			await Promise.all([
-				listCategories(ctx.bucketId),
-				listExpenses(
-					auth.userId,
-					{
-						page: 1,
-						limit: 5000,
-						sortBy: "paidAt",
-						order: "desc",
-					},
-					ctx.bucketId,
-				),
-				listExpensesForRange(
-					auth.userId,
-					monthStart,
-					now,
-					ctx.bucketId,
-				),
+				CategoryModel.find({ bucketId: { $in: validBuckets } })
+					.sort({ createdAt: -1 })
+					.lean(),
+				ExpenseModel.find({ bucketId: { $in: validBuckets } })
+					.sort({ paidAt: -1 })
+					.limit(5000)
+					.lean(),
+				ExpenseModel.find({
+					bucketId: { $in: validBuckets },
+					paidAt: { $gte: monthStart, $lte: now },
+				}).lean(),
 			]);
 
 		const exportedAt = new Date().toISOString();
@@ -87,7 +73,7 @@ export async function GET(request: NextRequest) {
 				(sum, item) => sum + item.amount,
 				0,
 			),
-			expenseCount: expenses.total,
+			expenseCount: expenses.length,
 			categoryCount: categories.length,
 			exportGeneratedAt: exportedAt,
 		};
@@ -96,27 +82,37 @@ export async function GET(request: NextRequest) {
 			exportedAt,
 			analytics,
 			categories: categories.map((category) => ({
-				id: category._id.toString(),
+				id: (category._id as { toString(): string }).toString(),
 				name: category.name,
 				color: category.color,
-				createdAt: category.createdAt,
+				createdAt: (
+					category as { createdAt?: Date }
+				).createdAt?.toISOString(),
 			})),
-			expenses: expenses.items.map((expense) => ({
-				id: expense._id.toString(),
+			expenses: expenses.map((expense) => ({
+				id: (expense._id as { toString(): string }).toString(),
 				title: expense.title,
 				amount: expense.amount,
-				categoryId: expense.categoryId.toString(),
+				categoryId: (
+					expense.categoryId as { toString(): string }
+				).toString(),
 				categoryName:
 					categories.find(
 						(category) =>
-							category._id.toString() ===
-							expense.categoryId.toString(),
+							(
+								category._id as { toString(): string }
+							).toString() ===
+							(
+								expense.categoryId as { toString(): string }
+							).toString(),
 					)?.name ?? "Unknown",
 				images: expense.images,
 				location: expense.location,
 				currency: expense.currency,
-				paidAt: expense.paidAt,
-				createdAt: expense.createdAt,
+				paidAt: (expense.paidAt as Date).toISOString(),
+				createdAt: (
+					expense as { createdAt?: Date }
+				).createdAt?.toISOString(),
 			})),
 		};
 

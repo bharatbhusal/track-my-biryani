@@ -63,13 +63,16 @@ export function CategoryForm({
 }: CategoryFormProps) {
 	const router = useRouter();
 	const dispatch = useAppDispatch();
-	const buckets = useAppSelector((s) => s.buckets.allBuckets);
+	const buckets = useAppSelector(
+		(s) => s.buckets.allBuckets,
+	);
 	const category = useAppSelector(
 		(s) => s.categories.currentCategory,
 	);
 	const { resolvedTheme } = useTheme();
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [selectedBucketId, setSelectedBucketId] = useState("");
+	const [selectedBucketId, setSelectedBucketId] =
+		useState("");
 
 	const isEditing = Boolean(id);
 	const categoryLoaded = isEditing && category?._id === id;
@@ -146,6 +149,10 @@ export function CategoryForm({
 	);
 
 	const onSubmit = async (values: FormValues) => {
+		if (!selectedBucketId) {
+			toast.error("Bucket is required");
+			return;
+		}
 		setIsSubmitting(true);
 		try {
 			if (isEditing && id) {
@@ -156,7 +163,7 @@ export function CategoryForm({
 							name: values.name.trim(),
 							emoji: values.emoji || "🏷️",
 							color: values.color,
-							bucketId: selectedBucketId || undefined,
+							bucketId: selectedBucketId,
 						},
 					}),
 				).unwrap();
@@ -172,7 +179,7 @@ export function CategoryForm({
 						name: values.name.trim(),
 						emoji: values.emoji || "🏷️",
 						color: values.color,
-						bucketId: selectedBucketId || undefined,
+						bucketId: selectedBucketId,
 					}),
 				).unwrap();
 				toast.success("Category created");
@@ -223,9 +230,7 @@ export function CategoryForm({
 				</label>
 				<Select
 					value={selectedBucketId}
-					onChange={(e) =>
-						setSelectedBucketId(e.target.value)
-					}
+					onChange={(e) => setSelectedBucketId(e.target.value)}
 				>
 					<option value="">Select a bucket</option>
 					{buckets.map((bucket) => (

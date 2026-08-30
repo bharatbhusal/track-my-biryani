@@ -1,7 +1,6 @@
 import { Types } from "mongoose";
 
 import { buildExpenseQuery } from "@/lib/query-builders";
-import { escapeRegex } from "@/lib/utils";
 import { ExpenseModel } from "@/models/Expense";
 import { CategoryModel } from "@/models/Category";
 import { BucketModel } from "@/models/Bucket";
@@ -18,19 +17,6 @@ import type {
 	DistributionPoint,
 	TrendPoint,
 } from "@/types/analytics.types";
-
-type ExpenseFilters = {
-	q?: string;
-	categoryId?: string;
-	from?: string;
-	to?: string;
-	amountMin?: number;
-	amountMax?: number;
-	sortBy: "paidAt" | "amount" | "title";
-	order: "asc" | "desc";
-	page?: number;
-	limit?: number;
-};
 
 type AggregateBucket = {
 	_id: string | null;
@@ -91,105 +77,6 @@ export async function createExpense(data: {
 	return expense.toObject();
 }
 
-export async function listExpenses(
-	userId: string,
-	filters: ExpenseFilters,
-	bucketId: string,
-) {
-	const query: Record<string, unknown> = { bucketId };
-
-	if (filters.q) {
-		// Use case-insensitive substring search across title and notes
-		const q = filters.q.trim();
-		if (q.length > 0) {
-			const regex = new RegExp(escapeRegex(q), "i");
-			query.$or = [
-				{ title: { $regex: regex } },
-				{ notes: { $regex: regex } },
-			];
-		}
-	}
-
-	if (
-		filters.categoryId &&
-		Types.ObjectId.isValid(filters.categoryId)
-	) {
-		query.categoryId = filters.categoryId;
-	}
-
-	if (filters.from || filters.to) {
-		query.paidAt = {
-			...(filters.from
-				? { $gte: new Date(filters.from) }
-				: {}),
-			...(filters.to ? { $lte: new Date(filters.to) } : {}),
-		};
-	}
-
-	if (
-		typeof filters.amountMin === "number" ||
-		typeof filters.amountMax === "number"
-	) {
-		query.amount = {
-			...(typeof filters.amountMin === "number"
-				? { $gte: filters.amountMin }
-				: {}),
-			...(typeof filters.amountMax === "number"
-				? { $lte: filters.amountMax }
-				: {}),
-		};
-	}
-
-	const page = filters.page ?? 1;
-	const limit = filters.limit ?? 50;
-	const skip = (page - 1) * limit;
-
-	const expensesQuery = ExpenseModel.find(query).populate(
-		"userId",
-		"name username",
-	);
-
-	const [items, total] = await Promise.all([
-		expensesQuery
-			.populate("categoryId", "emoji color")
-			.select("title amount paidAt currency")
-			.sort({
-				[filters.sortBy]: filters.order === "asc" ? 1 : -1,
-			})
-			.skip(skip)
-			.limit(limit)
-			.lean(),
-		ExpenseModel.countDocuments(query),
-	]);
-
-	const transformedItems = items.map((item) => {
-		const posterName =
-			(item.userId as { username?: string } | undefined)
-				?.username ?? "";
-		return {
-			...item,
-			...(posterName !== "" ? { posterName } : {}),
-			userId:
-				(
-					item.userId as { _id?: Types.ObjectId } | undefined
-				)?._id?.toString() ?? "",
-			categoryColor: item.categoryId?.color ?? "",
-			categoryEmoji: item.categoryId?.emoji ?? "",
-			categoryId:
-				item.categoryId?._id?.toString() ??
-				item.categoryId?.toString() ??
-				"",
-		};
-	});
-
-	return {
-		items: transformedItems,
-		total,
-		page,
-		totalPages: Math.ceil(total / limit) || 1,
-	};
-}
-
 export async function updateExpense(
 	userId: string,
 	expenseId: string,
@@ -209,7 +96,6 @@ export async function updateExpense(
 export async function deleteExpense(
 	userId: string,
 	expenseId: string,
-	bucketId: string,
 ) {
 	if (!Types.ObjectId.isValid(expenseId)) {
 		return null;
@@ -218,20 +104,15 @@ export async function deleteExpense(
 	return ExpenseModel.findOneAndDelete({
 		_id: expenseId,
 		userId,
-		bucketId,
 	}).lean();
 }
-export async function getExpenseById(
-	expenseId: string,
-	bucketId?: string,
-) {
+export async function getExpenseById(expenseId: string) {
 	if (!Types.ObjectId.isValid(expenseId)) {
 		return null;
 	}
 
 	const expense = await ExpenseModel.findOne({
 		_id: expenseId,
-		...(bucketId ? { bucketId } : {}),
 	})
 		.populate("categoryId", "emoji color")
 		.lean();
@@ -251,6 +132,33 @@ export async function getExpenseById(
 		categoryColor: category.color,
 	};
 }
+
+export async function getExpenseByIdForMember(
+	expenseId: string,
+	validBucketIds: Types.ObjectId[],
+) {
+	if (!Types.ObjectId.isValid(expenseId)) {
+		return null;
+	}
+	const expense = await ExpenseModel.findOne({
+		_id: expenseId,
+		bucketId: { $in: validBucketIds },
+	})
+		.populate("categoryId", "emoji color")
+		.lean();
+	if (!expense) return null;
+	const category = expense.categoryId as {
+		_id: Types.ObjectId;
+		emoji: string;
+		color: string;
+	};
+	return {
+		...expense,
+		categoryId: category._id.toString(),
+		categoryEmoji: category.emoji,
+		categoryColor: category.color,
+	};
+}
 export async function listRecentExpenses(
 	userId: string,
 	limit = 5,
@@ -262,14 +170,13 @@ export async function listRecentExpenses(
 }
 
 export async function listExpensesForRange(
-	userId: string,
 	from: Date,
 	to: Date,
-	bucketId: string,
+	validBucketIds: Types.ObjectId[],
 	categoryId?: string,
 ) {
 	const filter: Record<string, unknown> = {
-		bucketId,
+		bucketId: { $in: validBucketIds },
 		paidAt: { $gte: from, $lte: to },
 	};
 	if (categoryId) {
@@ -486,22 +393,20 @@ export async function getCategoryRangeStats(
 }
 
 export async function getExpenseContribution(
-	userId: string,
 	expenseId: string,
-	bucketId: string,
+	bucketId: Types.ObjectId,
 	from?: Date,
 	to?: Date,
 ) {
 	if (!Types.ObjectId.isValid(expenseId)) return null;
 	const expense = await ExpenseModel.findOne({
 		_id: new Types.ObjectId(expenseId),
-		userId: new Types.ObjectId(userId),
-		bucketId: new Types.ObjectId(bucketId),
+		bucketId,
 	}).lean();
 	if (!expense) return null;
 
 	const scopeFilter: Record<string, unknown> = {
-		bucketId: new Types.ObjectId(bucketId),
+		bucketId,
 	};
 
 	const amount = expense.amount;

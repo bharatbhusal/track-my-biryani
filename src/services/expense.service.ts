@@ -1,24 +1,23 @@
+import { Types } from "mongoose";
+
 import { AppError } from "@/lib/errors";
-import { resolveBucketContext } from "@/lib/bucket";
 import {
 	chartOverviewSchema,
 	distributionSchema,
-	expenseFiltersSchema,
 	expenseSchema,
 	expenseSearchSchema,
 } from "@/lib/validators";
 import { toIsoBoundsForPreset } from "@/lib/date-range";
 import { buildExpenseQuery } from "@/lib/query-builders";
-import { accessibleBucketIds } from "@/lib/query-builders/membership";
+import { getValidBuckets } from "@/lib/query-builders/membership";
 import {
 	createExpense,
 	deleteExpense,
 	getDistribution,
-	getExpenseById,
+	getExpenseByIdForMember,
 	getExpenseContribution,
 	getExpenseOverviewStats,
 	getChartData,
-	listExpenses,
 	searchExpenses,
 	updateExpense,
 } from "@/repositories/expense.repository";
@@ -31,23 +30,24 @@ import { findUserById } from "@/repositories/user.repository";
 import { logAuditEvent } from "@/services/audit.service";
 import type { ExpenseSearchRequest } from "@/types/search.types";
 
-export async function listExpensesService(
-	userId: string,
-	queryParams: Record<string, string>,
-	bucketId?: string | null,
-) {
-	const ctx = await resolveBucketContext(userId, bucketId);
-	const filters = expenseFiltersSchema.parse(queryParams);
-	return listExpenses(userId, filters, ctx.bucketId);
-}
-
 export async function createExpenseService(
 	userId: string,
-	bucketId: string | null | undefined,
 	body: unknown,
 ) {
 	const payload = expenseSchema.parse(body);
-	const ctx = await resolveBucketContext(userId, bucketId);
+
+	const validBuckets = await getValidBuckets(userId);
+	if (
+		!validBuckets
+			.map((id) => id.toString())
+			.includes(payload.bucketId)
+	) {
+		throw new AppError(
+			"Not a member of this bucket",
+			403,
+			"NOT_A_MEMBER",
+		);
+	}
 
 	const existing = await findUserById(userId);
 	if (!existing) {
@@ -60,7 +60,7 @@ export async function createExpenseService(
 
 	const category = await getCategoryById(
 		payload.categoryId,
-		ctx.bucketId,
+		payload.bucketId,
 	);
 	if (!category) {
 		throw new AppError(
@@ -72,7 +72,7 @@ export async function createExpenseService(
 
 	const expense = await createExpense({
 		userId,
-		bucketId: ctx.bucketId,
+		bucketId: payload.bucketId,
 		title: payload.title,
 		amount: payload.amount,
 		categoryId: payload.categoryId,
@@ -87,7 +87,7 @@ export async function createExpenseService(
 
 	await logAuditEvent({
 		actorId: userId,
-		bucketId: ctx.bucketId,
+		bucketId: payload.bucketId,
 		action: "create",
 		entity: "expense",
 		entityId: expense._id.toString(),
@@ -101,38 +101,57 @@ export async function createExpenseService(
 export async function getExpenseService(
 	userId: string,
 	expenseId: string,
-	bucketId?: string | null,
 ) {
-	const expense = await getExpenseById(expenseId);
+	const validBuckets = await getValidBuckets(userId);
+	const expense = await getExpenseByIdForMember(
+		expenseId,
+		validBuckets,
+	);
 	if (!expense) {
 		throw new AppError("Expense not found", 404, "NOT_FOUND");
 	}
-	await resolveBucketContext(
-		userId,
-		bucketId ?? expense.bucketId?.toString(),
-	);
 	return expense;
 }
 
 export async function updateExpenseService(
 	userId: string,
-	bucketId: string | null | undefined,
 	expenseId: string,
 	body: unknown,
 ) {
 	const payload = expenseSchema.partial().parse(body);
 
-	const current = await getExpenseById(expenseId);
+	const validBuckets = await getValidBuckets(userId);
+	const current = await getExpenseByIdForMember(
+		expenseId,
+		validBuckets,
+	);
 	if (!current) {
 		throw new AppError("Expense not found", 404, "NOT_FOUND");
 	}
+	if (current.userId.toString() !== userId) {
+		throw new AppError(
+			"Only the owner can update this expense",
+			403,
+			"NOT_OWNER",
+		);
+	}
 
-	const targetBucketId =
-		payload.bucketId ?? current.bucketId;
-	await resolveBucketContext(
-		userId,
-		bucketId ?? targetBucketId,
-	);
+	const targetBucketId = payload.bucketId
+		? String(payload.bucketId)
+		: current.bucketId.toString();
+
+	if (
+		payload.bucketId &&
+		!validBuckets
+			.map((id) => id.toString())
+			.includes(targetBucketId)
+	) {
+		throw new AppError(
+			"Not a member of this bucket",
+			403,
+			"NOT_A_MEMBER",
+		);
+	}
 
 	let categoryId: string;
 	if (payload.categoryId) {
@@ -148,12 +167,14 @@ export async function updateExpenseService(
 			);
 		}
 		categoryId = category._id.toString();
-	} else if (targetBucketId === current.bucketId) {
+	} else if (
+		targetBucketId === current.bucketId.toString()
+	) {
 		categoryId = current.categoryId;
 	} else {
 		const sourceCategory = await getCategoryById(
 			current.categoryId,
-			current.bucketId,
+			current.bucketId.toString(),
 		);
 		if (!sourceCategory) {
 			throw new AppError(
@@ -226,28 +247,30 @@ export async function updateExpenseService(
 export async function deleteExpenseService(
 	userId: string,
 	expenseId: string,
-	bucketId?: string | null,
 ) {
-	const existing = await getExpenseById(expenseId);
+	const validBuckets = await getValidBuckets(userId);
+	const existing = await getExpenseByIdForMember(
+		expenseId,
+		validBuckets,
+	);
 	if (!existing) {
 		throw new AppError("Expense not found", 404, "NOT_FOUND");
 	}
-	const ctx = await resolveBucketContext(
-		userId,
-		bucketId ?? existing.bucketId?.toString(),
-	);
-	const deleted = await deleteExpense(
-		userId,
-		expenseId,
-		ctx.bucketId,
-	);
+	if (existing.userId.toString() !== userId) {
+		throw new AppError(
+			"Only the owner can delete this expense",
+			403,
+			"NOT_OWNER",
+		);
+	}
+	const deleted = await deleteExpense(userId, expenseId);
 	if (!deleted) {
 		throw new AppError("Expense not found", 404, "NOT_FOUND");
 	}
 
 	await logAuditEvent({
 		actorId: userId,
-		bucketId: ctx.bucketId,
+		bucketId: existing.bucketId.toString(),
 		action: "delete",
 		entity: "expense",
 		entityId: expenseId,
@@ -260,22 +283,20 @@ export async function deleteExpenseService(
 export async function getContributionService(
 	userId: string,
 	expenseId: string,
-	bucketId?: string | null,
 	from?: string,
 	to?: string,
 ) {
-	const existing = await getExpenseById(expenseId);
+	const validBuckets = await getValidBuckets(userId);
+	const existing = await getExpenseByIdForMember(
+		expenseId,
+		validBuckets,
+	);
 	if (!existing) {
 		throw new AppError("Expense not found", 404, "NOT_FOUND");
 	}
-	const ctx = await resolveBucketContext(
-		userId,
-		bucketId ?? existing.bucketId?.toString(),
-	);
 	const data = await getExpenseContribution(
-		userId,
 		expenseId,
-		ctx.bucketId,
+		existing.bucketId as unknown as Types.ObjectId,
 		from ? new Date(from) : undefined,
 		to ? new Date(to) : undefined,
 	);
@@ -429,7 +450,7 @@ export async function getDistributionService(
 		parsed.filterCriteria ??
 		defaultExpenseSearchRequest().filterCriteria;
 
-	const bucketIds = await accessibleBucketIds(userId);
+	const bucketIds = await getValidBuckets(userId);
 	const bounds = toIsoBoundsForPreset(
 		filters.datePreset,
 		filters.customFrom,

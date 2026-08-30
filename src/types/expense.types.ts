@@ -42,10 +42,10 @@ export type CreateExpensePayload = {
 	title: string;
 	amount: number;
 	categoryId: string;
+	bucketId: string;
 	images: string[];
 	location: ExpenseLocation;
 	currency: string;
 	paidAt: string;
 	notes?: string;
-	bucketId?: string;
 };

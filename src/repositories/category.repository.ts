@@ -61,12 +61,6 @@ export async function ensureCategoryInBucket(
 	}
 }
 
-export async function listCategories(bucketId: string) {
-	return CategoryModel.find({ bucketId })
-		.sort({ createdAt: -1 })
-		.lean();
-}
-
 export async function deleteCategoriesByBucket(
 	bucketId: string,
 ) {
@@ -264,6 +258,19 @@ export async function getCategoryById(
 		...(bucketId
 			? { bucketId: new Types.ObjectId(bucketId) }
 			: {}),
+	}).lean();
+}
+
+export async function getCategoryByIdForMember(
+	categoryId: string,
+	validBucketIds: Types.ObjectId[],
+) {
+	if (!Types.ObjectId.isValid(categoryId)) {
+		return null;
+	}
+	return CategoryModel.findOne({
+		_id: categoryId,
+		bucketId: { $in: validBucketIds },
 	}).lean();
 }
 

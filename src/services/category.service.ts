@@ -1,7 +1,9 @@
 import { AppError } from "@/lib/errors";
 import { Types } from "mongoose";
-import { resolveBucketContext } from "@/lib/bucket";
-import { resolveBucketScope } from "@/lib/query-builders/membership";
+import {
+	getValidBuckets,
+	resolveBucketScope,
+} from "@/lib/query-builders/membership";
 import { toIsoBoundsForPreset } from "@/lib/date-range";
 import {
 	categoryDistributionSchema,
@@ -16,8 +18,7 @@ import {
 import {
 	createCategory,
 	deleteCategory,
-	getCategoryById,
-	listCategories,
+	getCategoryByIdForMember,
 	listCategoriesWithStats,
 	listCategoryIds,
 	searchCategories,
@@ -41,11 +42,11 @@ import type {
 async function assertCategoryCreator(
 	userId: string,
 	categoryId: string,
-	bucketId: string,
+	validBucketIds: Types.ObjectId[],
 ) {
-	const category = await getCategoryById(
+	const category = await getCategoryByIdForMember(
 		categoryId,
-		bucketId,
+		validBucketIds,
 	);
 	if (!category) {
 		throw new AppError(
@@ -64,13 +65,6 @@ async function assertCategoryCreator(
 	return category;
 }
 
-export async function listCategoriesService(
-	userId: string,
-	bucketId?: string | null,
-) {
-	const ctx = await resolveBucketContext(userId, bucketId);
-	return listCategories(ctx.bucketId);
-}
 export async function listCategoriesWithStatsService(
 	userId: string,
 	body: unknown,
@@ -127,11 +121,22 @@ export async function listCategoriesWithStatsService(
 
 export async function createCategoryService(
 	userId: string,
-	bucketId: string | null | undefined,
 	body: unknown,
 ) {
 	const payload = categorySchema.parse(body);
-	const ctx = await resolveBucketContext(userId, bucketId);
+
+	const validBuckets = await getValidBuckets(userId);
+	if (
+		!validBuckets
+			.map((id) => id.toString())
+			.includes(payload.bucketId)
+	) {
+		throw new AppError(
+			"Not a member of this bucket",
+			403,
+			"NOT_A_MEMBER",
+		);
+	}
 
 	const existing = await findUserById(userId);
 	if (!existing) {
@@ -144,7 +149,7 @@ export async function createCategoryService(
 
 	const category = await createCategory({
 		userId,
-		bucketId: ctx.bucketId,
+		bucketId: payload.bucketId,
 		name: payload.name,
 		color: payload.color ?? randomHexColor(),
 		emoji: payload.emoji,
@@ -152,7 +157,7 @@ export async function createCategoryService(
 
 	await logAuditEvent({
 		actorId: userId,
-		bucketId: ctx.bucketId,
+		bucketId: payload.bucketId,
 		action: "create",
 		entity: "category",
 		entityId: category._id.toString(),
@@ -165,11 +170,11 @@ export async function createCategoryService(
 export async function getCategoryService(
 	userId: string,
 	categoryId: string,
-	bucketId?: string | null,
 ) {
-	const category = await getCategoryById(
+	const validBuckets = await getValidBuckets(userId);
+	const category = await getCategoryByIdForMember(
 		categoryId,
-		bucketId,
+		validBuckets,
 	);
 	if (!category) {
 		throw new AppError(
@@ -178,35 +183,41 @@ export async function getCategoryService(
 			"NOT_FOUND",
 		);
 	}
-	await resolveBucketContext(
-		userId,
-		bucketId ?? category.bucketId?.toString(),
-	);
 	return category;
 }
 
 export async function updateCategoryService(
 	userId: string,
-	bucketId: string | null | undefined,
 	categoryId: string,
 	body: unknown,
 ) {
 	const payload = categorySchema.parse(body);
-	const ctx = await resolveBucketContext(userId, bucketId);
-	await assertCategoryCreator(
-		userId,
-		categoryId,
-		ctx.bucketId,
+	const validBuckets = await getValidBuckets(userId);
+	const validSet = new Set(
+		validBuckets.map((id) => id.toString()),
 	);
 
-	const targetBucketId = payload.bucketId ?? ctx.bucketId;
-	if (targetBucketId !== ctx.bucketId) {
-		await resolveBucketContext(userId, targetBucketId);
+	// creator check — must be member + owner
+	const creatorCategory = await assertCategoryCreator(
+		userId,
+		categoryId,
+		validBuckets,
+	);
+	const currentBucketId =
+		creatorCategory.bucketId.toString();
+	const targetBucketId = payload.bucketId;
+
+	if (!validSet.has(targetBucketId)) {
+		throw new AppError(
+			"Not a member of this bucket",
+			403,
+			"NOT_A_MEMBER",
+		);
 	}
 
 	const category = await updateCategory(
 		categoryId,
-		ctx.bucketId,
+		currentBucketId,
 		{
 			name: payload.name,
 			color: payload.color ?? randomHexColor(),
@@ -225,9 +236,9 @@ export async function updateCategoryService(
 
 	if (
 		payload.bucketId &&
-		payload.bucketId !== ctx.bucketId
+		payload.bucketId !== currentBucketId
 	) {
-		const sourceId = ctx.bucketId;
+		const sourceId = currentBucketId;
 		const destId = targetBucketId;
 		const sourceName =
 			(await findBucketById(sourceId))?.name ?? sourceId;
@@ -252,7 +263,7 @@ export async function updateCategoryService(
 	} else {
 		await logAuditEvent({
 			actorId: userId,
-			bucketId: ctx.bucketId,
+			bucketId: currentBucketId,
 			action: "update",
 			entity: "category",
 			entityId: category._id.toString(),
@@ -265,33 +276,18 @@ export async function updateCategoryService(
 
 export async function deleteCategoryService(
 	userId: string,
-	bucketId: string | null | undefined,
 	categoryId: string,
 ) {
-	const existing = await getCategoryById(
-		categoryId,
-		bucketId,
-	);
-	if (!existing) {
-		throw new AppError(
-			"Category not found",
-			404,
-			"NOT_FOUND",
-		);
-	}
-	const ctx = await resolveBucketContext(
-		userId,
-		bucketId ?? existing.bucketId?.toString(),
-	);
+	const validBuckets = await getValidBuckets(userId);
 	const category = await assertCategoryCreator(
 		userId,
 		categoryId,
-		ctx.bucketId,
+		validBuckets,
 	);
 
 	const deleted = await deleteCategory(
 		categoryId,
-		ctx.bucketId,
+		category.bucketId.toString(),
 	);
 	if (!deleted) {
 		throw new AppError(
@@ -303,7 +299,7 @@ export async function deleteCategoryService(
 
 	await logAuditEvent({
 		actorId: userId,
-		bucketId: ctx.bucketId,
+		bucketId: category.bucketId.toString(),
 		action: "delete",
 		entity: "category",
 		entityId: categoryId,
@@ -318,7 +314,6 @@ export async function getCategoryStatsService(
 	categoryId: string,
 	from: string,
 	to: string,
-	bucketId?: string | null,
 ) {
 	if (!from || !to) {
 		throw new AppError(
@@ -326,18 +321,16 @@ export async function getCategoryStatsService(
 			400,
 		);
 	}
-	const ctx = await resolveBucketContext(userId, bucketId);
 	const category = await getCategoryService(
 		userId,
 		categoryId,
-		ctx.bucketId,
 	);
 	const range = await getCategoryRangeStats(
 		userId,
 		categoryId,
 		new Date(from),
 		new Date(to),
-		ctx.bucketId,
+		category.bucketId.toString(),
 	);
 	return {
 		stats: {

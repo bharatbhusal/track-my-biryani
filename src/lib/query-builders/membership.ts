@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 
 import { BucketModel } from "@/models/Bucket";
 
-export async function accessibleBucketIds(
+export async function getValidBuckets(
 	userId: string,
 ): Promise<Types.ObjectId[]> {
 	const buckets = await BucketModel.find({
@@ -31,19 +31,29 @@ export async function resolveBucketScope(
 		})
 			.select("_id")
 			.lean();
-		return { $in: personal ? [personal._id as Types.ObjectId] : [] };
+		return {
+			$in: personal ? [personal._id as Types.ObjectId] : [],
+		};
 	}
 
-	const allowed = await accessibleBucketIds(userId);
+	const allowed = await getValidBuckets(userId);
 
 	if (preset === "ALL") {
 		return { $in: allowed };
 	}
 
-	const allowedSet = new Set(allowed.map((id) => id.toString()));
+	const allowedSet = new Set(
+		allowed.map((id) => id.toString()),
+	);
 	return {
 		$in: requestedIds
-			.filter((id) => Types.ObjectId.isValid(id) && allowedSet.has(id))
+			.filter(
+				(id) =>
+					Types.ObjectId.isValid(id) && allowedSet.has(id),
+			)
 			.map((id) => new Types.ObjectId(id)),
 	};
 }
+
+// ponytail: backward compat alias
+export const accessibleBucketIds = getValidBuckets;

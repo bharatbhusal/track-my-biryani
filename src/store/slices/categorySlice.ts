@@ -53,19 +53,12 @@ export const fetchCategoryDetail = createAsyncThunk(
 		id,
 		from,
 		to,
-		bucketId,
 	}: {
 		id: string;
 		from: string;
 		to: string;
-		bucketId?: string;
 	}) => {
-		return expensesApi.getCategoryById(
-			id,
-			from,
-			to,
-			bucketId,
-		);
+		return expensesApi.getCategoryById(id, from, to);
 	},
 );
 
@@ -76,7 +69,7 @@ export const createCategory = createAsyncThunk(
 			name: string;
 			color?: string;
 			emoji?: string;
-			bucketId?: string;
+			bucketId: string;
 		},
 		{ dispatch, getState },
 	) => {
@@ -104,7 +97,7 @@ export const updateCategory = createAsyncThunk(
 			name: string;
 			color?: string;
 			emoji?: string;
-			bucketId?: string;
+			bucketId: string;
 		};
 	}) => {
 		return expensesApi.updateCategory(id, payload);

@@ -99,8 +99,6 @@ export async function createBucketService(
 	return toDetail(bucket);
 }
 
-
-
 export async function getBucketStatsService(
 	userId: string,
 	bucketId: string,
@@ -115,7 +113,11 @@ export async function getBucketStatsService(
 		(m) => m.userId.toString() === userId,
 	);
 	if (!member || member.status !== "accepted") {
-		throw new AppError("Not a member of this bucket", 403, "NOT_A_MEMBER");
+		throw new AppError(
+			"Not a member of this bucket",
+			403,
+			"NOT_A_MEMBER",
+		);
 	}
 	const detail = await toDetail(bucket);
 	const f = parsed.filterCriteria ?? {
@@ -125,8 +127,14 @@ export async function getBucketStatsService(
 		ownerIds: [] as string[],
 		datePreset: "THIS_MONTH" as const,
 	};
-	const expenseMatch = buildBucketStatsExpenseMatch(userId, f);
-	const stats = await getFilteredBucketExpenseStats(bucketId, expenseMatch);
+	const expenseMatch = buildBucketStatsExpenseMatch(
+		userId,
+		f,
+	);
+	const stats = await getFilteredBucketExpenseStats(
+		bucketId,
+		expenseMatch,
+	);
 	return {
 		...detail,
 		role: member.role,
@@ -153,16 +161,24 @@ function buildBucketStatsExpenseMatch(
 ): Record<string, unknown> {
 	const match: Record<string, unknown> = {};
 	if (filters.categoryPreset === "MULTIPLE") {
-		const ids = filters.categoryIds.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+		const ids = filters.categoryIds
+			.filter((id) => Types.ObjectId.isValid(id))
+			.map((id) => new Types.ObjectId(id));
 		if (ids.length > 0) match.categoryId = { $in: ids };
 	}
 	if (filters.ownerPreset === "ME") {
 		match.userId = new Types.ObjectId(userId);
 	} else if (filters.ownerPreset === "MULTIPLE") {
-		const ids = filters.ownerIds.filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+		const ids = filters.ownerIds
+			.filter((id) => Types.ObjectId.isValid(id))
+			.map((id) => new Types.ObjectId(id));
 		if (ids.length > 0) match.userId = { $in: ids };
 	}
-	const bounds = toIsoBoundsForPreset(filters.datePreset as any, filters.customFrom, filters.customTo);
+	const bounds = toIsoBoundsForPreset(
+		filters.datePreset as any,
+		filters.customFrom,
+		filters.customTo,
+	);
 	if (bounds) {
 		match.paidAt = {
 			...(bounds.from ? { $gte: new Date(bounds.from) } : {}),
@@ -173,13 +189,38 @@ function buildBucketStatsExpenseMatch(
 	const q = filters.q?.trim();
 	if (q) {
 		const regex = new RegExp(escapeRegex(q), "i");
-		and.push({ $or: [{ title: regex }, { notes: regex }] } as any);
+		and.push({
+			$or: [{ title: regex }, { notes: regex }],
+		} as any);
 	}
 	if (filters.hasNotes !== undefined) {
-		and.push(filters.hasNotes ? { notes: { $exists: true, $nin: ["", null] } } : { $or: [{ notes: { $exists: false } }, { notes: { $in: ["", null] } }] } as any);
+		and.push(
+			filters.hasNotes
+				? { notes: { $exists: true, $nin: ["", null] } }
+				: ({
+						$or: [
+							{ notes: { $exists: false } },
+							{ notes: { $in: ["", null] } },
+						],
+					} as any),
+		);
 	}
 	if (filters.hasLocation !== undefined) {
-		and.push(filters.hasLocation ? { $or: [{ "location.latitude": { $exists: true, $ne: 0 } }, { "location.longitude": { $exists: true, $ne: 0 } }] } : { $or: [{ "location.latitude": { $exists: false } }, { "location.latitude": 0, "location.longitude": 0 }] } as any);
+		and.push(
+			filters.hasLocation
+				? {
+						$or: [
+							{ "location.latitude": { $exists: true, $ne: 0 } },
+							{ "location.longitude": { $exists: true, $ne: 0 } },
+						],
+					}
+				: ({
+						$or: [
+							{ "location.latitude": { $exists: false } },
+							{ "location.latitude": 0, "location.longitude": 0 },
+						],
+					} as any),
+		);
 	}
 	if (and.length > 0) (match as any).$and = and;
 	return match;
@@ -542,7 +583,7 @@ export async function searchBucketsService(
 	const parsed = bucketSearchSchema.parse(
 		searchRequest ?? {},
 	);
-	console.log(parsed);
+
 	const request: BucketSearchRequest = {
 		filterCriteria:
 			parsed.filterCriteria ??

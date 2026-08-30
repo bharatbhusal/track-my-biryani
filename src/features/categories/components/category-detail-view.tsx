@@ -7,15 +7,28 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/modals/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FilterBar, sortForVariant } from "@/components/filters";
+import {
+	FilterBar,
+	sortForVariant,
+} from "@/components/filters";
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
 import { CategoryCard } from "@/features/categories/components/category-card";
-import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { fetchCategoryDetail, deleteCategory } from "@/store/slices/categorySlice";
+import {
+	useAppSelector,
+	useAppDispatch,
+} from "@/store/hooks";
+import {
+	fetchCategoryDetail,
+	deleteCategory,
+} from "@/store/slices/categorySlice";
 import { toIsoBoundsForPreset } from "@/lib/date-range";
 import { expensesApi } from "@/lib/api/expenses";
-import { filterBounds, scopedExpenseRequest, expenseCriteriaForVariant } from "@/lib/filters";
+import {
+	filterBounds,
+	scopedExpenseRequest,
+	expenseCriteriaForVariant,
+} from "@/lib/filters";
 import { CashFlowChart } from "@/components/cash-flow-chart";
 import { ChartSkeleton } from "@/components/charts/chart-skeleton";
 import type { ExpenseItem } from "@/types/expense.types";
@@ -24,13 +37,20 @@ export function CategoryDetailView({ id }: { id: string }) {
 	const router = useRouter();
 	const dispatch = useAppDispatch();
 	const [deleteOpen, setDeleteOpen] = useState(false);
-	const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+	const [editDrawerOpen, setEditDrawerOpen] =
+		useState(false);
 	const [page, setPage] = useState(1);
 
-	const filterCriteria = useAppSelector((s) => s.filters.category.filterCriteria);
-	const sortCriteria = useAppSelector((s) => s.filters.category.sortCriteria);
+	const filterCriteria = useAppSelector(
+		(s) => s.filters.category.filterCriteria,
+	);
+	const sortCriteria = useAppSelector(
+		(s) => s.filters.category.sortCriteria,
+	);
 
-	const category = useAppSelector((s) => s.categories.currentCategory);
+	const category = useAppSelector(
+		(s) => s.categories.currentCategory,
+	);
 	const effectiveSort = useMemo(
 		() => sortForVariant("category", sortCriteria),
 		[sortCriteria],
@@ -40,7 +60,11 @@ export function CategoryDetailView({ id }: { id: string }) {
 		totalPages: number;
 		loading: boolean;
 	}>({ items: [], totalPages: 0, loading: true });
-	const { items: expenses, totalPages: expensesTotalPages, loading: expensesLoading } = expenseList;
+	const {
+		items: expenses,
+		totalPages: expensesTotalPages,
+		loading: expensesLoading,
+	} = expenseList;
 
 	const bounds = useMemo(
 		() =>
@@ -51,11 +75,19 @@ export function CategoryDetailView({ id }: { id: string }) {
 					filterCriteria.customTo,
 				),
 			),
-		[filterCriteria.datePreset, filterCriteria.customFrom, filterCriteria.customTo],
+		[
+			filterCriteria.datePreset,
+			filterCriteria.customFrom,
+			filterCriteria.customTo,
+		],
 	);
 
-	const filterKey = JSON.stringify([filterCriteria, sortCriteria]);
-	const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+	const filterKey = JSON.stringify([
+		filterCriteria,
+		sortCriteria,
+	]);
+	const [prevFilterKey, setPrevFilterKey] =
+		useState(filterKey);
 	if (prevFilterKey !== filterKey) {
 		setPrevFilterKey(filterKey);
 		setPage(1);
@@ -67,17 +99,21 @@ export function CategoryDetailView({ id }: { id: string }) {
 				id,
 				from: bounds.from,
 				to: bounds.to,
-				bucketId: category?.bucketId,
 			}),
 		)
 			.unwrap()
-			.catch(() => router.replace("/unauthorized?type=category"));
+			.catch(() =>
+				router.replace("/unauthorized?type=category"),
+			);
 	}, [dispatch, id, bounds.from, bounds.to, router]);
 
 	useEffect(() => {
 		let cancelled = false;
 		// category variant filters apply to expenses in that category — bucket/category locked to this id, but other criteria (search/owner/additional/date) from variant
-		const variantCriteria = expenseCriteriaForVariant("category", filterCriteria as any);
+		const variantCriteria = expenseCriteriaForVariant(
+			"category",
+			filterCriteria as any,
+		);
 		const scoped = scopedExpenseRequest({
 			bucketId: category?.bucketId,
 			categoryId: id,
@@ -89,7 +125,18 @@ export function CategoryDetailView({ id }: { id: string }) {
 		const mergedCriteria = {
 			...scoped.filterCriteria,
 			...Object.fromEntries(
-				Object.entries(variantCriteria).filter(([k]) => !["bucketPreset", "bucketIds", "categoryPreset", "categoryIds", "datePreset", "customFrom", "customTo"].includes(k)),
+				Object.entries(variantCriteria).filter(
+					([k]) =>
+						![
+							"bucketPreset",
+							"bucketIds",
+							"categoryPreset",
+							"categoryIds",
+							"datePreset",
+							"customFrom",
+							"customTo",
+						].includes(k),
+				),
 			),
 		} as typeof scoped.filterCriteria;
 		expensesApi
@@ -100,15 +147,33 @@ export function CategoryDetailView({ id }: { id: string }) {
 			})
 			.then((res) => {
 				if (cancelled) return;
-				setExpenseList({ items: res.items, totalPages: res.totalPages, loading: false });
+				setExpenseList({
+					items: res.items,
+					totalPages: res.totalPages,
+					loading: false,
+				});
 			})
 			.catch(() => {
-				if (!cancelled) setExpenseList({ items: [], totalPages: 0, loading: false });
+				if (!cancelled)
+					setExpenseList({
+						items: [],
+						totalPages: 0,
+						loading: false,
+					});
 			});
 		return () => {
 			cancelled = true;
 		};
-	}, [id, page, bounds.from, bounds.to, sortCriteria, effectiveSort, category?.bucketId, filterCriteria]);
+	}, [
+		id,
+		page,
+		bounds.from,
+		bounds.to,
+		sortCriteria,
+		effectiveSort,
+		category?.bucketId,
+		filterCriteria,
+	]);
 
 	const chartTrend = useMemo(() => {
 		const raw = category?.trend ?? [];
@@ -122,7 +187,9 @@ export function CategoryDetailView({ id }: { id: string }) {
 			return {
 				name: new Intl.DateTimeFormat("en-IN", {
 					month: "short",
-					...(isDaily ? { day: "2-digit" } : { year: "2-digit" }),
+					...(isDaily
+						? { day: "2-digit" }
+						: { year: "2-digit" }),
 				}).format(date),
 				total: point.total,
 			};
@@ -139,7 +206,13 @@ export function CategoryDetailView({ id }: { id: string }) {
 	);
 
 	const chartColorMap = useMemo(
-		() => new Map([[category?.name ?? "Category", category?.color ?? "var(--chart-2)"]]),
+		() =>
+			new Map([
+				[
+					category?.name ?? "Category",
+					category?.color ?? "var(--chart-2)",
+				],
+			]),
 		[category?.name, category?.color],
 	);
 
@@ -182,9 +255,23 @@ export function CategoryDetailView({ id }: { id: string }) {
 
 	return (
 		<div className="space-y-2 overflow-x-hidden">
-			<FilterBar variant="category" buckets={[]} categories={[]} owners={[]} />
-			<CategoryCard category={category} onEdit={() => setEditDrawerOpen(true)} onDelete={() => setDeleteOpen(true)} />
-			<CashFlowChart title="Trend" stackedSeries={chartStackedSeries} categoryColorMap={chartColorMap} isLoading={expensesLoading} />
+			<FilterBar
+				variant="category"
+				buckets={[]}
+				categories={[]}
+				owners={[]}
+			/>
+			<CategoryCard
+				category={category}
+				onEdit={() => setEditDrawerOpen(true)}
+				onDelete={() => setDeleteOpen(true)}
+			/>
+			<CashFlowChart
+				title="Trend"
+				stackedSeries={chartStackedSeries}
+				categoryColorMap={chartColorMap}
+				isLoading={expensesLoading}
+			/>
 
 			{expenses.length > 0 && (
 				<ExpenseTable
@@ -198,7 +285,11 @@ export function CategoryDetailView({ id }: { id: string }) {
 				/>
 			)}
 
-			<AddCategoryDialog open={editDrawerOpen} onClose={() => setEditDrawerOpen(false)} id={category?._id} />
+			<AddCategoryDialog
+				open={editDrawerOpen}
+				onClose={() => setEditDrawerOpen(false)}
+				id={category?._id}
+			/>
 
 			<ConfirmDialog
 				open={deleteOpen}
@@ -212,7 +303,11 @@ export function CategoryDetailView({ id }: { id: string }) {
 						toast.success("Category deleted");
 						router.replace("/categories");
 					} catch (error) {
-						toast.error(error instanceof Error ? error.message : "Failed to delete category");
+						toast.error(
+							error instanceof Error
+								? error.message
+								: "Failed to delete category",
+						);
 					}
 				}}
 			/>
