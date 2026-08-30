@@ -643,6 +643,10 @@ export async function getExpenseOverviewStats(match: Record<string, unknown>) {
         _id: null,
         total: { $sum: "$amount" },
         count: { $sum: 1 },
+        avg: { $avg: "$amount" },
+        min: { $min: "$amount" },
+        max: { $max: "$amount" },
+        categories: { $addToSet: "$categoryId" },
       },
     },
   ]);
@@ -650,6 +654,10 @@ export async function getExpenseOverviewStats(match: Record<string, unknown>) {
   return {
     total: result?.total ?? 0,
     count: result?.count ?? 0,
+    avg: result?.avg ?? 0,
+    min: result?.min ?? 0,
+    max: result?.max ?? 0,
+    categoriesCount: result?.categories?.length ?? 0,
   };
 }
 

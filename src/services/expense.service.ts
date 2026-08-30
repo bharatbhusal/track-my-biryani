@@ -243,7 +243,7 @@ async function chartOverviewContext(
 
 export async function getExpenseOverviewStatsService(userId: string, body: unknown) {
   const { match, from, to } = await chartOverviewContext(userId, body);
-  const { total } = await getExpenseOverviewStats(match);
+  const { total, count, avg, min, max, categoriesCount } = await getExpenseOverviewStats(match);
 
   const dayDiff = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -262,14 +262,39 @@ export async function getExpenseOverviewStatsService(userId: string, body: unkno
 
   const cards = [
     {
-      key: "total_spend",
-      title: "Total Spend",
-      value: total,
-    },
-    {
       key: perPeriodLabel,
       title: perPeriodLabel === "spend_per_month" ? "Per Month Spend" : "Per Day Spend",
       value: averageSpend,
+    },
+    {
+      key: "expense_count",
+      title: "Expenses",
+      value: count,
+    },
+    {
+      key: "categories_count",
+      title: "Categories",
+      value: categoriesCount,
+    },
+    {
+      key: "avg_amount",
+      title: "Average",
+      value: avg,
+    },
+    {
+      key: "min_amount",
+      title: "Minimum",
+      value: min,
+    },
+    {
+      key: "max_amount",
+      title: "Maximum",
+      value: max,
+    },
+    {
+      key: "total_spend",
+      title: "Total Spend",
+      value: total,
     },
   ];
 

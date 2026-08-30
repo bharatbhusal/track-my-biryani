@@ -12,6 +12,7 @@ import { AddCategoryDialog } from "@/features/categories/components/add-category
 import { formatCurrency } from "@/lib/format";
 import { categoryCriteria } from "@/lib/filters";
 import { sortForVariant } from "@/components/filters/variants";
+import { StatCard } from "@/components/stat-card";
 
 export function CategoryManager() {
   const dispatch = useAppDispatch();
@@ -67,10 +68,7 @@ export function CategoryManager() {
               </Card>
             ))
           : summaryCells.map(([label, value]) => (
-              <Card key={label} className="min-w-[100px] flex-1">
-                <p className="truncate text-xs text-[var(--color-muted)]">{label}</p>
-                <p className="truncate font-medium tabular-nums">{value}</p>
-              </Card>
+              <StatCard key={label} title={label} value={value} />
             ))}
       </div>
 

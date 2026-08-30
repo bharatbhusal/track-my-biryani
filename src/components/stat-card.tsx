@@ -1,22 +1,15 @@
-import type { ReactNode } from "react";
-import { Card, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 
 type StatCardProps = {
-  icon: ReactNode;
   title: string;
   value: string;
 };
 
-export function StatCard({ icon, title, value }: StatCardProps) {
+export function StatCard({ title, value }: StatCardProps) {
   return (
-    <Card>
-      <div className="flex items-center gap-3">
-        <div className="hidden sm:block rounded-lg bg-[var(--color-surface-muted)] p-2">{icon}</div>
-        <div>
-          <CardTitle>{title}</CardTitle>
-          <p className="mt-1 text-xl font-bold">{value}</p>
-        </div>
-      </div>
+    <Card key={title} className="min-w-[100px] flex-1">
+      <p className="truncate text-xs text-[var(--color-muted)]">{title}</p>
+      <p className="truncate font-medium tabular-nums">{value}</p>
     </Card>
   );
 }
