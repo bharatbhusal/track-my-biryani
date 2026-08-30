@@ -168,8 +168,7 @@ export function LogsTable({
 									<TableCell className="text-xs text-[var(--color-muted)]">
 										{log.bucketName ? (
 											<>
-												{log.bucketIcon ?? "📁"}{" "}
-												{log.bucketName}
+												{log.bucketIcon ?? "📁"} {log.bucketName}
 											</>
 										) : (
 											"—"
@@ -190,7 +189,7 @@ export function LogsTable({
 				totalPages !== undefined &&
 				totalPages > 1 &&
 				onPageChange && (
-					<div className="mt-3 flex items-center justify-center gap-3 text-sm">
+					<div className="mt-3 flex items-center justify-between gap-3 text-sm">
 						<Button
 							variant="outline"
 							size="icon"

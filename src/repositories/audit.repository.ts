@@ -22,43 +22,13 @@ export async function createAuditLog(input: {
 	return log.toObject();
 }
 
-export async function listAuditLogs(
-	userId: string,
-	bucketId?: string,
-	page = 1,
-	limit = 30,
-	sortBy: "timestamp" | "action" | "entity" = "timestamp",
-	order: "asc" | "desc" = "desc",
-) {
-	const query: Record<string, unknown> = {};
-	if (bucketId) {
-		query.bucketId = bucketId;
-	}
-
-	const skip = (page - 1) * limit;
-
-	const [logs, total] = await Promise.all([
-		AuditLogModel.find(query)
-			.sort({ [sortBy]: order === "asc" ? 1 : -1 })
-			.skip(skip)
-			.limit(limit)
-			.populate("actorId", "name username")
-			.populate("bucketId", "name icon")
-			.lean(),
-		AuditLogModel.countDocuments(query),
-	]);
-
-	return {
-		items: logs.map(toAuditItem),
-		total,
-		page,
-		totalPages: Math.ceil(total / limit) || 1,
-	};
-}
-
 function toAuditItem(log: Record<string, unknown>) {
 	const actor = log.actorId as
-		| { _id?: Types.ObjectId; name?: string; username?: string }
+		| {
+				_id?: Types.ObjectId;
+				name?: string;
+				username?: string;
+		  }
 		| null
 		| undefined;
 	const bucket = log.bucketId as
@@ -70,14 +40,20 @@ function toAuditItem(log: Record<string, unknown>) {
 		_id: (log._id as Types.ObjectId).toString(),
 		action: log.action as string,
 		entity: log.entity as string,
-		...(log.entityId ? { entityId: log.entityId as string } : {}),
+		...(log.entityId
+			? { entityId: log.entityId as string }
+			: {}),
 		...(log.note ? { note: log.note as string } : {}),
 		metadata: log.metadata as Record<string, unknown>,
 		timestamp: (log.timestamp as Date).toISOString(),
 		...(actor?._id ? { actorId: actor._id.toString() } : {}),
 		...(actor?.name ? { actorName: actor.name } : {}),
-		...(actor?.username ? { actorUsername: actor.username } : {}),
-		...(bucket?._id ? { bucketId: bucket._id.toString() } : {}),
+		...(actor?.username
+			? { actorUsername: actor.username }
+			: {}),
+		...(bucket?._id
+			? { bucketId: bucket._id.toString() }
+			: {}),
 		...(bucket?.name ? { bucketName: bucket.name } : {}),
 		...(bucket?.icon ? { bucketIcon: bucket.icon } : {}),
 	};

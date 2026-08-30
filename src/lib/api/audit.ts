@@ -35,20 +35,6 @@ export type AuditLogListQuery = {
 };
 
 export const auditApi = {
-	listLogs: (filters: AuditLogListQuery = {}) => {
-		const params = new URLSearchParams();
-		if (filters.page !== undefined)
-			params.set("page", String(filters.page));
-		if (filters.limit !== undefined)
-			params.set("limit", String(filters.limit));
-		if (filters.sortBy) params.set("sortBy", filters.sortBy);
-		if (filters.order) params.set("order", filters.order);
-		const qs = params.toString();
-		return apiRequest<AuditLogsListPayload>(
-			`/audit${qs ? `?${qs}` : ""}`,
-		);
-	},
-
 	searchLogs: (request: AuditSearchRequest) =>
 		apiRequest<SearchResult<AuditLogItem>>("/audit/search", {
 			method: "POST",
