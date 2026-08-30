@@ -15,9 +15,16 @@ export function selectedBuckets(
   preset: BucketPreset | undefined,
   bucketIds: string[] | undefined,
 ): BucketSummary[] {
+  // ponytail: keep preset compat for legacy callers; new nested list uses ids-only
   if (preset === "PERSONAL") return buckets.filter((b) => b.isPersonal);
-  if (preset === "MULTIPLE") return buckets.filter((b) => (bucketIds ?? []).includes(b._id));
-  return buckets;
+  if (preset === "MULTIPLE") {
+    if (!bucketIds || bucketIds.length === 0) return buckets;
+    return buckets.filter((b) => bucketIds.includes(b._id));
+  }
+  if (preset === "ALL") return buckets;
+  // ids-only (preset undefined): empty = all
+  if (!bucketIds || bucketIds.length === 0) return buckets;
+  return buckets.filter((b) => bucketIds.includes(b._id));
 }
 
 function dedupeById<T extends { _id: string }>(items: T[]): T[] {
@@ -37,12 +44,14 @@ export function useScopedOptions(
   categories: CategoryItem[];
   owners: FilterOwner[];
   isLoading: boolean;
+  categoriesByBucket: Record<string, CategoryItem[]>;
 } {
   const [data, setData] = useState<{
     key: string | null;
     categories: CategoryItem[];
+    categoriesByBucket: Record<string, CategoryItem[]>;
     owners: FilterOwner[];
-  }>({ key: null, categories: [], owners: [] });
+  }>({ key: null, categories: [], categoriesByBucket: {}, owners: [] });
 
   const scopedIds = selectedBuckets(buckets, preset, bucketIds)
     .map((b) => b._id)
@@ -74,9 +83,14 @@ export function useScopedOptions(
     ])
       .then(([categoryLists, memberLists]) => {
         if (cancelled) return;
+        const byBucket: Record<string, CategoryItem[]> = {};
+        ids.forEach((id, idx) => {
+          byBucket[id] = dedupeById(categoryLists[idx] ?? []);
+        });
         setData({
           key: scopedIds,
           categories: dedupeById(categoryLists.flat()),
+          categoriesByBucket: byBucket,
           owners: [
             ...new Map(
               memberLists.flat().map((m) => [
@@ -92,7 +106,8 @@ export function useScopedOptions(
         });
       })
       .catch(() => {
-        if (!cancelled) setData({ key: scopedIds, categories: [], owners: [] });
+        if (!cancelled)
+          setData({ key: scopedIds, categories: [], categoriesByBucket: {}, owners: [] });
       });
 
     return () => {
@@ -102,7 +117,68 @@ export function useScopedOptions(
 
   return {
     categories: data.categories,
+    categoriesByBucket: data.categoriesByBucket,
     owners: data.owners,
     isLoading: enabled && data.key !== scopedIds,
+  };
+}
+
+export function useAllBucketCategories(
+  enabled: boolean,
+  buckets: BucketSummary[],
+): {
+  categoriesByBucket: Record<string, CategoryItem[]>;
+  isLoading: boolean;
+} {
+  const [data, setData] = useState<{
+    key: string | null;
+    byBucket: Record<string, CategoryItem[]>;
+  }>({ key: null, byBucket: {} });
+
+  const allIds = buckets
+    .map((b) => b._id)
+    .sort()
+    .join(",");
+
+  useEffect(() => {
+    if (!enabled || data.key === allIds) return;
+    const ids = allIds ? allIds.split(",") : [];
+    let cancelled = false;
+    if (ids.length === 0) {
+      // empty buckets — no fetch needed, but defer setData to avoid cascading render lint
+      queueMicrotask(() => {
+        if (!cancelled) setData({ key: allIds, byBucket: {} });
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+    Promise.all(
+      ids.map((id) =>
+        expensesApi
+          .searchCategories(scopedCategoryRequest(id))
+          .then((r) => r.items)
+          .catch((): CategoryItem[] => []),
+      ),
+    )
+      .then((lists) => {
+        if (cancelled) return;
+        const byBucket: Record<string, CategoryItem[]> = {};
+        ids.forEach((id, idx) => {
+          byBucket[id] = dedupeById(lists[idx] ?? []);
+        });
+        setData({ key: allIds, byBucket });
+      })
+      .catch(() => {
+        if (!cancelled) setData({ key: allIds, byBucket: {} });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, allIds, data.key]);
+
+  return {
+    categoriesByBucket: data.byBucket,
+    isLoading: enabled && data.key !== allIds,
   };
 }

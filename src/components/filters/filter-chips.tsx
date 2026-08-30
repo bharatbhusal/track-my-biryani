@@ -85,19 +85,15 @@ export function FilterChips({
 
   if (sections.buckets) {
     const { bucketPreset, bucketIds = [] } = filterCriteria as any;
-    if (bucketPreset === "PERSONAL") {
-      chips.push(<Chip key="bucket-personal" label="Personal" variant="muted" />);
-    } else if (bucketPreset === "ALL") {
-      chips.push(
-        <Chip
-          key="bucket-all"
-          label="All buckets"
-          onRemove={
-            actions.clearBucketFilter ? () => dispatch(actions.clearBucketFilter!()) : undefined
-          }
-        />,
-      );
-    } else if (bucketPreset === "MULTIPLE") {
+    // ids-only: bucketIds explicitly lists selected; ALL/PERSONAL presets map to muted All
+    const isPresetAll = bucketPreset === "ALL" || bucketPreset === "PERSONAL";
+    if (isPresetAll) {
+      chips.push(<Chip key="bucket-all" label="All buckets" variant="muted" />);
+    } else if (bucketIds.length === 0 || bucketIds.length === buckets.length) {
+      // empty or all ids => All (muted, no remove)
+      if (buckets.length > 0)
+        chips.push(<Chip key="bucket-all" label="All buckets" variant="muted" />);
+    } else {
       for (const id of bucketIds) {
         const bucket = buckets.find((b) => b._id === id);
         chips.push(
@@ -116,9 +112,13 @@ export function FilterChips({
 
   if (sections.categories) {
     const { categoryPreset, categoryIds = [] } = filterCriteria as any;
-    if (categoryPreset === "ALL") {
+    const isPresetAll = categoryPreset === "ALL";
+    if (isPresetAll) {
       chips.push(<Chip key="category-all" label="All categories" variant="muted" />);
-    } else if (categoryPreset === "MULTIPLE") {
+    } else if (categoryIds.length === 0 || categoryIds.length === categories.length) {
+      if (categories.length > 0)
+        chips.push(<Chip key="category-all" label="All categories" variant="muted" />);
+    } else {
       for (const id of categoryIds) {
         const category = categories.find((c) => c._id === id);
         chips.push(
@@ -142,19 +142,12 @@ export function FilterChips({
 
   if (sections.owners) {
     const { ownerPreset, ownerIds = [] } = filterCriteria as any;
-    if (ownerPreset === "ME") {
-      chips.push(<Chip key="owner-me" label="Me" variant="muted" />);
-    } else if (ownerPreset === "ALL") {
-      chips.push(
-        <Chip
-          key="owner-all"
-          label="All users"
-          onRemove={
-            actions.clearOwnerFilter ? () => dispatch(actions.clearOwnerFilter!()) : undefined
-          }
-        />,
-      );
-    } else if (ownerPreset === "MULTIPLE") {
+    const isPresetAll = ownerPreset === "ALL" || ownerPreset === "ME";
+    if (isPresetAll) {
+      chips.push(<Chip key="owner-all" label="All users" variant="muted" />);
+    } else if (ownerIds.length === 0 || ownerIds.length === owners.length) {
+      if (owners.length > 0) chips.push(<Chip key="owner-all" label="All users" variant="muted" />);
+    } else {
       for (const id of ownerIds) {
         const owner = owners.find((o) => o.id === id);
         chips.push(

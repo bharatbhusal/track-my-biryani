@@ -1,10 +1,9 @@
 "use client";
 
-import { Chip } from "@/components/ui/chip";
-import { MultiSelect } from "@/components/ui/multi-select";
-import { FilterSection } from "./section";
-import type { OwnerPreset } from "@/types/search.types";
-import { ownerSummary } from "./section-summary";
+import * as React from "react";
+
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 export type FilterOwner = {
   id: string;
@@ -13,51 +12,82 @@ export type FilterOwner = {
 };
 
 type OwnerFilterSectionProps = {
-  preset: OwnerPreset;
   ownerIds: string[];
   owners: FilterOwner[];
-  onChange: (next: { preset: OwnerPreset; ids: string[] }) => void;
+  onChange: (ids: string[]) => void;
   onClear: () => void;
   isLoading?: boolean;
-  defaultOpen?: boolean;
 };
 
+const rowClass =
+  "flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-[var(--color-surface-muted)]";
+
 export function OwnerFilterSection({
-  preset,
   ownerIds,
   owners,
   onChange,
   onClear,
   isLoading,
-  defaultOpen,
 }: OwnerFilterSectionProps) {
+  const allIds = owners.map((o) => o.id);
+  const allChecked = allIds.length > 0 && ownerIds.length === allIds.length;
+  const indeterminate = ownerIds.length > 0 && ownerIds.length < allIds.length;
+  const allRef = React.useRef<HTMLInputElement>(null);
+  React.useEffect(() => {
+    if (allRef.current) allRef.current.indeterminate = indeterminate;
+  }, [indeterminate]);
+
+  const toggle = (id: string, checked: boolean) => {
+    if (checked) onChange([...new Set([...ownerIds, id])]);
+    else onChange(ownerIds.filter((v) => v !== id));
+  };
+
   return (
-    <FilterSection
-      title="Posted by"
-      onClear={onClear}
-      isLoading={isLoading}
-      defaultOpen={defaultOpen}
-      summary={ownerSummary(preset, ownerIds, owners)}
-    >
-      <div className="flex flex-wrap gap-2">
-        <Chip
-          label="Me"
-          variant={preset === "ME" ? "default" : "muted"}
-          onClick={() => onChange({ preset: "ME", ids: [] })}
-        />
+    <section className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="flex items-center gap-2 text-sm font-semibold tracking-tight">
+          Posted by
+          {isLoading ? <Spinner className="h-3 w-3" /> : null}
+        </h3>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onClear}
+          className="shrink-0 text-[var(--color-muted)]"
+        >
+          Clear
+        </Button>
       </div>
-      <MultiSelect
-        allLabel="All users"
-        emptyLabel={isLoading ? "Loading users…" : "No members in the selected buckets"}
-        isAll={preset === "ALL"}
-        onAllChange={(isAll) => onChange({ preset: isAll ? "ALL" : "MULTIPLE", ids: [] })}
-        selected={preset === "MULTIPLE" ? ownerIds : []}
-        onChange={(ids) => onChange({ preset: "MULTIPLE", ids })}
-        options={owners.map((o) => ({
-          value: o.id,
-          label: o.name || o.username,
-        }))}
-      />
-    </FilterSection>
+
+      <div className="max-h-56 space-y-0.5 overflow-y-auto rounded-xl border border-[var(--color-border)] p-1">
+        <label className={rowClass}>
+          <input
+            ref={allRef}
+            type="checkbox"
+            checked={allChecked}
+            onChange={(e) => onChange(e.target.checked ? [...allIds] : [])}
+            className="h-4 w-4 shrink-0 accent-[var(--color-primary)]"
+          />
+          <span className="font-medium">All users</span>
+        </label>
+        {owners.length === 0 ? (
+          <p className="px-3 py-2 text-xs text-[var(--color-muted)]">
+            {isLoading ? "Loading users…" : "No members in the selected buckets"}
+          </p>
+        ) : null}
+        {owners.map((o) => (
+          <label key={o.id} className={rowClass}>
+            <input
+              type="checkbox"
+              checked={ownerIds.includes(o.id)}
+              onChange={(e) => toggle(o.id, e.target.checked)}
+              className="h-4 w-4 shrink-0 accent-[var(--color-primary)]"
+            />
+            <span className="truncate">{o.name || o.username}</span>
+          </label>
+        ))}
+      </div>
+    </section>
   );
 }

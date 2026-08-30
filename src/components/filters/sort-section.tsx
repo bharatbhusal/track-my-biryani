@@ -18,10 +18,6 @@ type SortSectionProps = {
   defaultOpen?: boolean;
 };
 
-function sortLabel(fields: SortField[], field: string): string {
-  return fields.find((f) => f.value === field)?.label ?? field;
-}
-
 export function SortSection({
   field,
   direction,
@@ -31,12 +27,7 @@ export function SortSection({
   defaultOpen,
 }: SortSectionProps) {
   return (
-    <FilterSection
-      title="Sort"
-      onClear={onClear}
-      defaultOpen={defaultOpen}
-      summary={`${sortLabel(fields, field)} ${direction === "ASC" ? "↑" : "↓"}`}
-    >
+    <FilterSection title="Sort" onClear={onClear} defaultOpen={defaultOpen}>
       <div className="flex items-center gap-2">
         <Select value={field} onChange={(e) => onChange({ field: e.target.value, direction })}>
           {fields.map((f) => (

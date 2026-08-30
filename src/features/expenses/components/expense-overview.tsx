@@ -1,13 +1,10 @@
 "use client";
 
-import { FiCalendar } from "react-icons/fi";
-
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/stat-card";
 import { formatCurrency } from "@/lib/format";
 import { useAppSelector } from "@/store/hooks";
-import { IndianRupeeIcon } from "lucide-react";
 import type { DashboardCard } from "@/types/analytics.types";
 
 type ExpenseOverviewProps = {
@@ -15,11 +12,14 @@ type ExpenseOverviewProps = {
   isLoading: boolean;
 };
 
-const cardIcons: Record<string, React.ReactNode> = {
-  total_spend: <IndianRupeeIcon className="h-5 w-5 text-[var(--color-muted)]" />,
-  spend_per_day: <FiCalendar className="h-5 w-5 text-[var(--color-muted)]" />,
-  spend_per_month: <FiCalendar className="h-5 w-5 text-[var(--color-muted)]" />,
-};
+const currencyKeys = new Set([
+  "total_spend",
+  "spend_per_day",
+  "spend_per_month",
+  "avg_amount",
+  "min_amount",
+  "max_amount",
+]);
 
 export function ExpenseOverview({ data, isLoading }: ExpenseOverviewProps) {
   const currency = useAppSelector((s) => s.ui.currency);
@@ -28,23 +28,24 @@ export function ExpenseOverview({ data, isLoading }: ExpenseOverviewProps) {
     <div>
       {isLoading || !data ? (
         <div className="flex flex-wrap gap-2">
-          {[...Array(2)].map((_, i) => (
-            <div key={i} className="flex-1 min-w-[calc(50%-0.5rem)]">
-              <Card>
-                <Skeleton className="h-4 w-24 mb-2" />
-                <Skeleton className="h-8 w-32" />
-              </Card>
-            </div>
+          {[...Array(7)].map((_, i) => (
+            <Card key={i} className="min-w-[100px] flex-1">
+              <Skeleton className="h-3 w-15 mb-2"></Skeleton>
+              <Skeleton className="h-4 w-20"></Skeleton>
+            </Card>
           ))}
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">
           {data.map((card: DashboardCard) => (
-            <div key={card.key} className="flex-1 min-w-[calc(50%-0.5rem)]">
+            <div key={card.key} className="flex-1">
               <StatCard
-                icon={cardIcons[card.key]}
                 title={card.title}
-                value={formatCurrency(card.value, currency)}
+                value={
+                  currencyKeys.has(card.key)
+                    ? formatCurrency(card.value, currency)
+                    : String(Math.round(card.value))
+                }
               />
             </div>
           ))}

@@ -6,7 +6,6 @@ import { FilterSection } from "./section";
 import { presetLabel } from "@/lib/date-range";
 import { getLocalDateTimeInputValue, toUtcIsoString } from "@/lib/datetime";
 import type { FilterDatePreset } from "@/types/search.types";
-import { dateSummary } from "./section-summary";
 
 export const PRESETS: FilterDatePreset[] = [
   "TODAY",
@@ -65,12 +64,7 @@ export function DateFilterSection({
     });
 
   return (
-    <FilterSection
-      title="Date"
-      onClear={onClear}
-      defaultOpen={defaultOpen}
-      summary={dateSummary(preset, customFrom, customTo)}
-    >
+    <FilterSection title="Date" onClear={onClear} defaultOpen={defaultOpen}>
       <div className="space-y-2">
         <div className="flex flex-wrap gap-1.5">
           {PRESETS.map((p) => {
