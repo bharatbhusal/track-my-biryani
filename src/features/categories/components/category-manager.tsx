@@ -63,8 +63,8 @@ export function CategoryManager() {
         {!categoriesWithStats
           ? Array.from({ length: summaryCells.length }).map((_, i) => (
               <Card key={i} className="min-w-[100px] flex-1">
-                <Skeleton className="mb-1 h-4 w-16" />
-                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-3 w-15 mb-2"></Skeleton>
+                <Skeleton className="h-4 w-20"></Skeleton>
               </Card>
             ))
           : summaryCells.map(([label, value]) => (
