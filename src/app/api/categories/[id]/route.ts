@@ -1,37 +1,25 @@
 import { NextRequest } from "next/server";
 
-import {
-	errorResponse,
-	successResponse,
-} from "@/lib/api-response";
+import { errorResponse, successResponse } from "@/lib/api-response";
 import { connectToDatabase } from "@/lib/db";
-import {
-	deleteCategory,
-	updateCategory,
-} from "@/controllers/category.controller";
+import { deleteCategory, updateCategory } from "@/controllers/category.controller";
 
-export async function PUT(
-	request: NextRequest,
-	context: { params: Promise<{ id: string }> },
-) {
-	try {
-		await connectToDatabase();
-		const data = await updateCategory(request, context);
-		return successResponse(data);
-	} catch (error) {
-		return errorResponse(error);
-	}
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  try {
+    await connectToDatabase();
+    const data = await updateCategory(request, context);
+    return successResponse(data);
+  } catch (error) {
+    return errorResponse(error);
+  }
 }
 
-export async function DELETE(
-	request: NextRequest,
-	context: { params: Promise<{ id: string }> },
-) {
-	try {
-		await connectToDatabase();
-		const data = await deleteCategory(request, context);
-		return successResponse(data);
-	} catch (error) {
-		return errorResponse(error);
-	}
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  try {
+    await connectToDatabase();
+    const data = await deleteCategory(request, context);
+    return successResponse(data);
+  } catch (error) {
+    return errorResponse(error);
+  }
 }

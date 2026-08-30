@@ -1,7 +1,7 @@
-import { AuthForm } from '@/features/auth/components/auth-form';
+import { AuthForm } from "@/features/auth/components/auth-form";
 
 export const metadata = {
-  title: 'Login',
+  title: "Login",
 };
 
 export default async function LoginPage({
@@ -11,7 +11,5 @@ export default async function LoginPage({
 }) {
   const { next } = await searchParams;
 
-  return (
-    <AuthForm mode="login" nextPath={next} />
-  );
+  return <AuthForm mode="login" nextPath={next} />;
 }

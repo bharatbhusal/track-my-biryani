@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import { env } from '@/config/env';
+import mongoose from "mongoose";
+import { env } from "@/config/env";
 
 const globalMongoose = globalThis as typeof globalThis & {
   mongoose?: { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null };
@@ -10,7 +10,8 @@ if (!globalMongoose.mongoose) {
 }
 
 export async function connectToDatabase(): Promise<typeof mongoose> {
-  const cache = globalMongoose.mongoose ?? (globalMongoose.mongoose = { conn: null, promise: null });
+  const cache =
+    globalMongoose.mongoose ?? (globalMongoose.mongoose = { conn: null, promise: null });
 
   if (cache.conn) {
     return cache.conn;

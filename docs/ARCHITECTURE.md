@@ -25,6 +25,7 @@ Route → Controller → Service → Repository → MongoDB
 ```
 
 All API routes follow this pattern:
+
 - Route: DB connect + controller call + response formatting
 - Controller: Auth check + request parsing + service call
 - Service: Business logic + validation + audit logging
@@ -113,6 +114,7 @@ flowchart LR
 ### Dashboard Computation
 
 Dashboard data is computed client-side using Redux selectors:
+
 - `selectTotalSpend` — sum of all expense amounts
 - `selectRankedCategories` — category totals sorted by value
 - `selectStackedSeries` — period × category matrix

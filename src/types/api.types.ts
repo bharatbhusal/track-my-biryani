@@ -14,7 +14,7 @@ export type ApiFailure = {
 
 export type ApiResponse<T> = ApiSuccess<T> | ApiFailure;
 
-export type ApiRequestOptions = Omit<RequestInit, 'body'> & {
+export type ApiRequestOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
   signal?: AbortSignal;
 };

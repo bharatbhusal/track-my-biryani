@@ -37,424 +37,258 @@
 //
 // ─────────────────────────────────────────────
 
-const endpoints = importModule("api/endpoints")
-const bootstrap = importModule("lib/bootstrap")
-const layout = importModule("lib/layout")
-const components = importModule("lib/components")
-const theme = importModule("lib/theme")
-const moneyLib = importModule("lib/money")
-const date = importModule("lib/date")
+const endpoints = importModule("api/endpoints");
+const bootstrap = importModule("lib/bootstrap");
+const layout = importModule("lib/layout");
+const components = importModule("lib/components");
+const theme = importModule("lib/theme");
+const moneyLib = importModule("lib/money");
+const date = importModule("lib/date");
 
-const { footer, stackedCategoryBar, categoryBar, categoryCompactBar } = components
-const { t } = theme
-const { font } = layout
-const { moneyShort, compact } = moneyLib
-const { currentMonthRange } = date
-
+const { footer, stackedCategoryBar, categoryBar, categoryCompactBar } = components;
+const { t } = theme;
+const { font } = layout;
+const { moneyShort, compact } = moneyLib;
+const { currentMonthRange } = date;
 
 // ─────────────────────────────────────────────
 // Widget parameter
 // ─────────────────────────────────────────────
 
-const bucketId =
-	String(args.widgetParameter || "").trim()
-
+const bucketId = String(args.widgetParameter || "").trim();
 
 // ─────────────────────────────────────────────
 // Widget
 // ─────────────────────────────────────────────
 
 bootstrap.run(async () => {
-	const widget =
-		new ListWidget()
+  const widget = new ListWidget();
 
-	widget.backgroundColor =
-		theme.background()
+  widget.backgroundColor = theme.background();
 
+  const family = layout.family();
 
-	const family =
-		layout.family()
+  const isLarge = family === "large";
 
-	const isLarge =
-		family === "large"
+  const isMedium = family === "medium";
 
-	const isMedium =
-		family === "medium"
+  const isAccessory = layout.isAccessory();
 
-	const isAccessory =
-		layout.isAccessory()
+  // ─────────────────────────────────────────
+  // Validate bucket parameter
+  // ─────────────────────────────────────────
 
+  if (!bucketId) {
+    const title = widget.addText("Track My Biryani");
 
-	// ─────────────────────────────────────────
-	// Validate bucket parameter
-	// ─────────────────────────────────────────
+    title.font = font("semibold", 14);
 
-	if (!bucketId) {
+    title.textColor = t("text");
 
-		const title =
-			widget.addText(
-				"Track My Biryani"
-			)
+    widget.addSpacer(5);
 
-		title.font =
-			font("semibold", 14)
+    const message = widget.addText("Set a bucket ID in Widget Parameter");
 
-		title.textColor =
-			t("text")
+    message.font = font("regular", 10);
 
+    message.textColor = t("muted");
 
-		widget.addSpacer(5)
+    return widget;
+  }
 
+  // ─────────────────────────────────────────
+  // Fetch bucket details
+  // ─────────────────────────────────────────
 
-		const message =
-			widget.addText(
-				"Set a bucket ID in Widget Parameter"
-			)
+  const bucketsResponse = await endpoints.buckets();
 
-		message.font =
-			font("regular", 10)
+  const buckets = Array.isArray(bucketsResponse?.items) ? bucketsResponse.items : [];
 
-		message.textColor =
-			t("muted")
+  const bucket = buckets.find((item) => item && item._id === bucketId);
 
-		return widget
-	}
+  // ─────────────────────────────────────────
+  // Validate bucket
+  // ─────────────────────────────────────────
 
+  if (!bucket) {
+    const title = widget.addText("Bucket Not Found");
 
-	// ─────────────────────────────────────────
-	// Fetch bucket details
-	// ─────────────────────────────────────────
+    title.font = font("semibold", 14);
 
-	const bucketsResponse =
-		await endpoints.buckets()
+    title.textColor = t("text");
 
+    widget.addSpacer(5);
 
-	const buckets =
-		Array.isArray(bucketsResponse?.items)
-			? bucketsResponse.items
-			: []
+    const message = widget.addText(bucketId);
 
+    message.font = font("regular", 9);
 
-	const bucket =
-		buckets.find(
-			(item) =>
-				item &&
-				item._id === bucketId
-		)
+    message.textColor = t("muted");
 
+    message.lineLimit = 2;
 
-	// ─────────────────────────────────────────
-	// Validate bucket
-	// ─────────────────────────────────────────
+    return widget;
+  }
 
-	if (!bucket) {
+  const bucketName = bucket.name || "Bucket";
 
-		const title =
-			widget.addText(
-				"Bucket Not Found"
-			)
+  // ─────────────────────────────────────────
+  // Date
+  // ─────────────────────────────────────────
 
-		title.font =
-			font("semibold", 14)
+  const { from, to } = currentMonthRange();
 
-		title.textColor =
-			t("text")
+  // ─────────────────────────────────────────
+  // API
+  // ─────────────────────────────────────────
 
+  const response = await endpoints.categoriesWithStats({
+    from,
+    to,
+    bucketId,
+  });
 
-		widget.addSpacer(5)
+  const categories = response || [];
 
+  // ─────────────────────────────────────────
+  // Accessory widgets
+  // ─────────────────────────────────────────
 
-		const message =
-			widget.addText(
-				bucketId
-			)
+  if (isAccessory) {
+    if (!categories.length) {
+      const empty = widget.addText("No spending");
 
-		message.font =
-			font("regular", 9)
+      empty.font = font("regular", 10);
 
-		message.textColor =
-			t("muted")
+      empty.textColor = t("muted");
 
-		message.lineLimit = 2
+      return widget;
+    }
 
-		return widget
-	}
+    const top = categories.slice(0, 3);
 
+    for (let i = 0; i < top.length; i++) {
+      categoryCompactBar(widget, top[i]);
 
-	const bucketName =
-		bucket.name || "Bucket"
+      if (i < top.length - 1) {
+        widget.addSpacer(4);
+      }
+    }
 
+    return widget;
+  }
 
-	// ─────────────────────────────────────────
-	// Date
-	// ─────────────────────────────────────────
+  // ─────────────────────────────────────────
+  // Header
+  // ─────────────────────────────────────────
 
-	const {
-		from,
-		to,
-	} = currentMonthRange()
+  const header = widget.addStack();
 
+  header.layoutHorizontally();
+  header.centerAlignContent();
 
-	// ─────────────────────────────────────────
-	// API
-	// ─────────────────────────────────────────
+  const title = header.addText(`Where It Went · ${bucketName}`);
 
-	const response =
-		await endpoints.categoriesWithStats({
-			from,
-			to,
-			bucketId,
-		})
+  title.font = font("semibold", isLarge ? 15 : 14);
 
+  title.textColor = t("text");
 
-	const categories =
-		response || []
+  title.lineLimit = 1;
 
+  header.addSpacer();
 
-	// ─────────────────────────────────────────
-	// Accessory widgets
-	// ─────────────────────────────────────────
+  const subtitle = header.addText("This Month");
 
-	if (isAccessory) {
+  subtitle.font = font("regular", 9);
 
-		if (!categories.length) {
+  subtitle.textColor = t("muted");
 
-			const empty =
-				widget.addText(
-					"No spending"
-				)
+  // ─────────────────────────────────────────
+  // Empty state
+  // ─────────────────────────────────────────
 
-			empty.font =
-				font("regular", 10)
+  if (!categories.length) {
+    widget.addSpacer(10);
 
-			empty.textColor =
-				t("muted")
+    const empty = widget.addText("No category spending yet");
 
-			return widget
-		}
+    empty.font = font("regular", 10);
 
+    empty.textColor = t("muted");
 
-		const top =
-			categories.slice(0, 3)
+    widget.addSpacer();
 
+    footer(widget, {
+      left: bucketName,
+      right: "₹0",
+    });
 
-		for (
-			let i = 0;
-			i < top.length;
-			i++
-		) {
-			categoryCompactBar(
-				widget,
-				top[i]
-			)
+    return widget;
+  }
 
+  // ─────────────────────────────────────────
+  // Category selection
+  // ─────────────────────────────────────────
 
-			if (
-				i < top.length - 1
-			) {
-				widget.addSpacer(4)
-			}
-		}
+  let visibleCategories;
 
+  if (isLarge) {
+    visibleCategories = categories.slice(0, 10);
+  } else {
+    visibleCategories = categories.slice(0, 4);
+  }
 
-		return widget
-	}
+  // ─────────────────────────────────────────
+  // Stacked bar
+  // ─────────────────────────────────────────
 
+  widget.addSpacer(9);
 
-	// ─────────────────────────────────────────
-	// Header
-	// ─────────────────────────────────────────
+  stackedCategoryBar(widget, categories);
 
-	const header =
-		widget.addStack()
+  widget.addSpacer(10);
 
-	header.layoutHorizontally()
-	header.centerAlignContent()
+  // ─────────────────────────────────────────
+  // Category list
+  // ─────────────────────────────────────────
 
+  for (let i = 0; i < visibleCategories.length; i++) {
+    categoryBar(widget, visibleCategories[i], true);
 
-	const title =
-		header.addText(
-			`Where It Went · ${bucketName}`
-		)
+    if (i < visibleCategories.length - 1) {
+      widget.addSpacer(isLarge ? 6 : 5);
+    }
+  }
 
-	title.font =
-		font(
-			"semibold",
-			isLarge ? 15 : 14
-		)
+  // ─────────────────────────────────────────
+  // More categories
+  // ─────────────────────────────────────────
 
-	title.textColor =
-		t("text")
+  const remaining = categories.length - visibleCategories.length;
 
-	title.lineLimit = 1
+  if (remaining > 0) {
+    widget.addSpacer(5);
 
+    const more = widget.addText(`+${remaining} more categor${remaining === 1 ? "y" : "ies"}`);
 
-	header.addSpacer()
+    more.font = font("regular", 8);
 
+    more.textColor = t("muted");
+  }
 
-	const subtitle =
-		header.addText(
-			"This Month"
-		)
+  // ─────────────────────────────────────────
+  // Footer
+  // ─────────────────────────────────────────
 
-	subtitle.font =
-		font("regular", 9)
+  widget.addSpacer();
 
-	subtitle.textColor =
-		t("muted")
+  const totalSpend = categories.reduce((sum, category) => sum + category.total, 0);
 
+  footer(widget, {
+    left: `${categories.length} categor${categories.length === 1 ? "y" : "ies"}`,
 
-	// ─────────────────────────────────────────
-	// Empty state
-	// ─────────────────────────────────────────
+    right: moneyShort(totalSpend),
+  });
 
-	if (!categories.length) {
-
-		widget.addSpacer(10)
-
-
-		const empty =
-			widget.addText(
-				"No category spending yet"
-			)
-
-		empty.font =
-			font("regular", 10)
-
-		empty.textColor =
-			t("muted")
-
-
-		widget.addSpacer()
-
-
-		footer(widget, {
-			left: bucketName,
-			right: "₹0",
-		})
-
-
-		return widget
-	}
-
-
-	// ─────────────────────────────────────────
-	// Category selection
-	// ─────────────────────────────────────────
-
-	let visibleCategories
-
-
-	if (isLarge) {
-		visibleCategories =
-			categories.slice(0, 10)
-	} else {
-		visibleCategories =
-			categories.slice(0, 4)
-	}
-
-
-	// ─────────────────────────────────────────
-	// Stacked bar
-	// ─────────────────────────────────────────
-
-	widget.addSpacer(9)
-
-
-	stackedCategoryBar(
-		widget,
-		categories
-	)
-
-
-	widget.addSpacer(10)
-
-
-	// ─────────────────────────────────────────
-	// Category list
-	// ─────────────────────────────────────────
-
-	for (
-		let i = 0;
-		i < visibleCategories.length;
-		i++
-	) {
-		categoryBar(
-			widget,
-			visibleCategories[i],
-			true
-		)
-
-
-		if (
-			i <
-			visibleCategories.length - 1
-		) {
-			widget.addSpacer(
-				isLarge ? 6 : 5
-			)
-		}
-	}
-
-
-	// ─────────────────────────────────────────
-	// More categories
-	// ─────────────────────────────────────────
-
-	const remaining =
-		categories.length -
-		visibleCategories.length
-
-
-	if (remaining > 0) {
-
-		widget.addSpacer(5)
-
-
-		const more =
-			widget.addText(
-				`+${remaining} more categor${
-					remaining === 1
-						? "y"
-						: "ies"
-				}`
-			)
-
-		more.font =
-			font("regular", 8)
-
-		more.textColor =
-			t("muted")
-	}
-
-
-	// ─────────────────────────────────────────
-	// Footer
-	// ─────────────────────────────────────────
-
-	widget.addSpacer()
-
-
-	const totalSpend =
-		categories.reduce(
-			(sum, category) =>
-				sum + category.total,
-			0
-		)
-
-
-	footer(widget, {
-		left:
-			`${categories.length} categor${
-				categories.length === 1
-					? "y"
-					: "ies"
-			}`,
-
-		right:
-			moneyShort(totalSpend),
-	})
-
-
-	return widget
-})
+  return widget;
+});

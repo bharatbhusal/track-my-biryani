@@ -2,13 +2,13 @@
 
 import * as React from "react";
 import {
-	Controller,
-	FormProvider,
-	useFormContext,
-	useFormState,
-	type ControllerProps,
-	type FieldPath,
-	type FieldValues,
+  Controller,
+  FormProvider,
+  useFormContext,
+  useFormState,
+  type ControllerProps,
+  type FieldPath,
+  type FieldValues,
 } from "react-hook-form";
 
 import { cn } from "@/lib/utils";
@@ -17,142 +17,112 @@ import { Label } from "@/components/ui/label";
 const Form = FormProvider;
 
 type FormFieldContextValue<
-	TFieldValues extends FieldValues = FieldValues,
-	TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 > = {
-	name: TName;
+  name: TName;
 };
 
-const FormFieldContext = React.createContext<FormFieldContextValue>(
-	{} as FormFieldContextValue,
-);
+const FormFieldContext = React.createContext<FormFieldContextValue>({} as FormFieldContextValue);
 
 const FormField = <
-	TFieldValues extends FieldValues = FieldValues,
-	TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >({
-	...props
+  ...props
 }: ControllerProps<TFieldValues, TName>) => {
-	return (
-		<FormFieldContext.Provider value={{ name: props.name }}>
-			<Controller {...props} />
-		</FormFieldContext.Provider>
-	);
+  return (
+    <FormFieldContext.Provider value={{ name: props.name }}>
+      <Controller {...props} />
+    </FormFieldContext.Provider>
+  );
 };
 
-const FormItemContext = React.createContext<{ id: string }>(
-	{} as { id: string },
-);
+const FormItemContext = React.createContext<{ id: string }>({} as { id: string });
 
-function FormItem({
-	className,
-	...props
-}: React.ComponentProps<"div">) {
-	const id = React.useId();
+function FormItem({ className, ...props }: React.ComponentProps<"div">) {
+  const id = React.useId();
 
-	return (
-		<FormItemContext.Provider value={{ id }}>
-			<div className={cn("space-y-2", className)} {...props} />
-		</FormItemContext.Provider>
-	);
+  return (
+    <FormItemContext.Provider value={{ id }}>
+      <div className={cn("space-y-2", className)} {...props} />
+    </FormItemContext.Provider>
+  );
 }
 
 function useFormField() {
-	const fieldContext = React.useContext(FormFieldContext);
-	const itemContext = React.useContext(FormItemContext);
-	const { getFieldState } = useFormContext();
-	const formState = useFormState({ name: fieldContext.name });
-	const fieldState = getFieldState(fieldContext.name, formState);
-	const { id } = itemContext;
+  const fieldContext = React.useContext(FormFieldContext);
+  const itemContext = React.useContext(FormItemContext);
+  const { getFieldState } = useFormContext();
+  const formState = useFormState({ name: fieldContext.name });
+  const fieldState = getFieldState(fieldContext.name, formState);
+  const { id } = itemContext;
 
-	return {
-		id,
-		name: fieldContext.name,
-		formItemId: `${id}-form-item`,
-		formDescriptionId: `${id}-form-item-description`,
-		formMessageId: `${id}-form-item-message`,
-		...fieldState,
-	};
+  return {
+    id,
+    name: fieldContext.name,
+    formItemId: `${id}-form-item`,
+    formDescriptionId: `${id}-form-item-description`,
+    formMessageId: `${id}-form-item-message`,
+    ...fieldState,
+  };
 }
 
-function FormLabel({
-	className,
-	...props
-}: React.ComponentProps<typeof Label>) {
-	const { error, formItemId } = useFormField();
+function FormLabel({ className, ...props }: React.ComponentProps<typeof Label>) {
+  const { error, formItemId } = useFormField();
 
-	return (
-		<Label
-			className={cn(error && "text-red-600", className)}
-			htmlFor={formItemId}
-			{...props}
-		/>
-	);
+  return (
+    <Label className={cn(error && "text-red-600", className)} htmlFor={formItemId} {...props} />
+  );
 }
 
 function FormControl({ ...props }: React.ComponentProps<"div">) {
-	const { error, formItemId, formDescriptionId, formMessageId } =
-		useFormField();
+  const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
 
-	return (
-		<div
-			id={formItemId}
-			aria-describedby={
-				!error
-					? `${formDescriptionId}`
-					: `${formDescriptionId} ${formMessageId}`
-			}
-			aria-invalid={!!error}
-			{...props}
-		/>
-	);
+  return (
+    <div
+      id={formItemId}
+      aria-describedby={!error ? `${formDescriptionId}` : `${formDescriptionId} ${formMessageId}`}
+      aria-invalid={!!error}
+      {...props}
+    />
+  );
 }
 
-function FormDescription({
-	className,
-	...props
-}: React.ComponentProps<"p">) {
-	const { formDescriptionId } = useFormField();
+function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
+  const { formDescriptionId } = useFormField();
 
-	return (
-		<p
-			id={formDescriptionId}
-			className={cn("text-xs text-[var(--color-muted)]", className)}
-			{...props}
-		/>
-	);
+  return (
+    <p
+      id={formDescriptionId}
+      className={cn("text-xs text-[var(--color-muted)]", className)}
+      {...props}
+    />
+  );
 }
 
-function FormMessage({
-	className,
-	children,
-	...props
-}: React.ComponentProps<"p">) {
-	const { error, formMessageId } = useFormField();
-	const body = error ? String(error.message) : children;
+function FormMessage({ className, children, ...props }: React.ComponentProps<"p">) {
+  const { error, formMessageId } = useFormField();
+  const body = error ? String(error.message) : children;
 
-	if (!body) {
-		return null;
-	}
+  if (!body) {
+    return null;
+  }
 
-	return (
-		<p
-			id={formMessageId}
-			className={cn("text-xs font-medium text-red-600", className)}
-			{...props}
-		>
-			{body}
-		</p>
-	);
+  return (
+    <p id={formMessageId} className={cn("text-xs font-medium text-red-600", className)} {...props}>
+      {body}
+    </p>
+  );
 }
 
 export {
-	useFormField,
-	Form,
-	FormItem,
-	FormLabel,
-	FormControl,
-	FormDescription,
-	FormMessage,
-	FormField,
+  useFormField,
+  Form,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription,
+  FormMessage,
+  FormField,
 };

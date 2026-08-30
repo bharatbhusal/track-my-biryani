@@ -1,12 +1,7 @@
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
 export function Skeleton({ className }: { className?: string }) {
   return (
-    <div
-      className={cn(
-        'animate-pulse rounded-xl bg-[var(--color-surface-muted)]',
-        className,
-      )}
-    />
+    <div className={cn("animate-pulse rounded-xl bg-[var(--color-surface-muted)]", className)} />
   );
 }

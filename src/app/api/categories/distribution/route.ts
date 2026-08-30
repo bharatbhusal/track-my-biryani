@@ -4,11 +4,11 @@ import { connectToDatabase } from "@/lib/db";
 import { getCategoryDistribution } from "@/controllers/category.controller";
 
 export async function POST(request: NextRequest) {
-	try {
-		await connectToDatabase();
-		const data = await getCategoryDistribution(request);
-		return successResponse(data);
-	} catch (error) {
-		return errorResponse(error);
-	}
+  try {
+    await connectToDatabase();
+    const data = await getCategoryDistribution(request);
+    return successResponse(data);
+  } catch (error) {
+    return errorResponse(error);
+  }
 }

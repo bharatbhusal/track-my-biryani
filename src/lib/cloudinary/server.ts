@@ -3,55 +3,51 @@ import { v2 as cloudinary } from "cloudinary";
 import { getEnv } from "@/config/env";
 
 export type UploadSignature = {
-	timestamp: number;
-	signature: string;
-	apiKey: string;
-	cloudName: string;
-	folder: string;
-	publicId?: string;
+  timestamp: number;
+  signature: string;
+  apiKey: string;
+  cloudName: string;
+  folder: string;
+  publicId?: string;
 };
 
 let isConfigured = false;
 
 function ensureCloudinaryConfigured() {
-	if (isConfigured) {
-		return;
-	}
+  if (isConfigured) {
+    return;
+  }
 
-	const env = getEnv();
-	cloudinary.config({
-		cloud_name: env.CLOUDINARY_CLOUD_NAME,
-		api_key: env.CLOUDINARY_API_KEY,
-		api_secret: env.CLOUDINARY_API_SECRET,
-		secure: true,
-	});
-	isConfigured = true;
+  const env = getEnv();
+  cloudinary.config({
+    cloud_name: env.CLOUDINARY_CLOUD_NAME,
+    api_key: env.CLOUDINARY_API_KEY,
+    api_secret: env.CLOUDINARY_API_SECRET,
+    secure: true,
+  });
+  isConfigured = true;
 }
 
-export function createUploadSignature(
-	folder?: string,
-	publicId?: string,
-): UploadSignature {
-	ensureCloudinaryConfigured();
-	const env = getEnv();
-	const resolvedFolder =
-		folder ?? env.CLOUDINARY_FOLDER_NAME;
-	const timestamp = Math.round(Date.now() / 1000);
-	const signature = cloudinary.utils.api_sign_request(
-		{
-			folder: resolvedFolder,
-			timestamp,
-			...(publicId ? { public_id: publicId } : {}),
-		},
-		env.CLOUDINARY_API_SECRET,
-	);
+export function createUploadSignature(folder?: string, publicId?: string): UploadSignature {
+  ensureCloudinaryConfigured();
+  const env = getEnv();
+  const resolvedFolder = folder ?? env.CLOUDINARY_FOLDER_NAME;
+  const timestamp = Math.round(Date.now() / 1000);
+  const signature = cloudinary.utils.api_sign_request(
+    {
+      folder: resolvedFolder,
+      timestamp,
+      ...(publicId ? { public_id: publicId } : {}),
+    },
+    env.CLOUDINARY_API_SECRET,
+  );
 
-	return {
-		timestamp,
-		signature,
-		apiKey: env.CLOUDINARY_API_KEY,
-		cloudName: env.CLOUDINARY_CLOUD_NAME,
-		folder: resolvedFolder,
-		publicId,
-	};
+  return {
+    timestamp,
+    signature,
+    apiKey: env.CLOUDINARY_API_KEY,
+    cloudName: env.CLOUDINARY_CLOUD_NAME,
+    folder: resolvedFolder,
+    publicId,
+  };
 }

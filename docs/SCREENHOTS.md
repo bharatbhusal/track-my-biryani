@@ -125,7 +125,7 @@ authenticated pages below were captured while logged in.
 
 - **Theme toggle:** use Settings to switch light/dark; the preference persists.
 - **Date-range presets:** on the Dashboard, the `Select` cycles `Day / Week /
-  Month / Year`; the chevrons step through past periods (disabled at offset 0).
+Month / Year`; the chevrons step through past periods (disabled at offset 0).
 - **Category filtering:** tapping a category in the Dashboard distribution list
   filters the Monthly Expense chart to that category.
 - **Chart tooltips:** hover (or tap) any bar in the Monthly Expense chart to

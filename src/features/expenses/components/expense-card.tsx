@@ -13,129 +13,109 @@ import { shareLink } from "@/lib/share";
 import { useRouter } from "next/navigation";
 
 type Props = {
-	expense: ExpenseItem;
-	onEdit?: () => void;
-	onDelete?: () => void;
+  expense: ExpenseItem;
+  onEdit?: () => void;
+  onDelete?: () => void;
 };
 
-export function ExpenseCard({
-	expense,
-	onEdit,
-	onDelete,
-}: Props) {
-	const currency = useAppSelector((s) => s.ui.currency);
-	const currentUserId = useAppSelector(
-		(s) => s.auth.user?.id,
-	);
-	const isOwner =
-		!!currentUserId && expense.userId === currentUserId;
-	const hasActions = onEdit || onDelete;
-	const router = useRouter();
+export function ExpenseCard({ expense, onEdit, onDelete }: Props) {
+  const currency = useAppSelector((s) => s.ui.currency);
+  const currentUserId = useAppSelector((s) => s.auth.user?.id);
+  const isOwner = !!currentUserId && expense.userId === currentUserId;
+  const hasActions = onEdit || onDelete;
+  const router = useRouter();
 
-	const handleShare = () => {
-		const url = `${window.location.origin}/expenses/${expense._id}`;
-		return shareLink({
-			url,
-			title: expense.title || "Expense",
-		});
-	};
+  const handleShare = () => {
+    const url = `${window.location.origin}/expenses/${expense._id}`;
+    return shareLink({
+      url,
+      title: expense.title || "Expense",
+    });
+  };
 
-	const handleMenu = (value: string) => {
-		if (value === "edit") onEdit?.();
-		else if (value === "delete") onDelete?.();
-		else if (value === "share") void handleShare();
-	};
+  const handleMenu = (value: string) => {
+    if (value === "edit") onEdit?.();
+    else if (value === "delete") onDelete?.();
+    else if (value === "share") void handleShare();
+  };
 
-	const menuOptions = [
-		{ value: "share", label: "Share" },
-		...(onEdit ? [{ value: "edit", label: "Edit" }] : []),
-		...(onDelete
-			? [{ value: "delete", label: "Delete" }]
-			: []),
-	];
+  const menuOptions = [
+    { value: "share", label: "Share" },
+    ...(onEdit ? [{ value: "edit", label: "Edit" }] : []),
+    ...(onDelete ? [{ value: "delete", label: "Delete" }] : []),
+  ];
 
-	return (
-		<Card
-			className={`block rounded-md border border-[var(--color-border)] p-3 ${!hasActions ? "hover:bg-[color-mix(in_oklab,var(--color-bg)_96%,transparent)]" : ""}`}
-		>
-			<div
-				onClick={
-					!hasActions
-						? () => router.push(`/expenses/${expense._id}`)
-						: undefined
-				}
-				className={!hasActions ? "cursor-pointer" : ""}
-			>
-				<div className="flex gap-2 items-center justify-between">
-					<div className="flex gap-2 items-center text-medium min-w-0 flex-1">
-						<div className="shrink-0">
-							<EmojiBadge
-								color={expense?.categoryColor || ""}
-								emoji={expense?.categoryEmoji}
-								className="flex-1"
-							/>
-						</div>
+  return (
+    <Card
+      className={`block rounded-md border border-[var(--color-border)] p-3 ${!hasActions ? "hover:bg-[color-mix(in_oklab,var(--color-bg)_96%,transparent)]" : ""}`}
+    >
+      <div
+        onClick={!hasActions ? () => router.push(`/expenses/${expense._id}`) : undefined}
+        className={!hasActions ? "cursor-pointer" : ""}
+      >
+        <div className="flex gap-2 items-center justify-between">
+          <div className="flex gap-2 items-center text-medium min-w-0 flex-1">
+            <div className="shrink-0">
+              <EmojiBadge
+                color={expense?.categoryColor || ""}
+                emoji={expense?.categoryEmoji}
+                className="flex-1"
+              />
+            </div>
 
-						<div className="flex flex-col min-w-0">
-							<p className="font-medium break-words leading-5">
-								{expense.title
-									? expense.title.charAt(0).toUpperCase() +
-										expense.title.slice(1)
-									: expense.title}
-							</p>
-							<p className="text-xs text-[var(--color-muted)]">
-								{formatShortDateTime(expense.paidAt)}
-							</p>
-							{expense.posterName && (
-								<p className="text-xs text-[var(--color-muted)]">
-									by {expense.posterName}
-								</p>
-							)}
-						</div>
-					</div>
-					<div className="flex gap-2 items-center shrink-0">
-						<div className="text-right shrink-0">
-							<p className="font-semibold">
-								{formatCurrency(expense.amount, currency)}
-							</p>
-						</div>
-						{hasActions && (
-							<>
-								{isOwner ? (
-									<DropdownList
-										value=""
-										placeholder="Actions"
-										trigger={<FiMoreVertical className="h-4 w-4" />}
-										options={menuOptions}
-										onValueChange={handleMenu}
-										aria-label="Expense actions"
-										className="h-8 w-8 cursor-pointer shrink-0"
-										onClick={(e) => e.stopPropagation()}
-									/>
-								) : (
-									<Button
-										variant="ghost"
-										size="icon"
-										className="h-8 w-8 cursor-pointer shrink-0"
-										aria-label="Share expense"
-										onClick={(e) => {
-											e.stopPropagation();
-											void handleShare();
-										}}
-									>
-										<FiShare2 className="h-4 w-4" />
-									</Button>
-								)}
-							</>
-						)}
-					</div>
-				</div>
-				{expense.notes && hasActions && (
-					<p className="text-sm border-t-2 mt-4 py-2 text-[var(--color-muted)]">
-						{expense.notes}
-					</p>
-				)}
-			</div>
-		</Card>
-	);
+            <div className="flex flex-col min-w-0">
+              <p className="font-medium break-words leading-5">
+                {expense.title
+                  ? expense.title.charAt(0).toUpperCase() + expense.title.slice(1)
+                  : expense.title}
+              </p>
+              <p className="text-xs text-[var(--color-muted)]">
+                {formatShortDateTime(expense.paidAt)}
+              </p>
+              {expense.posterName && (
+                <p className="text-xs text-[var(--color-muted)]">by {expense.posterName}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-2 items-center shrink-0">
+            <div className="text-right shrink-0">
+              <p className="font-semibold">{formatCurrency(expense.amount, currency)}</p>
+            </div>
+            {hasActions && (
+              <>
+                {isOwner ? (
+                  <DropdownList
+                    value=""
+                    placeholder="Actions"
+                    trigger={<FiMoreVertical className="h-4 w-4" />}
+                    options={menuOptions}
+                    onValueChange={handleMenu}
+                    aria-label="Expense actions"
+                    className="h-8 w-8 cursor-pointer shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 cursor-pointer shrink-0"
+                    aria-label="Share expense"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleShare();
+                    }}
+                  >
+                    <FiShare2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+        {expense.notes && hasActions && (
+          <p className="text-sm border-t-2 mt-4 py-2 text-[var(--color-muted)]">{expense.notes}</p>
+        )}
+      </div>
+    </Card>
+  );
 }

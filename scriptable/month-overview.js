@@ -23,484 +23,309 @@
 //
 // ─────────────────────────────────────────────
 
-const endpoints = importModule("api/endpoints")
-const bootstrap = importModule("lib/bootstrap")
-const layout = importModule("lib/layout")
-const components = importModule("lib/components")
-const theme = importModule("lib/theme")
-const moneyLib = importModule("lib/money")
-const date = importModule("lib/date")
+const endpoints = importModule("api/endpoints");
+const bootstrap = importModule("lib/bootstrap");
+const layout = importModule("lib/layout");
+const components = importModule("lib/components");
+const theme = importModule("lib/theme");
+const moneyLib = importModule("lib/money");
+const date = importModule("lib/date");
 
-const { footer, expenseBar } = components
-const { t } = theme
-const { font } = layout
-const { moneyShort, compact } = moneyLib
-const { currentMonthRange, currentMonthProgress, relativeDay } = date
-
+const { footer, expenseBar } = components;
+const { t } = theme;
+const { font } = layout;
+const { moneyShort, compact } = moneyLib;
+const { currentMonthRange, currentMonthProgress, relativeDay } = date;
 
 // ─────────────────────────────────────────────
 // Bucket ID from Scriptable widget parameter
 // ─────────────────────────────────────────────
 
-const bucketId =
-	String(args.widgetParameter || "").trim()
-
+const bucketId = String(args.widgetParameter || "").trim();
 
 // ─────────────────────────────────────────────
 // Progress bar
 // ─────────────────────────────────────────────
 
-function bar(parent, {
-	value,
-	color,
-	trackColor,
-}) {
-	const row = parent.addStack()
+function bar(parent, { value, color, trackColor }) {
+  const row = parent.addStack();
 
-	row.layoutHorizontally()
+  row.layoutHorizontally();
 
-	const total = 300
+  const total = 300;
 
-	const progress =
-		Math.max(
-			0,
-			Math.min(1, value)
-		)
+  const progress = Math.max(0, Math.min(1, value));
 
-	const fill =
-		Math.round(
-			total * progress
-		)
+  const fill = Math.round(total * progress);
 
+  const filled = row.addStack();
 
-	const filled =
-		row.addStack()
+  filled.size = new Size(fill, 6);
 
-	filled.size =
-		new Size(fill, 6)
+  filled.cornerRadius = 3;
 
-	filled.cornerRadius = 3
+  filled.backgroundColor = color || t("accent");
 
-	filled.backgroundColor =
-		color || t("accent")
+  const track = row.addStack();
 
+  track.size = new Size(total - fill, 6);
 
-	const track =
-		row.addStack()
+  track.cornerRadius = 3;
 
-	track.size =
-		new Size(
-			total - fill,
-			6
-		)
+  track.backgroundColor = trackColor || t("border");
 
-	track.cornerRadius = 3
-
-	track.backgroundColor =
-		trackColor || t("border")
-
-	return row
+  return row;
 }
-
 
 // ─────────────────────────────────────────────
 // Widget
 // ─────────────────────────────────────────────
 
 bootstrap.run(async () => {
-	const widget =
-		new ListWidget()
+  const widget = new ListWidget();
 
-	widget.backgroundColor =
-		theme.background()
+  widget.backgroundColor = theme.background();
 
+  // ─────────────────────────────────────────
+  // Validate widget parameter
+  // ─────────────────────────────────────────
 
-	// ─────────────────────────────────────────
-	// Validate widget parameter
-	// ─────────────────────────────────────────
+  if (!bucketId) {
+    const title = widget.addText("Track My Biryani");
 
-	if (!bucketId) {
-		const title =
-			widget.addText(
-				"Track My Biryani"
-			)
+    title.font = font("semibold", 14);
 
-		title.font =
-			font("semibold", 14)
+    title.textColor = t("text");
 
-		title.textColor =
-			t("text")
+    widget.addSpacer(5);
 
+    const message = widget.addText("Set a bucket ID in Widget Parameter");
 
-		widget.addSpacer(5)
+    message.font = font("regular", 10);
 
+    message.textColor = t("muted");
 
-		const message =
-			widget.addText(
-				"Set a bucket ID in Widget Parameter"
-			)
+    return widget;
+  }
 
-		message.font =
-			font("regular", 10)
+  // ─────────────────────────────────────────
+  // Fetch bucket details
+  // ─────────────────────────────────────────
+  //
+  // We only have /buckets currently,
+  // so fetch the list and find our bucket.
+  // ─────────────────────────────────────────
 
-		message.textColor =
-			t("muted")
+  const bucketsResponse = await endpoints.buckets();
 
-		return widget
-	}
+  const buckets = Array.isArray(bucketsResponse?.items) ? bucketsResponse.items : [];
 
+  const bucket = buckets.find((item) => item && item._id === bucketId);
 
-	// ─────────────────────────────────────────
-	// Fetch bucket details
-	// ─────────────────────────────────────────
-	//
-	// We only have /buckets currently,
-	// so fetch the list and find our bucket.
-	// ─────────────────────────────────────────
+  // ─────────────────────────────────────────
+  // Validate bucket
+  // ─────────────────────────────────────────
 
-	const bucketsResponse =
-		await endpoints.buckets()
+  if (!bucket) {
+    const title = widget.addText("Bucket Not Found");
 
-	const buckets =
-		Array.isArray(bucketsResponse?.items)
-			? bucketsResponse.items
-			: []
+    title.font = font("semibold", 14);
 
+    title.textColor = t("text");
 
-	const bucket =
-		buckets.find(
-			(item) =>
-				item &&
-				item._id === bucketId
-		)
+    widget.addSpacer(5);
 
+    const message = widget.addText(bucketId);
 
-	// ─────────────────────────────────────────
-	// Validate bucket
-	// ─────────────────────────────────────────
+    message.font = font("regular", 9);
 
-	if (!bucket) {
-		const title =
-			widget.addText(
-				"Bucket Not Found"
-			)
+    message.textColor = t("muted");
 
-		title.font =
-			font("semibold", 14)
+    message.lineLimit = 2;
 
-		title.textColor =
-			t("text")
+    return widget;
+  }
 
+  const bucketName = bucket.name || "Bucket";
 
-		widget.addSpacer(5)
+  // ─────────────────────────────────────────
+  // Date range
+  // ─────────────────────────────────────────
 
+  const { from, to } = currentMonthRange();
 
-		const message =
-			widget.addText(
-				bucketId
-			)
+  const month = currentMonthProgress();
 
-		message.font =
-			font("regular", 9)
+  // ─────────────────────────────────────────
+  // Fetch bucket expenses
+  // ─────────────────────────────────────────
 
-		message.textColor =
-			t("muted")
+  const response = await endpoints.expenses({
+    page: 1,
+    limit: 50,
+    from,
+    to,
+    bucketId,
+    sortBy: "paidAt",
+    order: "desc",
+  });
 
-		message.lineLimit = 2
+  // endpoints.expenses() returns the
+  // unwrapped `data` object:
+  //
+  // {
+  //   items: [...],
+  //   total: 5,
+  //   page: 1,
+  //   totalPages: 1
+  // }
 
-		return widget
-	}
+  const data = response || {};
 
+  const expenses = Array.isArray(data.items) ? data.items : [];
 
-	const bucketName =
-		bucket.name || "Bucket"
+  // ─────────────────────────────────────────
+  // Calculate monthly statistics
+  // ─────────────────────────────────────────
 
+  const totalSpend = expenses.reduce((sum, expense) => sum + (Number(expense.amount) || 0), 0);
 
-	// ─────────────────────────────────────────
-	// Date range
-	// ─────────────────────────────────────────
+  const perDay = month.currentDay > 0 ? totalSpend / month.currentDay : 0;
 
-	const {
-		from,
-		to,
-	} = currentMonthRange()
+  // ─────────────────────────────────────────
+  // Header
+  // ─────────────────────────────────────────
 
+  const header = widget.addStack();
 
-	const month =
-		currentMonthProgress()
+  header.layoutHorizontally();
+  header.centerAlignContent();
 
+  const title = header.addText(`This Month · ${bucketName}`);
 
-	// ─────────────────────────────────────────
-	// Fetch bucket expenses
-	// ─────────────────────────────────────────
+  title.font = font("semibold", 15);
 
-	const response =
-		await endpoints.expenses({
-			page: 1,
-			limit: 50,
-			from,
-			to,
-			bucketId,
-			sortBy: "paidAt",
-			order: "desc",
-		})
+  title.textColor = t("text");
 
+  title.lineLimit = 1;
 
-	// endpoints.expenses() returns the
-	// unwrapped `data` object:
-	//
-	// {
-	//   items: [...],
-	//   total: 5,
-	//   page: 1,
-	//   totalPages: 1
-	// }
+  header.addSpacer();
 
-	const data =
-		response || {}
+  const day = header.addText(`Day ${month.currentDay}/${month.daysInMonth}`);
 
-	const expenses =
-		Array.isArray(data.items)
-			? data.items
-			: []
+  day.font = font("regular", 10);
 
+  day.textColor = t("muted");
 
-	// ─────────────────────────────────────────
-	// Calculate monthly statistics
-	// ─────────────────────────────────────────
+  day.rightAlignText();
 
-	const totalSpend =
-		expenses.reduce(
-			(sum, expense) =>
-				sum +
-				(Number(expense.amount) || 0),
-			0
-		)
+  widget.addSpacer(8);
 
+  // ─────────────────────────────────────────
+  // Statistics
+  // ─────────────────────────────────────────
 
-	const perDay =
-		month.currentDay > 0
-			? totalSpend /
-				month.currentDay
-			: 0
+  const stats = widget.addStack();
 
+  stats.layoutHorizontally();
 
-	// ─────────────────────────────────────────
-	// Header
-	// ─────────────────────────────────────────
+  // Total Spent
+  const totalStack = stats.addStack();
 
-	const header =
-		widget.addStack()
+  totalStack.layoutVertically();
 
-	header.layoutHorizontally()
-	header.centerAlignContent()
+  const totalLabel = totalStack.addText("Total Spent");
 
+  totalLabel.font = font("regular", 9);
 
-	const title =
-		header.addText(
-			`This Month · ${bucketName}`
-		)
+  totalLabel.textColor = t("muted");
 
-	title.font =
-		font("semibold", 15)
+  const totalValue = totalStack.addText(compact(totalSpend));
 
-	title.textColor =
-		t("text")
+  totalValue.font = font("semibold", 15);
 
-	title.lineLimit = 1
+  totalValue.textColor = t("primary");
 
+  // Push Per Day to right edge
+  stats.addSpacer();
 
-	header.addSpacer()
+  // Per Day
+  const perDayStack = stats.addStack();
 
+  perDayStack.layoutVertically();
 
-	const day =
-		header.addText(
-			`Day ${month.currentDay}/${month.daysInMonth}`
-		)
+  const perDayLabel = perDayStack.addText("Per Day");
 
-	day.font =
-		font("regular", 10)
+  perDayLabel.font = font("regular", 9);
 
-	day.textColor =
-		t("muted")
+  perDayLabel.textColor = t("muted");
 
-	day.rightAlignText()
+  perDayLabel.rightAlignText();
 
+  const perDayValue = perDayStack.addText(moneyShort(perDay));
 
-	widget.addSpacer(8)
+  perDayValue.font = font("semibold", 15);
 
+  perDayValue.textColor = t("text");
 
-	// ─────────────────────────────────────────
-	// Statistics
-	// ─────────────────────────────────────────
+  perDayValue.rightAlignText();
 
-	const stats =
-		widget.addStack()
+  widget.addSpacer(7);
 
-	stats.layoutHorizontally()
+  // ─────────────────────────────────────────
+  // Month progress
+  // ─────────────────────────────────────────
 
+  bar(widget, {
+    value: month.progress,
+    color: t("accent"),
+  });
 
-	// Total Spent
-	const totalStack =
-		stats.addStack()
+  widget.addSpacer(10);
 
-	totalStack.layoutVertically()
+  // ─────────────────────────────────────────
+  // Latest expenses
+  // ─────────────────────────────────────────
 
+  const section = widget.addText("Latest Expenses");
 
-	const totalLabel =
-		totalStack.addText(
-			"Total Spent"
-		)
+  section.font = font("semibold", 11);
 
-	totalLabel.font =
-		font("regular", 9)
+  section.textColor = t("text");
 
-	totalLabel.textColor =
-		t("muted")
+  widget.addSpacer(6);
 
+  if (expenses.length === 0) {
+    const empty = widget.addText("No expenses this month");
 
-	const totalValue =
-		totalStack.addText(
-			compact(totalSpend)
-		)
+    empty.font = font("regular", 10);
 
-	totalValue.font =
-		font("semibold", 15)
+    empty.textColor = t("muted");
+  } else {
+    // API is sorted by paidAt descending,
+    // so the first six are the latest.
+    const latest = expenses.slice(0, 6);
 
-	totalValue.textColor =
-		t("primary")
+    for (let i = 0; i < latest.length; i++) {
+      expenseBar(widget, latest[i]);
 
+      if (i < latest.length - 1) {
+        widget.addSpacer(7);
+      }
+    }
+  }
 
-	// Push Per Day to right edge
-	stats.addSpacer()
+  widget.addSpacer();
 
+  // ─────────────────────────────────────────
+  // Footer
+  // ─────────────────────────────────────────
 
-	// Per Day
-	const perDayStack =
-		stats.addStack()
+  footer(widget, {
+    left: `${data.total ?? expenses.length} expenses`,
 
-	perDayStack.layoutVertically()
+    right: moneyShort(totalSpend),
+  });
 
-
-	const perDayLabel =
-		perDayStack.addText(
-			"Per Day"
-		)
-
-	perDayLabel.font =
-		font("regular", 9)
-
-	perDayLabel.textColor =
-		t("muted")
-
-	perDayLabel.rightAlignText()
-
-
-	const perDayValue =
-		perDayStack.addText(
-			moneyShort(perDay)
-		)
-
-	perDayValue.font =
-		font("semibold", 15)
-
-	perDayValue.textColor =
-		t("text")
-
-	perDayValue.rightAlignText()
-
-
-	widget.addSpacer(7)
-
-
-	// ─────────────────────────────────────────
-	// Month progress
-	// ─────────────────────────────────────────
-
-	bar(widget, {
-		value: month.progress,
-		color: t("accent"),
-	})
-
-
-	widget.addSpacer(10)
-
-
-	// ─────────────────────────────────────────
-	// Latest expenses
-	// ─────────────────────────────────────────
-
-	const section =
-		widget.addText(
-			"Latest Expenses"
-		)
-
-	section.font =
-		font("semibold", 11)
-
-	section.textColor =
-		t("text")
-
-
-	widget.addSpacer(6)
-
-
-	if (expenses.length === 0) {
-
-		const empty =
-			widget.addText(
-				"No expenses this month"
-			)
-
-		empty.font =
-			font("regular", 10)
-
-		empty.textColor =
-			t("muted")
-
-	} else {
-
-		// API is sorted by paidAt descending,
-		// so the first six are the latest.
-		const latest =
-			expenses.slice(0,6)
-
-
-		for (
-			let i = 0;
-			i < latest.length;
-			i++
-		) {
-			expenseBar(
-				widget,
-				latest[i]
-			)
-
-
-			if (
-				i < latest.length - 1
-			) {
-				widget.addSpacer(7)
-			}
-		}
-	}
-
-
-	widget.addSpacer()
-
-
-	// ─────────────────────────────────────────
-	// Footer
-	// ─────────────────────────────────────────
-
-	footer(widget, {
-		left:
-			`${data.total ?? expenses.length} expenses`,
-
-		right:
-			moneyShort(totalSpend),
-	})
-
-
-	return widget
-})
+  return widget;
+});

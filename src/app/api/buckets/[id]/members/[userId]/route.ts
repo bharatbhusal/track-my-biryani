@@ -1,21 +1,18 @@
 import { NextRequest } from "next/server";
 
-import {
-	errorResponse,
-	successResponse,
-} from "@/lib/api-response";
+import { errorResponse, successResponse } from "@/lib/api-response";
 import { connectToDatabase } from "@/lib/db";
 import { revokeInvite } from "@/controllers/bucket.controller";
 
 export async function DELETE(
-	request: NextRequest,
-	context: { params: Promise<{ id: string; userId: string }> },
+  request: NextRequest,
+  context: { params: Promise<{ id: string; userId: string }> },
 ) {
-	try {
-		await connectToDatabase();
-		const data = await revokeInvite(request, context);
-		return successResponse(data);
-	} catch (error) {
-		return errorResponse(error);
-	}
+  try {
+    await connectToDatabase();
+    const data = await revokeInvite(request, context);
+    return successResponse(data);
+  } catch (error) {
+    return errorResponse(error);
+  }
 }

@@ -3,5 +3,5 @@ import { DashboardOverview } from "@/features/dashboard/components/dashboard-ove
 export const metadata = { title: "Dashboard" };
 
 export default function DashboardPage() {
-	return <DashboardOverview />;
+  return <DashboardOverview />;
 }
