@@ -51,3 +51,29 @@ export type BucketDetail = {
   createdAt?: string;
   updatedAt?: string;
 };
+
+export type BucketPreview = {
+  _id: string;
+  name: string;
+  icon?: string;
+  ownerId: string;
+  ownerName?: string;
+  isPersonal?: boolean;
+  memberCount: number;
+  role?: BucketRole;
+  status?: BucketStatus;
+};
+
+export type IncomingRequestUser = {
+  userId: string;
+  name: string;
+  username?: string;
+  invitedAt?: string;
+};
+
+export type IncomingRequestsGroup = {
+  bucketId: string;
+  name: string;
+  icon?: string;
+  requests: IncomingRequestUser[];
+};

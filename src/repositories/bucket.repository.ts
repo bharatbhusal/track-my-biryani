@@ -50,11 +50,13 @@ export async function listBucketsForMember(userId: string) {
 }
 
 export async function listBucketsForPendingMember(userId: string) {
+  // exclude self-requested pending (invitedBy === userId) — those need owner approval
   const buckets = await BucketModel.find({
     members: {
       $elemMatch: {
         userId: new Types.ObjectId(userId),
         status: "pending",
+        invitedBy: { $ne: new Types.ObjectId(userId) },
       },
     },
   }).lean();
@@ -195,6 +197,14 @@ export async function findUsersByIds(ids: string[]) {
 
 export async function findBucketByUserId(userId: string) {
   return BucketModel.findOne({ ownerId: userId }).lean();
+}
+
+export async function listOwnerPendingRequests(userId: string) {
+  const buckets = await BucketModel.find({
+    ownerId: new Types.ObjectId(userId),
+    "members.status": "pending",
+  }).lean();
+  return buckets as unknown as BucketDoc[];
 }
 
 export async function searchBuckets(

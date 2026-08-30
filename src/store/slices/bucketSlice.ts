@@ -3,12 +3,13 @@ import { bucketsApi } from "@/lib/api/buckets";
 import { sortForVariant } from "@/components/filters/variants";
 import { bucketCriteria } from "@/lib/filters";
 import type { RootState } from "@/store";
-import type { BucketDetail, BucketSummary } from "@/types/bucket.types";
+import type { BucketDetail, BucketSummary, IncomingRequestsGroup } from "@/types/bucket.types";
 
 type BucketState = {
   buckets: BucketSummary[];
   allBuckets: BucketSummary[];
   invitations: BucketSummary[];
+  incomingRequests: IncomingRequestsGroup[];
   currentBucket: BucketDetail | null;
   loading: boolean;
   error: string | null;
@@ -18,6 +19,7 @@ const initialState: BucketState = {
   buckets: [],
   allBuckets: [],
   invitations: [],
+  incomingRequests: [],
   currentBucket: null,
   loading: false,
   error: null,
@@ -134,6 +136,29 @@ export const revokeInvite = createAsyncThunk(
   },
 );
 
+export const fetchIncomingRequests = createAsyncThunk("buckets/fetchIncomingRequests", async () =>
+  bucketsApi.getIncomingRequests(),
+);
+
+export const acceptIncomingRequest = createAsyncThunk(
+  "buckets/acceptIncomingRequest",
+  async (payload: { id: string; userId: string }, { dispatch }) => {
+    const bucket = await bucketsApi.acceptRequest(payload.id, payload.userId);
+    dispatch(fetchIncomingRequests());
+    dispatch(fetchBuckets());
+    return bucket;
+  },
+);
+
+export const declineIncomingRequest = createAsyncThunk(
+  "buckets/declineIncomingRequest",
+  async (payload: { id: string; userId: string }, { dispatch }) => {
+    const bucket = await bucketsApi.revokeInvite(payload.id, payload.userId);
+    dispatch(fetchIncomingRequests());
+    return bucket;
+  },
+);
+
 const bucketThunks = [
   fetchBuckets,
   fetchInvitations,
@@ -146,6 +171,9 @@ const bucketThunks = [
   declineInvite,
   leaveBucket,
   revokeInvite,
+  fetchIncomingRequests,
+  acceptIncomingRequest,
+  declineIncomingRequest,
 ];
 
 const bucketSlice = createSlice({
@@ -190,6 +218,9 @@ const bucketSlice = createSlice({
       .addCase(fetchBucketDetail.fulfilled, (state, action) => {
         state.loading = false;
         state.currentBucket = action.payload;
+      })
+      .addCase(fetchIncomingRequests.fulfilled, (state, action) => {
+        state.incomingRequests = action.payload;
       })
       .addMatcher(isAnyOf(...bucketThunks.map((t) => t.rejected)), (state, action) => {
         state.loading = false;
