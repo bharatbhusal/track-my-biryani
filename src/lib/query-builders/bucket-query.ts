@@ -14,13 +14,22 @@ export async function buildBucketQuery(
   skip: number;
   limit: number;
 }> {
+  // pending self-requests (invitedBy === userId) are not "invitations" — they must be
+  // approved by owner, not self-accepted. Exclude them from the regular bucket list.
+  const uid = new Types.ObjectId(userId);
   const query: MongoFilter = {
-    members: {
-      $elemMatch: {
-        userId: new Types.ObjectId(userId),
-        status: { $in: ["accepted", "pending"] },
+    $or: [
+      { members: { $elemMatch: { userId: uid, status: "accepted" } } },
+      {
+        members: {
+          $elemMatch: {
+            userId: uid,
+            status: "pending",
+            invitedBy: { $ne: uid },
+          },
+        },
       },
-    },
+    ],
   };
 
   const sort: MongoSort = {

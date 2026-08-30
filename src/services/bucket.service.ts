@@ -21,6 +21,7 @@ import {
   getFilteredBucketExpenseStats,
   listBucketsForMember,
   listBucketsForPendingMember,
+  listOwnerPendingRequests,
   pullBucketMember,
   searchBuckets,
   updateBucketName,
@@ -32,7 +33,13 @@ import {
 } from "@/repositories/category.repository";
 import { findUserByUsername } from "@/repositories/user.repository";
 import { logAuditEvent } from "@/services/audit.service";
-import type { BucketDetail, BucketsListPayload, BucketSummary } from "@/types/bucket.types";
+import type {
+  BucketDetail,
+  BucketPreview,
+  BucketsListPayload,
+  BucketSummary,
+  IncomingRequestsGroup,
+} from "@/types/bucket.types";
 import type { BucketSearchRequest } from "@/types/search.types";
 
 export async function listBucketsService(userId: string): Promise<BucketsListPayload> {
@@ -279,7 +286,12 @@ export async function inviteUserService(
 }
 
 export async function acceptInviteService(userId: string, bucketId: string): Promise<BucketDetail> {
-  await requirePendingMember(userId, bucketId);
+  const bucketDoc = await requirePendingMember(userId, bucketId);
+  const member = bucketDoc.members.find((m) => m.userId.toString() === userId);
+  // self-requested pending must be approved by owner, not self-accepted
+  if (member?.invitedBy && member.invitedBy.toString() === userId) {
+    throw new AppError("Your request is pending owner approval", 403, "REQUEST_PENDING");
+  }
   const bucket = await acceptBucketMember(bucketId, userId, new Date());
 
   await logAuditEvent({
@@ -375,6 +387,142 @@ export async function revokeInviteService(
     metadata: { targetUserId },
   });
 
+  return toDetail(updated!);
+}
+
+export async function getBucketPreviewService(
+  userId: string,
+  bucketId: string,
+): Promise<BucketPreview> {
+  const bucket = await findBucketById(bucketId);
+  if (!bucket) {
+    throw new AppError("Bucket not found", 404, "NOT_FOUND");
+  }
+  if (bucket.isPersonal) {
+    throw new AppError("This bucket cannot be shared", 400, "BUCKET_IS_PERSONAL");
+  }
+  const users = await findUsersByIds([bucket.ownerId.toString()]);
+  const owner = users[0];
+  const member = bucket.members.find((m) => m.userId.toString() === userId);
+  return {
+    _id: bucket._id.toString(),
+    name: bucket.name,
+    icon: bucket.icon,
+    ownerId: bucket.ownerId.toString(),
+    ownerName: owner?.name,
+    isPersonal: bucket.isPersonal,
+    memberCount: bucket.members.length,
+    role: member?.role,
+    status: member?.status,
+  };
+}
+
+export async function requestToJoinService(
+  userId: string,
+  bucketId: string,
+): Promise<BucketPreview> {
+  const bucket = await findBucketById(bucketId);
+  if (!bucket) {
+    throw new AppError("Bucket not found", 404, "NOT_FOUND");
+  }
+  if (bucket.isPersonal) {
+    throw new AppError("This bucket cannot be shared", 400, "BUCKET_IS_PERSONAL");
+  }
+  const existing = bucket.members.find((m) => m.userId.toString() === userId);
+  if (existing) {
+    if (existing.status === "accepted") {
+      throw new AppError("You are already a member", 409, "ALREADY_MEMBER");
+    }
+    throw new AppError("Request already pending", 409, "ALREADY_PENDING");
+  }
+  await addBucketMember(bucketId, {
+    userId,
+    role: "member",
+    status: "pending",
+    invitedBy: userId,
+    invitedAt: new Date(),
+  });
+
+  await logAuditEvent({
+    actorId: userId,
+    bucketId,
+    action: "request",
+    entity: "bucket-member",
+    entityId: bucketId,
+    note: `Requested to join "${bucket.name}"`,
+    metadata: { targetUserId: userId },
+  });
+
+  // also notify owner via same audit stream; owner sees it in audit logs
+  const preview = await getBucketPreviewService(userId, bucketId);
+  return preview;
+}
+
+export async function listIncomingRequestsService(
+  userId: string,
+): Promise<IncomingRequestsGroup[]> {
+  const buckets = await listOwnerPendingRequests(userId);
+  if (buckets.length === 0) return [];
+  // only self-requested pending (invitedBy === userId of the pending member) are join requests
+  const isJoinRequest = (m: {
+    userId: Types.ObjectId;
+    invitedBy?: Types.ObjectId;
+    status: string;
+  }) => m.status === "pending" && m.invitedBy?.toString() === m.userId.toString();
+
+  const pendingUserIds = [
+    ...new Set(
+      buckets.flatMap((b) => b.members.filter(isJoinRequest).map((m) => m.userId.toString())),
+    ),
+  ];
+  if (pendingUserIds.length === 0) return [];
+  const users = await findUsersByIds(pendingUserIds);
+  const userById = new Map(users.map((u) => [u._id.toString(), u]));
+  return buckets
+    .map((bucket) => ({
+      bucketId: bucket._id.toString(),
+      name: bucket.name,
+      icon: bucket.icon,
+      requests: bucket.members.filter(isJoinRequest).map((m) => {
+        const user = userById.get(m.userId.toString());
+        return {
+          userId: m.userId.toString(),
+          name: user?.name ?? "",
+          username: user?.username,
+          invitedAt: m.invitedAt?.toISOString(),
+        };
+      }),
+    }))
+    .filter((g) => g.requests.length > 0);
+}
+
+export async function acceptRequestService(
+  ownerId: string,
+  bucketId: string,
+  targetUserId: string,
+): Promise<BucketDetail> {
+  const bucket = await requireOwner(ownerId, bucketId);
+  const member = bucket.members.find((m) => m.userId.toString() === targetUserId);
+  if (!member) {
+    throw new AppError("Request not found", 404, "NOT_FOUND");
+  }
+  if (member.status !== "pending") {
+    throw new AppError("User is already a member", 409, "ALREADY_MEMBER");
+  }
+  // only self-requested joins (invitedBy === target) are approvable here; owner invites are accepted by the invitee
+  if (member.invitedBy && member.invitedBy.toString() !== targetUserId) {
+    throw new AppError("Only join requests can be approved here", 400, "NOT_JOIN_REQUEST");
+  }
+  const updated = await acceptBucketMember(bucketId, targetUserId, new Date());
+  await logAuditEvent({
+    actorId: ownerId,
+    bucketId,
+    action: "accept",
+    entity: "bucket-member",
+    entityId: bucketId,
+    note: `Approved join request for "${bucket.name}"`,
+    metadata: { targetUserId },
+  });
   return toDetail(updated!);
 }
 

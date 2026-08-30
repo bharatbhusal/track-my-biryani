@@ -4,6 +4,7 @@ import { useEffect } from "react";
 
 import { FilterBar, useScopedOptions } from "@/components/filters";
 import { BucketSettings } from "@/features/settings/components/bucket-settings";
+import { IncomingRequestsSection } from "@/features/settings/components/incoming-requests-section";
 import { InvitationsSection } from "@/features/settings/components/invitations-section";
 
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
@@ -26,6 +27,7 @@ export function BucketsPage() {
       <FilterBar variant="buckets" buckets={allBuckets} categories={[]} owners={owners} />
       <BucketSettings />
       <InvitationsSection />
+      <IncomingRequestsSection />
     </div>
   );
 }

@@ -1,5 +1,10 @@
 import { apiRequest } from "@/lib/api/client";
-import type { BucketDetail, BucketSummary } from "@/types/bucket.types";
+import type {
+  BucketDetail,
+  BucketPreview,
+  BucketSummary,
+  IncomingRequestsGroup,
+} from "@/types/bucket.types";
 import type {
   BucketSearchRequest,
   ExpenseFilterCriteria,
@@ -44,5 +49,16 @@ export const bucketsApi = {
     apiRequest<BucketDetail>(
       `/buckets/${encodeURIComponent(id)}/members/${encodeURIComponent(userId)}`,
       { method: "DELETE" },
+    ),
+  getPreview: (id: string) =>
+    apiRequest<BucketPreview>(`/buckets/${encodeURIComponent(id)}/preview`, { method: "GET" }),
+  requestToJoin: (id: string) =>
+    apiRequest<BucketPreview>(`/buckets/${encodeURIComponent(id)}/request`, { method: "POST" }),
+  getIncomingRequests: () =>
+    apiRequest<IncomingRequestsGroup[]>("/buckets/requests", { method: "GET" }),
+  acceptRequest: (id: string, userId: string) =>
+    apiRequest<BucketDetail>(
+      `/buckets/${encodeURIComponent(id)}/requests/${encodeURIComponent(userId)}/accept`,
+      { method: "POST" },
     ),
 };

@@ -125,8 +125,8 @@ export function BucketCard({ bucket, onDelete, onLeave }: BucketCardProps) {
     }
   };
 
-  const handleShare = () => {
-    const url = `${window.location.origin}/buckets/${bucket._id}`;
+  const handleCopyInviteLink = () => {
+    const url = `${window.location.origin}/buckets/${bucket._id}/invite`;
     return shareLink({
       url,
       title: bucket.name,
@@ -134,8 +134,7 @@ export function BucketCard({ bucket, onDelete, onLeave }: BucketCardProps) {
   };
 
   const handleMenu = (value: string) => {
-    if (value === "share") void handleShare();
-    else if (value === "members") openManage();
+    if (value === "members") openManage();
     else if (value === "invite") setInviting(true);
     else if (value === "edit") setRenaming(true);
     else if (value === "leave") setLeaving(true);
@@ -143,7 +142,6 @@ export function BucketCard({ bucket, onDelete, onLeave }: BucketCardProps) {
   };
 
   const menuOptions = [
-    { value: "share", label: "Share" },
     { value: "members", label: "View Members" },
     ...(isOwner && !isPersonal
       ? [
@@ -215,34 +213,59 @@ export function BucketCard({ bucket, onDelete, onLeave }: BucketCardProps) {
         onClose={() => setInviting(false)}
         title={`Invite to ${bucket.name}`}
         subtitle="Add a collaborator"
-        description="Invite by exact username."
       >
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void handleInvite();
-          }}
-        >
+        <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-[var(--color-foreground)]">Username</label>
-            <Input
-              value={inviteUsername}
-              onChange={(e) => setInviteUsername(e.target.value)}
-              placeholder="username"
-              autoFocus
-            />
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => setInviting(false)}>
-              Cancel
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => void handleCopyInviteLink()}
+            >
+              Share invitation link
             </Button>
-            <Button type="submit" disabled={pending || !inviteUsername.trim()}>
-              {pending ? <Spinner className="mr-2" /> : null}
-              Invite
-            </Button>
+            <p className="text-xs text-[var(--color-muted)] text-center">
+              Anyone with this link can request to join. You approve requests in Settings → Buckets.
+            </p>
           </div>
-        </form>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[var(--color-border)]" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-[var(--color-surface)] px-2 text-xs text-[var(--color-muted)]">
+                or
+              </span>
+            </div>
+          </div>
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleInvite();
+            }}
+          >
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-[var(--color-foreground)]">
+                Request by Username
+              </label>
+              <Input
+                value={inviteUsername}
+                onChange={(e) => setInviteUsername(e.target.value)}
+                placeholder="username"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={() => setInviting(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={pending || !inviteUsername.trim()}>
+                {pending ? <Spinner className="mr-2" /> : null}
+                Invite
+              </Button>
+            </div>
+          </form>
+        </div>
       </Modal>
 
       <Modal

@@ -3,13 +3,17 @@ import { NextRequest } from "next/server";
 import { getAuthPayload } from "@/lib/auth";
 import {
   acceptInviteService,
+  acceptRequestService,
   createBucketService,
   declineInviteService,
   deleteBucketService,
+  getBucketPreviewService,
   getBucketStatsService,
   inviteUserService,
   leaveBucketService,
   listBucketsService,
+  listIncomingRequestsService,
+  requestToJoinService,
   revokeInviteService,
   searchBucketsService,
   updateBucketService,
@@ -105,4 +109,36 @@ export async function revokeInvite(
   const auth = await getAuthPayload();
   const { id, userId } = await context.params;
   return revokeInviteService(auth.userId, id, userId);
+}
+
+export async function getBucketPreview(
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
+  const auth = await getAuthPayload();
+  const { id } = await context.params;
+  return getBucketPreviewService(auth.userId, id);
+}
+
+export async function requestToJoin(
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
+  const auth = await getAuthPayload();
+  const { id } = await context.params;
+  return requestToJoinService(auth.userId, id);
+}
+
+export async function listIncomingRequests() {
+  const auth = await getAuthPayload();
+  return listIncomingRequestsService(auth.userId);
+}
+
+export async function acceptRequest(
+  _request: NextRequest,
+  context: { params: Promise<{ id: string; userId: string }> },
+) {
+  const auth = await getAuthPayload();
+  const { id, userId } = await context.params;
+  return acceptRequestService(auth.userId, id, userId);
 }
