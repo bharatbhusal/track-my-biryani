@@ -20,7 +20,6 @@ export function FilterSection({
   onClear,
   isLoading,
   defaultOpen = false,
-  summary,
   children,
 }: FilterSectionProps) {
   const [open, setOpen] = React.useState(defaultOpen);
@@ -42,11 +41,6 @@ export function FilterSection({
           ) : (
             <FiChevronDown className="h-4 w-4 text-[var(--color-muted)]" />
           )}
-          {!open && summary ? (
-            <span className="truncate text-xs font-normal text-[var(--color-muted)]">
-              {summary}
-            </span>
-          ) : null}
         </button>
         <Button
           type="button"

@@ -2,7 +2,6 @@
 
 import { Select } from "@/components/ui/select";
 import { FilterSection } from "./section";
-import { additionalSummary } from "./section-summary";
 
 type AdditionalChange = {
   hasNotes?: boolean;
@@ -38,12 +37,7 @@ export function AdditionalFiltersSection({
   defaultOpen,
 }: AdditionalFiltersSectionProps) {
   return (
-    <FilterSection
-      title="Additional"
-      onClear={onClear}
-      defaultOpen={defaultOpen}
-      summary={additionalSummary(hasNotes, hasLocation)}
-    >
+    <FilterSection title="Additional" onClear={onClear} defaultOpen={defaultOpen}>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <label className="space-y-1">
           <span className="text-xs text-[var(--color-muted)]">Has notes</span>

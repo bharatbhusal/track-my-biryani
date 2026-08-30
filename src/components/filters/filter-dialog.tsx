@@ -6,13 +6,12 @@ import { ConfirmDialog, Modal } from "@/components/modals/dialog";
 import { Button } from "@/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { AdditionalFiltersSection } from "./additional-filters-section";
-import { BucketFilterSection } from "./bucket-filter-section";
-import { CategoryFilterSection } from "./category-filter-section";
+import { BucketCategoryFilterSection } from "./bucket-category-filter-section";
 import { DateFilterSection } from "./date-filter-section";
 import { OwnerFilterSection } from "./owner-filter-section";
 import { SearchSection } from "./search-section";
 import { SortSection } from "./sort-section";
-import { useScopedOptions } from "./use-scoped-options";
+import { useAllBucketCategories, useScopedOptions } from "./use-scoped-options";
 import {
   ACTIONS,
   SORT_FIELDS,
@@ -46,6 +45,7 @@ export function FilterDialog({
   const sliceState = useAppSelector((s) => (s.filters as Record<string, any>)[variant]);
   const state = sliceState;
   const buckets = useAppSelector((s) => s.buckets.allBuckets);
+  const authUser = useAppSelector((s) => s.auth.user);
 
   const [confirmClear, setConfirmClear] = useState(false);
 
@@ -66,37 +66,101 @@ export function FilterDialog({
     setDraft((d) => ({ ...d, criteria: updater(d.criteria) }));
   const setSort = (next: SortCriteria) => setDraft((d) => ({ ...d, sort: next }));
 
-  const scoped = useScopedOptions(
-    open && (sections.categories || sections.owners),
+  // all bucket categories (for nested list, always load when either buckets or categories section is visible)
+  const allBucketCats = useAllBucketCategories(
+    open && (sections.buckets || sections.categories),
     buckets,
-    criteria.bucketPreset as any,
-    criteria.bucketIds as any,
+  );
+  // effective ids for scoped owners (ids-only, empty => all? keep legacy compat)
+  const effectiveBucketIdsForOwners = (() => {
+    const preset = (criteria as any).bucketPreset;
+    const ids = (criteria as any).bucketIds as string[] | undefined;
+    if (preset === "PERSONAL") {
+      const pid = buckets.find((b) => b.isPersonal)?._id;
+      return pid ? [pid] : (ids ?? []);
+    }
+    if (preset === "ALL") return buckets.map((b) => b._id);
+    if (ids && ids.length > 0) return ids;
+    // legacy empty MULTIPLE or ALL without preset => treat as all
+    return buckets.map((b) => b._id);
+  })();
+
+  const scoped = useScopedOptions(
+    open && sections.owners,
+    buckets,
+    undefined,
+    effectiveBucketIdsForOwners,
   );
 
   const patch = (next: Partial<DraftCriteria>) => setCriteria((c) => ({ ...c, ...next }));
 
+  // helpers to normalize draft ids to explicit lists (ids-only, no preset)
+  const effectiveBucketIds = (() => {
+    const preset = (criteria as any).bucketPreset;
+    const ids = (criteria as any).bucketIds as string[] | undefined;
+    if (preset === "PERSONAL") {
+      const pid = buckets.find((b) => b.isPersonal)?._id;
+      return pid ? [pid] : [];
+    }
+    if (preset === "ALL") return buckets.map((b) => b._id);
+    if (ids && ids.length > 0) return ids;
+    // ids-only empty => none? but for initial legacy state (empty+ALL) we mapped above; fallback to personal
+    if (buckets.length > 0 && (!ids || ids.length === 0) && preset === undefined) {
+      // treat empty ids as all buckets for display before user interacts
+      return buckets.map((b) => b._id);
+    }
+    return ids ?? [];
+  })();
+
+  const effectiveCategoryIds = (() => {
+    const preset = (criteria as any).categoryPreset;
+    const ids = (criteria as any).categoryIds as string[] | undefined;
+    if (preset === "ALL") {
+      return [
+        ...new Set(
+          Object.values(allBucketCats.categoriesByBucket)
+            .flat()
+            .map((c) => c._id),
+        ),
+      ];
+    }
+    return ids ?? [];
+  })();
+
+  const effectiveOwnerIds = (() => {
+    const preset = (criteria as any).ownerPreset;
+    const ids = (criteria as any).ownerIds as string[] | undefined;
+    if (preset === "ME") return authUser?.id ? [authUser.id] : [];
+    if (preset === "ALL") return scoped.owners.map((o) => o.id);
+    return ids ?? [];
+  })();
+
+  const bucketCategoryLoading = allBucketCats.isLoading || scoped.isLoading;
+
   const apply = () => {
-    if (sections.buckets && actions.setBucketFilter) {
+    // ids-only: always MULTIPLE (preset is legacy, we force MULTIPLE)
+    const showBuckets = sections.buckets || sections.categories;
+    if (showBuckets && actions.setBucketFilter) {
       dispatch(
         actions.setBucketFilter({
-          preset: (criteria.bucketPreset as any) ?? "PERSONAL",
-          ids: (criteria.bucketIds as any) ?? [],
+          preset: "MULTIPLE",
+          ids: effectiveBucketIds,
         }),
       );
     }
     if (sections.categories && actions.setCategoryFilter) {
       dispatch(
         actions.setCategoryFilter({
-          preset: (criteria.categoryPreset as any) ?? "ALL",
-          ids: (criteria.categoryIds as any) ?? [],
+          preset: "MULTIPLE",
+          ids: effectiveCategoryIds,
         }),
       );
     }
     if (sections.owners && actions.setOwnerFilter) {
       dispatch(
         actions.setOwnerFilter({
-          preset: (criteria.ownerPreset as any) ?? "ME",
-          ids: (criteria.ownerIds as any) ?? [],
+          preset: "MULTIPLE",
+          ids: effectiveOwnerIds,
         }),
       );
     }
@@ -121,11 +185,54 @@ export function FilterDialog({
   };
 
   const clearAll = () => {
-    if (actions.clearAllFilters) {
-      dispatch(actions.clearAllFilters());
+    // ponytail: clear to personal bucket + its categories (ids-only), not preset ALL
+    const personalId = buckets.find((b) => b.isPersonal)?._id ?? buckets[0]?._id;
+    if (personalId) {
+      const personalCatIds = (allBucketCats.categoriesByBucket[personalId] ?? []).map((c) => c._id);
+      if (actions.setBucketFilter)
+        dispatch(actions.setBucketFilter({ preset: "MULTIPLE", ids: [personalId] }));
+      if (sections.categories && actions.setCategoryFilter)
+        dispatch(actions.setCategoryFilter({ preset: "MULTIPLE", ids: personalCatIds }));
+      else if (actions.setCategoryFilter)
+        dispatch(actions.setCategoryFilter({ preset: "MULTIPLE", ids: [] }));
+    } else {
+      if (actions.clearBucketFilter) dispatch(actions.clearBucketFilter());
+      if (actions.clearCategoryFilter) dispatch(actions.clearCategoryFilter());
     }
+    if (sections.owners && actions.setOwnerFilter) {
+      const meId = authUser?.id;
+      if (meId) dispatch(actions.setOwnerFilter({ preset: "MULTIPLE", ids: [meId] }));
+      else if (actions.clearOwnerFilter) dispatch(actions.clearOwnerFilter());
+    } else if (actions.clearOwnerFilter) {
+      dispatch(actions.clearOwnerFilter());
+    }
+    if (sections.date && actions.clearDateFilter) dispatch(actions.clearDateFilter());
+    if (sections.search && actions.setSearch) dispatch(actions.setSearch(undefined));
+    if (sections.additional && actions.clearAdditionalFilters)
+      dispatch(actions.clearAdditionalFilters());
+    if (sections.sort && actions.clearSort) dispatch(actions.clearSort());
     setConfirmClear(false);
     onClose();
+  };
+
+  const handleBucketCategoryClear = () => {
+    const personalId = buckets.find((b) => b.isPersonal)?._id ?? buckets[0]?._id;
+    if (!personalId) {
+      patch({
+        bucketPreset: "MULTIPLE" as any,
+        bucketIds: [] as any,
+        categoryPreset: "MULTIPLE" as any,
+        categoryIds: [] as any,
+      });
+      return;
+    }
+    const personalCatIds = (allBucketCats.categoriesByBucket[personalId] ?? []).map((c) => c._id);
+    patch({
+      bucketPreset: "MULTIPLE" as any,
+      bucketIds: [personalId] as any,
+      categoryPreset: "MULTIPLE" as any,
+      categoryIds: personalCatIds as any,
+    });
   };
 
   return (
@@ -144,44 +251,34 @@ export function FilterDialog({
             />
           ) : null}
 
-          {sections.buckets ? (
-            <BucketFilterSection
-              preset={(criteria.bucketPreset as any) ?? "PERSONAL"}
-              bucketIds={(criteria.bucketIds as any) ?? []}
-              buckets={buckets}
-              onChange={({ preset, ids }) =>
-                patch({ bucketPreset: preset as any, bucketIds: ids as any })
-              }
-              onClear={() => patch({ bucketPreset: "PERSONAL" as any, bucketIds: [] as any })}
-              defaultOpen={false}
-            />
-          ) : null}
-
-          {sections.categories ? (
-            <CategoryFilterSection
-              preset={(criteria.categoryPreset as any) ?? "ALL"}
-              categoryIds={(criteria.categoryIds as any) ?? []}
-              categories={scoped.categories}
-              isLoading={scoped.isLoading}
-              onChange={({ preset, ids }) =>
-                patch({ categoryPreset: preset as any, categoryIds: ids as any })
-              }
-              onClear={() => patch({ categoryPreset: "ALL" as any, categoryIds: [] as any })}
-              defaultOpen={false}
-            />
-          ) : null}
-
           {sections.owners ? (
             <OwnerFilterSection
-              preset={(criteria.ownerPreset as any) ?? "ME"}
-              ownerIds={(criteria.ownerIds as any) ?? []}
+              ownerIds={effectiveOwnerIds}
               owners={scoped.owners}
               isLoading={scoped.isLoading}
-              onChange={({ preset, ids }) =>
-                patch({ ownerPreset: preset as any, ownerIds: ids as any })
+              onChange={(ids) => patch({ ownerPreset: "MULTIPLE" as any, ownerIds: ids as any })}
+              onClear={() => {
+                const meId = authUser?.id;
+                patch({ ownerPreset: "MULTIPLE" as any, ownerIds: (meId ? [meId] : []) as any });
+              }}
+            />
+          ) : null}
+
+          {sections.buckets || sections.categories ? (
+            <BucketCategoryFilterSection
+              buckets={buckets}
+              bucketIds={effectiveBucketIds}
+              categoryIds={effectiveCategoryIds}
+              categoriesByBucket={allBucketCats.categoriesByBucket}
+              isLoading={bucketCategoryLoading}
+              categoriesEnabled={!!sections.categories}
+              onBucketIdsChange={(ids) =>
+                patch({ bucketPreset: "MULTIPLE" as any, bucketIds: ids as any })
               }
-              onClear={() => patch({ ownerPreset: "ME" as any, ownerIds: [] as any })}
-              defaultOpen={false}
+              onCategoryIdsChange={(ids) =>
+                patch({ categoryPreset: "MULTIPLE" as any, categoryIds: ids as any })
+              }
+              onClear={handleBucketCategoryClear}
             />
           ) : null}
 
