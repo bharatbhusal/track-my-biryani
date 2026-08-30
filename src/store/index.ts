@@ -17,6 +17,7 @@ import uiReducer from "./slices/uiSlice";
 import expenseReducer from "./slices/expenseSlice";
 import categoryReducer from "./slices/categorySlice";
 import bucketReducer from "./slices/bucketSlice";
+import budgetReducer from "./slices/budgetSlice";
 import filtersReducer, { initialFiltersState } from "./slices/filtersSlice";
 
 const rootReducer = combineReducers({
@@ -25,6 +26,7 @@ const rootReducer = combineReducers({
   expenses: expenseReducer,
   categories: categoryReducer,
   buckets: bucketReducer,
+  budgets: budgetReducer,
   filters: filtersReducer,
 });
 
@@ -34,7 +36,7 @@ const persistConfig: PersistConfig<RootReducerState> = {
   key: "root",
   storage,
   stateReconciler: autoMergeLevel2 as PersistConfig<RootReducerState>["stateReconciler"],
-  whitelist: ["auth", "ui", "expenses", "categories", "filters", "buckets"],
+  whitelist: ["auth", "ui", "expenses", "categories", "filters", "buckets", "budgets"],
   version: 1,
   migrate: ((state: unknown) => {
     const s = state as Partial<RootReducerState> | undefined;

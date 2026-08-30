@@ -111,5 +111,7 @@ export const config = {
     "/auth/:path*",
     "/settings",
     "/buckets/:path*",
+    "/budgets/:path*",
+    "/budgets",
   ],
 };
