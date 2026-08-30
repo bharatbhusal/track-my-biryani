@@ -7,6 +7,7 @@ module.exports = {
   distribution,
   expenses,
   buckets,
+  budgets,
 };
 
 function overview({ from, to, bucketId } = {}) {
@@ -107,4 +108,8 @@ function buckets() {
     pagination: { page: 1, pageSize: 20 },
   };
   return request("/buckets/search", { method: "POST", body });
+}
+
+function budgets() {
+  return request("/budgets", { method: "GET" });
 }
