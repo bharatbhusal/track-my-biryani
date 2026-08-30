@@ -1,7 +1,7 @@
-const config = importModule("config")
+const config = importModule("config");
 
 module.exports = {
-	log(...args) {
-		if (config.DEBUG) console.log(...args)
-	},
-}
+  log(...args) {
+    if (config.DEBUG) console.log(...args);
+  },
+};

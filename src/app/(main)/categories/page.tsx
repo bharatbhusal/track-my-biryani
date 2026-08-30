@@ -1,9 +1,9 @@
 import { CategoryManager } from "@/features/categories/components/category-manager";
 
 export const metadata = {
-	title: "Categories",
+  title: "Categories",
 };
 
 export default function CategoriesPage() {
-	return <CategoryManager />;
+  return <CategoryManager />;
 }

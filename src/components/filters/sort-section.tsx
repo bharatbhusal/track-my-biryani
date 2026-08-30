@@ -10,68 +10,61 @@ import type { SortDirection } from "@/types/search.types";
 export type SortField = { value: string; label: string };
 
 type SortSectionProps = {
-	field: string;
-	direction: SortDirection;
-	fields: SortField[];
-	onChange: (next: { field: string; direction: SortDirection }) => void;
-	onClear: () => void;
-	defaultOpen?: boolean;
+  field: string;
+  direction: SortDirection;
+  fields: SortField[];
+  onChange: (next: { field: string; direction: SortDirection }) => void;
+  onClear: () => void;
+  defaultOpen?: boolean;
 };
 
 function sortLabel(fields: SortField[], field: string): string {
-	return fields.find((f) => f.value === field)?.label ?? field;
+  return fields.find((f) => f.value === field)?.label ?? field;
 }
 
 export function SortSection({
-	field,
-	direction,
-	fields,
-	onChange,
-	onClear,
-	defaultOpen,
+  field,
+  direction,
+  fields,
+  onChange,
+  onClear,
+  defaultOpen,
 }: SortSectionProps) {
-	return (
-		<FilterSection
-			title="Sort"
-			onClear={onClear}
-			defaultOpen={defaultOpen}
-			summary={`${sortLabel(fields, field)} ${
-				direction === "ASC" ? "↑" : "↓"
-			}`}
-		>
-			<div className="flex items-center gap-2">
-				<Select
-					value={field}
-					onChange={(e) => onChange({ field: e.target.value, direction })}
-				>
-					{fields.map((f) => (
-						<option key={f.value} value={f.value}>
-							{f.label}
-						</option>
-					))}
-				</Select>
-				<Button
-					type="button"
-					variant="outline"
-					size="icon"
-					aria-label={
-						direction === "ASC" ? "Sort ascending" : "Sort descending"
-					}
-					onClick={() =>
-						onChange({
-							field,
-							direction: direction === "ASC" ? "DESC" : "ASC",
-						})
-					}
-					className="shrink-0"
-				>
-					{direction === "ASC" ? (
-						<FiArrowUp className="h-4 w-4" />
-					) : (
-						<FiArrowDown className="h-4 w-4" />
-					)}
-				</Button>
-			</div>
-		</FilterSection>
-	);
+  return (
+    <FilterSection
+      title="Sort"
+      onClear={onClear}
+      defaultOpen={defaultOpen}
+      summary={`${sortLabel(fields, field)} ${direction === "ASC" ? "↑" : "↓"}`}
+    >
+      <div className="flex items-center gap-2">
+        <Select value={field} onChange={(e) => onChange({ field: e.target.value, direction })}>
+          {fields.map((f) => (
+            <option key={f.value} value={f.value}>
+              {f.label}
+            </option>
+          ))}
+        </Select>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          aria-label={direction === "ASC" ? "Sort ascending" : "Sort descending"}
+          onClick={() =>
+            onChange({
+              field,
+              direction: direction === "ASC" ? "DESC" : "ASC",
+            })
+          }
+          className="shrink-0"
+        >
+          {direction === "ASC" ? (
+            <FiArrowUp className="h-4 w-4" />
+          ) : (
+            <FiArrowDown className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+    </FilterSection>
+  );
 }

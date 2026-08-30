@@ -5,5 +5,5 @@
 // overrides these defaults with the browser locale (e.g. en-US -> USD).
 
 export function useLocalePreferences(): void {
-	// no-op
+  // no-op
 }

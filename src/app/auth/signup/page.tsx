@@ -1,15 +1,15 @@
 import { AuthForm } from "@/features/auth/components/auth-form";
 
 export const metadata = {
-	title: "Sign Up",
+  title: "Sign Up",
 };
 
 export default async function SignupPage({
-	searchParams,
+  searchParams,
 }: {
-	searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string }>;
 }) {
-	const { next } = await searchParams;
+  const { next } = await searchParams;
 
-	return <AuthForm mode="signup" nextPath={next} />;
+  return <AuthForm mode="signup" nextPath={next} />;
 }

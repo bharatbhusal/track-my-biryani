@@ -10,26 +10,19 @@ import { PwaProvider } from "@/components/providers/pwa-provider";
 import { AppThemeProvider } from "@/components/providers/theme-provider";
 import { makeStore } from "@/store";
 
-export function AppProvider({
-	children,
-}: {
-	children: ReactNode;
-}) {
-	const store = useMemo(() => makeStore(), []);
-	const persistor = useMemo(
-		() => persistStore(store),
-		[store],
-	);
+export function AppProvider({ children }: { children: ReactNode }) {
+  const store = useMemo(() => makeStore(), []);
+  const persistor = useMemo(() => persistStore(store), [store]);
 
-	return (
-		<AppThemeProvider>
-			<Provider store={store}>
-				<PersistGate loading={null} persistor={persistor}>
-					<PwaProvider />
-					{children}
-					<ToastProvider />
-				</PersistGate>
-			</Provider>
-		</AppThemeProvider>
-	);
+  return (
+    <AppThemeProvider>
+      <Provider store={store}>
+        <PersistGate loading={null} persistor={persistor}>
+          <PwaProvider />
+          {children}
+          <ToastProvider />
+        </PersistGate>
+      </Provider>
+    </AppThemeProvider>
+  );
 }

@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
-import { ZodError } from 'zod';
+import { NextResponse } from "next/server";
+import { ZodError } from "zod";
 
-import { AppError } from '@/lib/errors';
+import { AppError } from "@/lib/errors";
 
 export function successResponse<T>(data: T, status = 200): NextResponse {
   return NextResponse.json({ success: true, data }, { status });
@@ -13,8 +13,8 @@ export function errorResponse(error: unknown): NextResponse {
       {
         success: false,
         error: {
-          message: 'Validation failed',
-          code: 'VALIDATION_ERROR',
+          message: "Validation failed",
+          code: "VALIDATION_ERROR",
           details: error.flatten(),
         },
       },
@@ -36,7 +36,7 @@ export function errorResponse(error: unknown): NextResponse {
     );
   }
 
-  const message = error instanceof Error ? error.message : 'Something went wrong';
+  const message = error instanceof Error ? error.message : "Something went wrong";
   return NextResponse.json(
     {
       success: false,

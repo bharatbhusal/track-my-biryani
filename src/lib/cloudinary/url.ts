@@ -1,18 +1,22 @@
-import type { CloudinaryTransform } from '@/types/upload.types';
+import type { CloudinaryTransform } from "@/types/upload.types";
 
-export function buildCloudinaryUrl(publicId: string, cloudName: string, transform: CloudinaryTransform = {}): string {
+export function buildCloudinaryUrl(
+  publicId: string,
+  cloudName: string,
+  transform: CloudinaryTransform = {},
+): string {
   if (!cloudName) {
-    return '';
+    return "";
   }
 
   const clauses = [
     transform.width ? `w_${transform.width}` : undefined,
     transform.height ? `h_${transform.height}` : undefined,
     transform.crop ? `c_${transform.crop}` : undefined,
-    transform.quality ? `q_${transform.quality}` : 'q_auto',
-    transform.format ? `f_${transform.format}` : 'f_auto',
+    transform.quality ? `q_${transform.quality}` : "q_auto",
+    transform.format ? `f_${transform.format}` : "f_auto",
   ].filter(Boolean);
 
-  const transforms = clauses.length > 0 ? `${clauses.join(',')}/` : '';
+  const transforms = clauses.length > 0 ? `${clauses.join(",")}/` : "";
   return `https://res.cloudinary.com/${cloudName}/image/upload/${transforms}${publicId}`;
 }

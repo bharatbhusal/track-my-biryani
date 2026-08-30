@@ -1,7 +1,7 @@
 export default function ExpensesLayout({
-	children,
+  children,
 }: Readonly<{
-	children: React.ReactNode;
+  children: React.ReactNode;
 }>) {
-	return <div className="h-full space-y-4">{children}</div>;
+  return <div className="h-full space-y-4">{children}</div>;
 }
