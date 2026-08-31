@@ -19,6 +19,7 @@ const { renderSmall } = importModule("components/budget-accessory/small");
 const { renderMedium } = importModule("components/budget-accessory/medium");
 const { renderLarge } = importModule("components/budget-accessory/large");
 const { renderCircular } = importModule("components/budget-accessory/circular");
+const errorComp = importModule("components/error");
 
 const { t } = theme;
 const { font } = layout;
@@ -38,39 +39,10 @@ bootstrap.run(async () => {
   const param = String(args.widgetParameter || "").trim();
   const { bucket, budget: pick, bucketId } = await widgets.budgetAccessory({ bucketId: param });
 
-  // ── Shared empty states (all sizes) ──
-  if (!bucketId) {
-    const title = widget.addText("Set bucket ID");
-    title.font = font("semibold", 12);
-    title.textColor = t("muted");
-    title.centerAlignText();
-    return widget;
-  }
-  if (!bucket) {
-    const title = widget.addText("Bucket not found");
-    title.font = font("semibold", 12);
-    title.textColor = t("muted");
-    title.centerAlignText();
-    widget.addSpacer(2);
-    const id = widget.addText(bucketId);
-    id.font = font("regular", 8);
-    id.textColor = t("muted");
-    id.centerAlignText();
-    id.lineLimit = 1;
-    return widget;
-  }
-  if (!pick) {
-    const title = widget.addText(bucket.name || "Budget");
-    title.font = font("semibold", 12);
-    title.textColor = t("text");
-    title.centerAlignText();
-    widget.addSpacer(4);
-    const msg = widget.addText("No bucket budget");
-    msg.font = font("regular", 10);
-    msg.textColor = t("muted");
-    msg.centerAlignText();
-    return widget;
-  }
+  // ── Shared empty states via error component (no duplicate UI) ──
+  if (!bucketId) return errorComp.renderNoBucketId(widget);
+  if (!bucket) return errorComp.renderBucketNotFound(widget, bucketId);
+  if (!pick) return errorComp.renderNoBudget(widget, bucket.name);
 
   // ── Layout switch via layout helpers (no plain strings) ──
   if (layout.isSmall()) return renderSmall(widget, { bucket, budget: pick });

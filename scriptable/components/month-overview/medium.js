@@ -7,6 +7,7 @@ const layout = importModule("lib/layout");
 const moneyLib = importModule("lib/money");
 const shared = importModule("components/shared");
 const overviewComp = importModule("components/month-overview/rectangular");
+const errorComp = importModule("components/error");
 
 const { t } = theme;
 const { font } = layout;
@@ -53,12 +54,10 @@ function renderMedium(widget, { bucketName, expenses, total, totalSpend, month }
   perDayValue.font = font("semibold", 14);
   perDayValue.textColor = t("text");
   perDayValue.rightAlignText();
-  // Latest
+  // Latest — empty state via error component
   widget.addSpacer(8);
   if (expenses.length === 0) {
-    const empty = widget.addText("No expenses");
-    empty.font = font("regular", 10);
-    empty.textColor = t("muted");
+    errorComp.renderNoData(widget, "No expenses");
   } else {
     const latest = expenses.slice(0, 3);
     for (let i = 0; i < latest.length; i++) {

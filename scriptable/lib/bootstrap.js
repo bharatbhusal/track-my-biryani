@@ -3,7 +3,7 @@
 // Widget lifecycle helper: ensures auth, builds widget, adds refresh footer,
 // sets deep link + refresh date, presents in-app preview, handles errors.
 // Widgets should only implement `async () => ListWidget` and let bootstrap
-// handle session + presentation + error UI (via lib/error.js).
+// handle session + presentation + error UI (via components/error.js).
 // ─────────────────────────────────────────────────────────────────────────────
 
 const cfg = importModule("config"); // app config (BASE_URL, REFRESH_MINUTES)
@@ -11,7 +11,7 @@ const debug = importModule("lib/debug");
 const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
 const date = importModule("lib/date");
-const errorComp = importModule("lib/error"); // separate error component
+const errorComp = importModule("components/error"); // moved from lib/error.js — lib should not contain UI
 
 module.exports = { run, renderError };
 
@@ -73,7 +73,7 @@ function addRefreshFooter(widget) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// renderError: delegates to lib/error.js single component for consistency
+// renderError: delegates to components/error.js single component for consistency
 // ─────────────────────────────────────────────────────────────────────────────
 function renderError(e) {
   debug.log(e);

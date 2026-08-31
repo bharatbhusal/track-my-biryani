@@ -7,6 +7,7 @@ const layout = importModule("lib/layout");
 const moneyLib = importModule("lib/money");
 const shared = importModule("components/shared");
 const catComp = importModule("components/category-month/rectangular");
+const errorComp = importModule("components/error");
 
 const { t } = theme;
 const { font } = layout;
@@ -30,9 +31,7 @@ function renderLarge(widget, { bucketName, categories, totalSpend }) {
   sub.textColor = t("muted");
   if (!categories.length) {
     widget.addSpacer(10);
-    const empty = widget.addText("No category spending yet");
-    empty.font = font("regular", 10);
-    empty.textColor = t("muted");
+    errorComp.renderNoData(widget, "No category spending yet");
     widget.addSpacer();
     footer(widget, { left: bucketName, right: "₹0" });
     return widget;

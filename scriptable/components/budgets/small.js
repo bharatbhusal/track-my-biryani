@@ -6,6 +6,7 @@ const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
 const moneyLib = importModule("lib/money");
 const shared = importModule("components/shared");
+const errorComp = importModule("components/error");
 
 const { t } = theme;
 const { font } = layout;
@@ -15,13 +16,7 @@ module.exports = { renderSmall };
 
 function renderSmall(widget, { bucket, bucketBudgets, categoryBudgets }) {
   const pick = bucketBudgets[0] || categoryBudgets[0];
-  if (!pick) {
-    const e = widget.addText("No budget");
-    e.font = font("regular", 11);
-    e.textColor = t("muted");
-    e.centerAlignText();
-    return widget;
-  }
+  if (!pick) return errorComp.renderNoData(widget, "No budget");
   const icon = widget.addText(bucket.icon || "💰");
   icon.font = font("regular", 16);
   icon.centerAlignText();

@@ -8,6 +8,7 @@ const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
 const moneyLib = importModule("lib/money");
 const shared = importModule("components/shared");
+const errorComp = importModule("components/error");
 
 const { t } = theme;
 const { font } = layout;
@@ -165,13 +166,7 @@ function budgetHeroCard(
 // ─────────────────────────────────────────────────────────────────────────────
 function renderRectangular(widget, { bucket, bucketName, bucketBudgets, categoryBudgets }) {
   const b = bucketBudgets[0] || categoryBudgets[0];
-  if (!b) {
-    const e = widget.addText("No budget");
-    e.font = font("regular", 10);
-    e.textColor = t("muted");
-    e.centerAlignText();
-    return widget;
-  }
+  if (!b) return errorComp.renderNoData(widget, "No budget");
   // Compact hero card for 145pt rectangular accessory
   budgetHeroCard(widget, {
     title: bucketName,

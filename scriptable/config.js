@@ -17,6 +17,6 @@ module.exports = {
   BUCKET_HEADER: "x-bucket-id",
   RESET_CREDENTIALS: false, // set true to force re-prompt
   DEBUG: true, // set false to silence logs
-  REFRESH_MINUTES: 15, // widget refreshAfterDate
+  REFRESH_MINUTES: 10, // widget refreshAfterDate
   REQUEST_TIMEOUT: 15, // seconds
 };

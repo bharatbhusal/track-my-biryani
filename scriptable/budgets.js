@@ -15,6 +15,7 @@ const { renderMedium } = importModule("components/budgets/medium");
 const { renderLarge } = importModule("components/budgets/large");
 const { renderCircular } = importModule("components/budgets/circular");
 const { renderRectangular } = importModule("components/budgets/rectangular");
+const errorComp = importModule("components/error");
 
 const { t } = theme;
 const { font } = layout;
@@ -29,44 +30,10 @@ bootstrap.run(async () => {
   const param = String(args.widgetParameter || "").trim();
   const { bucket, bucketId, bucketName, bucketBudgets, categoryBudgets } = await widgets.budgetsWidget({ bucketId: param });
 
-  // Shared empty states for all sizes
-  if (!bucketId) {
-    const title = widget.addText("Track My Biryani");
-    title.font = font("semibold", 14);
-    title.textColor = t("text");
-    title.centerAlignText();
-    widget.addSpacer(5);
-    const msg = widget.addText("Set a bucket ID in Widget Parameter");
-    msg.font = font("regular", 10);
-    msg.textColor = t("muted");
-    msg.centerAlignText();
-    return widget;
-  }
-  if (!bucket) {
-    const title = widget.addText("Bucket Not Found");
-    title.font = font("semibold", 14);
-    title.textColor = t("text");
-    title.centerAlignText();
-    widget.addSpacer(5);
-    const msg = widget.addText(bucketId);
-    msg.font = font("regular", 9);
-    msg.textColor = t("muted");
-    msg.centerAlignText();
-    msg.lineLimit = 2;
-    return widget;
-  }
-  if (bucketBudgets.length === 0 && categoryBudgets.length === 0) {
-    const title = widget.addText(bucketName);
-    title.font = font("semibold", 14);
-    title.textColor = t("text");
-    title.centerAlignText();
-    widget.addSpacer(5);
-    const msg = widget.addText("No budgets — create one in the app");
-    msg.font = font("regular", 10);
-    msg.textColor = t("muted");
-    msg.centerAlignText();
-    return widget;
-  }
+  // Empty states via error component (custom messages, no duplicates)
+  if (!bucketId) return errorComp.addInlineError(widget, { title: "Track My Biryani", message: "Set a bucket ID in Widget Parameter", titleSize: 14, messageSize: 10, titleColor: "text" });
+  if (!bucket) return errorComp.addInlineError(widget, { title: "Bucket Not Found", message: String(bucketId || ""), titleSize: 14, messageSize: 9, titleColor: "text" });
+  if (bucketBudgets.length === 0 && categoryBudgets.length === 0) return errorComp.addInlineError(widget, { title: bucketName || "Budgets", message: "No budgets — create one in the app", titleSize: 14, messageSize: 10, titleColor: "text" });
 
   // Layout via helpers — no plain string comparisons
   if (layout.isSmall()) return renderSmall(widget, { bucket, bucketBudgets, categoryBudgets });

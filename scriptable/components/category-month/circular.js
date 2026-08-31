@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
+const errorComp = importModule("components/error");
 
 const { t } = theme;
 const { font } = layout;
@@ -13,10 +14,7 @@ module.exports = { renderCircular };
 function renderCircular(widget, { categories }) {
   widget.addSpacer();
   if (!categories.length) {
-    const e = widget.addText("—");
-    e.font = font("regular", 12);
-    e.textColor = t("muted");
-    e.centerAlignText();
+    errorComp.renderNoData(widget, "—");
     widget.addSpacer();
     return widget;
   }

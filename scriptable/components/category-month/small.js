@@ -5,6 +5,7 @@
 const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
 const catComp = importModule("components/category-month/rectangular");
+const errorComp = importModule("components/error");
 
 const { t } = theme;
 const { font } = layout;
@@ -14,13 +15,7 @@ module.exports = { renderSmall };
 
 // Small: compact, 2 categories max, stacked bar on top
 function renderSmall(widget, { categories }) {
-  if (!categories.length) {
-    const e = widget.addText("No spending");
-    e.font = font("regular", 10);
-    e.textColor = t("muted");
-    e.centerAlignText();
-    return widget;
-  }
+  if (!categories.length) return errorComp.renderNoData(widget, "No spending");
   // Tiny stacked bar
   stackedCategoryBar(widget, categories);
   widget.addSpacer(6);

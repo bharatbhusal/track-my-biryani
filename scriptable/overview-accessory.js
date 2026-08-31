@@ -16,9 +16,6 @@ const { renderLarge } = importModule("components/overview-accessory/large");
 const { renderCircular } = importModule("components/overview-accessory/circular");
 const { renderRectangular } = importModule("components/overview-accessory/rectangular");
 
-const { t } = theme;
-const { font } = layout;
-
 bootstrap.run(async () => {
   const widget = new ListWidget();
   widget.backgroundColor = theme.background();

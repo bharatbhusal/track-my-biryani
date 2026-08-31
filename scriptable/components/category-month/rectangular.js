@@ -8,6 +8,7 @@ const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
 const moneyLib = importModule("lib/money");
 const shared = importModule("components/shared");
+const errorComp = importModule("components/error");
 
 const { t } = theme;
 const { font } = layout;
@@ -133,13 +134,7 @@ function stackedCategoryBar(parent, categories) {
 // Used for Lock Screen rectangular — tight, no footer, 3 rows max.
 // ─────────────────────────────────────────────────────────────────────────────
 function renderRectangular(widget, { categories }) {
-  if (!categories.length) {
-    const empty = widget.addText("No spending");
-    empty.font = font("regular", 10);
-    empty.textColor = t("muted");
-    empty.centerAlignText();
-    return widget;
-  }
+  if (!categories.length) return errorComp.renderNoData(widget, "No spending");
   const top = categories.slice(0, 3);
   for (let i = 0; i < top.length; i++) {
     categoryCompactBar(widget, top[i]);

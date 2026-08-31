@@ -68,6 +68,7 @@ function renderRectangular(widget, { bucket, bucketName, expenses, total, totalS
   const perDay = month.currentDay > 0 ? totalSpend / month.currentDay : 0;
   const moneyLib = importModule("lib/money");
   const shared = importModule("components/shared");
+  const errorComp = importModule("components/error");
   const { footer } = shared;
   const { moneyShort, compact } = moneyLib;
   const { font } = importModule("lib/layout");
@@ -90,7 +91,7 @@ function renderRectangular(widget, { bucket, bucketName, expenses, total, totalS
   day.rightAlignText();
   widget.addSpacer(4);
 
-  // 2 latest expenses compact
+  // 2 latest expenses compact — empty via error component
   if (expenses.length) {
     const top = expenses.slice(0, 2);
     for (let i = 0; i < top.length; i++) {
@@ -98,10 +99,7 @@ function renderRectangular(widget, { bucket, bucketName, expenses, total, totalS
       if (i < top.length - 1) widget.addSpacer(4);
     }
   } else {
-    const e = widget.addText("No expenses");
-    e.font = font("regular", 9);
-    e.textColor = t("muted");
-    e.centerAlignText();
+    errorComp.renderNoData(widget, "No expenses");
   }
   widget.addSpacer();
   // Footer: Day X/Y left, perDay right

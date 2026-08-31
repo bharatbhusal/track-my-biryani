@@ -7,6 +7,7 @@ const layout = importModule("lib/layout");
 const moneyLib = importModule("lib/money");
 const shared = importModule("components/shared");
 const overviewComp = importModule("components/month-overview/rectangular");
+const errorComp = importModule("components/error");
 
 const { t } = theme;
 const { font } = layout;
@@ -70,9 +71,7 @@ function renderLarge(widget, { bucketName, expenses, total, totalSpend, month })
   section.textColor = t("text");
   widget.addSpacer(6);
   if (expenses.length === 0) {
-    const empty = widget.addText("No expenses this month");
-    empty.font = font("regular", 10);
-    empty.textColor = t("muted");
+    errorComp.renderNoData(widget, "No expenses this month");
   } else {
     const latest = expenses.slice(0, 6);
     for (let i = 0; i < latest.length; i++) {

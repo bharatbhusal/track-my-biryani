@@ -15,6 +15,7 @@ const { renderMedium } = importModule("components/category-month/medium");
 const { renderLarge } = importModule("components/category-month/large");
 const { renderCircular } = importModule("components/category-month/circular");
 const { renderRectangular } = importModule("components/category-month/rectangular");
+const errorComp = importModule("components/error");
 
 const { t } = theme;
 const { font } = layout;
@@ -29,31 +30,8 @@ bootstrap.run(async () => {
     bucketId: param,
   });
 
-  if (!bucketId) {
-    const title = widget.addText("Track My Biryani");
-    title.font = font("semibold", 14);
-    title.textColor = t("text");
-    title.centerAlignText();
-    widget.addSpacer(5);
-    const msg = widget.addText("Set a bucket ID in Widget Parameter");
-    msg.font = font("regular", 10);
-    msg.textColor = t("muted");
-    msg.centerAlignText();
-    return widget;
-  }
-  if (!bucket) {
-    const title = widget.addText("Bucket Not Found");
-    title.font = font("semibold", 14);
-    title.textColor = t("text");
-    title.centerAlignText();
-    widget.addSpacer(5);
-    const msg = widget.addText(bucketId);
-    msg.font = font("regular", 9);
-    msg.textColor = t("muted");
-    msg.centerAlignText();
-    msg.lineLimit = 2;
-    return widget;
-  }
+  if (!bucketId) return errorComp.addInlineError(widget, { title: "Track My Biryani", message: "Set a bucket ID in Widget Parameter", titleSize: 14, messageSize: 10, titleColor: "text" });
+  if (!bucket) return errorComp.addInlineError(widget, { title: "Bucket Not Found", message: String(bucketId || ""), titleSize: 14, messageSize: 9, titleColor: "text" });
 
   // Layout via layout helpers — no plain strings
   if (layout.isSmall()) return renderSmall(widget, { categories });
