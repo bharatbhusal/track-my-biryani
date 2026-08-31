@@ -1,17 +1,18 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // components/overview/medium.js
 // Medium (2x2): header + spent of target + bar + Day left + perDay right
+
 // ─────────────────────────────────────────────────────────────────────────────
 const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
 const moneyLib = importModule("lib/money");
-const shared = importModule("components/shared");
 const date = importModule("lib/date");
+const shared = importModule("components/shared");
 
 const { t } = theme;
 const { font } = layout;
-const { budgetBallTrack } = shared;
 const { budgetPeriodProgress } = date;
+const { budgetBar } = shared;
 
 module.exports = { renderMedium };
 
@@ -45,11 +46,12 @@ function renderMedium(widget, { bucket, budget, perDay }) {
   pct.font = font("semibold", 12);
   pct.textColor = budget.pct >= 100 ? t("danger") : t("success");
   widget.addSpacer(6);
-  budgetBallTrack(widget, {
+  // Simple budgetBar: muted track + colored fill (no ball)
+  budgetBar(widget, {
     pct: budget.pct,
+    width: 280,
     spent: budget.spent,
     target: budget.amount,
-    width: 280,
   });
   widget.addSpacer(8);
   const footer = widget.addStack();

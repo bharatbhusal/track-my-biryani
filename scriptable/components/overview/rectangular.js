@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// components/overview.js
+// components/overview/rectangular.js
 // Combined budget + overview accessory: same compact layout as
 // budget-accessory, but bottom line shows "Day X of Y" left + "590/day" right.
-// Reuses shared budgetBallTrack for the progress ball.
+// Uses shared budgetBar (muted track + colored fill, no ball) as requested.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const theme = importModule("lib/theme");
@@ -12,7 +12,7 @@ const shared = importModule("components/shared");
 
 const { t } = theme;
 const { font } = layout;
-const { budgetBallTrack } = shared;
+const { budgetBar } = shared;
 
 module.exports = { budgetOverviewSummary, renderRectangular };
 
@@ -46,8 +46,7 @@ function budgetOverviewSummary(
   right.rightAlignText();
 
   parent.addSpacer(7);
-  // Line 2: ball track (width 145 for accessory)
-  budgetBallTrack(parent, { pct: raw, spent, target, width: width || 320 });
+  budgetBar(parent, { pct: raw, width, fillColor, spent, target });
   parent.addSpacer(7);
 
   // Line 3: Day X of Y left, perDay right (e.g. "₹590/day")

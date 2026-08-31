@@ -1,6 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // components/overview/large.js
 // Large (4x2): header + big numbers + bar + Day left + perDay right
+
 // ─────────────────────────────────────────────────────────────────────────────
 const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
@@ -10,7 +11,7 @@ const date = importModule("lib/date");
 
 const { t } = theme;
 const { font } = layout;
-const { budgetBallTrack } = shared;
+const { budgetBar } = shared;
 const { budgetPeriodProgress } = date;
 
 module.exports = { renderLarge };
@@ -45,11 +46,12 @@ function renderLarge(widget, { bucket, budget, perDay }) {
   pct.font = font("semibold", 18);
   pct.textColor = budget.pct >= 100 ? t("danger") : t("text");
   widget.addSpacer(10);
-  budgetBallTrack(widget, {
+  // Simple budgetBar: muted track + colored fill (no ball)
+  budgetBar(widget, {
     pct: budget.pct,
+    width: 320,
     spent: budget.spent,
     target: budget.amount,
-    width: 320,
   });
   widget.addSpacer(10);
   const footer = widget.addStack();

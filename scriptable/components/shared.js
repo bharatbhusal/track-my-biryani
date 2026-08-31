@@ -8,14 +8,10 @@
 const format = importModule("lib/format");
 const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
-const moneyLib = importModule("lib/money");
-const date = importModule("lib/date");
 
 // Theme + layout shortcuts — used in every component below.
 const { t } = theme;
 const { font } = layout;
-const { moneyShort } = moneyLib;
-const { relativeDay } = date;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: safely create a Color, fallback to gray if hex is invalid.
@@ -48,7 +44,6 @@ module.exports = {
   card,
   footer,
   budgetBar,
-  budgetBallTrack,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -237,58 +232,4 @@ function budgetBar(parent, { pct, width = 320, trackColor, spent, target, height
     rest.backgroundColor = track;
   }
   return row;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Budget bar with floating ball indicator (hidden when over budget)
-// Shows ball position proportional to pct, used in compact summary
-// ─────────────────────────────────────────────────────────────────────────────
-function budgetBallTrack(parent, { pct, width = 320, trackColor, spent, target } = {}) {
-  const raw = Number(pct) || 0;
-  const clamped = Math.max(0, Math.min(100, raw));
-  const ratio = clamped / 100;
-  const fill = Math.round(width * ratio);
-  const track = trackColor || t("border");
-  const isOver =
-    raw >= 100 || (typeof spent === "number" && typeof target === "number" && spent > target);
-  const fillColor = isOver ? t("danger") : clamped > 85 ? t("warning") : t("success");
-  const showBall = !isOver && raw > 0 && raw < 100;
-
-  if (showBall) {
-    const wrap = parent.addStack();
-    wrap.layoutVertically();
-    wrap.size = new Size(width, 16);
-    wrap.spacing = 0;
-
-    const ballRow = wrap.addStack();
-    ballRow.layoutHorizontally();
-    ballRow.size = new Size(width, 10);
-    const ballOffset = Math.max(0, Math.min(width - 10, fill - 5));
-    if (ballOffset > 0) {
-      const sp = ballRow.addStack();
-      sp.size = new Size(ballOffset, 10);
-    }
-    const ball = ballRow.addStack();
-    ball.size = new Size(10, 10);
-    ball.cornerRadius = 5;
-    ball.backgroundColor = fillColor;
-    ball.borderWidth = 1.2;
-    ball.borderColor = new Color("#ffffff", 1);
-    ballRow.addSpacer();
-
-    const trackRow = wrap.addStack();
-    trackRow.layoutHorizontally();
-    trackRow.size = new Size(width, 6);
-    trackRow.cornerRadius = 3;
-    trackRow.backgroundColor = track;
-    if (fill > 0) {
-      const filled = trackRow.addStack();
-      filled.size = new Size(Math.min(fill, width), 6);
-      filled.cornerRadius = 3;
-      filled.backgroundColor = fillColor;
-    }
-    return wrap;
-  }
-
-  return budgetBar(parent, { pct: raw, width, trackColor: track, spent, target, height: 6 });
 }

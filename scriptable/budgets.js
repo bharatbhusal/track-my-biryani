@@ -62,6 +62,7 @@ bootstrap.run(async () => {
     return renderLarge(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
   if (layout.isCircular() || layout.isInline())
     return renderCircular(widget, { bucket, bucketBudgets, categoryBudgets });
-  if (layout.isRectangular()) return renderRectangular(widget, { bucketBudgets, categoryBudgets });
+  if (layout.isRectangular())
+    return renderRectangular(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
   return renderLarge(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
 });
