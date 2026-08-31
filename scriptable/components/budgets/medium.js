@@ -2,13 +2,8 @@
 // components/budgets/medium.js
 // Medium (2x2): hero + 1 category card, compactMode true
 // ─────────────────────────────────────────────────────────────────────────────
-const theme = importModule("lib/theme");
-const layout = importModule("lib/layout");
-const shared = importModule("components/shared");
 const budgetsComp = importModule("components/budgets/rectangular");
 
-const { t } = theme;
-const { font } = layout;
 // Reuse hero/card from rectangular component file (which holds logic)
 const { budgetHeroCard, budgetCard } = budgetsComp;
 

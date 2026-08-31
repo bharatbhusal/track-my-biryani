@@ -64,7 +64,6 @@ async function run(build) {
 function addRefreshFooter(widget) {
   if (widget.noRefreshFooter) return; // widget explicitly disabled
   if (widget.showRefresh === false) return; // alternative opt-out flag
-  if (layout.isAccessory()) return; // accessory never shows refresh
   if (!layout.isLarge()) return; // only large (incl. extraLarge) shows refresh
   const label = widget.addText(`Refreshed ${date.formatClock24(new Date())}`);
   label.font = layout.font("regular", 10);

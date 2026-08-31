@@ -17,9 +17,6 @@ const { renderCircular } = importModule("components/budgets/circular");
 const { renderRectangular } = importModule("components/budgets/rectangular");
 const errorComp = importModule("components/error");
 
-const { t } = theme;
-const { font } = layout;
-
 bootstrap.run(async () => {
   const widget = new ListWidget();
   widget.backgroundColor = theme.background();
@@ -28,18 +25,43 @@ bootstrap.run(async () => {
   if (layout.isAccessory()) widget.noRefreshFooter = true;
 
   const param = String(args.widgetParameter || "").trim();
-  const { bucket, bucketId, bucketName, bucketBudgets, categoryBudgets } = await widgets.budgetsWidget({ bucketId: param });
+  const { bucket, bucketId, bucketName, bucketBudgets, categoryBudgets } =
+    await widgets.budgetsWidget({ bucketId: param });
 
   // Empty states via error component (custom messages, no duplicates)
-  if (!bucketId) return errorComp.addInlineError(widget, { title: "Track My Biryani", message: "Set a bucket ID in Widget Parameter", titleSize: 14, messageSize: 10, titleColor: "text" });
-  if (!bucket) return errorComp.addInlineError(widget, { title: "Bucket Not Found", message: String(bucketId || ""), titleSize: 14, messageSize: 9, titleColor: "text" });
-  if (bucketBudgets.length === 0 && categoryBudgets.length === 0) return errorComp.addInlineError(widget, { title: bucketName || "Budgets", message: "No budgets — create one in the app", titleSize: 14, messageSize: 10, titleColor: "text" });
+  if (!bucketId)
+    return errorComp.addInlineError(widget, {
+      title: "Track My Biryani",
+      message: "Set a bucket ID in Widget Parameter",
+      titleSize: 14,
+      messageSize: 10,
+      titleColor: "text",
+    });
+  if (!bucket)
+    return errorComp.addInlineError(widget, {
+      title: "Bucket Not Found",
+      message: String(bucketId || ""),
+      titleSize: 14,
+      messageSize: 9,
+      titleColor: "text",
+    });
+  if (bucketBudgets.length === 0 && categoryBudgets.length === 0)
+    return errorComp.addInlineError(widget, {
+      title: bucketName || "Budgets",
+      message: "No budgets — create one in the app",
+      titleSize: 14,
+      messageSize: 10,
+      titleColor: "text",
+    });
 
   // Layout via helpers — no plain string comparisons
   if (layout.isSmall()) return renderSmall(widget, { bucket, bucketBudgets, categoryBudgets });
-  if (layout.isMedium()) return renderMedium(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
-  if (layout.isLarge()) return renderLarge(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
-  if (layout.isCircular() || layout.isInline()) return renderCircular(widget, { bucket, bucketBudgets, categoryBudgets });
-  if (layout.isRectangular()) return renderRectangular(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
-  return renderMedium(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
+  if (layout.isMedium())
+    return renderMedium(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
+  if (layout.isLarge())
+    return renderLarge(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
+  if (layout.isCircular() || layout.isInline())
+    return renderCircular(widget, { bucket, bucketBudgets, categoryBudgets });
+  if (layout.isRectangular()) return renderRectangular(widget, { bucketBudgets, categoryBudgets });
+  return renderLarge(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
 });

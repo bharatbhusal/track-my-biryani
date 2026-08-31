@@ -1,12 +1,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// components/month-overview/large.js
+// components/expenses/large.js
 // Large (4x2): header + stats + bar + 6 latest + footer, full details
 // ─────────────────────────────────────────────────────────────────────────────
 const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
 const moneyLib = importModule("lib/money");
 const shared = importModule("components/shared");
-const overviewComp = importModule("components/month-overview/rectangular");
+const overviewComp = importModule("components/expenses/rectangular");
 const errorComp = importModule("components/error");
 
 const { t } = theme;

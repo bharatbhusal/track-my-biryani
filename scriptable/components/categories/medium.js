@@ -1,12 +1,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// components/category-month/medium.js
+// components/categories/medium.js
 // Medium (2x2): header + stacked bar + 4 category rows + footer
 // ─────────────────────────────────────────────────────────────────────────────
 const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
 const moneyLib = importModule("lib/money");
 const shared = importModule("components/shared");
-const catComp = importModule("components/category-month/rectangular");
+const catComp = importModule("components/categories/rectangular");
 const errorComp = importModule("components/error");
 
 const { t } = theme;

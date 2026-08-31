@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// components/month-overview.js
-// Expense list row for month-overview widget (latest expenses)
+// components/expenses.js
+// Expense list row for expenses widget (latest expenses)
 // Includes emoji, color indicator, title, relative day, amount
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -103,6 +103,9 @@ function renderRectangular(widget, { bucket, bucketName, expenses, total, totalS
   }
   widget.addSpacer();
   // Footer: Day X/Y left, perDay right
-  footer(widget, { left: `Day ${month.currentDay}/${month.daysInMonth}`, right: `${moneyShort(perDay)}/day` });
+  footer(widget, {
+    left: `Day ${month.currentDay}/${month.daysInMonth}`,
+    right: `${moneyShort(perDay)}/day`,
+  });
   return widget;
 }

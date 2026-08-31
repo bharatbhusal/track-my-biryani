@@ -1,7 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// components/budget-accessory/medium.js
-// Medium widget (2x2): header + spent of target + bar + Day line
-// Width ~280pt, more breathing room than small.
+// components/overview/medium.js
+// Medium (2x2): header + spent of target + bar + Day left + perDay right
 // ─────────────────────────────────────────────────────────────────────────────
 const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
@@ -16,11 +15,9 @@ const { budgetPeriodProgress } = date;
 
 module.exports = { renderMedium };
 
-function renderMedium(widget, { bucket, budget }) {
+function renderMedium(widget, { bucket, budget, perDay }) {
   const period = budget.period || "monthly";
   const { currentDay, totalDays } = budgetPeriodProgress(period);
-
-  // Header: icon + name + period pill
   const header = widget.addStack();
   header.layoutHorizontally();
   header.centerAlignContent();
@@ -35,29 +32,36 @@ function renderMedium(widget, { bucket, budget }) {
   pill.font = font("regular", 8);
   pill.textColor = t("muted");
   widget.addSpacer(8);
-
-  // Line1: spent of target + %
   const line1 = widget.addStack();
   line1.layoutHorizontally();
   line1.centerAlignContent();
-  const left = line1.addText(`${moneyLib.compact(budget.spent)} of ${moneyLib.compact(budget.amount)}`);
-  left.font = font("semibold", 15);
+  const left = line1.addText(
+    `${moneyLib.compact(budget.spent)} of ${moneyLib.compact(budget.amount)}`,
+  );
+  left.font = font("semibold", 14);
   left.textColor = t("text");
   line1.addSpacer();
-  const right = line1.addText(`${Math.round(budget.pct)}%`);
-  right.font = font("semibold", 13);
-  right.textColor = budget.pct >= 100 ? t("danger") : budget.pct > 85 ? t("warning") : t("success");
-  widget.addSpacer(8);
-  budgetBallTrack(widget, { pct: budget.pct, spent: budget.spent, target: budget.amount, width: 280 });
+  const pct = line1.addText(`${Math.round(budget.pct)}%`);
+  pct.font = font("semibold", 12);
+  pct.textColor = budget.pct >= 100 ? t("danger") : t("success");
+  widget.addSpacer(6);
+  budgetBallTrack(widget, {
+    pct: budget.pct,
+    spent: budget.spent,
+    target: budget.amount,
+    width: 280,
+  });
   widget.addSpacer(8);
   const footer = widget.addStack();
   footer.layoutHorizontally();
+  footer.centerAlignContent();
   const day = footer.addText(`Day ${currentDay} of ${totalDays}`);
   day.font = font("regular", 10);
   day.textColor = t("muted");
   footer.addSpacer();
-  const per = footer.addText(String(period));
-  per.font = font("regular", 9);
+  const per = footer.addText(`${moneyLib.compact(perDay)}/day`);
+  per.font = font("semibold", 10);
   per.textColor = t("muted");
+  per.rightAlignText();
   return widget;
 }

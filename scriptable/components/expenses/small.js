@@ -1,12 +1,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// components/month-overview/small.js
+// components/expenses/small.js
 // Small widget: total + perDay + 2 latest expenses, no bar
 // ─────────────────────────────────────────────────────────────────────────────
 const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
 const moneyLib = importModule("lib/money");
 const shared = importModule("components/shared");
-const overviewComp = importModule("components/month-overview/rectangular");
+const overviewComp = importModule("components/expenses/rectangular");
 
 const { t } = theme;
 const { font } = layout;

@@ -1,12 +1,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// components/month-overview/medium.js
+// components/expenses/medium.js
 // Medium (2x2): header + stats + bar + 3 latest expenses + footer
 // ─────────────────────────────────────────────────────────────────────────────
 const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
 const moneyLib = importModule("lib/money");
 const shared = importModule("components/shared");
-const overviewComp = importModule("components/month-overview/rectangular");
+const overviewComp = importModule("components/expenses/rectangular");
 const errorComp = importModule("components/error");
 
 const { t } = theme;

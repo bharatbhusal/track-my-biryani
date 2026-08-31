@@ -1,31 +1,32 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// components/budget-overview-accessory/circular.js
-// Circular accessory: tiny, icon + pct + perDay stacked
+// components/categories/circular.js
+// Circular accessory: tiny, just top category emoji + pct, centered
 // ─────────────────────────────────────────────────────────────────────────────
 const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
-const moneyLib = importModule("lib/money");
+const errorComp = importModule("components/error");
 
 const { t } = theme;
 const { font } = layout;
 
 module.exports = { renderCircular };
 
-function renderCircular(widget, { bucket, budget, perDay }) {
+function renderCircular(widget, { categories }) {
   widget.addSpacer();
-  const icon = widget.addText(bucket.icon || "💰");
-  icon.font = font("regular", 14);
-  icon.centerAlignText();
+  if (!categories.length) {
+    errorComp.renderNoData(widget, "—");
+    widget.addSpacer();
+    return widget;
+  }
+  const top = categories[0];
+  const emoji = widget.addText(top.emoji);
+  emoji.font = font("regular", 16);
+  emoji.centerAlignText();
   widget.addSpacer(2);
-  const pct = widget.addText(`${Math.round(budget.pct)}%`);
-  pct.font = font("bold", 12);
-  pct.textColor = budget.pct >= 100 ? t("danger") : t("success");
+  const pct = widget.addText(`${top.pct}%`);
+  pct.font = font("bold", 13);
+  pct.textColor = t("text");
   pct.centerAlignText();
-  widget.addSpacer(2);
-  const per = widget.addText(`${moneyLib.compact(perDay)}/day`);
-  per.font = font("regular", 8);
-  per.textColor = t("muted");
-  per.centerAlignText();
   widget.addSpacer();
   return widget;
 }

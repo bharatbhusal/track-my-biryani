@@ -10,16 +10,12 @@ const widgets = importModule("api/widgets");
 const bootstrap = importModule("lib/bootstrap");
 const layout = importModule("lib/layout");
 const theme = importModule("lib/theme");
-const date = importModule("lib/date");
-const { renderRectangular } = importModule("components/budget-overview-accessory/rectangular");
-const { renderSmall } = importModule("components/budget-overview-accessory/small");
-const { renderMedium } = importModule("components/budget-overview-accessory/medium");
-const { renderLarge } = importModule("components/budget-overview-accessory/large");
-const { renderCircular } = importModule("components/budget-overview-accessory/circular");
+const { renderRectangular } = importModule("components/overview/rectangular");
+const { renderSmall } = importModule("components/overview/small");
+const { renderMedium } = importModule("components/overview/medium");
+const { renderLarge } = importModule("components/overview/large");
+const { renderCircular } = importModule("components/overview/circular");
 const errorComp = importModule("components/error");
-
-const { t } = theme;
-const { font } = layout;
 
 bootstrap.run(async () => {
   const widget = new ListWidget();
@@ -42,6 +38,7 @@ bootstrap.run(async () => {
   if (layout.isSmall()) return renderSmall(widget, { bucket, budget: pick, perDay });
   if (layout.isMedium()) return renderMedium(widget, { bucket, budget: pick, perDay });
   if (layout.isLarge()) return renderLarge(widget, { bucket, budget: pick, perDay });
-  if (layout.isCircular() || layout.isInline()) return renderCircular(widget, { bucket, budget: pick, perDay });
+  if (layout.isCircular() || layout.isInline())
+    return renderCircular(widget, { bucket, budget: pick, perDay });
   return renderRectangular(widget, { bucket, budget: pick, perDay });
 });

@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// components/month-overview/circular.js
+// components/expenses/circular.js
 // Circular accessory: tiny, just total spend centered + bucket icon
 // ─────────────────────────────────────────────────────────────────────────────
 const theme = importModule("lib/theme");

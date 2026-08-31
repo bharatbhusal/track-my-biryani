@@ -1,14 +1,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// components/category-month/small.js
+// components/categories/small.js
 // Small widget (1x1): top 2 categories compact + stacked bar, no footer
 // ─────────────────────────────────────────────────────────────────────────────
-const theme = importModule("lib/theme");
-const layout = importModule("lib/layout");
-const catComp = importModule("components/category-month/rectangular");
+const catComp = importModule("components/categories/rectangular");
 const errorComp = importModule("components/error");
 
-const { t } = theme;
-const { font } = layout;
 const { categoryCompactBar, stackedCategoryBar } = catComp;
 
 module.exports = { renderSmall };

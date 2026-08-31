@@ -1,12 +1,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// components/category-month/large.js
+// components/categories/large.js
 // Large (4x2): header + stacked bar + 10 category rows + footer
 // ─────────────────────────────────────────────────────────────────────────────
 const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
 const moneyLib = importModule("lib/money");
 const shared = importModule("components/shared");
-const catComp = importModule("components/category-month/rectangular");
+const catComp = importModule("components/categories/rectangular");
 const errorComp = importModule("components/error");
 
 const { t } = theme;

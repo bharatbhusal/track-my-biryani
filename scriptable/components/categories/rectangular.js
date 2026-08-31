@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// components/category-month/rectangular.js
+// components/categories/rectangular.js
 // Category breakdown UI: bars + legend + rectangular layout for accessory.
 // Uses shared safeColor helper for category colors.
 // ─────────────────────────────────────────────────────────────────────────────

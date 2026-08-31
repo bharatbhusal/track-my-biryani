@@ -1,7 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// components/budget-accessory/large.js
-// Large widget (4x2): spacious header, big numbers, bar, Day + period
-// Width ~320pt, uses hero-style large fonts
+// components/overview/large.js
+// Large (4x2): header + big numbers + bar + Day left + perDay right
 // ─────────────────────────────────────────────────────────────────────────────
 const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
@@ -16,11 +15,9 @@ const { budgetPeriodProgress } = date;
 
 module.exports = { renderLarge };
 
-function renderLarge(widget, { bucket, budget }) {
+function renderLarge(widget, { bucket, budget, perDay }) {
   const period = budget.period || "monthly";
   const { currentDay, totalDays } = budgetPeriodProgress(period);
-
-  // Header
   const header = widget.addStack();
   header.layoutHorizontally();
   header.centerAlignContent();
@@ -35,13 +32,9 @@ function renderLarge(widget, { bucket, budget }) {
   pill.font = font("regular", 10);
   pill.textColor = t("muted");
   widget.addSpacer(12);
-
-  // Big spent of target
   const line1 = widget.addStack();
   line1.layoutHorizontally();
   line1.centerAlignContent();
-  const spentStr = widget.addText(moneyLib.compact(budget.spent));
-  // Reuse budgetOverview style? Keep simple
   const left = line1.addText(
     `${moneyLib.compact(budget.spent)} of ${moneyLib.compact(budget.amount)}`,
   );
@@ -65,8 +58,9 @@ function renderLarge(widget, { bucket, budget }) {
   day.font = font("regular", 11);
   day.textColor = t("muted");
   footer.addSpacer();
-  const per = footer.addText(String(period));
-  per.font = font("regular", 10);
+  const per = footer.addText(`${moneyLib.compact(perDay)}/day`);
+  per.font = font("semibold", 11);
   per.textColor = t("muted");
+  per.rightAlignText();
   return widget;
 }
