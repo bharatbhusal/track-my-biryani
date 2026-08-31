@@ -4,7 +4,7 @@
 // Track My Biryani — budget accessory (Lock Screen rectangular)
 // Bucket-level budget: total spend of target, progress ball, day progress.
 
-const endpoints = importModule("api/endpoints");
+const widgets = importModule("api/widgets");
 const bootstrap = importModule("lib/bootstrap");
 const layout = importModule("lib/layout");
 const components = importModule("lib/components");
@@ -16,15 +16,10 @@ const { t } = theme;
 const { font } = layout;
 const { budgetPeriodProgress } = date;
 
-let bucketId = String(args.widgetParameter || "").trim();
-
 bootstrap.run(async () => {
   const widget = new ListWidget();
   widget.backgroundColor = theme.background();
-
-  // ─────────────────────────────────────────
-  // Only rectangular lock-screen is supported
-  // ─────────────────────────────────────────
+  widget.noRefreshFooter = true;
 
   if (layout.family() !== "accessoryRectangular") {
     const fallback = widget.addText("Track My Biryani");
@@ -33,12 +28,8 @@ bootstrap.run(async () => {
     return widget;
   }
 
-  if (!bucketId) {
-    try {
-      const me = await endpoints.authMe();
-      bucketId = me?.bucketId || "";
-    } catch {}
-  }
+  const param = String(args.widgetParameter || "").trim();
+  const { bucket, budget: pick, bucketId } = await widgets.budgetAccessory({ bucketId: param });
 
   if (!bucketId) {
     const title = widget.addText("Set bucket ID");
@@ -46,10 +37,6 @@ bootstrap.run(async () => {
     title.textColor = t("muted");
     return widget;
   }
-
-  const bucketsResponse = await endpoints.buckets();
-  const buckets = Array.isArray(bucketsResponse?.items) ? bucketsResponse.items : [];
-  const bucket = buckets.find((item) => item && item._id === bucketId);
 
   if (!bucket) {
     const title = widget.addText("Bucket not found");
@@ -63,14 +50,7 @@ bootstrap.run(async () => {
     return widget;
   }
 
-  const budgetsResponse = await endpoints.budgets();
-  const groups = Array.isArray(budgetsResponse) ? budgetsResponse : [];
-  const allBudgets = groups.flatMap((g) => (Array.isArray(g.budgets) ? g.budgets : []));
-  const bucketBudgets = allBudgets.filter(
-    (b) => b && b.bucketId === bucketId && (b.categoryId === null || b.categoryId === undefined)
-  );
-
-  if (bucketBudgets.length === 0) {
+  if (!pick) {
     const title = widget.addText(bucket.name || "Budget");
     title.font = font("semibold", 10);
     title.textColor = t("text");
@@ -81,21 +61,11 @@ bootstrap.run(async () => {
     return widget;
   }
 
-  let pick =
-    bucketBudgets.find((b) => b.period === "monthly") ||
-    bucketBudgets.find((b) => b.period === "yearly") ||
-    bucketBudgets.find((b) => b.period === "weekly") ||
-    bucketBudgets[0];
-
-  const spent = Number(pick.spent) || 0;
-  const target = Number(pick.amount) || 0;
-  const pct = typeof pick.pct === "number" ? pick.pct : target > 0 ? (spent / target) * 100 : 0;
+  const spent = pick.spent;
+  const target = pick.amount;
+  const pct = target > 0 ? (spent / target) * 100 : pick.pct;
   const period = pick.period || "monthly";
   const { currentDay, totalDays } = budgetPeriodProgress(period);
-
-  // ─────────────────────────────────────────
-  // Header — icon + bucket name (compact)
-  // ─────────────────────────────────────────
 
   const header = widget.addStack();
   header.layoutHorizontally();
@@ -114,7 +84,6 @@ bootstrap.run(async () => {
 
   widget.addSpacer(4);
 
-  // L1: spent of target (compact 140 width) — reused component in compactMode
   budgetSummary(widget, {
     spent,
     target,
@@ -125,9 +94,6 @@ bootstrap.run(async () => {
     width: 145,
     compactMode: true,
   });
-
-  // no refresh footer on accessory — bootstrap skips it for non-rectangular,
-  // but rectangular gets one automatically; keep layout tight so it fits
 
   return widget;
 });

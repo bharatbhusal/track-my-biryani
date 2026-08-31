@@ -293,7 +293,7 @@ function stackedCategoryBar(parent, categories) {
     const category = categories[i];
     const segment = row.addStack();
 
-    const width = Math.max(1, Math.round(300 * (category.pct / Math.max(totalPct, 1))));
+    const width = Math.max(1, Math.round(320 * (category.pct / Math.max(totalPct, 1))));
 
     segment.size = new Size(width, 10);
     segment.backgroundColor = safeColor(category.color);
@@ -317,7 +317,8 @@ function budgetBar(parent, { pct, width = 320, trackColor, spent, target, height
   const ratio = clamped / 100;
   const fill = Math.round(width * ratio);
   const track = trackColor || t("border");
-  const isOver = raw >= 100 || (typeof spent === "number" && typeof target === "number" && spent > target);
+  const isOver =
+    raw >= 100 || (typeof spent === "number" && typeof target === "number" && spent > target);
   const fillColor = isOver ? t("danger") : clamped > 85 ? t("warning") : t("success");
   // ponytail: sibling filled+track (like month-overview bar) — no nested child, flush left, no left gap
   const row = parent.addStack();
@@ -416,7 +417,7 @@ function budgetSummary(
   right.rightAlignText();
 
   parent.addSpacer(7);
-  budgetBallTrack(parent, { pct: raw, spent, target, width: width || 300 });
+  budgetBallTrack(parent, { pct: raw, spent, target, width: width || 320 });
   parent.addSpacer(7);
 
   if (typeof currentDay === "number" && typeof totalDays === "number") {
@@ -439,7 +440,7 @@ function budgetSummary(
 
 function budgetCard(
   parent,
-  { title, emoji, indicatorColor, period, spent, target, pct, width = 300, compactMode } = {},
+  { title, emoji, indicatorColor, period, spent, target, pct, width = 320, compactMode } = {},
 ) {
   const raw = Number(pct) || 0;
   const isOver = raw >= 100 || spent > target;
@@ -501,7 +502,7 @@ function budgetCard(
 
 function budgetHeroCard(
   parent,
-  { title, emoji, period, spent, target, pct, width = 300, compactMode } = {},
+  { title, emoji, period, spent, target, pct, width = 320, compactMode } = {},
 ) {
   const raw = Number(pct) || 0;
   const isOver = raw >= 100 || spent > target;

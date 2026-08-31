@@ -3,9 +3,8 @@
 // icon-color: orange; icon-glyph: wallet;
 // Track My Biryani — budget large
 // Shows all budgets for a bucket: bucket budget first, then top 3 category budgets by pct.
-// No Day X line. Bar ball is hidden when over 100% (inspired by budget-card.tsx).
 
-const endpoints = importModule("api/endpoints");
+const widgets = importModule("api/widgets");
 const bootstrap = importModule("lib/bootstrap");
 const layout = importModule("lib/layout");
 const components = importModule("lib/components");
@@ -14,8 +13,6 @@ const theme = importModule("lib/theme");
 const { budgetCard, budgetHeroCard } = components;
 const { t } = theme;
 const { font } = layout;
-
-const bucketId = String(args.widgetParameter || "").trim();
 
 bootstrap.run(async () => {
   const widget = new ListWidget();
@@ -27,6 +24,7 @@ bootstrap.run(async () => {
   const isAccessory = layout.isAccessory();
 
   if (isAccessory) {
+    widget.noRefreshFooter = true;
     const title = widget.addText("Budget · Large");
     title.font = font("semibold", 12);
     title.textColor = t("text");
@@ -36,6 +34,12 @@ bootstrap.run(async () => {
     hint.textColor = t("muted");
     return widget;
   }
+
+  const param = String(args.widgetParameter || "").trim();
+  const { bucket, bucketId, bucketName, bucketBudgets, categoryBudgets } =
+    await widgets.budgetsWidget({
+      bucketId: param,
+    });
 
   if (!bucketId) {
     const title = widget.addText("Track My Biryani");
@@ -47,10 +51,6 @@ bootstrap.run(async () => {
     message.textColor = t("muted");
     return widget;
   }
-
-  const bucketsResponse = await endpoints.buckets();
-  const buckets = Array.isArray(bucketsResponse?.items) ? bucketsResponse.items : [];
-  const bucket = buckets.find((item) => item && item._id === bucketId);
 
   if (!bucket) {
     const title = widget.addText("Bucket Not Found");
@@ -64,14 +64,7 @@ bootstrap.run(async () => {
     return widget;
   }
 
-  const bucketName = bucket.name || "Bucket";
-
-  const budgetsResponse = await endpoints.budgets();
-  const groups = Array.isArray(budgetsResponse) ? budgetsResponse : [];
-  const allBudgets = groups.flatMap((g) => (Array.isArray(g.budgets) ? g.budgets : []));
-  const inBucket = allBudgets.filter((b) => b && b.bucketId === bucketId);
-
-  if (inBucket.length === 0) {
+  if (bucketBudgets.length === 0 && categoryBudgets.length === 0) {
     const title = widget.addText(bucketName);
     title.font = font("semibold", 14);
     title.textColor = t("text");
@@ -82,20 +75,9 @@ bootstrap.run(async () => {
     return widget;
   }
 
-  const bucketBudgets = inBucket.filter((b) => b.categoryId === null || b.categoryId === undefined);
-  const categoryBudgets = inBucket
-    .filter((b) => b.categoryId !== null && b.categoryId !== undefined)
-    .sort((a, b) => (Number(b.pct) || 0) - (Number(a.pct) || 0))
-    .slice(0, 3);
-
-  const width = isLarge ? 300 : isMedium ? 260 : 300;
+  const width = isLarge ? 320 : isMedium ? 260 : 320;
   const compactMode = !isLarge;
 
-  // ─────────────────────────────────────────
-  // Bucket budgets (usually 1) — first
-  // ─────────────────────────────────────────
-
-  // bucket-level hero — distinct design at top
   if (bucketBudgets.length > 0) {
     for (let i = 0; i < bucketBudgets.length; i++) {
       const b = bucketBudgets[i];
@@ -103,9 +85,9 @@ bootstrap.run(async () => {
         title: bucketName,
         emoji: bucket.icon || "💰",
         period: b.period,
-        spent: Number(b.spent) || 0,
-        target: Number(b.amount) || 0,
-        pct: Number(b.pct) || 0,
+        spent: b.spent,
+        target: b.amount,
+        pct: b.pct,
         width,
         compactMode,
       });
@@ -113,10 +95,6 @@ bootstrap.run(async () => {
         widget.addSpacer(isLarge ? 10 : 8);
     }
   }
-
-  // ─────────────────────────────────────────
-  // Top 3 category budgets by pct
-  // ─────────────────────────────────────────
 
   if (categoryBudgets.length > 0) {
     if (bucketBudgets.length > 0) {
@@ -129,12 +107,12 @@ bootstrap.run(async () => {
       const b = categoryBudgets[i];
       budgetCard(widget, {
         title: b.categoryName || "Category",
-        emoji: b.categoryEmoji || "🏷️",
-        indicatorColor: b.categoryColor || "#999999",
+        emoji: b.categoryEmoji,
+        indicatorColor: b.categoryColor,
         period: b.period,
-        spent: Number(b.spent) || 0,
-        target: Number(b.amount) || 0,
-        pct: Number(b.pct) || 0,
+        spent: b.spent,
+        target: b.amount,
+        pct: b.pct,
         width,
         compactMode,
       });

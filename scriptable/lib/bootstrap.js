@@ -1,9 +1,9 @@
 const cfg = importModule("config");
 const debug = importModule("lib/debug");
 const theme = importModule("lib/theme");
-const format = importModule("lib/format");
 const layout = importModule("lib/layout");
 const date = importModule("lib/date");
+const errorComp = importModule("lib/error");
 
 module.exports = { run, renderError };
 
@@ -35,10 +35,11 @@ async function run(build) {
   }
 }
 
-// ponytail: tiny accessory slots have no room for a footer line
+// ponytail: refreshed time is opt-out — accessory widgets never show it
 function addRefreshFooter(widget) {
   if (widget.noRefreshFooter) return;
-  if (layout.isAccessory() && layout.family() !== "accessoryRectangular") return;
+  if (widget.showRefresh === false) return;
+  if (layout.isAccessory()) return;
   const label = widget.addText(`Refreshed ${date.formatClock24(new Date())}`);
   label.font = layout.font("regular", 10);
   label.textColor = theme.t("muted");
@@ -47,16 +48,7 @@ function addRefreshFooter(widget) {
 
 function renderError(e) {
   debug.log(e);
-  const widget = new ListWidget();
-  widget.backgroundColor = theme.background();
-  const title = widget.addText(format.truncate(String(e.message || e), 60));
-  title.font = layout.font("semibold", 14);
-  title.textColor = theme.t("danger");
-  const hint = widget.addText(
-    "Check DEBUG logs. Set RESET_CREDENTIALS=true in config.js to re-enter credentials.",
-  );
-  hint.font = layout.font("regular", 10);
-  hint.textColor = theme.t("muted");
+  const widget = errorComp.buildErrorWidget(e);
   Script.setWidget(widget);
   return widget;
 }
