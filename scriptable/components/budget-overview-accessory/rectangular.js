@@ -14,7 +14,7 @@ const { t } = theme;
 const { font } = layout;
 const { budgetBallTrack } = shared;
 
-module.exports = { budgetOverviewSummary };
+module.exports = { budgetOverviewSummary, renderRectangular };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Budget + per-day summary: spent of target + % on line1,
@@ -69,4 +69,51 @@ function budgetOverviewSummary(
     }
   }
   return parent;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rectangular accessory layout: header + budgetOverviewSummary (145pt)
+// Day X/Y left + perDay (590/day) right — as requested
+// ─────────────────────────────────────────────────────────────────────────────
+function renderRectangular(widget, { bucket, budget, perDay }) {
+  const date = importModule("lib/date");
+  const layout = importModule("lib/layout");
+  const theme = importModule("lib/theme");
+  const { budgetPeriodProgress } = date;
+  const { font } = layout;
+  const { t } = theme;
+
+  const period = budget.period || "monthly";
+  const { currentDay, totalDays } = budgetPeriodProgress(period);
+
+  // Header: icon + bucket name + period pill
+  const header = widget.addStack();
+  header.layoutHorizontally();
+  header.centerAlignContent();
+  const icon = header.addText(bucket.icon || "💰");
+  icon.font = font("regular", 10);
+  header.addSpacer(4);
+  const title = header.addText(bucket.name || "Budget");
+  title.font = font("semibold", 9);
+  title.textColor = t("text");
+  title.lineLimit = 1;
+  header.addSpacer();
+  const pill = header.addText(String(period).slice(0, 3));
+  pill.font = font("regular", 7);
+  pill.textColor = t("muted");
+
+  widget.addSpacer(4);
+
+  // Body: combined summary with perDay on right of Day line
+  budgetOverviewSummary(widget, {
+    spent: budget.spent,
+    target: budget.amount,
+    pct: budget.pct,
+    currentDay,
+    totalDays,
+    perDay,
+    width: 145,
+    compactMode: true,
+  });
+  return widget;
 }

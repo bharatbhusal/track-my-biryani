@@ -14,7 +14,7 @@ const bootstrap = importModule("lib/bootstrap");
 const layout = importModule("lib/layout");
 const theme = importModule("lib/theme");
 const date = importModule("lib/date");
-const { budgetSummary } = importModule("components/budget-accessory/rectangular");
+const { renderRectangular } = importModule("components/budget-accessory/rectangular");
 const { renderSmall } = importModule("components/budget-accessory/small");
 const { renderMedium } = importModule("components/budget-accessory/medium");
 const { renderLarge } = importModule("components/budget-accessory/large");
@@ -22,7 +22,6 @@ const { renderCircular } = importModule("components/budget-accessory/circular");
 
 const { t } = theme;
 const { font } = layout;
-const { budgetPeriodProgress } = date;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main: resolves bucket/budget once, then switches on family for layout.
@@ -73,7 +72,7 @@ bootstrap.run(async () => {
     return widget;
   }
 
-  // ── Layout switch: delegate to per-size component ──
+  // ── Layout switch: delegate to per-size component (all in components/) ──
   const family = layout.family();
   switch (family) {
     case "small":
@@ -87,39 +86,7 @@ bootstrap.run(async () => {
     case "accessoryInline":
       return renderCircular(widget, { bucket, budget: pick });
     case "accessoryRectangular":
-    default: {
-      // ── Rectangular accessory (default): header + compact summary 145pt ──
-      const spent = pick.spent;
-      const target = pick.amount;
-      const pct = target > 0 ? (spent / target) * 100 : pick.pct;
-      const period = pick.period || "monthly";
-      const { currentDay, totalDays } = budgetPeriodProgress(period);
-      const header = widget.addStack();
-      header.layoutHorizontally();
-      header.centerAlignContent();
-      const icon = header.addText(bucket.icon || "💰");
-      icon.font = font("regular", 10);
-      header.addSpacer(4);
-      const title = header.addText(bucket.name || "Budget");
-      title.font = font("semibold", 9);
-      title.textColor = t("text");
-      title.lineLimit = 1;
-      header.addSpacer();
-      const pill = header.addText(String(period).slice(0, 3));
-      pill.font = font("regular", 7);
-      pill.textColor = t("muted");
-      widget.addSpacer(4);
-      budgetSummary(widget, {
-        spent,
-        target,
-        pct,
-        currentDay,
-        totalDays,
-        period: null,
-        width: 145,
-        compactMode: true,
-      });
-      return widget;
-    }
+    default:
+      return renderRectangular(widget, { bucket, budget: pick });
   }
 });

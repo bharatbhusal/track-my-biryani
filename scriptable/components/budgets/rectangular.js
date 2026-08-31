@@ -13,7 +13,7 @@ const { t } = theme;
 const { font } = layout;
 const { safeColor, capPeriod, budgetBar } = shared;
 
-module.exports = { budgetCard, budgetHeroCard };
+module.exports = { budgetCard, budgetHeroCard, renderRectangular };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Row card: emoji + vertical color line + name + period + target amount
@@ -151,4 +151,31 @@ function budgetHeroCard(parent, { title, emoji, period, spent, target, pct, widt
   rightEl.rightAlignText();
 
   return hero;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rectangular accessory layout: compact single hero (145pt) for
+// Lock Screen rectangular. Shows top budget only, compact mode.
+// ─────────────────────────────────────────────────────────────────────────────
+function renderRectangular(widget, { bucket, bucketName, bucketBudgets, categoryBudgets }) {
+  const b = bucketBudgets[0] || categoryBudgets[0];
+  if (!b) {
+    const e = widget.addText("No budget");
+    e.font = font("regular", 10);
+    e.textColor = t("muted");
+    e.centerAlignText();
+    return widget;
+  }
+  // Compact hero card for 145pt rectangular accessory
+  budgetHeroCard(widget, {
+    title: bucketName,
+    emoji: bucket.icon || "💰",
+    period: b.period,
+    spent: b.spent,
+    target: b.amount,
+    pct: b.pct,
+    width: 145,
+    compactMode: true,
+  });
+  return widget;
 }

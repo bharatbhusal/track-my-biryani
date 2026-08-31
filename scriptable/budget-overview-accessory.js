@@ -11,7 +11,7 @@ const bootstrap = importModule("lib/bootstrap");
 const layout = importModule("lib/layout");
 const theme = importModule("lib/theme");
 const date = importModule("lib/date");
-const { budgetOverviewSummary } = importModule("components/budget-overview-accessory/rectangular");
+const { renderRectangular } = importModule("components/budget-overview-accessory/rectangular");
 const { renderSmall } = importModule("components/budget-overview-accessory/small");
 const { renderMedium } = importModule("components/budget-overview-accessory/medium");
 const { renderLarge } = importModule("components/budget-overview-accessory/large");
@@ -19,7 +19,6 @@ const { renderCircular } = importModule("components/budget-overview-accessory/ci
 
 const { t } = theme;
 const { font } = layout;
-const { budgetPeriodProgress } = date;
 
 bootstrap.run(async () => {
   const widget = new ListWidget();
@@ -27,7 +26,12 @@ bootstrap.run(async () => {
   if (layout.isAccessory()) widget.noRefreshFooter = true;
 
   const param = String(args.widgetParameter || "").trim();
-  const { bucket, budget: pick, bucketId, perDay } = await widgets.budgetOverviewAccessory({ bucketId: param });
+  const {
+    bucket,
+    budget: pick,
+    bucketId,
+    perDay,
+  } = await widgets.budgetOverviewAccessory({ bucketId: param });
 
   if (!bucketId) {
     const title = widget.addText("Set bucket ID");
@@ -62,7 +66,7 @@ bootstrap.run(async () => {
     return widget;
   }
 
-  // Switch on family for size-appropriate layout
+  // Switch on family — all layouts live in components/budget-overview-accessory/
   const family = layout.family();
   switch (family) {
     case "small":
@@ -76,39 +80,7 @@ bootstrap.run(async () => {
     case "accessoryInline":
       return renderCircular(widget, { bucket, budget: pick, perDay });
     case "accessoryRectangular":
-    default: {
-      // Rectangular: header + combined summary (Day X/Y left, perDay right)
-      const spent = pick.spent;
-      const target = pick.amount;
-      const pct = target > 0 ? (spent / target) * 100 : pick.pct;
-      const period = pick.period || "monthly";
-      const { currentDay, totalDays } = budgetPeriodProgress(period);
-      const header = widget.addStack();
-      header.layoutHorizontally();
-      header.centerAlignContent();
-      const icon = header.addText(bucket.icon || "💰");
-      icon.font = font("regular", 10);
-      header.addSpacer(4);
-      const title = header.addText(bucket.name || "Budget");
-      title.font = font("semibold", 9);
-      title.textColor = t("text");
-      title.lineLimit = 1;
-      header.addSpacer();
-      const pill = header.addText(String(period).slice(0, 3));
-      pill.font = font("regular", 7);
-      pill.textColor = t("muted");
-      widget.addSpacer(4);
-      budgetOverviewSummary(widget, {
-        spent,
-        target,
-        pct,
-        currentDay,
-        totalDays,
-        perDay,
-        width: 145,
-        compactMode: true,
-      });
-      return widget;
-    }
+    default:
+      return renderRectangular(widget, { bucket, budget: pick, perDay });
   }
 });

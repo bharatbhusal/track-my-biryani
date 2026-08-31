@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// components/category-month.js
-// Category breakdown UI: bars + legend for category-month widget.
+// components/category-month/rectangular.js
+// Category breakdown UI: bars + legend + rectangular layout for accessory.
 // Uses shared safeColor helper for category colors.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -14,7 +14,7 @@ const { font } = layout;
 const { moneyShort } = moneyLib;
 const { safeColor } = shared;
 
-module.exports = { categoryBar, categoryCompactBar, stackedCategoryBar };
+module.exports = { categoryBar, categoryCompactBar, stackedCategoryBar, renderRectangular };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Full row: emoji + vertical line + name + amount + %
@@ -126,4 +126,24 @@ function stackedCategoryBar(parent, categories) {
   }
 
   return row;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rectangular accessory layout: top 3 categories compact, no header/stacked
+// Used for Lock Screen rectangular — tight, no footer, 3 rows max.
+// ─────────────────────────────────────────────────────────────────────────────
+function renderRectangular(widget, { categories }) {
+  if (!categories.length) {
+    const empty = widget.addText("No spending");
+    empty.font = font("regular", 10);
+    empty.textColor = t("muted");
+    empty.centerAlignText();
+    return widget;
+  }
+  const top = categories.slice(0, 3);
+  for (let i = 0; i < top.length; i++) {
+    categoryCompactBar(widget, top[i]);
+    if (i < top.length - 1) widget.addSpacer(4);
+  }
+  return widget;
 }

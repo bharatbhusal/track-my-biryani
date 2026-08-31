@@ -14,6 +14,7 @@ const { renderSmall } = importModule("components/category-month/small");
 const { renderMedium } = importModule("components/category-month/medium");
 const { renderLarge } = importModule("components/category-month/large");
 const { renderCircular } = importModule("components/category-month/circular");
+const { renderRectangular } = importModule("components/category-month/rectangular");
 
 const { t } = theme;
 const { font } = layout;
@@ -24,7 +25,9 @@ bootstrap.run(async () => {
   if (layout.isAccessory()) widget.noRefreshFooter = true;
 
   const param = String(args.widgetParameter || "").trim();
-  const { bucket, bucketId, bucketName, categories, totalSpend } = await widgets.categoryMonth({ bucketId: param });
+  const { bucket, bucketId, bucketName, categories, totalSpend } = await widgets.categoryMonth({
+    bucketId: param,
+  });
 
   if (!bucketId) {
     const title = widget.addText("Track My Biryani");
@@ -65,23 +68,8 @@ bootstrap.run(async () => {
     case "accessoryCircular":
     case "accessoryInline":
       return renderCircular(widget, { categories });
-    case "accessoryRectangular": {
-      // Rectangular accessory: top 3 compact bars (no header/footer)
-      const { categoryCompactBar } = importModule("components/category-month/rectangular");
-      if (!categories.length) {
-        const empty = widget.addText("No spending");
-        empty.font = font("regular", 10);
-        empty.textColor = t("muted");
-        empty.centerAlignText();
-        return widget;
-      }
-      const top = categories.slice(0, 3);
-      for (let i = 0; i < top.length; i++) {
-        categoryCompactBar(widget, top[i]);
-        if (i < top.length - 1) widget.addSpacer(4);
-      }
-      return widget;
-    }
+    case "accessoryRectangular":
+      return renderRectangular(widget, { categories });
     default:
       return renderMedium(widget, { bucketName, categories, totalSpend });
   }

@@ -14,6 +14,7 @@ const { renderSmall } = importModule("components/budgets/small");
 const { renderMedium } = importModule("components/budgets/medium");
 const { renderLarge } = importModule("components/budgets/large");
 const { renderCircular } = importModule("components/budgets/circular");
+const { renderRectangular } = importModule("components/budgets/rectangular");
 
 const { t } = theme;
 const { font } = layout;
@@ -80,30 +81,9 @@ bootstrap.run(async () => {
     case "accessoryCircular":
     case "accessoryInline":
       return renderCircular(widget, { bucket, bucketBudgets, categoryBudgets });
-    case "accessoryRectangular": {
-      // Rectangular accessory: compact single hero (145pt style)
-      const { budgetHeroCard } = importModule("components/budgets/rectangular");
-      const b = bucketBudgets[0] || categoryBudgets[0];
-      if (!b) {
-        const e = widget.addText("No budget");
-        e.font = font("regular", 10);
-        e.textColor = t("muted");
-        e.centerAlignText();
-        return widget;
-      }
-      // Use hero card compact for rectangular
-      budgetHeroCard(widget, {
-        title: bucketName,
-        emoji: bucket.icon || "💰",
-        period: b.period,
-        spent: b.spent,
-        target: b.amount,
-        pct: b.pct,
-        width: 145,
-        compactMode: true,
-      });
-      return widget;
-    }
+    case "accessoryRectangular":
+      // Rectangular accessory lives in components/budgets/rectangular.js
+      return renderRectangular(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
     default:
       return renderMedium(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
   }
