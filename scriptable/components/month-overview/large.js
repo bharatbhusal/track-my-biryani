@@ -33,8 +33,9 @@ function renderLarge(widget, { bucketName, expenses, total, totalSpend, month })
   stats.layoutHorizontally();
   const totalStack = stats.addStack();
   totalStack.layoutVertically();
-  totalStack.addText("Total Spent").font = font("regular", 9);
-  totalStack.children[0].textColor = t("muted");
+  const totalLabel = totalStack.addText("Total Spent");
+  totalLabel.font = font("regular", 9);
+  totalLabel.textColor = t("muted");
   const totalValue = totalStack.addText(compact(totalSpend));
   totalValue.font = font("semibold", 15);
   totalValue.textColor = t("primary");
@@ -53,7 +54,7 @@ function renderLarge(widget, { bucketName, expenses, total, totalSpend, month })
   // Progress bar
   const row = widget.addStack();
   row.layoutHorizontally();
-  const totalW = 340;
+  const totalW = 320;
   const fill = Math.round(totalW * Math.max(0, Math.min(1, month.progress)));
   const filled = row.addStack();
   filled.size = new Size(fill, 6);

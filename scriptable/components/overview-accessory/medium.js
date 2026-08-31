@@ -28,8 +28,9 @@ function renderMedium(widget, { totalSpend, perDay }) {
   row.layoutHorizontally();
   const left = row.addStack();
   left.layoutVertically();
-  left.addText("Total Spent").font = font("regular", 10);
-  left.children[0].textColor = t("muted");
+  const leftLabel = left.addText("Total Spent");
+  leftLabel.font = font("regular", 10);
+  leftLabel.textColor = t("muted");
   const leftVal = left.addText(compact(totalSpend));
   leftVal.font = font("bold", 16);
   leftVal.textColor = t("primary");

@@ -66,21 +66,10 @@ bootstrap.run(async () => {
     return widget;
   }
 
-  // Switch on family — all layouts live in components/budget-overview-accessory/
-  const family = layout.family();
-  switch (family) {
-    case "small":
-      return renderSmall(widget, { bucket, budget: pick, perDay });
-    case "medium":
-      return renderMedium(widget, { bucket, budget: pick, perDay });
-    case "large":
-    case "extraLarge":
-      return renderLarge(widget, { bucket, budget: pick, perDay });
-    case "accessoryCircular":
-    case "accessoryInline":
-      return renderCircular(widget, { bucket, budget: pick, perDay });
-    case "accessoryRectangular":
-    default:
-      return renderRectangular(widget, { bucket, budget: pick, perDay });
-  }
+  // Layout via layout helpers (no plain strings)
+  if (layout.isSmall()) return renderSmall(widget, { bucket, budget: pick, perDay });
+  if (layout.isMedium()) return renderMedium(widget, { bucket, budget: pick, perDay });
+  if (layout.isLarge()) return renderLarge(widget, { bucket, budget: pick, perDay });
+  if (layout.isCircular() || layout.isInline()) return renderCircular(widget, { bucket, budget: pick, perDay });
+  return renderRectangular(widget, { bucket, budget: pick, perDay });
 });

@@ -68,23 +68,11 @@ bootstrap.run(async () => {
     return widget;
   }
 
-  // ── Size switch: delegate to per-size layout ──
-  const family = layout.family();
-  switch (family) {
-    case "small":
-      return renderSmall(widget, { bucket, bucketBudgets, categoryBudgets });
-    case "medium":
-      return renderMedium(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
-    case "large":
-    case "extraLarge":
-      return renderLarge(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
-    case "accessoryCircular":
-    case "accessoryInline":
-      return renderCircular(widget, { bucket, bucketBudgets, categoryBudgets });
-    case "accessoryRectangular":
-      // Rectangular accessory lives in components/budgets/rectangular.js
-      return renderRectangular(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
-    default:
-      return renderMedium(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
-  }
+  // Layout via helpers — no plain string comparisons
+  if (layout.isSmall()) return renderSmall(widget, { bucket, bucketBudgets, categoryBudgets });
+  if (layout.isMedium()) return renderMedium(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
+  if (layout.isLarge()) return renderLarge(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
+  if (layout.isCircular() || layout.isInline()) return renderCircular(widget, { bucket, bucketBudgets, categoryBudgets });
+  if (layout.isRectangular()) return renderRectangular(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
+  return renderMedium(widget, { bucket, bucketName, bucketBudgets, categoryBudgets });
 });

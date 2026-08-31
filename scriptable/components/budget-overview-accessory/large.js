@@ -35,7 +35,9 @@ function renderLarge(widget, { bucket, budget, perDay }) {
   const line1 = widget.addStack();
   line1.layoutHorizontally();
   line1.centerAlignContent();
-  const left = line1.addText(`${moneyLib.compact(budget.spent)} of ${moneyLib.compact(budget.amount)}`);
+  const left = line1.addText(
+    `${moneyLib.compact(budget.spent)} of ${moneyLib.compact(budget.amount)}`,
+  );
   left.font = font("bold", 22);
   left.textColor = budget.pct >= 100 ? t("danger") : t("success");
   line1.addSpacer();
@@ -43,7 +45,12 @@ function renderLarge(widget, { bucket, budget, perDay }) {
   pct.font = font("semibold", 18);
   pct.textColor = budget.pct >= 100 ? t("danger") : t("text");
   widget.addSpacer(10);
-  budgetBallTrack(widget, { pct: budget.pct, spent: budget.spent, target: budget.amount, width: 340 });
+  budgetBallTrack(widget, {
+    pct: budget.pct,
+    spent: budget.spent,
+    target: budget.amount,
+    width: 320,
+  });
   widget.addSpacer(10);
   const footer = widget.addStack();
   footer.layoutHorizontally();

@@ -63,7 +63,10 @@ function renderRectangular(widget, { bucket, budget }) {
 // Budget summary (compact): line1 spent of target + %, line2 ball track,
 // line3 Day X of Y + optional period. Used only by budget-accessory.
 // ─────────────────────────────────────────────────────────────────────────────
-function budgetSummary(parent, { spent, target, pct, currentDay, totalDays, period, width, compactMode } = {}) {
+function budgetSummary(
+  parent,
+  { spent, target, pct, currentDay, totalDays, period, width, compactMode } = {},
+) {
   const spentStr = moneyLib.compact(spent);
   const targetStr = moneyLib.compact(target);
   const raw = Number(pct) || 0;
@@ -86,7 +89,7 @@ function budgetSummary(parent, { spent, target, pct, currentDay, totalDays, peri
 
   parent.addSpacer(7);
   // Line 2: progress ball track (show ball unless over budget)
-  budgetBallTrack(parent, { pct: raw, spent, target, width: width || 340 });
+  budgetBallTrack(parent, { pct: raw, spent, target, width: width || 320 });
   parent.addSpacer(7);
 
   // Line 3: "Day 31 of 31" left, optional period right

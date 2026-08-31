@@ -29,20 +29,10 @@ bootstrap.run(async () => {
   // expenseCount is 0 if not returned; overview currently returns perDay + totalSpend
   // We enrich with expenseCount if available via overview raw (not needed for accessory)
 
-  const family = layout.family();
-  switch (family) {
-    case "small":
-      return renderSmall(widget, { totalSpend });
-    case "medium":
-      return renderMedium(widget, { totalSpend, perDay });
-    case "large":
-    case "extraLarge":
-      return renderLarge(widget, { totalSpend, perDay, expenseCount });
-    case "accessoryCircular":
-    case "accessoryInline":
-      return renderCircular(widget, { totalSpend });
-    case "accessoryRectangular":
-    default:
-      return renderRectangular(widget, { totalSpend, perDay });
-  }
+  if (layout.isSmall()) return renderSmall(widget, { totalSpend });
+  if (layout.isMedium()) return renderMedium(widget, { totalSpend, perDay });
+  if (layout.isLarge()) return renderLarge(widget, { totalSpend, perDay, expenseCount });
+  if (layout.isCircular() || layout.isInline()) return renderCircular(widget, { totalSpend });
+  // accessoryRectangular is default — lives in components/overview-accessory/rectangular.js
+  return renderRectangular(widget, { totalSpend, perDay });
 });

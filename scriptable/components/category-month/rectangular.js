@@ -96,7 +96,7 @@ function categoryCompactBar(parent, category) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Stacked horizontal bar: segments proportional to category pct
-// Width is fixed 340pt (matches budget bars), each segment gets pct slice.
+// Width is fixed 320pt (matches budget bars), each segment gets pct slice.
 // ─────────────────────────────────────────────────────────────────────────────
 function stackedCategoryBar(parent, categories) {
   const row = parent.addStack();
@@ -115,7 +115,7 @@ function stackedCategoryBar(parent, categories) {
     const category = categories[i];
     const segment = row.addStack();
 
-    const width = Math.max(1, Math.round(340 * (category.pct / Math.max(totalPct, 1))));
+    const width = Math.max(1, Math.round(320 * (category.pct / Math.max(totalPct, 1))));
 
     segment.size = new Size(width, 10);
     segment.backgroundColor = safeColor(category.color);

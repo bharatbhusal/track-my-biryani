@@ -72,21 +72,11 @@ bootstrap.run(async () => {
     return widget;
   }
 
-  // ── Layout switch: delegate to per-size component (all in components/) ──
-  const family = layout.family();
-  switch (family) {
-    case "small":
-      return renderSmall(widget, { bucket, budget: pick });
-    case "medium":
-      return renderMedium(widget, { bucket, budget: pick });
-    case "large":
-    case "extraLarge":
-      return renderLarge(widget, { bucket, budget: pick });
-    case "accessoryCircular":
-    case "accessoryInline":
-      return renderCircular(widget, { bucket, budget: pick });
-    case "accessoryRectangular":
-    default:
-      return renderRectangular(widget, { bucket, budget: pick });
-  }
+  // ── Layout switch via layout helpers (no plain strings) ──
+  if (layout.isSmall()) return renderSmall(widget, { bucket, budget: pick });
+  if (layout.isMedium()) return renderMedium(widget, { bucket, budget: pick });
+  if (layout.isLarge()) return renderLarge(widget, { bucket, budget: pick });
+  if (layout.isCircular() || layout.isInline()) return renderCircular(widget, { bucket, budget: pick });
+  // accessoryRectangular is default for all accessory rectangular + fallback
+  return renderRectangular(widget, { bucket, budget: pick });
 });

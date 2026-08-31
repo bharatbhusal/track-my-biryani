@@ -40,13 +40,11 @@ async function run(build) {
     // In-app preview (Scriptable IDE) — show widget when not in widget host
     // `config` here is Scriptable's GLOBAL config, not our app config
     if (!config.runsInWidget) {
-      const f = layout.family();
-      const fn =
-        f === "large" || f === "extraLarge"
-          ? "presentLarge"
-          : f === "small"
-            ? "presentSmall"
-            : "presentMedium";
+      const fn = layout.isLarge()
+        ? "presentLarge"
+        : layout.isSmall()
+          ? "presentSmall"
+          : "presentMedium";
       await widget[fn]();
     }
     Script.complete();
@@ -58,14 +56,16 @@ async function run(build) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// addRefreshFooter: appends "Refreshed HH:MM" line if allowed
-// Opt-out: widget.noRefreshFooter = true  OR  widget.showRefresh === false
-// Automatically hidden for all accessory families (tiny slots, no room)
+// addRefreshFooter: appends "Refreshed HH:MM" only for large family
+// Per request: except large, no other family shows refresh.
+// Opt-out: widget.noRefreshFooter = true OR widget.showRefresh === false
+// Accessory is also hidden (redundant with family check but kept for clarity)
 // ─────────────────────────────────────────────────────────────────────────────
 function addRefreshFooter(widget) {
   if (widget.noRefreshFooter) return; // widget explicitly disabled
   if (widget.showRefresh === false) return; // alternative opt-out flag
   if (layout.isAccessory()) return; // accessory never shows refresh
+  if (!layout.isLarge()) return; // only large (incl. extraLarge) shows refresh
   const label = widget.addText(`Refreshed ${date.formatClock24(new Date())}`);
   label.font = layout.font("regular", 10);
   label.textColor = theme.t("muted");

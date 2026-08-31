@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // components/budgets/large.js
-// Large (4x2): hero + up to 3 category cards, full width 340
+// Large (4x2): hero + up to 3 category cards, full width 320
 // ─────────────────────────────────────────────────────────────────────────────
 const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
@@ -13,7 +13,7 @@ const { budgetHeroCard, budgetCard } = budgetsComp;
 module.exports = { renderLarge };
 
 function renderLarge(widget, { bucket, bucketName, bucketBudgets, categoryBudgets }) {
-  const width = 340;
+  const width = 320;
   for (let i = 0; i < bucketBudgets.length; i++) {
     const b = bucketBudgets[i];
     budgetHeroCard(widget, {

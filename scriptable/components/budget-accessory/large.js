@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // components/budget-accessory/large.js
 // Large widget (4x2): spacious header, big numbers, bar, Day + period
-// Width ~340pt, uses hero-style large fonts
+// Width ~320pt, uses hero-style large fonts
 // ─────────────────────────────────────────────────────────────────────────────
 const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
@@ -42,7 +42,9 @@ function renderLarge(widget, { bucket, budget }) {
   line1.centerAlignContent();
   const spentStr = widget.addText(moneyLib.compact(budget.spent));
   // Reuse budgetOverview style? Keep simple
-  const left = line1.addText(`${moneyLib.compact(budget.spent)} of ${moneyLib.compact(budget.amount)}`);
+  const left = line1.addText(
+    `${moneyLib.compact(budget.spent)} of ${moneyLib.compact(budget.amount)}`,
+  );
   left.font = font("bold", 22);
   left.textColor = budget.pct >= 100 ? t("danger") : t("success");
   line1.addSpacer();
@@ -50,7 +52,12 @@ function renderLarge(widget, { bucket, budget }) {
   pct.font = font("semibold", 18);
   pct.textColor = budget.pct >= 100 ? t("danger") : t("text");
   widget.addSpacer(10);
-  budgetBallTrack(widget, { pct: budget.pct, spent: budget.spent, target: budget.amount, width: 340 });
+  budgetBallTrack(widget, {
+    pct: budget.pct,
+    spent: budget.spent,
+    target: budget.amount,
+    width: 320,
+  });
   widget.addSpacer(10);
   const footer = widget.addStack();
   footer.layoutHorizontally();

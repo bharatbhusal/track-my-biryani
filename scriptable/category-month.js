@@ -55,22 +55,11 @@ bootstrap.run(async () => {
     return widget;
   }
 
-  // Switch on family: each layout handles its own header/bar/rows/footer
-  const family = layout.family();
-  switch (family) {
-    case "small":
-      return renderSmall(widget, { categories });
-    case "medium":
-      return renderMedium(widget, { bucketName, categories, totalSpend });
-    case "large":
-    case "extraLarge":
-      return renderLarge(widget, { bucketName, categories, totalSpend });
-    case "accessoryCircular":
-    case "accessoryInline":
-      return renderCircular(widget, { categories });
-    case "accessoryRectangular":
-      return renderRectangular(widget, { categories });
-    default:
-      return renderMedium(widget, { bucketName, categories, totalSpend });
-  }
+  // Layout via layout helpers — no plain strings
+  if (layout.isSmall()) return renderSmall(widget, { categories });
+  if (layout.isMedium()) return renderMedium(widget, { bucketName, categories, totalSpend });
+  if (layout.isLarge()) return renderLarge(widget, { bucketName, categories, totalSpend });
+  if (layout.isCircular() || layout.isInline()) return renderCircular(widget, { categories });
+  if (layout.isRectangular()) return renderRectangular(widget, { categories });
+  return renderMedium(widget, { bucketName, categories, totalSpend });
 });

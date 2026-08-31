@@ -47,7 +47,7 @@ function budgetOverviewSummary(
 
   parent.addSpacer(7);
   // Line 2: ball track (width 145 for accessory)
-  budgetBallTrack(parent, { pct: raw, spent, target, width: width || 340 });
+  budgetBallTrack(parent, { pct: raw, spent, target, width: width || 320 });
   parent.addSpacer(7);
 
   // Line 3: Day X of Y left, perDay right (e.g. "₹590/day")

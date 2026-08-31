@@ -213,7 +213,7 @@ function footer(parent, { left, right }) {
 // Budget progress bar (sibling filled + track, flush left, no gap)
 // Shared by all budget widgets — hero, card, summary
 // ─────────────────────────────────────────────────────────────────────────────
-function budgetBar(parent, { pct, width = 340, trackColor, spent, target, height = 6 } = {}) {
+function budgetBar(parent, { pct, width = 320, trackColor, spent, target, height = 6 } = {}) {
   const raw = Number(pct) || 0;
   const clamped = Math.max(0, Math.min(100, raw));
   const ratio = clamped / 100;
@@ -243,7 +243,7 @@ function budgetBar(parent, { pct, width = 340, trackColor, spent, target, height
 // Budget bar with floating ball indicator (hidden when over budget)
 // Shows ball position proportional to pct, used in compact summary
 // ─────────────────────────────────────────────────────────────────────────────
-function budgetBallTrack(parent, { pct, width = 340, trackColor, spent, target } = {}) {
+function budgetBallTrack(parent, { pct, width = 320, trackColor, spent, target } = {}) {
   const raw = Number(pct) || 0;
   const clamped = Math.max(0, Math.min(100, raw));
   const ratio = clamped / 100;

@@ -19,7 +19,10 @@ module.exports = { budgetCard, budgetHeroCard, renderRectangular };
 // Row card: emoji + vertical color line + name + period + target amount
 // + bar + bottom spent left / % left over right
 // ─────────────────────────────────────────────────────────────────────────────
-function budgetCard(parent, { title, emoji, indicatorColor, period, spent, target, pct, width = 340, compactMode } = {}) {
+function budgetCard(
+  parent,
+  { title, emoji, indicatorColor, period, spent, target, pct, width = 320, compactMode } = {},
+) {
   const raw = Number(pct) || 0;
   const isOver = raw >= 100 || spent > target;
 
@@ -82,7 +85,10 @@ function budgetCard(parent, { title, emoji, indicatorColor, period, spent, targe
 // Hero card: large numbers for bucket budget — spent of target with %
 // + thick 8pt bar + bottom remaining/over text
 // ─────────────────────────────────────────────────────────────────────────────
-function budgetHeroCard(parent, { title, emoji, period, spent, target, pct, width = 340, compactMode } = {}) {
+function budgetHeroCard(
+  parent,
+  { title, emoji, period, spent, target, pct, width = 320, compactMode } = {},
+) {
   const raw = Number(pct) || 0;
   const isOver = raw >= 100 || spent > target;
   const fillColor = isOver ? t("danger") : raw > 85 ? t("warning") : t("success");

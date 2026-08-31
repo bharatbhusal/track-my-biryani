@@ -60,21 +60,11 @@ bootstrap.run(async () => {
   // Local date progress for perDay calc (not API)
   const month = currentMonthProgress();
 
-  const family = layout.family();
-  switch (family) {
-    case "small":
-      return renderSmall(widget, { bucketName, expenses, total, totalSpend, month });
-    case "medium":
-      return renderMedium(widget, { bucketName, expenses, total, totalSpend, month });
-    case "large":
-    case "extraLarge":
-      return renderLarge(widget, { bucketName, expenses, total, totalSpend, month });
-    case "accessoryCircular":
-    case "accessoryInline":
-      return renderCircular(widget, { bucket, totalSpend });
-    case "accessoryRectangular":
-      return renderRectangular(widget, { bucket, bucketName, expenses, total, totalSpend, month });
-    default:
-      return renderMedium(widget, { bucketName, expenses, total, totalSpend, month });
-  }
+  // Layout via helpers — no string literals
+  if (layout.isSmall()) return renderSmall(widget, { bucketName, expenses, total, totalSpend, month });
+  if (layout.isMedium()) return renderMedium(widget, { bucketName, expenses, total, totalSpend, month });
+  if (layout.isLarge()) return renderLarge(widget, { bucketName, expenses, total, totalSpend, month });
+  if (layout.isCircular() || layout.isInline()) return renderCircular(widget, { bucket, totalSpend });
+  if (layout.isRectangular()) return renderRectangular(widget, { bucket, bucketName, expenses, total, totalSpend, month });
+  return renderMedium(widget, { bucketName, expenses, total, totalSpend, month });
 });
