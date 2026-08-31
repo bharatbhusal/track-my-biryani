@@ -1,3 +1,9 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// api/client.js
+// Low-level HTTP: wraps Scriptable Request, handles auth cookie, 401 retry,
+// JSON body, and ApiError throwing. All higher layers (endpoints/widgets)
+// go through `request(path, {method, body})` and get `payload.data` back.
+// ─────────────────────────────────────────────────────────────────────────────
 const config = importModule("config");
 const keychain = importModule("lib/keychain");
 

@@ -1,45 +1,34 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
-// icon-color: orange; icon-glyph: wallet;
-// Track My Biryani — Budget Progress (All Sizes)
-// Shows bucket budget progress — supports small, medium, large, circular & rectangular.
-// WidgetParameter: optional bucketId override; defaults to me().bucketId
-// Appropriate name: Budget Progress Tracker
+// icon-color: teal; icon-glyph: wallet;
+// Track My Biryani — Budget + Daily Spend (All Sizes)
+// Combines budget progress with per-day spend ("590/day" on Day line)
+// WidgetParameter: optional bucketId, defaults to me().bucketId
+// Appropriate name: Budget & Daily Spend Tracker
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Imports: flat data + bootstrap + layout/theme + per-size layouts
-// ─────────────────────────────────────────────────────────────────────────────
 const widgets = importModule("api/widgets");
 const bootstrap = importModule("lib/bootstrap");
 const layout = importModule("lib/layout");
 const theme = importModule("lib/theme");
 const date = importModule("lib/date");
-const { budgetSummary } = importModule("components/budget-accessory/rectangular");
-const { renderSmall } = importModule("components/budget-accessory/small");
-const { renderMedium } = importModule("components/budget-accessory/medium");
-const { renderLarge } = importModule("components/budget-accessory/large");
-const { renderCircular } = importModule("components/budget-accessory/circular");
+const { budgetOverviewSummary } = importModule("components/budget-overview-accessory/rectangular");
+const { renderSmall } = importModule("components/budget-overview-accessory/small");
+const { renderMedium } = importModule("components/budget-overview-accessory/medium");
+const { renderLarge } = importModule("components/budget-overview-accessory/large");
+const { renderCircular } = importModule("components/budget-overview-accessory/circular");
 
 const { t } = theme;
 const { font } = layout;
 const { budgetPeriodProgress } = date;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main: resolves bucket/budget once, then switches on family for layout.
-// Accessory families hide refresh footer; home screen families show it.
-// ─────────────────────────────────────────────────────────────────────────────
 bootstrap.run(async () => {
   const widget = new ListWidget();
   widget.backgroundColor = theme.background();
-
-  // Hide refresh for all accessory families (circular/rectangular/inline)
   if (layout.isAccessory()) widget.noRefreshFooter = true;
 
-  // ── Data: single flat call (param || me) ──
   const param = String(args.widgetParameter || "").trim();
-  const { bucket, budget: pick, bucketId } = await widgets.budgetAccessory({ bucketId: param });
+  const { bucket, budget: pick, bucketId, perDay } = await widgets.budgetOverviewAccessory({ bucketId: param });
 
-  // ── Shared empty states (all sizes) ──
   if (!bucketId) {
     const title = widget.addText("Set bucket ID");
     title.font = font("semibold", 12);
@@ -73,22 +62,22 @@ bootstrap.run(async () => {
     return widget;
   }
 
-  // ── Layout switch: delegate to per-size component ──
+  // Switch on family for size-appropriate layout
   const family = layout.family();
   switch (family) {
     case "small":
-      return renderSmall(widget, { bucket, budget: pick });
+      return renderSmall(widget, { bucket, budget: pick, perDay });
     case "medium":
-      return renderMedium(widget, { bucket, budget: pick });
+      return renderMedium(widget, { bucket, budget: pick, perDay });
     case "large":
     case "extraLarge":
-      return renderLarge(widget, { bucket, budget: pick });
+      return renderLarge(widget, { bucket, budget: pick, perDay });
     case "accessoryCircular":
     case "accessoryInline":
-      return renderCircular(widget, { bucket, budget: pick });
+      return renderCircular(widget, { bucket, budget: pick, perDay });
     case "accessoryRectangular":
     default: {
-      // ── Rectangular accessory (default): header + compact summary 145pt ──
+      // Rectangular: header + combined summary (Day X/Y left, perDay right)
       const spent = pick.spent;
       const target = pick.amount;
       const pct = target > 0 ? (spent / target) * 100 : pick.pct;
@@ -109,13 +98,13 @@ bootstrap.run(async () => {
       pill.font = font("regular", 7);
       pill.textColor = t("muted");
       widget.addSpacer(4);
-      budgetSummary(widget, {
+      budgetOverviewSummary(widget, {
         spent,
         target,
         pct,
         currentDay,
         totalDays,
-        period: null,
+        perDay,
         width: 145,
         compactMode: true,
       });

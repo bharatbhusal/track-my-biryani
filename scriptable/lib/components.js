@@ -1,3 +1,9 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// lib/components.js — LEGACY ENTRY POINT
+// New code should import from components/shared.js + components/<widget>.js
+// This file re-exports all components for backwards compatibility so old
+// widgets still work. New widgets use the per-widget split.
+// ─────────────────────────────────────────────────────────────────────────────
 const format = importModule("lib/format");
 const theme = importModule("lib/theme");
 const layout = importModule("lib/layout");
@@ -293,7 +299,7 @@ function stackedCategoryBar(parent, categories) {
     const category = categories[i];
     const segment = row.addStack();
 
-    const width = Math.max(1, Math.round(320 * (category.pct / Math.max(totalPct, 1))));
+    const width = Math.max(1, Math.round(340 * (category.pct / Math.max(totalPct, 1))));
 
     segment.size = new Size(width, 10);
     segment.backgroundColor = safeColor(category.color);
@@ -311,7 +317,7 @@ function capPeriod(s) {
   return str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 }
 
-function budgetBar(parent, { pct, width = 320, trackColor, spent, target, height = 6 } = {}) {
+function budgetBar(parent, { pct, width = 340, trackColor, spent, target, height = 6 } = {}) {
   const raw = Number(pct) || 0;
   const clamped = Math.max(0, Math.min(100, raw));
   const ratio = clamped / 100;
@@ -341,7 +347,7 @@ function budgetBar(parent, { pct, width = 320, trackColor, spent, target, height
   return row;
 }
 
-function budgetBallTrack(parent, { pct, width = 320, trackColor, spent, target } = {}) {
+function budgetBallTrack(parent, { pct, width = 340, trackColor, spent, target } = {}) {
   const raw = Number(pct) || 0;
   const clamped = Math.max(0, Math.min(100, raw));
   const ratio = clamped / 100;
@@ -417,7 +423,7 @@ function budgetSummary(
   right.rightAlignText();
 
   parent.addSpacer(7);
-  budgetBallTrack(parent, { pct: raw, spent, target, width: width || 320 });
+  budgetBallTrack(parent, { pct: raw, spent, target, width: width || 340 });
   parent.addSpacer(7);
 
   if (typeof currentDay === "number" && typeof totalDays === "number") {
@@ -440,7 +446,7 @@ function budgetSummary(
 
 function budgetCard(
   parent,
-  { title, emoji, indicatorColor, period, spent, target, pct, width = 320, compactMode } = {},
+  { title, emoji, indicatorColor, period, spent, target, pct, width = 340, compactMode } = {},
 ) {
   const raw = Number(pct) || 0;
   const isOver = raw >= 100 || spent > target;
@@ -502,7 +508,7 @@ function budgetCard(
 
 function budgetHeroCard(
   parent,
-  { title, emoji, period, spent, target, pct, width = 320, compactMode } = {},
+  { title, emoji, period, spent, target, pct, width = 340, compactMode } = {},
 ) {
   const raw = Number(pct) || 0;
   const isOver = raw >= 100 || spent > target;

@@ -1,18 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// api/auth.js
-// Auth endpoints: me() returns {id, name, username, bucketId} for current
-// user (used to resolve default bucketId), logout() clears server + local.
+// components/overview-accessory.js
+// No unique UI — overview accessory reuses shared primitives only.
+// This file exists for symmetry (each widget has a components/<widget>.js).
+// Add overview-specific helpers here if widget grows (e.g. mini stat tiles).
 // ─────────────────────────────────────────────────────────────────────────────
-const { request } = importModule("api/client");
-const keychain = importModule("lib/keychain");
 
-module.exports = { me, logout };
-
-async function me() {
-  return request("/auth/me");
-}
-
-async function logout() {
-  await request("/auth/logout", { method: "POST" });
-  keychain.clearAuth();
-}
+module.exports = {};
