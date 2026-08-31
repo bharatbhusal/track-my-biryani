@@ -1,6 +1,5 @@
 const config = importModule("config");
 const keychain = importModule("lib/keychain");
-const debug = importModule("lib/debug");
 
 class ApiError extends Error {
   constructor(message, code, status) {
@@ -11,7 +10,7 @@ class ApiError extends Error {
   }
 }
 
-async function request(path, { method = "GET", body, bucketId, retried } = {}) {
+async function request(path, { method = "GET", body, retried } = {}) {
   const req = new Request(config.BASE_URL + path);
   req.method = method;
   req.timeoutInterval = config.REQUEST_TIMEOUT;
@@ -22,13 +21,11 @@ async function request(path, { method = "GET", body, bucketId, retried } = {}) {
     req.headers = { ...(req.headers || {}), "Content-Type": "application/json" };
     req.body = JSON.stringify(body);
   }
-  if (bucketId) req.headers = { ...(req.headers || {}), [config.BUCKET_HEADER]: bucketId };
-  debug.log(`[request] ${method} ${path}`, bucketId ? `bucket=${bucketId}` : "");
   const payload = await req.loadJSON();
   const statusCode = req.response.statusCode;
   if (statusCode === 401 && !retried) {
     await login();
-    return request(path, { method, body, bucketId, retried: true });
+    return request(path, { method, body, retried: true });
   }
   if (statusCode >= 400) {
     throw new ApiError(

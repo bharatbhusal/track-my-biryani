@@ -16,7 +16,7 @@ const { t } = theme;
 const { font } = layout;
 const { budgetPeriodProgress } = date;
 
-const bucketId = String(args.widgetParameter || "").trim();
+let bucketId = String(args.widgetParameter || "").trim();
 
 bootstrap.run(async () => {
   const widget = new ListWidget();
@@ -31,6 +31,13 @@ bootstrap.run(async () => {
     fallback.font = font("semibold", 12);
     fallback.textColor = t("text");
     return widget;
+  }
+
+  if (!bucketId) {
+    try {
+      const me = await endpoints.authMe();
+      bucketId = me?.bucketId || "";
+    } catch {}
   }
 
   if (!bucketId) {

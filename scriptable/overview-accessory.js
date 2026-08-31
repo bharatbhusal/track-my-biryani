@@ -20,6 +20,14 @@ bootstrap.run(async () => {
   const widget = new ListWidget();
   widget.backgroundColor = theme.background();
 
+  let bucketId = String(args.widgetParameter || "").trim();
+  if (!bucketId) {
+    try {
+      const me = await endpoints.authMe();
+      bucketId = me?.bucketId || "";
+    } catch {}
+  }
+
   // ─────────────────────────────────────────────
   // Date range
   // ─────────────────────────────────────────────
@@ -33,6 +41,7 @@ bootstrap.run(async () => {
   const response = await endpoints.overview({
     from,
     to,
+    bucketId: bucketId || undefined,
   });
 
   // API:

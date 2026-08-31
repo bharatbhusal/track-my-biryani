@@ -55,7 +55,7 @@ const { currentMonthRange } = date;
 // Widget parameter
 // ─────────────────────────────────────────────
 
-const bucketId = String(args.widgetParameter || "").trim();
+let bucketId = String(args.widgetParameter || "").trim();
 
 // ─────────────────────────────────────────────
 // Widget
@@ -77,6 +77,13 @@ bootstrap.run(async () => {
   // ─────────────────────────────────────────
   // Validate bucket parameter
   // ─────────────────────────────────────────
+
+  if (!bucketId) {
+    try {
+      const me = await endpoints.authMe();
+      bucketId = me?.bucketId || "";
+    } catch {}
+  }
 
   if (!bucketId) {
     const title = widget.addText("Track My Biryani");
