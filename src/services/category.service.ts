@@ -310,7 +310,6 @@ function defaultCategorySearchRequest(): CategorySearchRequest {
       bucketIds: [],
       ownerPreset: "ME",
       ownerIds: [],
-      datePreset: "THIS_MONTH",
     },
     sortCriteria: { field: "amount", direction: "DESC" },
     pagination: { page: 1, pageSize: 20 },

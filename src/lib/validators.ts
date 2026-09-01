@@ -118,7 +118,7 @@ const categoryFilterSchema = z.object({
   bucketIds: z.array(z.string()).default([]),
   ownerPreset: ownerPresetSchema.default("ALL"),
   ownerIds: z.array(z.string()).default([]),
-  datePreset: datePresetSchema.default("THIS_MONTH"),
+  datePreset: datePresetSchema.optional(),
   customFrom: z.string().optional(),
   customTo: z.string().optional(),
   q: z.string().trim().max(120).optional(),
