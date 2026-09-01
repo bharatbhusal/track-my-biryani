@@ -1,3 +1,8 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// api/auth.js
+// Auth endpoints: me() returns {id, name, username, bucketId} for current
+// user (used to resolve default bucketId), logout() clears server + local.
+// ─────────────────────────────────────────────────────────────────────────────
 const { request } = importModule("api/client");
 const keychain = importModule("lib/keychain");
 

@@ -8,7 +8,7 @@ top level is just a small file that fetches data and draws a `ListWidget`.
 
 Six widget scripts ship:
 
-- `month-overview.js` — monthly spend vs projected
+- `expenses.js` — monthly spend vs projected
 - `category-week.js` — this week's categories as a bar graph
 - `recent-expenses.js` — latest expenses
 - `daily-trend.js` — last 7 days of spend
@@ -35,7 +35,7 @@ Six widget scripts ship:
 
    ```text
    Scriptable/
-   ├── month-overview.js
+   ├── expenses.js
    ├── category-week.js
    ├── recent-expenses.js
    ├── daily-trend.js
@@ -86,8 +86,8 @@ Scriptable console.
 
 | Key                 | Default                                                                           | Meaning                                                                 | Notes                                                                                                                     |
 | ------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `BASE_URL`          | `http://localhost:3000/api`                                                       | API base URL the widgets call                                           | For production change the value to `https://trackmybiryani.bharatbhusal.com/api` (also noted in a comment above the key). |
-| `WEBSITE_URL`       | `http://localhost:3000`                                                           | Web app base URL, used to open the app from a widget                    | Production: `https://trackmybiryani.bharatbhusal.com`.                                                                    |
+| `BASE_URL`          | `http://localhost:3200/api`                                                       | API base URL the widgets call                                           | For production change the value to `https://trackmybiryani.bharatbhusal.com/api` (also noted in a comment above the key). |
+| `WEBSITE_URL`       | `http://localhost:3200`                                                           | Web app base URL, used to open the app from a widget                    | Production: `https://trackmybiryani.bharatbhusal.com`.                                                                    |
 | `KEYS`              | `{ USERNAME: "tmb_username", PASSWORD: "tmb_password", AUTH_COOKIE: "tmb_auth" }` | Keychain key names for credentials and the auth cookie                  | Leave alone unless you know what you're doing.                                                                            |
 | `BUCKET_HEADER`     | `x-bucket-id`                                                                     | HTTP header that selects the bucket for a request                       | Sent only when a bucket id is supplied (bucket-summary).                                                                  |
 | `RESET_CREDENTIALS` | `false`                                                                           | `true` deletes stored credentials on the next run so the app re-prompts | Set to `true`, run a script once, set back to `false`.                                                                    |
@@ -119,7 +119,7 @@ lock-screen accessory slots take the accessory scripts.
 
 | Script               | Shows                                                | Families                                         | Widget parameter               | Example                     |
 | -------------------- | ---------------------------------------------------- | ------------------------------------------------ | ------------------------------ | --------------------------- |
-| `month-overview.js`  | Month spend total, per-day, month progress           | small, medium, large, accessory\*                | —                              | "₹31,127 · ₹1,004/day"      |
+| `expenses.js`        | Month spend total, per-day, month progress           | small, medium, large, accessory\*                | —                              | "₹31,127 · ₹1,004/day"      |
 | `category-week.js`   | This week's categories by spend share as a bar graph | small, medium, large, accessory\*                | —                              | "Food ████████ 42%"         |
 | `recent-expenses.js` | Latest 5 expenses with day labels                    | medium, large                                    | —                              | "🍜 Biryani ₹450 Yesterday" |
 | `daily-trend.js`     | Last 7 days of spend                                 | medium, large, accessory\*                       | —                              | "7d ₹8,900"                 |

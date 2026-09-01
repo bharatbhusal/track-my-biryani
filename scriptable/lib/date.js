@@ -2,6 +2,7 @@ module.exports = {
   currentMonthRange,
   rangeForDays,
   currentMonthProgress,
+  budgetPeriodProgress,
   formatDay,
   relativeDay,
   formatClock,
@@ -45,6 +46,29 @@ function currentMonthProgress() {
     daysInMonth,
     progress: currentDay / daysInMonth,
   };
+}
+
+function budgetPeriodProgress(period) {
+  const now = new Date();
+  if (period === "weekly") {
+    const day = now.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diff);
+    monday.setHours(0, 0, 0, 0);
+    const currentDay = Math.floor((now - monday) / 86400000) + 1;
+    return { currentDay, totalDays: 7, progress: currentDay / 7 };
+  }
+  if (period === "yearly") {
+    const start = new Date(now.getFullYear(), 0, 1);
+    const isLeap = new Date(now.getFullYear(), 1, 29).getDate() === 29;
+    const total = isLeap ? 366 : 365;
+    const diff = Math.floor((now - start) / 86400000) + 1;
+    return { currentDay: diff, totalDays: total, progress: diff / total };
+  }
+  // monthly (default)
+  const { currentDay, daysInMonth, progress } = currentMonthProgress();
+  return { currentDay, totalDays: daysInMonth, progress };
 }
 
 function formatDay(iso) {

@@ -1,4 +1,17 @@
-module.exports = { family, isAccessory, mode, scale, font };
+module.exports = {
+  family,
+  isAccessory,
+  isSmall,
+  isMedium,
+  isLarge,
+  isExtraLarge,
+  isCircular,
+  isRectangular,
+  isInline,
+  mode,
+  scale,
+  font,
+};
 
 // ponytail: widgetFamily/runsInAccessoryWidget live on Scriptable's GLOBAL `config`, not our settings module
 
@@ -8,6 +21,35 @@ function family() {
 
 function isAccessory() {
   return config.runsInAccessoryWidget;
+}
+
+function isSmall() {
+  return config.widgetFamily === "small";
+}
+
+function isMedium() {
+  return config.widgetFamily === "medium";
+}
+
+function isLarge() {
+  // includes extraLarge for convenience — use isExtraLarge() for strict check
+  return config.widgetFamily === "large" || config.widgetFamily === "extraLarge";
+}
+
+function isExtraLarge() {
+  return config.widgetFamily === "extraLarge";
+}
+
+function isCircular() {
+  return config.widgetFamily === "accessoryCircular";
+}
+
+function isRectangular() {
+  return config.widgetFamily === "accessoryRectangular";
+}
+
+function isInline() {
+  return config.widgetFamily === "accessoryInline";
 }
 
 function mode() {
