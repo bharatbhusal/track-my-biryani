@@ -28,19 +28,19 @@ function expenseBar(parent, expense) {
   row.centerAlignContent();
 
   const emoji = row.addText(expense.categoryEmoji || "💸");
-  emoji.font = font("regular", 15);
+  emoji.font = font("regular", 14);
 
   row.addSpacer(7);
 
   const indicator = row.addStack();
-  indicator.size = new Size(5, 22);
-  indicator.cornerRadius = 2.5;
+  indicator.size = new Size(4, 18);
+  indicator.cornerRadius = 2;
   indicator.backgroundColor = safeColor(expense.categoryColor || "#999999");
 
   row.addSpacer(7);
 
   const title = row.addText(expense.title || "Expense");
-  title.font = font("regular", 11);
+  title.font = font("regular", 10);
   title.textColor = t("text");
   title.lineLimit = 1;
 
@@ -53,7 +53,7 @@ function expenseBar(parent, expense) {
   row.addSpacer(8);
 
   const amount = row.addText(moneyShort(Number(expense.amount) || 0));
-  amount.font = font("semibold", 11);
+  amount.font = font("semibold", 10);
   amount.textColor = t("text");
   amount.rightAlignText();
 

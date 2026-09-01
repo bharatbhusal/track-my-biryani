@@ -37,7 +37,7 @@ function renderMedium(widget, { bucketName, categories, totalSpend }) {
     footer(widget, { left: bucketName, right: "₹0" });
     return widget;
   }
-  const visible = categories.slice(0, 4);
+  const visible = categories.slice(0, 3);
   widget.addSpacer(9);
   stackedCategoryBar(widget, categories);
   widget.addSpacer(10);
