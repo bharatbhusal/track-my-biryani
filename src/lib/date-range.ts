@@ -158,7 +158,7 @@ function endOfMonth(year: number, month: number): Date {
 }
 
 export function toIsoBoundsForPreset(
-  preset: FilterDatePreset,
+  preset?: FilterDatePreset,
   customFrom?: string,
   customTo?: string,
 ): { from?: string; to?: string } | null {

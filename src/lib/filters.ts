@@ -135,7 +135,6 @@ export function scopedCategoryRequest(bucketId: string): CategorySearchRequest {
       bucketIds: [bucketId],
       ownerPreset: "ALL",
       ownerIds: [],
-      datePreset: "THIS_MONTH",
     },
     sortCriteria: { field: "createdAt", direction: "DESC" },
     pagination: { page: 1, pageSize: 100 },

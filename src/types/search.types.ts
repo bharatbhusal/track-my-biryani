@@ -45,7 +45,7 @@ export interface CategoryFilterCriteria {
   bucketIds: string[];
   ownerPreset: OwnerPreset;
   ownerIds: string[];
-  datePreset: FilterDatePreset;
+  datePreset?: FilterDatePreset;
   customFrom?: string;
   customTo?: string;
   q?: string;
