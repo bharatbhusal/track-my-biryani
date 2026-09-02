@@ -1,16 +1,9 @@
 import { auditSearchSchema } from "@/lib/validators";
 import { createAuditLog, searchAuditLogs } from "@/repositories/audit.repository";
 import type { AuditSearchRequest } from "@/constants/types/search.types";
+import { AuditLogType } from "@/constants/types/audit.types";
 
-export async function logAuditEvent(input: {
-  actorId: string;
-  bucketId?: string;
-  action: string;
-  entity: string;
-  entityId?: string;
-  note?: string;
-  metadata?: Record<string, unknown>;
-}): Promise<void> {
+export async function logAuditEvent(input: AuditLogType): Promise<void> {
   await createAuditLog(input);
 }
 

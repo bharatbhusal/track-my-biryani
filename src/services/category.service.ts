@@ -29,6 +29,7 @@ import { logAuditEvent } from "@/services/audit.service";
 import { randomHexColor } from "@/lib/utils";
 import type { CategoryStatsSummary } from "@/constants/types/analytics.types";
 import type { CategorySearchRequest, ExpenseFilterCriteria } from "@/constants/types/search.types";
+import { AUDIT_ACTIONS } from "@/constants/types/audit.types";
 
 async function assertCategoryCreator(
   userId: string,
@@ -107,7 +108,7 @@ export async function createCategoryService(userId: string, body: unknown) {
   await logAuditEvent({
     actorId: userId,
     bucketId: payload.bucketId,
-    action: "create",
+    action: AUDIT_ACTIONS.CREATE,
     entity: "category",
     entityId: category._id.toString(),
     note: `Created category "${category.name}"`,
@@ -158,7 +159,7 @@ export async function updateCategoryService(userId: string, categoryId: string, 
     await logAuditEvent({
       actorId: userId,
       bucketId: sourceId,
-      action: "move-out",
+      action: AUDIT_ACTIONS.OUT,
       entity: "category",
       entityId: category._id.toString(),
       note: `Moved category "${category.name}" to ${destName}`,
@@ -166,7 +167,7 @@ export async function updateCategoryService(userId: string, categoryId: string, 
     await logAuditEvent({
       actorId: userId,
       bucketId: destId,
-      action: "move-in",
+      action: AUDIT_ACTIONS.IN,
       entity: "category",
       entityId: category._id.toString(),
       note: `Category "${category.name}" moved from ${sourceName}`,
@@ -175,7 +176,7 @@ export async function updateCategoryService(userId: string, categoryId: string, 
     await logAuditEvent({
       actorId: userId,
       bucketId: currentBucketId,
-      action: "update",
+      action: AUDIT_ACTIONS.UPDATE,
       entity: "category",
       entityId: category._id.toString(),
       note: `Updated category "${category.name}"`,
@@ -197,7 +198,7 @@ export async function deleteCategoryService(userId: string, categoryId: string) 
   await logAuditEvent({
     actorId: userId,
     bucketId: category.bucketId.toString(),
-    action: "delete",
+    action: AUDIT_ACTIONS.DELETE,
     entity: "category",
     entityId: categoryId,
     note: `Deleted category "${category.name}"`,

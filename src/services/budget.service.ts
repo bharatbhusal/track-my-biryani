@@ -17,6 +17,7 @@ import {
 import { ensureCategoryInBucket, getCategoryById } from "@/repositories/category.repository";
 import { logAuditEvent } from "@/services/audit.service";
 import type { BudgetGroup, BudgetItem, BudgetPeriod } from "@/constants/types/budget.types";
+import { AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/constants/types/audit.types";
 
 function toBudgetItem(
   b: Record<string, unknown>,
@@ -181,8 +182,8 @@ export async function createBudgetService(userId: string, body: unknown): Promis
     await logAuditEvent({
       actorId: userId,
       bucketId: payload.bucketId,
-      action: "create",
-      entity: "budget",
+      action: AUDIT_ACTIONS.CREATE,
+      entity: AUDIT_ENTITIES.BUDGET,
       entityId: created._id.toString(),
       note: `Created ${payload.period} budget of ${payload.amount} for ${categoryId ? "category" : "bucket"} ${bucket?.name ?? payload.bucketId}`,
       metadata: {
@@ -305,16 +306,16 @@ export async function updateBudgetService(
       await logAuditEvent({
         actorId: userId,
         bucketId: current.bucketId.toString(),
-        action: "move-out",
-        entity: "budget",
+        action: AUDIT_ACTIONS.OUT,
+        entity: AUDIT_ENTITIES.BUDGET,
         entityId: budgetId,
         note: `Moved a budget to ${destName}`,
       });
       await logAuditEvent({
         actorId: userId,
         bucketId: targetBucketId,
-        action: "move-in",
-        entity: "budget",
+        action: AUDIT_ACTIONS.IN,
+        entity: AUDIT_ENTITIES.BUDGET,
         entityId: budgetId,
         note: `A budget moved from ${sourceName}`,
         metadata: { amount: nextAmount, period: nextPeriod },
@@ -323,8 +324,8 @@ export async function updateBudgetService(
       await logAuditEvent({
         actorId: userId,
         bucketId: targetBucketId,
-        action: "update",
-        entity: "budget",
+        action: AUDIT_ACTIONS.UPDATE,
+        entity: AUDIT_ENTITIES.BUDGET,
         entityId: budgetId,
         metadata: {
           amount: nextAmount,
@@ -376,8 +377,8 @@ export async function deleteBudgetService(userId: string, budgetId: string) {
   await logAuditEvent({
     actorId: userId,
     bucketId: current.bucketId.toString(),
-    action: "delete",
-    entity: "budget",
+    action: AUDIT_ACTIONS.DELETE,
+    entity: AUDIT_ENTITIES.BUDGET,
     entityId: budgetId,
     note: `Deleted budget ${budgetId}`,
   });

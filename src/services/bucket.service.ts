@@ -41,6 +41,7 @@ import type {
   IncomingRequestsGroup,
 } from "@/constants/types/bucket.types";
 import type { BucketSearchRequest } from "@/constants/types/search.types";
+import { AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/constants/types/audit.types";
 
 export async function listBucketsService(userId: string): Promise<BucketsListPayload> {
   const [accepted, invitations] = await Promise.all([
@@ -80,8 +81,8 @@ export async function createBucketService(userId: string, body: unknown): Promis
   await logAuditEvent({
     actorId: userId,
     bucketId: bucket._id.toString(),
-    action: "create",
-    entity: "bucket",
+    action: AUDIT_ACTIONS.CREATE,
+    entity: AUDIT_ENTITIES.BUCKET,
     entityId: bucket._id.toString(),
     note: `Created bucket "${bucket.name}"`,
   });
@@ -216,8 +217,8 @@ export async function updateBucketService(
   await logAuditEvent({
     actorId: userId,
     bucketId,
-    action: "update",
-    entity: "bucket",
+    action: AUDIT_ACTIONS.UPDATE,
+    entity: AUDIT_ENTITIES.BUCKET,
     entityId: bucketId,
     note: `Updated bucket "${payload.name}"`,
   });
@@ -238,8 +239,8 @@ export async function deleteBucketService(userId: string, bucketId: string) {
   await logAuditEvent({
     actorId: userId,
     bucketId,
-    action: "delete",
-    entity: "bucket",
+    action: AUDIT_ACTIONS.DELETE,
+    entity: AUDIT_ENTITIES.BUCKET,
     entityId: bucketId,
     note: `Deleted bucket "${bucket.name}"`,
   });
@@ -275,8 +276,8 @@ export async function inviteUserService(
   await logAuditEvent({
     actorId: userId,
     bucketId,
-    action: "invite",
-    entity: "bucket-member",
+    action: AUDIT_ACTIONS.INVITE,
+    entity: AUDIT_ENTITIES.MEMBER,
     entityId: bucketId,
     note: `Invited @${user.username} to ${bucket.name}`,
     metadata: { targetUserId: targetId },
@@ -297,8 +298,8 @@ export async function acceptInviteService(userId: string, bucketId: string): Pro
   await logAuditEvent({
     actorId: userId,
     bucketId,
-    action: "accept",
-    entity: "bucket-member",
+    action: AUDIT_ACTIONS.ACCEPT,
+    entity: AUDIT_ENTITIES.MEMBER,
     entityId: bucketId,
     note: `Joined bucket "${bucket!.name}"`,
   });
@@ -316,8 +317,8 @@ export async function declineInviteService(
   await logAuditEvent({
     actorId: userId,
     bucketId,
-    action: "decline",
-    entity: "bucket-member",
+    action: AUDIT_ACTIONS.DECLINE,
+    entity: AUDIT_ENTITIES.MEMBER,
     entityId: bucketId,
     note: `Declined invite to "${bucket.name}"`,
   });
@@ -356,8 +357,8 @@ export async function leaveBucketService(userId: string, bucketId: string) {
   await logAuditEvent({
     actorId: userId,
     bucketId,
-    action: "leave",
-    entity: "bucket-member",
+    action: AUDIT_ACTIONS.LEAVE,
+    entity: AUDIT_ENTITIES.MEMBER,
     entityId: bucketId,
     note: `Left bucket "${bucket.name}"`,
   });
@@ -380,8 +381,8 @@ export async function revokeInviteService(
   await logAuditEvent({
     actorId: userId,
     bucketId,
-    action: "revoke",
-    entity: "bucket-member",
+    action: AUDIT_ACTIONS.REVOKE,
+    entity: AUDIT_ENTITIES.MEMBER,
     entityId: bucketId,
     note: `Revoked invite for member of "${bucket.name}"`,
     metadata: { targetUserId },
@@ -446,8 +447,8 @@ export async function requestToJoinService(
   await logAuditEvent({
     actorId: userId,
     bucketId,
-    action: "request",
-    entity: "bucket-member",
+    action: AUDIT_ACTIONS.REQUEST,
+    entity: AUDIT_ENTITIES.MEMBER,
     entityId: bucketId,
     note: `Requested to join "${bucket.name}"`,
     metadata: { targetUserId: userId },
@@ -517,8 +518,8 @@ export async function acceptRequestService(
   await logAuditEvent({
     actorId: ownerId,
     bucketId,
-    action: "accept",
-    entity: "bucket-member",
+    action: AUDIT_ACTIONS.ACCEPT,
+    entity: AUDIT_ENTITIES.MEMBER,
     entityId: bucketId,
     note: `Approved join request for "${bucket.name}"`,
     metadata: { targetUserId },

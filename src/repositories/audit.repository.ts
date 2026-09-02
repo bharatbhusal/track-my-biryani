@@ -3,16 +3,9 @@ import { Types } from "mongoose";
 import { buildAuditQuery } from "@/lib/query-builders";
 import { AuditLogModel } from "@/models/AuditLog";
 import type { AuditSearchRequest } from "@/constants/types/search.types";
+import { AuditLogType } from "@/constants/types/audit.types";
 
-export async function createAuditLog(input: {
-  actorId: string;
-  bucketId?: string;
-  action: string;
-  entity: string;
-  entityId?: string;
-  note?: string;
-  metadata?: Record<string, unknown>;
-}) {
+export async function createAuditLog(input: AuditLogType) {
   const log = await AuditLogModel.create({
     ...input,
     timestamp: new Date(),

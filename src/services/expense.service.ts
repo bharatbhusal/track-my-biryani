@@ -26,6 +26,7 @@ import { findBucketById } from "@/repositories/bucket.repository";
 import { findUserById } from "@/repositories/user.repository";
 import { logAuditEvent } from "@/services/audit.service";
 import type { ExpenseSearchRequest } from "@/constants/types/search.types";
+import { AUDIT_ACTIONS } from "@/constants/types/audit.types";
 
 export async function createExpenseService(userId: string, body: unknown) {
   const payload = expenseSchema.parse(body);
@@ -61,7 +62,7 @@ export async function createExpenseService(userId: string, body: unknown) {
   await logAuditEvent({
     actorId: userId,
     bucketId: payload.bucketId,
-    action: "create",
+    action: AUDIT_ACTIONS.CREATE,
     entity: "expense",
     entityId: expense._id.toString(),
     note: `Created expense "${expense.title}"`,
@@ -137,7 +138,7 @@ export async function updateExpenseService(userId: string, expenseId: string, bo
     await logAuditEvent({
       actorId: userId,
       bucketId: sourceId,
-      action: "move-out",
+      action: AUDIT_ACTIONS.OUT,
       entity: "expense",
       entityId: expenseId,
       note: `Moved expense "${expense.title}" to ${destName}`,
@@ -145,7 +146,7 @@ export async function updateExpenseService(userId: string, expenseId: string, bo
     await logAuditEvent({
       actorId: userId,
       bucketId: destId,
-      action: "move-in",
+      action: AUDIT_ACTIONS.IN,
       entity: "expense",
       entityId: expenseId,
       note: `Expense "${expense.title}" moved from ${sourceName}`,
@@ -154,7 +155,7 @@ export async function updateExpenseService(userId: string, expenseId: string, bo
     await logAuditEvent({
       actorId: userId,
       bucketId: current.bucketId.toString(),
-      action: "update",
+      action: AUDIT_ACTIONS.UPDATE,
       entity: "expense",
       entityId: expenseId,
       note: `Updated expense "${expense.title}"`,
@@ -181,7 +182,7 @@ export async function deleteExpenseService(userId: string, expenseId: string) {
   await logAuditEvent({
     actorId: userId,
     bucketId: existing.bucketId.toString(),
-    action: "delete",
+    action: AUDIT_ACTIONS.DELETE,
     entity: "expense",
     entityId: expenseId,
     note: `Deleted expense "${deleted.title}"`,

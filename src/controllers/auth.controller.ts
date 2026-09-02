@@ -3,6 +3,7 @@ import { loginUser, registerUser } from "@/services/auth.service";
 import { setAuthCookie } from "@/lib/auth";
 import { logAuditEvent } from "@/services/audit.service";
 import { NextRequest } from "next/server";
+import { AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/constants/types/audit.types";
 
 async function signup(payload: NextRequest) {
   const data = signupSchema.parse(payload);
@@ -13,8 +14,8 @@ async function signup(payload: NextRequest) {
 
   await logAuditEvent({
     actorId: result.user.id,
-    action: "signup",
-    entity: "auth",
+    action: AUDIT_ACTIONS.SIGNUP,
+    entity: AUDIT_ENTITIES.AUTH,
     note: "Signed up",
   });
 
@@ -30,8 +31,8 @@ async function login(payload: unknown) {
 
   await logAuditEvent({
     actorId: result.user.id,
-    action: "login",
-    entity: "auth",
+    action: AUDIT_ACTIONS.LOGIN,
+    entity: AUDIT_ENTITIES.AUTH,
     note: "Logged in",
   });
 
