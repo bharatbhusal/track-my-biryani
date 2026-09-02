@@ -1,6 +1,6 @@
 import { loginSchema, signupSchema } from "@/lib/validators";
 import { loginUser, registerUser } from "@/services/auth.service";
-import { setAuthCookie } from "@/lib/auth";
+import { clearAuthCookie, getAuthPayload, setAuthCookie } from "@/lib/auth";
 import { logAuditEvent } from "@/services/audit.service";
 import { NextRequest } from "next/server";
 import { AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/constants/types/audit.types";
@@ -41,9 +41,24 @@ async function login(request: NextRequest) {
   return result.user;
 }
 
-const authService = {
+async function logout() {
+  const authUser = await getAuthPayload();
+
+  await clearAuthCookie();
+
+  await logAuditEvent({
+    actorId: authUser.userId,
+    action: AUDIT_ACTIONS.LOGOUT,
+    entity: AUDIT_ENTITIES.AUTH,
+    note: "Logged out",
+  });
+  return { message: "Logged out" };
+}
+
+const authController = {
   signup,
   login,
+  logout,
 };
 
-export default authService;
+export default authController;
