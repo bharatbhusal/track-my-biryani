@@ -3,7 +3,7 @@
 import { DropdownList } from "@/components/ui/dropdown-list";
 import { presetLabel } from "@/lib/date-range";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import type { FilterDatePreset } from "@/types/search.types";
+import type { FilterDatePreset } from "@/constants/types/search.types";
 import { PRESETS } from "./date-filter-section";
 import type { FilterVariant } from "./variants";
 import { ACTIONS } from "./variants";

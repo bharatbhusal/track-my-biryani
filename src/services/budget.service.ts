@@ -16,7 +16,7 @@ import {
 } from "@/repositories/budget.repository";
 import { ensureCategoryInBucket, getCategoryById } from "@/repositories/category.repository";
 import { logAuditEvent } from "@/services/audit.service";
-import type { BudgetGroup, BudgetItem, BudgetPeriod } from "@/types/budget.types";
+import type { BudgetGroup, BudgetItem, BudgetPeriod } from "@/constants/types/budget.types";
 
 function toBudgetItem(
   b: Record<string, unknown>,

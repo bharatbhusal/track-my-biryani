@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { bucketsApi } from "@/lib/api/buckets";
 import { ApiClientError } from "@/lib/api/client";
-import type { BucketPreview } from "@/types/bucket.types";
+import type { BucketPreview } from "@/constants/types/bucket.types";
 
 export function InviteView({ id }: { id: string }) {
   const [preview, setPreview] = useState<BucketPreview | null>(null);

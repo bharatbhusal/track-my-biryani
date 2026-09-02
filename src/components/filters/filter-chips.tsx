@@ -3,8 +3,8 @@
 import { Chip } from "@/components/ui/chip";
 import { presetLabel } from "@/lib/date-range";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import type { BucketSummary } from "@/types/bucket.types";
-import type { CategoryItem } from "@/types/expense.types";
+import type { BucketSummary } from "@/constants/types/bucket.types";
+import type { CategoryItem } from "@/constants/types/expense.types";
 import type { FilterOwner } from "./owner-filter-section";
 import { customRangeLabel } from "./section-summary";
 import {

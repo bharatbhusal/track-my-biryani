@@ -9,7 +9,7 @@ import { DropdownList } from "@/components/ui/dropdown-list";
 import { BudgetFormDialog } from "@/features/budgets/components/budget-form";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { deleteBudget } from "@/store/slices/budgetSlice";
-import type { BudgetItem } from "@/types/budget.types";
+import type { BudgetItem } from "@/constants/types/budget.types";
 import { formatCurrency } from "@/lib/format";
 import { toast } from "sonner";
 

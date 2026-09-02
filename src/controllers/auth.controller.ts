@@ -2,8 +2,9 @@ import { loginSchema, signupSchema } from "@/lib/validators";
 import { loginUser, registerUser } from "@/services/auth.service";
 import { setAuthCookie } from "@/lib/auth";
 import { logAuditEvent } from "@/services/audit.service";
+import { NextRequest } from "next/server";
 
-async function signup(payload: unknown) {
+async function signup(payload: NextRequest) {
   const data = signupSchema.parse(payload);
 
   const result = await registerUser(data);

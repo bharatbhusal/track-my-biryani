@@ -23,7 +23,7 @@ import {
   type FilterVariant,
   type SectionFlags,
 } from "./variants";
-import type { SortCriteria } from "@/types/search.types";
+import type { SortCriteria } from "@/constants/types/search.types";
 
 type FilterDialogProps = {
   variant: FilterVariant;

@@ -2,7 +2,7 @@
 
 import { DropdownList } from "@/components/ui/dropdown-list";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import type { SortDirection } from "@/types/search.types";
+import type { SortDirection } from "@/constants/types/search.types";
 import type { FilterVariant } from "./variants";
 import { ACTIONS, SORT_FIELDS, sortFieldLabel, sortForVariant } from "./variants";
 

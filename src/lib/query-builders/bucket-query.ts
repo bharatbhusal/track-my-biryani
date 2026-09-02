@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 
-import type { BucketSearchRequest } from "@/types/search.types";
+import type { BucketSearchRequest } from "@/constants/types/search.types";
 
 type MongoFilter = Record<string, unknown>;
 type MongoSort = Record<string, 1 | -1>;

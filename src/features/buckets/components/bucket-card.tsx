@@ -19,7 +19,7 @@ import { bucketsApi } from "@/lib/api/buckets";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { deleteBucket, inviteUser, leaveBucket, revokeInvite } from "@/store/slices/bucketSlice";
 import { BucketForm, bucketErrorMessage } from "./bucket-form";
-import type { BucketMemberWithName, BucketSummary } from "@/types/bucket.types";
+import type { BucketMemberWithName, BucketSummary } from "@/constants/types/bucket.types";
 
 type BucketCardProps = {
   bucket: BucketSummary;

@@ -12,8 +12,8 @@ import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { fetchAllBuckets } from "@/store/slices/bucketSlice";
 import { createBudget, updateBudget } from "@/store/slices/budgetSlice";
 import { budgetsApi } from "@/lib/api/budgets";
-import type { BudgetItem } from "@/types/budget.types";
-import type { CategoryItem } from "@/types/expense.types";
+import type { BudgetItem } from "@/constants/types/budget.types";
+import type { CategoryItem } from "@/constants/types/expense.types";
 
 type Props = {
   open: boolean;

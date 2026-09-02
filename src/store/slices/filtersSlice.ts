@@ -11,7 +11,7 @@ import type {
   PaginationCriteria,
   SortCriteria,
   SortDirection,
-} from "@/types/search.types";
+} from "@/constants/types/search.types";
 
 export type FilterVariant =
   "expenses" | "expense" | "categories" | "category" | "buckets" | "bucket" | "logs";

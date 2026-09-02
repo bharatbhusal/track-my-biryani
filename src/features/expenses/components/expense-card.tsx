@@ -1,6 +1,6 @@
 "use client";
 
-import type { ExpenseItem } from "@/types/expense.types";
+import type { ExpenseItem } from "@/constants/types/expense.types";
 import { FiMoreVertical, FiShare2 } from "react-icons/fi";
 import { formatCurrency } from "@/lib/format";
 import { useAppSelector } from "@/store/hooks";

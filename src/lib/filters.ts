@@ -1,4 +1,4 @@
-import type { BucketSummary } from "@/types/bucket.types";
+import type { BucketSummary } from "@/constants/types/bucket.types";
 import type {
   AuditFilterCriteria,
   BucketFilterCriteria,
@@ -7,7 +7,7 @@ import type {
   ExpenseFilterCriteria,
   ExpenseSearchRequest,
   FilterDatePreset,
-} from "@/types/search.types";
+} from "@/constants/types/search.types";
 import { SECTIONS, type FilterVariant } from "@/components/filters/variants";
 
 // per-variant omit disabled sections before API — disabled bucket/category/owner/search/additional fields are not sent

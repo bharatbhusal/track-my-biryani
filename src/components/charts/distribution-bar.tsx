@@ -5,7 +5,7 @@ import { ChartCard } from "@/components/charts/chart-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/format";
 import { useAppSelector } from "@/store/hooks";
-import type { DistributionPoint } from "@/types/analytics.types";
+import type { DistributionPoint } from "@/constants/types/analytics.types";
 
 type DistributionBarProps = {
   title: string;

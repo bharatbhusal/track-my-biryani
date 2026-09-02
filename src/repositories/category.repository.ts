@@ -4,8 +4,12 @@ import { buildCategoryQuery } from "@/lib/query-builders";
 import { CategoryModel } from "@/models/Category";
 import { ExpenseModel } from "@/models/Expense";
 import { AppError } from "@/lib/errors";
-import type { CategorySearchRequest, SearchResult, SortCriteria } from "@/types/search.types";
-import type { CategoryItem } from "@/types/expense.types";
+import type {
+  CategorySearchRequest,
+  SearchResult,
+  SortCriteria,
+} from "@/constants/types/search.types";
+import type { CategoryItem } from "@/constants/types/expense.types";
 
 export async function createCategory(data: {
   userId: string;

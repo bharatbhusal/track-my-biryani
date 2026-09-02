@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 
 import { toIsoBoundsForPreset } from "@/lib/date-range";
 import { resolveBucketScope } from "@/lib/query-builders/membership";
-import type { AuditSearchRequest } from "@/types/search.types";
+import type { AuditSearchRequest } from "@/constants/types/search.types";
 
 type MongoFilter = Record<string, unknown>;
 type MongoSort = Record<string, 1 | -1>;

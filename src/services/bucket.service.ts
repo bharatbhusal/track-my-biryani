@@ -39,8 +39,8 @@ import type {
   BucketsListPayload,
   BucketSummary,
   IncomingRequestsGroup,
-} from "@/types/bucket.types";
-import type { BucketSearchRequest } from "@/types/search.types";
+} from "@/constants/types/bucket.types";
+import type { BucketSearchRequest } from "@/constants/types/search.types";
 
 export async function listBucketsService(userId: string): Promise<BucketsListPayload> {
   const [accepted, invitations] = await Promise.all([

@@ -1,4 +1,4 @@
-import type { PaginationMeta } from "@/types/common.types";
+import type { PaginationMeta } from "@/constants/types/common.types";
 
 export type ExpenseLocation = {
   latitude: number;

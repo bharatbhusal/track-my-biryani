@@ -1,7 +1,11 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { expensesApi } from "@/lib/api/expenses";
-import type { ExpenseItem, CreateExpensePayload } from "@/types/expense.types";
-import type { ExpenseContribution, ChartData, DashboardCard } from "@/types/analytics.types";
+import type { ExpenseItem, CreateExpensePayload } from "@/constants/types/expense.types";
+import type {
+  ExpenseContribution,
+  ChartData,
+  DashboardCard,
+} from "@/constants/types/analytics.types";
 import type { GlobalDateRange } from "@/lib/date-range";
 import { toIsoBounds } from "@/lib/date-range";
 import { sortForVariant } from "@/components/filters/variants";

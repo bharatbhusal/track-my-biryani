@@ -1,6 +1,6 @@
 import { auditSearchSchema } from "@/lib/validators";
 import { createAuditLog, searchAuditLogs } from "@/repositories/audit.repository";
-import type { AuditSearchRequest } from "@/types/search.types";
+import type { AuditSearchRequest } from "@/constants/types/search.types";
 
 export async function logAuditEvent(input: {
   actorId: string;

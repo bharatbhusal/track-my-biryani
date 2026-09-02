@@ -25,7 +25,7 @@ import { ensureCategoryInBucket, getCategoryById } from "@/repositories/category
 import { findBucketById } from "@/repositories/bucket.repository";
 import { findUserById } from "@/repositories/user.repository";
 import { logAuditEvent } from "@/services/audit.service";
-import type { ExpenseSearchRequest } from "@/types/search.types";
+import type { ExpenseSearchRequest } from "@/constants/types/search.types";
 
 export async function createExpenseService(userId: string, body: unknown) {
   const payload = expenseSchema.parse(body);

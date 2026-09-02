@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DropdownList } from "@/components/ui/dropdown-list";
 import { shareLink } from "@/lib/share";
-import type { CategoryItem } from "@/types/analytics.types";
+import type { CategoryItem } from "@/constants/types/analytics.types";
 
 type CategoryCardProps = {
   category: CategoryItem;

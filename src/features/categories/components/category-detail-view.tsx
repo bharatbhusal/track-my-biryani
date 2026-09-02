@@ -18,7 +18,7 @@ import { expensesApi } from "@/lib/api/expenses";
 import { filterBounds, scopedExpenseRequest, expenseCriteriaForVariant } from "@/lib/filters";
 import { CashFlowChart } from "@/components/cash-flow-chart";
 import { ChartSkeleton } from "@/components/charts/chart-skeleton";
-import type { ExpenseItem } from "@/types/expense.types";
+import type { ExpenseItem } from "@/constants/types/expense.types";
 
 export function CategoryDetailView({ id }: { id: string }) {
   const router = useRouter();

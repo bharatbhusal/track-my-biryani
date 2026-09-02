@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/components/stat-card";
 import { formatCurrency } from "@/lib/format";
 import { useAppSelector } from "@/store/hooks";
-import type { DashboardCard } from "@/types/analytics.types";
+import type { DashboardCard } from "@/constants/types/analytics.types";
 
 type ExpenseOverviewProps = {
   data: DashboardCard[] | null;

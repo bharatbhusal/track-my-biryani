@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 
 import { bucketsApi } from "@/lib/api/buckets";
 import { expensesApi } from "@/lib/api/expenses";
-import type { BucketMemberWithName, BucketSummary } from "@/types/bucket.types";
+import type { BucketMemberWithName, BucketSummary } from "@/constants/types/bucket.types";
 import { scopedCategoryRequest } from "@/lib/filters";
-import type { CategoryItem } from "@/types/expense.types";
-import type { BucketPreset } from "@/types/search.types";
+import type { CategoryItem } from "@/constants/types/expense.types";
+import type { BucketPreset } from "@/constants/types/search.types";
 import type { FilterOwner } from "./owner-filter-section";
 
 export function selectedBuckets(

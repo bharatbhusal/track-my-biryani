@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 
 import { buildAuditQuery } from "@/lib/query-builders";
 import { AuditLogModel } from "@/models/AuditLog";
-import type { AuditSearchRequest } from "@/types/search.types";
+import type { AuditSearchRequest } from "@/constants/types/search.types";
 
 export async function createAuditLog(input: {
   actorId: string;

@@ -3,7 +3,11 @@ import { bucketsApi } from "@/lib/api/buckets";
 import { sortForVariant } from "@/components/filters/variants";
 import { bucketCriteria } from "@/lib/filters";
 import type { RootState } from "@/store";
-import type { BucketDetail, BucketSummary, IncomingRequestsGroup } from "@/types/bucket.types";
+import type {
+  BucketDetail,
+  BucketSummary,
+  IncomingRequestsGroup,
+} from "@/constants/types/bucket.types";
 
 type BucketState = {
   buckets: BucketSummary[];

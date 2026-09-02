@@ -9,14 +9,14 @@ import type {
   DistributionDimension,
   ExpenseSearchRequest,
   SearchResult,
-} from "@/types/search.types";
-import type { ExpenseItem } from "@/types/expense.types";
+} from "@/constants/types/search.types";
+import type { ExpenseItem } from "@/constants/types/expense.types";
 import type {
   ExpenseContribution,
   CategoryBreakdownPoint,
   DistributionPoint,
   TrendPoint,
-} from "@/types/analytics.types";
+} from "@/constants/types/analytics.types";
 
 type AggregateBucket = {
   _id: string | null;

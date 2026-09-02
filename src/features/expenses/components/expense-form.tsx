@@ -23,7 +23,7 @@ import { AddBucketDialog } from "@/features/settings/components/add-bucket-dialo
 import { setDraftExpense, clearDraftExpense } from "@/store/slices/uiSlice";
 import { expensesApi } from "@/lib/api/expenses";
 import { personalBucketId, scopedCategoryRequest } from "@/lib/filters";
-import type { CategoryItem, CreateExpensePayload } from "@/types/expense.types";
+import type { CategoryItem, CreateExpensePayload } from "@/constants/types/expense.types";
 
 const schema = z.object({
   title: z.string().min(1),

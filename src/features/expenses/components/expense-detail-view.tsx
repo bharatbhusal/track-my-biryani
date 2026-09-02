@@ -20,7 +20,7 @@ import { fetchExpenseDetail, deleteExpense, updateExpense } from "@/store/slices
 import { fetchAllBuckets } from "@/store/slices/bucketSlice";
 import { ExpenseCard } from "@/features/expenses/components/expense-card";
 import { ExpenseTable } from "./expense-table";
-import type { ExpenseItem } from "@/types/expense.types";
+import type { ExpenseItem } from "@/constants/types/expense.types";
 
 type ExpenseDetailViewProps = {
   id: string;

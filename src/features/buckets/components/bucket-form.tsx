@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Spinner } from "@/components/ui/spinner";
 import { useAppDispatch } from "@/store/hooks";
 import { createBucket, updateBucket } from "@/store/slices/bucketSlice";
-import type { BucketSummary } from "@/types/bucket.types";
+import type { BucketSummary } from "@/constants/types/bucket.types";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), {
   ssr: false,

@@ -10,7 +10,7 @@ import type {
   PaginationCriteria,
   SortCriteria,
   SortDirection,
-} from "@/types/search.types";
+} from "@/constants/types/search.types";
 import type { SortField } from "./sort-section";
 
 export type FilterVariant =

@@ -5,7 +5,7 @@ import { FiArrowDown, FiArrowUp } from "react-icons/fi";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { FilterSection } from "./section";
-import type { SortDirection } from "@/types/search.types";
+import type { SortDirection } from "@/constants/types/search.types";
 
 export type SortField = { value: string; label: string };
 

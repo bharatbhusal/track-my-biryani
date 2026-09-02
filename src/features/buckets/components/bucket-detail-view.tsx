@@ -14,9 +14,9 @@ import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { fetchAllBuckets, fetchBucketDetail } from "@/store/slices/bucketSlice";
 import { expensesApi } from "@/lib/api/expenses";
 import { expenseCriteriaForVariant } from "@/lib/filters";
-import type { ChartData } from "@/types/analytics.types";
-import type { ExpenseItem } from "@/types/expense.types";
-import type { BucketSummary } from "@/types/bucket.types";
+import type { ChartData } from "@/constants/types/analytics.types";
+import type { ExpenseItem } from "@/constants/types/expense.types";
+import type { BucketSummary } from "@/constants/types/bucket.types";
 
 export function BucketDetailView({ id }: { id: string }) {
   const router = useRouter();

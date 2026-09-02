@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { FilterSection } from "./section";
 import { presetLabel } from "@/lib/date-range";
 import { getLocalDateTimeInputValue, toUtcIsoString } from "@/lib/datetime";
-import type { FilterDatePreset } from "@/types/search.types";
+import type { FilterDatePreset } from "@/constants/types/search.types";
 
 export const PRESETS: FilterDatePreset[] = [
   "TODAY",

@@ -27,8 +27,8 @@ import { findBucketById } from "@/repositories/bucket.repository";
 import { findUserById } from "@/repositories/user.repository";
 import { logAuditEvent } from "@/services/audit.service";
 import { randomHexColor } from "@/lib/utils";
-import type { CategoryStatsSummary } from "@/types/analytics.types";
-import type { CategorySearchRequest, ExpenseFilterCriteria } from "@/types/search.types";
+import type { CategoryStatsSummary } from "@/constants/types/analytics.types";
+import type { CategorySearchRequest, ExpenseFilterCriteria } from "@/constants/types/search.types";
 
 async function assertCategoryCreator(
   userId: string,

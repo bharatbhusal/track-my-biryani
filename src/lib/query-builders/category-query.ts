@@ -3,7 +3,7 @@ import { Types } from "mongoose";
 import { toIsoBoundsForPreset } from "@/lib/date-range";
 import { resolveBucketScope } from "@/lib/query-builders/membership";
 import { escapeRegex } from "@/lib/utils";
-import type { CategorySearchRequest } from "@/types/search.types";
+import type { CategorySearchRequest } from "@/constants/types/search.types";
 
 type MongoFilter = Record<string, unknown>;
 type MongoSort = Record<string, 1 | -1>;

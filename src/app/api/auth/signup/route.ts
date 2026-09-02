@@ -7,8 +7,7 @@ import { connectToDatabase } from "@/lib/db";
 export async function POST(request: NextRequest) {
   try {
     await connectToDatabase();
-    const payload = await request.json();
-    const user = await authController.signup(payload);
+    const user = await authController.signup(request);
     return successResponse(user, 201);
   } catch (error) {
     return errorResponse(error);

@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { useAppSelector } from "@/store/hooks";
 import { ExpenseCard } from "@/features/expenses/components/expense-card";
-import type { ExpenseItem } from "@/types/expense.types";
+import type { ExpenseItem } from "@/constants/types/expense.types";
 import { EmojiBadge } from "@/components/ui/emoji-badge";
 import { formatShortDate } from "@/lib/datetime";
 

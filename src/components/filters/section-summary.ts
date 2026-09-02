@@ -1,8 +1,8 @@
 import { presetLabel } from "@/lib/date-range";
 import { formatShortDateTime } from "@/lib/datetime";
-import type { BucketSummary } from "@/types/bucket.types";
-import type { CategoryItem } from "@/types/expense.types";
-import type { FilterDatePreset } from "@/types/search.types";
+import type { BucketSummary } from "@/constants/types/bucket.types";
+import type { CategoryItem } from "@/constants/types/expense.types";
+import type { FilterDatePreset } from "@/constants/types/search.types";
 import type { FilterOwner } from "./owner-filter-section";
 import type { FilterVariant } from "./variants";
 import { sortFieldLabel } from "./variants";

@@ -5,8 +5,8 @@ import { toIsoBoundsForPreset } from "@/lib/date-range";
 import { BucketModel } from "@/models/Bucket";
 import { ExpenseModel } from "@/models/Expense";
 import { UserModel } from "@/models/User";
-import type { BucketSearchRequest, SearchResult } from "@/types/search.types";
-import type { BucketSummary } from "@/types/bucket.types";
+import type { BucketSearchRequest, SearchResult } from "@/constants/types/search.types";
+import type { BucketSummary } from "@/constants/types/bucket.types";
 
 export type BucketMemberDoc = {
   userId: Types.ObjectId;
