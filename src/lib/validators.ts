@@ -1,11 +1,34 @@
 import { z } from "zod";
-
-import { HEX_COLOR_REGEX } from "@/lib/validation-constants";
+import { HEX_COLOR_REGEX, USERNAME_REGEX } from "../constants/regex";
+import { SIGNUP_ERRORS } from "../constants/error-messages";
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  USER_NAME_MAX_LENGTH,
+  USER_NAME_MIN_LENGTH,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+} from "@/constants/validation";
 
 export const signupSchema = z.object({
-  name: z.string().min(2).max(255),
-  username: z.string().min(6).max(20),
-  password: z.string().min(8),
+  name: z
+    .string()
+    .trim()
+    .min(USER_NAME_MIN_LENGTH, SIGNUP_ERRORS.NAME_TOO_SHORT(USER_NAME_MIN_LENGTH))
+    .max(USER_NAME_MAX_LENGTH, SIGNUP_ERRORS.NAME_TOO_LONG(USER_NAME_MAX_LENGTH)),
+
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(USERNAME_MIN_LENGTH, SIGNUP_ERRORS.USERNAME_TOO_SHORT(USERNAME_MIN_LENGTH))
+    .max(USERNAME_MAX_LENGTH, SIGNUP_ERRORS.USERNAME_TOO_LONG(USERNAME_MAX_LENGTH))
+    .regex(USERNAME_REGEX, SIGNUP_ERRORS.USERNAME_INVALID),
+
+  password: z
+    .string()
+    .min(PASSWORD_MIN_LENGTH, SIGNUP_ERRORS.PASSWORD_TOO_SHORT(PASSWORD_MIN_LENGTH))
+    .max(PASSWORD_MAX_LENGTH, SIGNUP_ERRORS.PASSWORD_TOO_LONG(PASSWORD_MAX_LENGTH)),
 });
 
 export const loginSchema = z.object({

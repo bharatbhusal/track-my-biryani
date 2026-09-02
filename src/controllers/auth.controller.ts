@@ -3,28 +3,43 @@ import { loginUser, registerUser } from "@/services/auth.service";
 import { setAuthCookie } from "@/lib/auth";
 import { logAuditEvent } from "@/services/audit.service";
 
-export async function signupController(payload: unknown) {
+async function signup(payload: unknown) {
   const data = signupSchema.parse(payload);
+
   const result = await registerUser(data);
+
   await setAuthCookie(result.token);
+
   await logAuditEvent({
     actorId: result.user.id,
     action: "signup",
     entity: "auth",
     note: "Signed up",
   });
+
   return result.user;
 }
 
-export async function loginController(payload: unknown) {
+async function login(payload: unknown) {
   const data = loginSchema.parse(payload);
+
   const result = await loginUser(data);
+
   await setAuthCookie(result.token);
+
   await logAuditEvent({
     actorId: result.user.id,
     action: "login",
     entity: "auth",
     note: "Logged in",
   });
+
   return result.user;
 }
+
+const authService = {
+  signup,
+  login,
+};
+
+export default authService;
