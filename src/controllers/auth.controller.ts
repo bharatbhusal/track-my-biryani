@@ -5,7 +5,8 @@ import { logAuditEvent } from "@/services/audit.service";
 import { NextRequest } from "next/server";
 import { AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/constants/types/audit.types";
 
-async function signup(payload: NextRequest) {
+async function signup(request: NextRequest) {
+  const payload = await request.json();
   const data = signupSchema.parse(payload);
 
   const result = await registerUser(data);
@@ -22,7 +23,8 @@ async function signup(payload: NextRequest) {
   return result.user;
 }
 
-async function login(payload: unknown) {
+async function login(request: NextRequest) {
+  const payload = await request.json();
   const data = loginSchema.parse(payload);
 
   const result = await loginUser(data);
