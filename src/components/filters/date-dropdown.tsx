@@ -28,6 +28,7 @@ export function DateDropdown({ variant, onCustomOpen }: DateDropdownProps) {
 
   return (
     <DropdownList
+      aria-label="Filter by date"
       value={filterCriteria.datePreset}
       onValueChange={(v) => setPreset(v as FilterDatePreset)}
       options={PRESETS.map((p) => ({
