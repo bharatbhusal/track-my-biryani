@@ -16,7 +16,7 @@ import { fetchCategoryDetail, deleteCategory } from "@/store/slices/categorySlic
 import { toIsoBoundsForPreset } from "@/lib/date-range";
 import { expensesApi } from "@/lib/api/expenses";
 import { filterBounds, scopedExpenseRequest, expenseCriteriaForVariant } from "@/lib/filters";
-import { CashFlowChart } from "@/components/cash-flow-chart";
+import { CashFlowChart } from "@/components/charts/cash-flow-chart";
 import { ChartSkeleton } from "@/components/charts/chart-skeleton";
 import type { ExpenseItem } from "@/constants/types/expense.types";
 

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FilterBar, useScopedOptions, sortForVariant } from "@/components/filters";
-import { CashFlowChart } from "@/components/cash-flow-chart";
+import { CashFlowChart } from "@/components/charts/cash-flow-chart";
 import { ChartSkeleton } from "@/components/charts/chart-skeleton";
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import { BucketCard } from "@/features/buckets/components/bucket-card";
