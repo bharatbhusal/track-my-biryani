@@ -1,10 +1,14 @@
 "use client";
 
-import { useMemo, useEffect } from "react";
+import { Suspense, useMemo, useEffect } from "react";
+import Link from "next/link";
 
 import { FilterBar, useScopedOptions, sortForVariant } from "@/components/filters";
 import { ExpenseOverview } from "@/features/expenses/components/expense-overview";
-import { DashboardBarChart } from "@/components/dashboard-bar-chart";
+import { SpendingBarChart } from "@/components/charts/spending-bar-chart";
+import { ChartSkeleton } from "@/components/charts/chart-skeleton";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import type { SortField } from "@/features/expenses/components/expense-table";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
@@ -69,31 +73,63 @@ export function DashboardOverview() {
     );
   };
 
+  // ponytail: per-section holes instead of one isLoading for everything.
+  const overviewLoading = isLoading && !overviewStats;
+  const chartLoading = isLoading && !chartData;
+  const tableLoading = isLoading && items.length === 0;
+  const isEmpty = !isLoading && (chartData?.series?.length ?? 0) === 0 && items.length === 0;
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-4 sm:space-y-6">
       <FilterBar variant="expenses" buckets={buckets} categories={categories} owners={owners} />
 
-      <ExpenseOverview data={overviewStats} isLoading={isLoading} />
+      <section aria-busy={overviewLoading}>
+        <Suspense fallback={<ChartSkeleton />}>
+          <ExpenseOverview data={overviewStats} isLoading={overviewLoading} />
+        </Suspense>
+      </section>
 
-      <DashboardBarChart
-        stackedSeries={chartData?.series ?? []}
-        chartLabel={getChartLabel(chartGranularity(filterCriteria.datePreset), "Expense")}
-        averageSpend={averageSpend}
-        categoryColorMap={chartData?.categoryColors ?? {}}
-        isLoading={isLoading}
-      />
+      {isEmpty ? (
+        <Card className="py-8 text-center">
+          <p className="font-medium">No expenses match these filters</p>
+          <p className="mt-1 text-sm text-[var(--color-muted)]">
+            {overviewStats?.length
+              ? `${overviewStats.length} summary stats below — or add your first expense.`
+              : "Add your first expense to see trends."}
+          </p>
+          <Link href="/expenses/new" className="mt-4 inline-block">
+            <Button>Add expense</Button>
+          </Link>
+        </Card>
+      ) : (
+        <section aria-busy={chartLoading}>
+          <Suspense fallback={<ChartSkeleton />}>
+            <SpendingBarChart
+              stackedSeries={chartData?.series ?? []}
+              chartLabel={getChartLabel(chartGranularity(filterCriteria.datePreset), "Expense")}
+              averageSpend={averageSpend}
+              categoryColorMap={chartData?.categoryColors ?? {}}
+              isLoading={chartLoading}
+            />
+          </Suspense>
+        </section>
+      )}
 
-      <ExpenseTable
-        items={items}
-        isLoading={isLoading}
-        sortBy={effectiveSort.field as SortField}
-        order={effectiveSort.direction === "ASC" ? "asc" : "desc"}
-        onSort={handleSort}
-        page={pagination.page}
-        totalPages={totalPages}
-        onPageChange={(p) => dispatch(setPage({ variant: "expenses", page: p }))}
-        isSection={effectiveSort.field === "paidAt"}
-      />
+      <section aria-busy={tableLoading}>
+        <Suspense fallback={<ChartSkeleton />}>
+          <ExpenseTable
+            items={items}
+            isLoading={tableLoading}
+            sortBy={effectiveSort.field as SortField}
+            order={effectiveSort.direction === "ASC" ? "asc" : "desc"}
+            onSort={handleSort}
+            page={pagination.page}
+            totalPages={totalPages}
+            onPageChange={(p) => dispatch(setPage({ variant: "expenses", page: p }))}
+            isSection={effectiveSort.field === "paidAt"}
+          />
+        </Suspense>
+      </section>
     </div>
   );
 }
