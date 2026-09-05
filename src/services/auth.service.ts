@@ -1,4 +1,5 @@
 import { AppError } from "@/lib/errors";
+import { AUTH_ERRORS, ERROR_CODES } from "@/constants/error-messages";
 import { comparePassword, hashPassword, signToken } from "@/lib/auth";
 import { createUser, findUserByUsername } from "@/repositories/user.repository";
 import { createBucket, findBucketByUserId } from "@/repositories/bucket.repository";
@@ -13,7 +14,7 @@ export async function registerUser(input: SignupInput): Promise<{
 }> {
   const existing = await findUserByUsername(input.username);
   if (existing) {
-    throw new AppError("Username already in use", 409, "EMAIL_EXISTS");
+    throw new AppError(AUTH_ERRORS.USERNAME_IN_USE, 409, ERROR_CODES.EMAIL_EXISTS);
   }
 
   const password = await hashPassword(input.password);
@@ -69,12 +70,12 @@ export async function loginUser(input: LoginInput): Promise<{
 }> {
   const user = await findUserByUsername(input.username);
   if (!user?.password) {
-    throw new AppError("User doesn't exist", 401, "INVALID_CREDENTIALS");
+    throw new AppError(AUTH_ERRORS.USER_NOT_FOUND, 401, ERROR_CODES.INVALID_CREDENTIALS);
   }
 
   const isValid = await comparePassword(input.password, user.password);
   if (!isValid) {
-    throw new AppError("Incorrect username or password", 401, "INVALID_CREDENTIALS");
+    throw new AppError(AUTH_ERRORS.INCORRECT_CREDENTIALS, 401, ERROR_CODES.INVALID_CREDENTIALS);
   }
 
   const personalBucket = await findBucketByUserId(user._id.toString());

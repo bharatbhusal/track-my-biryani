@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 
-import { FILTER_ERRORS } from "@/constants/error-messages";
+import { ERROR_CODES, FILTER_ERRORS } from "@/constants/error-messages";
 import { AppError } from "@/lib/errors";
 import { resolveDateRange } from "@/lib/date-range";
 import { resolveBucketScope } from "@/lib/query-builders/membership";
@@ -77,7 +77,11 @@ export function searchRegex(q: string | undefined): RegExp | null {
 
 export function buildSort(allowlist: readonly string[], criteria: SortCriteria): MongoSort {
   if (!allowlist.includes(criteria.field)) {
-    throw new AppError(FILTER_ERRORS.INVALID_SORT_FIELD(criteria.field), 400, "INVALID_SORT_FIELD");
+    throw new AppError(
+      FILTER_ERRORS.INVALID_SORT_FIELD(criteria.field),
+      400,
+      ERROR_CODES.INVALID_SORT_FIELD,
+    );
   }
   return { [criteria.field]: criteria.direction === "ASC" ? 1 : -1 };
 }

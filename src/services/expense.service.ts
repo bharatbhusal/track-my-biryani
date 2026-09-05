@@ -1,4 +1,11 @@
 import { AppError } from "@/lib/errors";
+import {
+  BUCKET_ERRORS,
+  CATEGORY_ERRORS,
+  ERROR_CODES,
+  EXPENSE_ERRORS,
+  USER_ERRORS,
+} from "@/constants/error-messages";
 import { chartOverviewSchema, expenseSchema, expenseSearchSchema } from "@/lib/validators";
 import { resolveDateRange } from "@/lib/date-range";
 import { buildExpenseQuery } from "@/lib/query-builders";
@@ -9,7 +16,7 @@ import { findBucketById, isMember } from "@/repositories/bucket.repository";
 import { findUserById } from "@/repositories/user.repository";
 import { logAuditEvent } from "@/services/audit.service";
 import type { ExpenseSearchRequest } from "@/constants/types/search.types";
-import { AUDIT_ACTIONS } from "@/constants/types/audit.types";
+import { AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/constants/types/audit.types";
 import { AuthUser } from "@/constants/types/auth.types";
 
 async function createExpense(authUser: AuthUser, body: unknown) {
@@ -17,17 +24,17 @@ async function createExpense(authUser: AuthUser, body: unknown) {
 
   const existing = await findUserById(authUser.id);
   if (!existing) {
-    throw new AppError("User doesn't exist", 409, "USER_DOESN'T_EXIST");
+    throw new AppError(USER_ERRORS.DOESNT_EXIST, 409, ERROR_CODES.USER_DOESNT_EXIST);
   }
 
   const validBucket = await isMember(authUser.id, authUser.bucketId);
   if (!validBucket) {
-    throw new AppError("Not a member of this bucket", 403, "NOT_A_MEMBER");
+    throw new AppError(BUCKET_ERRORS.NOT_MEMBER, 403, ERROR_CODES.NOT_A_MEMBER);
   }
 
   const category = await getCategoryById(payload.categoryId, payload.bucketId);
   if (!category) {
-    throw new AppError("Category does not belong to this bucket", 400, "CATEGORY_NOT_IN_BUCKET");
+    throw new AppError(CATEGORY_ERRORS.NOT_IN_BUCKET, 400, ERROR_CODES.CATEGORY_NOT_IN_BUCKET);
   }
 
   const expense = await expenseRepository.createExpense({
@@ -47,7 +54,7 @@ async function createExpense(authUser: AuthUser, body: unknown) {
     actorId: authUser.id,
     bucketId: payload.bucketId,
     action: AUDIT_ACTIONS.CREATE,
-    entity: "expense",
+    entity: AUDIT_ENTITIES.EXPENSE,
     entityId: expense._id.toString(),
     note: `Created expense "${expense.title}"`,
     metadata: { amount: expense.amount },
@@ -60,7 +67,7 @@ async function getExpense(userId: string, expenseId: string) {
   const validBuckets = await getValidBuckets(userId);
   const expense = await expenseRepository.getExpenseByIdForMember(expenseId, validBuckets);
   if (!expense) {
-    throw new AppError("Expense not found", 404, "NOT_FOUND");
+    throw new AppError(EXPENSE_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
   return expense;
 }
@@ -71,23 +78,23 @@ async function updateExpense(userId: string, expenseId: string, body: unknown) {
   const validBuckets = await getValidBuckets(userId);
   const current = await expenseRepository.getExpenseByIdForMember(expenseId, validBuckets);
   if (!current) {
-    throw new AppError("Expense not found", 404, "NOT_FOUND");
+    throw new AppError(EXPENSE_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
   if (current.userId.toString() !== userId) {
-    throw new AppError("Only the owner can update this expense", 403, "NOT_OWNER");
+    throw new AppError(EXPENSE_ERRORS.NOT_OWNER_UPDATE, 403, ERROR_CODES.NOT_OWNER);
   }
 
   const targetBucketId = payload.bucketId ? String(payload.bucketId) : current.bucketId.toString();
 
   if (payload.bucketId && !validBuckets.map((id) => id.toString()).includes(targetBucketId)) {
-    throw new AppError("Not a member of this bucket", 403, "NOT_A_MEMBER");
+    throw new AppError(BUCKET_ERRORS.NOT_MEMBER, 403, ERROR_CODES.NOT_A_MEMBER);
   }
 
   let categoryId: string;
   if (payload.categoryId) {
     const category = await getCategoryById(payload.categoryId, targetBucketId);
     if (!category) {
-      throw new AppError("Category does not belong to this bucket", 400, "CATEGORY_NOT_IN_BUCKET");
+      throw new AppError(CATEGORY_ERRORS.NOT_IN_BUCKET, 400, ERROR_CODES.CATEGORY_NOT_IN_BUCKET);
     }
     categoryId = category._id.toString();
   } else if (targetBucketId === current.bucketId.toString()) {
@@ -95,7 +102,11 @@ async function updateExpense(userId: string, expenseId: string, body: unknown) {
   } else {
     const sourceCategory = await getCategoryById(current.categoryId, current.bucketId.toString());
     if (!sourceCategory) {
-      throw new AppError("Source category not found", 400, "CATEGORY_NOT_IN_BUCKET");
+      throw new AppError(
+        EXPENSE_ERRORS.SOURCE_CATEGORY_NOT_FOUND,
+        400,
+        ERROR_CODES.CATEGORY_NOT_IN_BUCKET,
+      );
     }
     const destCategory = await ensureCategoryInBucket(userId, targetBucketId, {
       name: sourceCategory.name,
@@ -111,7 +122,7 @@ async function updateExpense(userId: string, expenseId: string, body: unknown) {
     bucketId: targetBucketId,
   });
   if (!expense) {
-    throw new AppError("Expense not found", 404, "NOT_FOUND");
+    throw new AppError(EXPENSE_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
 
   if (payload.bucketId && payload.bucketId !== current.bucketId.toString()) {
@@ -153,14 +164,14 @@ async function deleteExpense(userId: string, expenseId: string) {
   const validBuckets = await getValidBuckets(userId);
   const existing = await expenseRepository.getExpenseByIdForMember(expenseId, validBuckets);
   if (!existing) {
-    throw new AppError("Expense not found", 404, "NOT_FOUND");
+    throw new AppError(EXPENSE_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
   if (existing.userId.toString() !== userId) {
-    throw new AppError("Only the owner can delete this expense", 403, "NOT_OWNER");
+    throw new AppError(EXPENSE_ERRORS.NOT_OWNER_DELETE, 403, ERROR_CODES.NOT_OWNER);
   }
   const deleted = await expenseRepository.deleteExpense(userId, expenseId);
   if (!deleted) {
-    throw new AppError("Expense not found", 404, "NOT_FOUND");
+    throw new AppError(EXPENSE_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
 
   await logAuditEvent({

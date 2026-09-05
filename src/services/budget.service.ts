@@ -1,6 +1,12 @@
 import { Types } from "mongoose";
 
 import { AppError } from "@/lib/errors";
+import {
+  BUCKET_ERRORS,
+  BUDGET_ERRORS,
+  CATEGORY_ERRORS,
+  ERROR_CODES,
+} from "@/constants/error-messages";
 import { boundsForBudgetPeriod } from "@/lib/date-range";
 import { budgetSchema, budgetUpdateSchema } from "@/lib/validators";
 import { getValidBuckets } from "@/lib/query-builders/membership";
@@ -158,14 +164,14 @@ export async function createBudgetService(userId: string, body: unknown): Promis
   const validBuckets = await getValidBuckets(userId);
   const validSet = new Set(validBuckets.map((id) => id.toString()));
   if (!validSet.has(payload.bucketId)) {
-    throw new AppError("Not a member of this bucket", 403, "NOT_A_MEMBER");
+    throw new AppError(BUCKET_ERRORS.NOT_MEMBER, 403, ERROR_CODES.NOT_A_MEMBER);
   }
 
   let categoryId: Types.ObjectId | null = null;
   if (payload.categoryId) {
     const cat = await getCategoryById(payload.categoryId, payload.bucketId);
     if (!cat)
-      throw new AppError("Category does not belong to this bucket", 400, "CATEGORY_NOT_IN_BUCKET");
+      throw new AppError(CATEGORY_ERRORS.NOT_IN_BUCKET, 400, ERROR_CODES.CATEGORY_NOT_IN_BUCKET);
     categoryId = new Types.ObjectId(payload.categoryId);
   }
 
@@ -212,11 +218,7 @@ export async function createBudgetService(userId: string, body: unknown): Promis
     };
   } catch (e: unknown) {
     if ((e as { code?: number }).code === 11000) {
-      throw new AppError(
-        "Budget already exists for this bucket/category/period",
-        409,
-        "ALREADY_EXISTS",
-      );
+      throw new AppError(BUDGET_ERRORS.ALREADY_EXISTS, 409, ERROR_CODES.ALREADY_EXISTS);
     }
     throw e;
   }
@@ -229,15 +231,15 @@ export async function updateBudgetService(
 ): Promise<BudgetItem> {
   const payload = budgetUpdateSchema.parse(body);
   const current = await findBudgetById(budgetId);
-  if (!current) throw new AppError("Budget not found", 404, "NOT_FOUND");
+  if (!current) throw new AppError(BUDGET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   if (current.ownerId.toString() !== userId) {
-    throw new AppError("Only the owner can edit this budget", 403, "NOT_OWNER");
+    throw new AppError(BUDGET_ERRORS.NOT_OWNER_EDIT, 403, ERROR_CODES.NOT_OWNER);
   }
 
   const targetBucketId = payload.bucketId ?? current.bucketId.toString();
   const validBuckets = await getValidBuckets(userId);
   if (!validBuckets.map((id) => id.toString()).includes(targetBucketId)) {
-    throw new AppError("Not a member of this bucket", 403, "NOT_A_MEMBER");
+    throw new AppError(BUCKET_ERRORS.NOT_MEMBER, 403, ERROR_CODES.NOT_A_MEMBER);
   }
 
   let nextCategoryId: Types.ObjectId | null | undefined;
@@ -251,11 +253,7 @@ export async function updateBudgetService(
     } else {
       const cat = await getCategoryById(payload.categoryId, targetBucketId);
       if (!cat)
-        throw new AppError(
-          "Category does not belong to this bucket",
-          400,
-          "CATEGORY_NOT_IN_BUCKET",
-        );
+        throw new AppError(CATEGORY_ERRORS.NOT_IN_BUCKET, 400, ERROR_CODES.CATEGORY_NOT_IN_BUCKET);
       nextCategoryId = new Types.ObjectId(payload.categoryId);
     }
   } else if (payload.bucketId && payload.bucketId !== current.bucketId.toString()) {
@@ -291,12 +289,12 @@ export async function updateBudgetService(
     const groups = await buildGroups(userId);
     const found = groups.flatMap((g) => g.budgets).find((b) => b._id === budgetId);
     if (found) return found;
-    throw new AppError("Budget not found", 404, "NOT_FOUND");
+    throw new AppError(BUDGET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
 
   try {
     const updated = await updateBudget(budgetId, update);
-    if (!updated) throw new AppError("Budget not found", 404, "NOT_FOUND");
+    if (!updated) throw new AppError(BUDGET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
 
     const isMove = payload?.bucketId !== current.bucketId.toString();
     if (isMove) {
@@ -356,11 +354,7 @@ export async function updateBudgetService(
     };
   } catch (e: unknown) {
     if ((e as { code?: number }).code === 11000) {
-      throw new AppError(
-        "Budget already exists for this bucket/category/period",
-        409,
-        "ALREADY_EXISTS",
-      );
+      throw new AppError(BUDGET_ERRORS.ALREADY_EXISTS, 409, ERROR_CODES.ALREADY_EXISTS);
     }
     throw e;
   }
@@ -368,9 +362,9 @@ export async function updateBudgetService(
 
 export async function deleteBudgetService(userId: string, budgetId: string) {
   const current = await findBudgetById(budgetId);
-  if (!current) throw new AppError("Budget not found", 404, "NOT_FOUND");
+  if (!current) throw new AppError(BUDGET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   if (current.ownerId.toString() !== userId) {
-    throw new AppError("Only the owner can delete this budget", 403, "NOT_OWNER");
+    throw new AppError(BUDGET_ERRORS.NOT_OWNER_DELETE, 403, ERROR_CODES.NOT_OWNER);
   }
   await deleteBudget(budgetId);
 

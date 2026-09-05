@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 
 import { DEFAULT_CATEGORIES } from "@/lib/constants";
 import { AppError } from "@/lib/errors";
+import { BUCKET_ERRORS, ERROR_CODES, USER_ERRORS } from "@/constants/error-messages";
 import { applyCategoryFilter, applyDateFilter, applyOwnerFilter } from "@/lib/query-builders";
 import { escapeRegex } from "@/lib/utils";
 import {
@@ -103,11 +104,11 @@ export async function getBucketStatsService(
   const parsed = bucketStatsSchema.parse(body ?? {});
   const bucket = await findBucketById(bucketId);
   if (!bucket) {
-    throw new AppError("Bucket not found", 404, "NOT_FOUND");
+    throw new AppError(BUCKET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
   const member = bucket.members.find((m) => m.userId.toString() === userId);
   if (!member || member.status !== "accepted") {
-    throw new AppError("Not a member of this bucket", 403, "NOT_A_MEMBER");
+    throw new AppError(BUCKET_ERRORS.NOT_MEMBER, 403, ERROR_CODES.NOT_A_MEMBER);
   }
   const detail = await toDetail(bucket);
   const f = {
@@ -209,7 +210,7 @@ export async function deleteBucketService(userId: string, bucketId: string) {
   const bucket = await requireOwner(userId, bucketId);
   const hasExpenses = await expenseExistsInBucket(bucketId);
   if (hasExpenses) {
-    throw new AppError("Cannot delete bucket with expenses", 400, "HAS_EXPENSES");
+    throw new AppError(BUCKET_ERRORS.HAS_EXPENSES, 400, ERROR_CODES.HAS_EXPENSES);
   }
 
   await deleteCategoriesByBucket(bucketId);
@@ -237,11 +238,11 @@ export async function inviteUserService(
 
   const user = await findUserByUsername(payload.username);
   if (!user) {
-    throw new AppError("User not found", 404, "USER_NOT_FOUND");
+    throw new AppError(USER_ERRORS.NOT_FOUND, 404, ERROR_CODES.USER_NOT_FOUND);
   }
   const targetId = user._id.toString();
   if (bucket.members.some((m) => m.userId.toString() === targetId)) {
-    throw new AppError("User is already a member of this bucket", 409, "ALREADY_MEMBER");
+    throw new AppError(BUCKET_ERRORS.ALREADY_MEMBER_BUCKET, 409, ERROR_CODES.ALREADY_MEMBER);
   }
 
   const updated = await addBucketMember(bucketId, {
@@ -270,7 +271,7 @@ export async function acceptInviteService(userId: string, bucketId: string): Pro
   const member = bucketDoc.members.find((m) => m.userId.toString() === userId);
   // self-requested pending must be approved by owner, not self-accepted
   if (member?.invitedBy && member.invitedBy.toString() === userId) {
-    throw new AppError("Your request is pending owner approval", 403, "REQUEST_PENDING");
+    throw new AppError(BUCKET_ERRORS.REQUEST_PENDING, 403, ERROR_CODES.REQUEST_PENDING);
   }
   const bucket = await acceptBucketMember(bucketId, userId, new Date());
 
@@ -317,18 +318,14 @@ export async function declineInviteService(
 export async function leaveBucketService(userId: string, bucketId: string) {
   const bucket = await findBucketById(bucketId);
   if (!bucket) {
-    throw new AppError("Bucket not found", 404, "NOT_FOUND");
+    throw new AppError(BUCKET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
   const member = bucket.members.find((m) => m.userId.toString() === userId);
   if (!member || member.status !== "accepted") {
-    throw new AppError("Not a member of this bucket", 403, "NOT_A_MEMBER");
+    throw new AppError(BUCKET_ERRORS.NOT_MEMBER, 403, ERROR_CODES.NOT_A_MEMBER);
   }
   if (member.role === "owner") {
-    throw new AppError(
-      "Owner cannot leave the bucket. Delete the bucket instead.",
-      400,
-      "OWNER_CANNOT_LEAVE",
-    );
+    throw new AppError(BUCKET_ERRORS.OWNER_CANNOT_LEAVE, 400, ERROR_CODES.OWNER_CANNOT_LEAVE);
   }
 
   await pullBucketMember(bucketId, userId);
@@ -352,7 +349,7 @@ export async function revokeInviteService(
 ): Promise<BucketDetail> {
   const bucket = await requireOwner(userId, bucketId);
   if (!bucket.members.some((m) => m.userId.toString() === targetUserId)) {
-    throw new AppError("Member not found", 404, "NOT_FOUND");
+    throw new AppError(BUCKET_ERRORS.MEMBER_NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
 
   const updated = await pullBucketMember(bucketId, targetUserId);
@@ -376,10 +373,10 @@ export async function getBucketPreviewService(
 ): Promise<BucketPreview> {
   const bucket = await findBucketById(bucketId);
   if (!bucket) {
-    throw new AppError("Bucket not found", 404, "NOT_FOUND");
+    throw new AppError(BUCKET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
   if (bucket.isPersonal) {
-    throw new AppError("This bucket cannot be shared", 400, "BUCKET_IS_PERSONAL");
+    throw new AppError(BUCKET_ERRORS.IS_PERSONAL, 400, ERROR_CODES.BUCKET_IS_PERSONAL);
   }
   const users = await findUsersByIds([bucket.ownerId.toString()]);
   const owner = users[0];
@@ -403,17 +400,17 @@ export async function requestToJoinService(
 ): Promise<BucketPreview> {
   const bucket = await findBucketById(bucketId);
   if (!bucket) {
-    throw new AppError("Bucket not found", 404, "NOT_FOUND");
+    throw new AppError(BUCKET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
   if (bucket.isPersonal) {
-    throw new AppError("This bucket cannot be shared", 400, "BUCKET_IS_PERSONAL");
+    throw new AppError(BUCKET_ERRORS.IS_PERSONAL, 400, ERROR_CODES.BUCKET_IS_PERSONAL);
   }
   const existing = bucket.members.find((m) => m.userId.toString() === userId);
   if (existing) {
     if (existing.status === "accepted") {
-      throw new AppError("You are already a member", 409, "ALREADY_MEMBER");
+      throw new AppError(BUCKET_ERRORS.ALREADY_MEMBER_SELF, 409, ERROR_CODES.ALREADY_MEMBER);
     }
-    throw new AppError("Request already pending", 409, "ALREADY_PENDING");
+    throw new AppError(BUCKET_ERRORS.ALREADY_PENDING, 409, ERROR_CODES.ALREADY_PENDING);
   }
   await addBucketMember(bucketId, {
     userId,
@@ -484,14 +481,14 @@ export async function acceptRequestService(
   const bucket = await requireOwner(ownerId, bucketId);
   const member = bucket.members.find((m) => m.userId.toString() === targetUserId);
   if (!member) {
-    throw new AppError("Request not found", 404, "NOT_FOUND");
+    throw new AppError(BUCKET_ERRORS.REQUEST_NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
   if (member.status !== "pending") {
-    throw new AppError("User is already a member", 409, "ALREADY_MEMBER");
+    throw new AppError(BUCKET_ERRORS.ALREADY_MEMBER, 409, ERROR_CODES.ALREADY_MEMBER);
   }
   // only self-requested joins (invitedBy === target) are approvable here; owner invites are accepted by the invitee
   if (member.invitedBy && member.invitedBy.toString() !== targetUserId) {
-    throw new AppError("Only join requests can be approved here", 400, "NOT_JOIN_REQUEST");
+    throw new AppError(BUCKET_ERRORS.NOT_JOIN_REQUEST, 400, ERROR_CODES.NOT_JOIN_REQUEST);
   }
   const updated = await acceptBucketMember(bucketId, targetUserId, new Date());
   await logAuditEvent({
@@ -509,17 +506,17 @@ export async function acceptRequestService(
 async function requireOwner(userId: string, bucketId: string): Promise<BucketDoc> {
   const bucket = await findBucketById(bucketId);
   if (!bucket) {
-    throw new AppError("Bucket not found", 404, "NOT_FOUND");
+    throw new AppError(BUCKET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
   const member = bucket.members.find((m) => m.userId.toString() === userId);
   if (!member || member.role !== "owner") {
-    throw new AppError("Only the bucket owner can perform this action", 403, "OWNER_ONLY");
+    throw new AppError(BUCKET_ERRORS.OWNER_ONLY, 403, ERROR_CODES.OWNER_ONLY);
   }
   if (bucket.isPersonal) {
     throw new AppError(
-      "This action is not allowed on the personal bucket",
+      BUCKET_ERRORS.PERSONAL_ACTION_NOT_ALLOWED,
       400,
-      "BUCKET_IS_PERSONAL",
+      ERROR_CODES.BUCKET_IS_PERSONAL,
     );
   }
   return bucket;
@@ -528,11 +525,11 @@ async function requireOwner(userId: string, bucketId: string): Promise<BucketDoc
 async function requirePendingMember(userId: string, bucketId: string): Promise<BucketDoc> {
   const bucket = await findBucketById(bucketId);
   if (!bucket) {
-    throw new AppError("Bucket not found", 404, "NOT_FOUND");
+    throw new AppError(BUCKET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
   const member = bucket.members.find((m) => m.userId.toString() === userId);
   if (!member || member.status !== "pending") {
-    throw new AppError("You were not invited to this bucket", 403, "NOT_INVITED");
+    throw new AppError(BUCKET_ERRORS.NOT_INVITED, 403, ERROR_CODES.NOT_INVITED);
   }
   return bucket;
 }

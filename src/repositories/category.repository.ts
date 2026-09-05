@@ -4,6 +4,7 @@ import { buildCategoryQuery } from "@/lib/query-builders";
 import { CategoryModel } from "@/models/Category";
 import { ExpenseModel } from "@/models/Expense";
 import { AppError } from "@/lib/errors";
+import { CATEGORY_ERRORS, ERROR_CODES } from "@/constants/error-messages";
 import type {
   CategorySearchRequest,
   SearchResult,
@@ -249,11 +250,7 @@ export async function deleteCategory(categoryId: string, bucketId: string) {
   });
 
   if (hasExpenses) {
-    throw new AppError(
-      "Cannot delete category with existing expenses. Reassign or delete expenses first.",
-      400,
-      "HAS_EXPENSES",
-    );
+    throw new AppError(CATEGORY_ERRORS.HAS_EXPENSES, 400, ERROR_CODES.HAS_EXPENSES);
   }
 
   return CategoryModel.findOneAndDelete({

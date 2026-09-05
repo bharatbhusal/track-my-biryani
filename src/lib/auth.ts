@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { AUTH_COOKIE } from "@/lib/constants";
 import { env, getJwtSecret } from "@/config/env";
 import { AppError } from "@/lib/errors";
+import { AUTH_ERRORS, ERROR_CODES } from "@/constants/error-messages";
 import { AuthUser } from "@/constants/types/auth.types";
 
 const COOKIE_MAX_AGE_THIRTY_DAYS = 60 * 60 * 24 * 30;
@@ -27,7 +28,7 @@ export function verifyToken(token: string): AuthUser {
   try {
     return jwt.verify(token, getJwtSecret()) as AuthUser;
   } catch {
-    throw new AppError("Invalid or expired token", 401, "UNAUTHORIZED");
+    throw new AppError(AUTH_ERRORS.TOKEN_EXPIRED, 401, ERROR_CODES.UNAUTHORIZED);
   }
 }
 
@@ -57,7 +58,7 @@ export async function getAuthPayload(): Promise<AuthUser> {
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_COOKIE)?.value;
   if (!token) {
-    throw new AppError("Authentication required", 401, "UNAUTHORIZED");
+    throw new AppError(AUTH_ERRORS.AUTH_REQUIRED, 401, ERROR_CODES.UNAUTHORIZED);
   }
 
   return verifyToken(token);

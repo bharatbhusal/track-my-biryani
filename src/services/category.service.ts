@@ -1,4 +1,10 @@
 import { AppError } from "@/lib/errors";
+import {
+  BUCKET_ERRORS,
+  CATEGORY_ERRORS,
+  ERROR_CODES,
+  USER_ERRORS,
+} from "@/constants/error-messages";
 import { Types } from "mongoose";
 import { getValidBuckets } from "@/lib/query-builders/membership";
 import { applyBucketScope, applyOwnerFilter } from "@/lib/query-builders";
@@ -35,10 +41,10 @@ async function assertCategoryCreator(
 ) {
   const category = await getCategoryByIdForMember(categoryId, validBucketIds);
   if (!category) {
-    throw new AppError("Category not found", 404, "NOT_FOUND");
+    throw new AppError(CATEGORY_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
   if (category.userId.toString() !== userId) {
-    throw new AppError("Only the category creator can manage this category", 403, "NOT_OWNER");
+    throw new AppError(CATEGORY_ERRORS.NOT_OWNER, 403, ERROR_CODES.NOT_OWNER);
   }
   return category;
 }
@@ -70,12 +76,12 @@ export async function createCategoryService(userId: string, body: unknown) {
 
   const validBuckets = await getValidBuckets(userId);
   if (!validBuckets.map((id) => id.toString()).includes(payload.bucketId)) {
-    throw new AppError("Not a member of this bucket", 403, "NOT_A_MEMBER");
+    throw new AppError(BUCKET_ERRORS.NOT_MEMBER, 403, ERROR_CODES.NOT_A_MEMBER);
   }
 
   const existing = await findUserById(userId);
   if (!existing) {
-    throw new AppError("User doesn't exist", 409, "USER_DOESN'T_EXIST");
+    throw new AppError(USER_ERRORS.DOESNT_EXIST, 409, ERROR_CODES.USER_DOESNT_EXIST);
   }
 
   const category = await createCategory({
@@ -102,7 +108,7 @@ export async function getCategoryService(userId: string, categoryId: string) {
   const validBuckets = await getValidBuckets(userId);
   const category = await getCategoryByIdForMember(categoryId, validBuckets);
   if (!category) {
-    throw new AppError("Category not found", 404, "NOT_FOUND");
+    throw new AppError(CATEGORY_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
   return category;
 }
@@ -118,7 +124,7 @@ export async function updateCategoryService(userId: string, categoryId: string, 
   const targetBucketId = payload.bucketId;
 
   if (!validSet.has(targetBucketId)) {
-    throw new AppError("Not a member of this bucket", 403, "NOT_A_MEMBER");
+    throw new AppError(BUCKET_ERRORS.NOT_MEMBER, 403, ERROR_CODES.NOT_A_MEMBER);
   }
 
   const category = await updateCategory(categoryId, currentBucketId, {
@@ -129,7 +135,7 @@ export async function updateCategoryService(userId: string, categoryId: string, 
   });
 
   if (!category) {
-    throw new AppError("Category not found", 404, "NOT_FOUND");
+    throw new AppError(CATEGORY_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
 
   if (payload.bucketId && payload.bucketId !== currentBucketId) {
@@ -173,7 +179,7 @@ export async function deleteCategoryService(userId: string, categoryId: string) 
 
   const deleted = await deleteCategory(categoryId, category.bucketId.toString());
   if (!deleted) {
-    throw new AppError("Category not found", 404, "NOT_FOUND");
+    throw new AppError(CATEGORY_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
 
   await logAuditEvent({
@@ -195,7 +201,7 @@ export async function getCategoryStatsService(
   to: string,
 ) {
   if (!from || !to) {
-    throw new AppError("from and to query params are required", 400);
+    throw new AppError(CATEGORY_ERRORS.FROM_TO_REQUIRED, 400);
   }
   const category = await getCategoryService(userId, categoryId);
   const range = await expenseRepository.getCategoryRangeStats(
