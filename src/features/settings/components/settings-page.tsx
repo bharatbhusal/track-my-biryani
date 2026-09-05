@@ -41,26 +41,25 @@ export function SettingsPage() {
       <div className="flex w-full justify-between items-center">
         <h2 className="text-lg font-semibold">Hi {authUser?.username || "User"}!</h2>
         <div className="flex items-center">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Toggle theme"
-            onClick={() => setTheme(currentTheme === "dark" ? "light" : "dark")}
-            disabled={!mounted}
-          >
-            <FiMoon className="dark:hidden" />
-            <FiSun className="hidden dark:block" />
-          </Button>
+          {mounted ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Toggle theme"
+              onClick={() => setTheme(currentTheme === "dark" ? "light" : "dark")}
+            >
+              <FiMoon className="dark:hidden" aria-hidden="true" />
+              <FiSun className="hidden dark:block" aria-hidden="true" />
+            </Button>
+          ) : (
+            <span className="inline-flex h-9 w-9" aria-hidden="true" />
+          )}
           {authLoading ? (
             <Skeleton className="h-6 w-6 rounded-full" />
           ) : authUser ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              aria-label="Logout"
-              onClick={() => setLogoutOpen(true)}
-            >
-              <FiLogOut className="mr-1.5" />
+            <Button variant="ghost" size="sm" onClick={() => setLogoutOpen(true)}>
+              <FiLogOut className="mr-1.5" aria-hidden="true" />
+              Logout
             </Button>
           ) : (
             <Link href="/auth/login">
@@ -79,9 +78,12 @@ export function SettingsPage() {
             </p>
           </div>
 
-          <Button variant="ghost" size="icon" aria-label="View buckets">
+          <span
+            aria-hidden="true"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-[var(--color-muted)]"
+          >
             <FiUsers className="h-4 w-4" />
-          </Button>
+          </span>
         </Link>
       </Card>
       <Card>
@@ -93,9 +95,12 @@ export function SettingsPage() {
             </p>
           </div>
 
-          <Button variant="ghost" size="icon" aria-label="View budgets">
+          <span
+            aria-hidden="true"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-[var(--color-muted)]"
+          >
             <FiPieChart className="h-4 w-4" />
-          </Button>
+          </span>
         </Link>
       </Card>
       <Card>
@@ -105,9 +110,12 @@ export function SettingsPage() {
             <p className="truncate text-xs text-[var(--color-muted)]">View all logged activity</p>
           </div>
 
-          <Button variant="ghost" size="icon" aria-label="View logs">
+          <span
+            aria-hidden="true"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-[var(--color-muted)]"
+          >
             <FiFileText className="h-4 w-4" />
-          </Button>
+          </span>
         </Link>
       </Card>
 

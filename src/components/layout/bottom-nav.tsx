@@ -30,13 +30,14 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              aria-label={item.label}
+              aria-current={active ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center gap-0.5 rounded-2xl px-5 py-1.5 text-xs transition-all duration-200",
+                "flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-0.5 rounded-2xl px-5 py-1.5 text-xs transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg)]",
                 active
                   ? "bg-[var(--color-primary-muted)] text-[var(--color-primary)]"
                   : "text-[var(--color-muted)] hover:text-[var(--color-text)]",
               )}
-              aria-label={item.label}
             >
               <Icon className="text-xl" aria-hidden="true" />
               <span className="text-[10px] font-medium leading-none">{item.label}</span>
