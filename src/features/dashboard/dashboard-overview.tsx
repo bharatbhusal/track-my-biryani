@@ -4,7 +4,7 @@ import { Suspense, useMemo, useEffect } from "react";
 import Link from "next/link";
 
 import { FilterBar, sortForVariant } from "@/components/filters";
-import { ExpenseOverview } from "@/features/expenses/components/expense-overview";
+import { ExpenseOverview } from "@/features/expenses/expense-overview";
 import { SpendingBarChart } from "@/components/charts/spending-bar-chart";
 import { ChartSkeleton } from "@/components/charts/chart-skeleton";
 import { Card } from "@/components/ui/card";

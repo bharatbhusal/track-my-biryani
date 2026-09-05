@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/modals/dialog";
 import { EmojiBadge } from "@/components/ui/emoji-badge";
-import { bucketErrorMessage } from "@/features/buckets/components/bucket-form";
+import { bucketErrorMessage } from "@/features/buckets/bucket-form";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
   acceptIncomingRequest,

@@ -1,7 +1,7 @@
 "use client";
 
 import { Modal } from "@/components/modals/dialog";
-import { BucketForm } from "@/features/buckets/components/bucket-form";
+import { BucketForm } from "@/features/buckets/bucket-form";
 
 type Props = {
   open: boolean;

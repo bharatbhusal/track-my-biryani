@@ -11,7 +11,7 @@ import { EmojiBadge } from "@/components/ui/emoji-badge";
 import { formatCurrency } from "@/lib/format";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { deleteBucket, leaveBucket } from "@/store/slices/bucketSlice";
-import { BucketForm, bucketErrorMessage } from "./bucket-form";
+import { BucketForm, bucketErrorMessage } from "../bucket-form";
 import { BucketInviteDialog } from "./bucket-invite-dialog";
 import { BucketMembersDialog } from "./bucket-members-dialog";
 import type { BucketSummary } from "@/constants/types/bucket.types";

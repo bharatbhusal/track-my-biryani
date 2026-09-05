@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { bucketsApi } from "@/lib/api/buckets";
 import { useAppDispatch } from "@/store/hooks";
 import { revokeInvite } from "@/store/slices/bucketSlice";
-import { bucketErrorMessage } from "./bucket-form";
+import { bucketErrorMessage } from "../bucket-form";
 import type { BucketMemberWithName, BucketSummary } from "@/constants/types/bucket.types";
 
 export function BucketMembersDialog({

@@ -6,7 +6,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/modals/dialog";
 import { CardMenu } from "@/components/ui/card-menu";
 import { EmojiBadge } from "@/components/ui/emoji-badge";
-import { BudgetFormDialog } from "@/features/budgets/components/budget-form";
+import { BudgetFormDialog } from "@/features/budgets/budget-form";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { deleteBudget } from "@/store/slices/budgetSlice";
 import type { BudgetItem } from "@/constants/types/budget.types";

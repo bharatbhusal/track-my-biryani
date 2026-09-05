@@ -10,7 +10,7 @@ import { Modal } from "@/components/modals/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { acceptInvite, declineInvite } from "@/store/slices/bucketSlice";
-import { bucketErrorMessage } from "@/features/buckets/components/bucket-form";
+import { bucketErrorMessage } from "@/features/buckets/bucket-form";
 
 export function InvitationsSection() {
   const dispatch = useAppDispatch();

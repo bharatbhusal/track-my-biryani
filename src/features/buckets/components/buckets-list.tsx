@@ -45,6 +45,3 @@ export function BucketsList() {
     </section>
   );
 }
-
-// ponytail: kept for existing importers until they migrate to BucketsList.
-export const BucketSettings = BucketsList;

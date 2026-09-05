@@ -5,8 +5,8 @@ import { toast } from "sonner";
 
 import { FilterBar, useScopedOptions } from "@/components/filters";
 import { sortForVariant } from "@/components/filters/variants";
-import { LogsTable } from "@/features/logs/components/logs-table";
-import type { SortField } from "@/features/logs/components/logs-table";
+import { LogsTable } from "@/features/logs/logs-table";
+import type { SortField } from "@/features/logs/logs-table";
 import { auditApi } from "@/lib/api/audit";
 import type { AuditLogItem } from "@/lib/api/audit";
 import { auditCriteria } from "@/lib/filters";

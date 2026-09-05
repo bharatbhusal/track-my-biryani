@@ -19,7 +19,7 @@ import { scopedExpenseRequest } from "@/lib/filters";
 import { fetchExpenseDetail, deleteExpense, updateExpense } from "@/store/slices/expenseSlice";
 import { fetchAllBuckets } from "@/store/slices/bucketSlice";
 import { ExpenseCard } from "@/features/expenses/components/expense-card";
-import { ExpenseTable } from "./expense-table";
+import { ExpenseTable } from "./components/expense-table";
 import type { ExpenseItem } from "@/constants/types/expense.types";
 
 type ExpenseDetailViewProps = {

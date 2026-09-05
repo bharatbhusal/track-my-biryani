@@ -11,7 +11,7 @@ import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { fetchBudgets } from "@/store/slices/budgetSlice";
 import { fetchAllBuckets } from "@/store/slices/bucketSlice";
 import { BudgetCard } from "@/features/budgets/components/budget-card";
-import { AddBudgetDialog } from "@/features/budgets/components/budget-form";
+import { AddBudgetDialog } from "@/features/budgets/budget-form";
 
 export function BudgetsPage() {
   const dispatch = useAppDispatch();

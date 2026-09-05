@@ -1,4 +1,4 @@
-import { MorePage } from "@/features/more/components/more-page";
+import { MorePage } from "@/features/more/more-page";
 
 export const metadata = { title: "Settings" };
 

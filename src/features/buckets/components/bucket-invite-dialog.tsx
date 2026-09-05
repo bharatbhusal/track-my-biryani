@@ -10,7 +10,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { shareLink } from "@/lib/share";
 import { useAppDispatch } from "@/store/hooks";
 import { inviteUser } from "@/store/slices/bucketSlice";
-import { bucketErrorMessage } from "./bucket-form";
+import { bucketErrorMessage } from "../bucket-form";
 import type { BucketSummary } from "@/constants/types/bucket.types";
 
 export function BucketInviteDialog({
