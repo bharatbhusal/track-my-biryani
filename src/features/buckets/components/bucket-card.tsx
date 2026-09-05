@@ -246,7 +246,7 @@ export function BucketCard({ bucket, onDelete, onLeave }: BucketCardProps) {
             }}
           >
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-[var(--color-foreground)]">
+              <label className="text-sm font-medium text-[var(--color-text)]">
                 Request by Username
               </label>
               <Input

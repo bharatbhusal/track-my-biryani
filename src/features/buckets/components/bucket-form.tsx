@@ -100,12 +100,12 @@ export function BucketForm({ bucket, onSuccess, onCancel }: BucketFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-[var(--color-foreground)]">Name</label>
+        <label className="text-sm font-medium text-[var(--color-text)]">Name</label>
         <Input {...register("name")} placeholder="Weekend trip" autoFocus={!isEditing} />
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-[var(--color-foreground)]">Icon</label>
+        <label className="text-sm font-medium text-[var(--color-text)]">Icon</label>
         <Popover>
           <PopoverTrigger asChild>
             <button

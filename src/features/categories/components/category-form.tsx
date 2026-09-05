@@ -192,25 +192,25 @@ export function CategoryForm({ id, onSuccess, onCancel }: CategoryFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-[var(--color-foreground)]">Bucket</label>
+        <label className="text-sm font-medium text-[var(--color-text)]">Bucket</label>
         <Select value={selectedBucketId} onChange={(e) => setSelectedBucketId(e.target.value)}>
           <option value="">Select a bucket</option>
           {buckets.map((bucket) => (
             <option key={bucket._id} value={bucket._id}>
-              {bucket.icon} {bucket.name}
+              {bucket.name}
             </option>
           ))}
         </Select>
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-[var(--color-foreground)]">Name</label>
+        <label className="text-sm font-medium text-[var(--color-text)]">Name</label>
         <Input {...register("name")} placeholder="Food, Transport..." autoFocus={!isEditing} />
       </div>
 
       <div className="flex gap-2">
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-[var(--color-foreground)]">Emoji</label>
+          <label className="text-sm font-medium text-[var(--color-text)]">Emoji</label>
           <Popover>
             <PopoverTrigger asChild>
               <button
@@ -230,7 +230,7 @@ export function CategoryForm({ id, onSuccess, onCancel }: CategoryFormProps) {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-[var(--color-foreground)]">Color</label>
+          <label className="text-sm font-medium text-[var(--color-text)]">Color</label>
 
           <input
             type="color"

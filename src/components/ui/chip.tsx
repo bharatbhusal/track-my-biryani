@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { FiX } from "react-icons/fi";
+import { X } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
 
@@ -27,10 +27,14 @@ export function Chip({ label, icon, onRemove, onClick, variant = "default" }: Ch
         variant === "default"
           ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-primary-foreground)]"
           : "border-[var(--color-border)] bg-[var(--color-surface-muted)] text-[var(--color-text)]",
-        onClick && "cursor-pointer hover:brightness-110 active:scale-[0.97]",
+        onClick && "cursor-pointer hover:brightness-110",
       )}
     >
-      {icon ? <span className="shrink-0">{icon}</span> : null}
+      {icon ? (
+        <span aria-hidden="true" className="shrink-0">
+          {icon}
+        </span>
+      ) : null}
       <span className="whitespace-nowrap">{label}</span>
       {onRemove ? (
         <button
@@ -42,7 +46,7 @@ export function Chip({ label, icon, onRemove, onClick, variant = "default" }: Ch
           }}
           className="-mr-1 rounded-full p-0.5 opacity-70 transition-opacity hover:opacity-100"
         >
-          <FiX className="h-3 w-3" />
+          <X className="h-3 w-3" />
         </button>
       ) : null}
     </Wrapper>

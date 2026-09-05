@@ -36,9 +36,10 @@ export function LineChart({
               border: "1px solid var(--color-border)",
               borderRadius: "0.5rem",
               fontSize: "0.875rem",
+              boxShadow: "var(--shadow-elevated)",
             }}
           />
-          <Line dataKey="total" stroke="#4f46e5" strokeWidth={2} />
+          <Line dataKey="total" stroke="var(--chart-1)" strokeWidth={2} />
         </RechartsLineChart>
       </ResponsiveContainer>
     </div>
