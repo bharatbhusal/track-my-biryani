@@ -381,7 +381,6 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
                         options={availableBuckets.map((b) => ({
                           value: b._id as string,
                           label: b.name,
-                          icon: b.icon ?? "📁",
                         }))}
                         addLabel="Add new bucket"
                         onAddNew={() => setAddBucketOpen(true)}
@@ -406,8 +405,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
                         onValueChange={field.onChange}
                         options={categories.map((category) => ({
                           value: category._id,
-                          label: category.name,
-                          icon: category.emoji,
+                          label: `${category.emoji} ${category.name}`,
                         }))}
                         placeholder="Category"
                         addLabel="Add new category"
