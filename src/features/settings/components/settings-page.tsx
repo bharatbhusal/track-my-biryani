@@ -59,7 +59,6 @@ export function SettingsPage() {
           ) : authUser ? (
             <Button variant="ghost" size="sm" onClick={() => setLogoutOpen(true)}>
               <FiLogOut className="mr-1.5" aria-hidden="true" />
-              Logout
             </Button>
           ) : (
             <Link href="/auth/login">
