@@ -11,29 +11,29 @@ import { resolveDateRange } from "@/lib/date-range";
 import { buildExpenseQuery } from "@/lib/query-builders";
 import { getValidBuckets } from "@/lib/query-builders/membership";
 import expenseRepository from "@/repositories/expense.repository";
-import { ensureCategoryInBucket, getCategoryById } from "@/repositories/category.repository";
+import {
+  categoryExistsInBucket,
+  ensureCategoryInBucket,
+  getCategoryById,
+} from "@/repositories/category.repository";
 import { findBucketById, isMember } from "@/repositories/bucket.repository";
-import { findUserById } from "@/repositories/user.repository";
 import { logAuditEvent } from "@/services/audit.service";
 import type { ExpenseSearchRequest } from "@/constants/types/search.types";
 import { AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/constants/types/audit.types";
 import { AuthUser } from "@/constants/types/auth.types";
-
 async function createExpense(authUser: AuthUser, body: unknown) {
   const payload = expenseSchema.parse(body);
 
-  const existing = await findUserById(authUser.id);
-  if (!existing) {
-    throw new AppError(USER_ERRORS.DOESNT_EXIST, 409, ERROR_CODES.USER_DOESNT_EXIST);
-  }
+  const [validBucket, categoryExists] = await Promise.all([
+    isMember(authUser.id, payload.bucketId),
+    categoryExistsInBucket(payload.categoryId, payload.bucketId),
+  ]);
 
-  const validBucket = await isMember(authUser.id, authUser.bucketId);
   if (!validBucket) {
     throw new AppError(BUCKET_ERRORS.NOT_MEMBER, 403, ERROR_CODES.NOT_A_MEMBER);
   }
 
-  const category = await getCategoryById(payload.categoryId, payload.bucketId);
-  if (!category) {
+  if (!categoryExists) {
     throw new AppError(CATEGORY_ERRORS.NOT_IN_BUCKET, 400, ERROR_CODES.CATEGORY_NOT_IN_BUCKET);
   }
 
@@ -47,7 +47,7 @@ async function createExpense(authUser: AuthUser, body: unknown) {
     images: payload.images,
     location: payload.location,
     currency: payload.currency,
-    paidAt: payload?.paidAt ? new Date(payload.paidAt) : undefined,
+    paidAt: payload.paidAt ? new Date(payload.paidAt) : undefined,
   });
 
   await logAuditEvent({

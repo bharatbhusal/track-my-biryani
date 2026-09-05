@@ -289,3 +289,17 @@ export async function searchCategories(
     totalPages: Math.ceil(total / request.pagination.pageSize) || 1,
   };
 }
+
+export async function categoryExistsInBucket(
+  categoryId: string,
+  bucketId: string,
+): Promise<boolean> {
+  if (!Types.ObjectId.isValid(categoryId) || !Types.ObjectId.isValid(bucketId)) {
+    return false;
+  }
+
+  return !!(await CategoryModel.exists({
+    _id: categoryId,
+    bucketId,
+  }));
+}

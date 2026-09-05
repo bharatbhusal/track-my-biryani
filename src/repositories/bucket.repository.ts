@@ -49,17 +49,19 @@ export async function listBucketsForMember(userId: string) {
 }
 
 export async function isMember(userId: string, bucketId: string): Promise<boolean> {
-  const bucket = await BucketModel.exists({
-    _id: new Types.ObjectId(bucketId),
+  if (!Types.ObjectId.isValid(bucketId)) {
+    return false;
+  }
+
+  return !!(await BucketModel.exists({
+    _id: bucketId,
     members: {
       $elemMatch: {
         userId: new Types.ObjectId(userId),
         status: "accepted",
       },
     },
-  });
-
-  return !!bucket;
+  }));
 }
 
 export async function listBucketsForPendingMember(userId: string) {
