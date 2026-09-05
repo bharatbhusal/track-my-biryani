@@ -87,11 +87,6 @@ export default function LogsPage() {
     <div className="space-y-2">
       <div className="flex items-center justify-between px-2">
         <h3 className="text-base font-semibold tracking-tight">Activity Logs</h3>
-        <p aria-live="polite" className="text-xs text-[var(--color-muted)]">
-          {isLoading
-            ? "Loading…"
-            : `${result.items.length} result${result.items.length === 1 ? "" : "s"}`}
-        </p>
       </div>
       {error && (
         <p

@@ -48,7 +48,10 @@ export function BudgetCard({ budget }: { budget: BudgetItem }) {
         <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             {budget.categoryName ? (
-              <EmojiBadge emoji={budget.categoryEmoji} color="var(--color-surface-muted)" />
+              <EmojiBadge
+                emoji={budget.categoryEmoji}
+                color={budget.categoryColor ?? "var(--color-surface-muted)"}
+              />
             ) : null}
             <div className="min-w-0">
               <CardTitle className="truncate" title={name}>

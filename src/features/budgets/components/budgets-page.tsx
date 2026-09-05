@@ -35,7 +35,7 @@ export function BudgetsPage() {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold">Budgets</h1>
         <Button size="sm" onClick={() => setOpen(true)}>
@@ -50,25 +50,21 @@ export function BudgetsPage() {
         />
       ) : (
         groups.map((group) => (
-          <div key={group.bucketId} className="space-y-2">
-            <div className="flex items-center gap-2">
-              <EmojiBadge
-                emoji={group.bucketIcon}
-                color="var(--color-surface-muted)"
-                className="h-6 w-6 text-xs"
-              />
-              <h2 className="truncate text-sm font-semibold" title={group.bucketName}>
-                {group.bucketName}
-              </h2>
+          <div key={group.bucketId} className="space-y-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <EmojiBadge emoji={group.bucketIcon} color="var(--color-surface-muted)" />
+                <h2 className="truncate text-sm font-semibold" title={group.bucketName}>
+                  {group.bucketName}
+                </h2>
+              </div>
               <span className="text-xs text-[var(--color-muted)]">
                 {group.budgets.length} budget(s)
               </span>
             </div>
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-              {group.budgets.map((b) => (
-                <BudgetCard key={b._id} budget={b} />
-              ))}
-            </div>
+            {group.budgets.map((b) => (
+              <BudgetCard key={b._id} budget={b} />
+            ))}
           </div>
         ))
       )}
