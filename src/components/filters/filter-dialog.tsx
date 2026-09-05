@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ConfirmDialog, Modal } from "@/components/modals/dialog";
 import { Button } from "@/components/ui/button";
@@ -50,17 +50,22 @@ export function FilterDialog({
   const [confirmClear, setConfirmClear] = useState(false);
 
   const [draft, setDraft] = useState({
-    open,
     criteria: state.filterCriteria as DraftCriteria,
     sort: sortForVariant(variant, state.sortCriteria),
   });
-  if (draft.open !== open) {
-    setDraft({
-      open,
-      criteria: state.filterCriteria as DraftCriteria,
-      sort: sortForVariant(variant, state.sortCriteria),
-    });
-  }
+  // ponytail: re-sync the draft when the dialog opens — in an effect, never
+  // setState during render. The transition guard keeps store updates from
+  // clobbering in-progress edits while open.
+  const wasOpen = useRef(open);
+  useEffect(() => {
+    if (open && !wasOpen.current) {
+      setDraft({
+        criteria: state.filterCriteria as DraftCriteria,
+        sort: sortForVariant(variant, state.sortCriteria),
+      });
+    }
+    wasOpen.current = open;
+  }, [open, state.filterCriteria, state.sortCriteria, variant]);
   const { criteria, sort } = draft;
   const setCriteria = (updater: (c: DraftCriteria) => DraftCriteria) =>
     setDraft((d) => ({ ...d, criteria: updater(d.criteria) }));

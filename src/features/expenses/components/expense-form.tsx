@@ -1,20 +1,27 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import { FiArrowLeft, FiSave, FiPlus, FiCalendar } from "react-icons/fi";
+import { FiArrowLeft, FiSave, FiPlus } from "react-icons/fi";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { DropdownList } from "@/components/ui/dropdown-list";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
-import { formatShortDateTime, getLocalDateTimeInputValue, toUtcIsoString } from "@/lib/datetime";
+import { getLocalDateTimeInputValue, toUtcIsoString } from "@/lib/datetime";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { fetchAllBuckets } from "@/store/slices/bucketSlice";
 import { fetchExpenseDetail, createExpense, updateExpense } from "@/store/slices/expenseSlice";
@@ -26,12 +33,12 @@ import { personalBucketId, scopedCategoryRequest } from "@/lib/filters";
 import type { CategoryItem, CreateExpensePayload } from "@/constants/types/expense.types";
 
 const schema = z.object({
-  title: z.string().min(1),
-  amount: z.number().positive(),
-  categoryId: z.string().min(1),
-  paidAt: z.string().min(1),
+  title: z.string().min(1, "Enter a title"),
+  amount: z.number({ error: "Enter an amount" }).positive("Amount must be greater than 0"),
+  categoryId: z.string().min(1, "Choose a category"),
+  paidAt: z.string().min(1, "Choose a date and time"),
   notes: z.string().optional(),
-  bucketId: z.string().min(1, "Bucket is required"),
+  bucketId: z.string().min(1, "Choose a bucket"),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -39,6 +46,15 @@ type FormValues = z.infer<typeof schema>;
 type ExpenseFormProps = {
   id?: string;
 };
+
+const FIELD_ORDER: (keyof FormValues)[] = [
+  "amount",
+  "title",
+  "bucketId",
+  "categoryId",
+  "paidAt",
+  "notes",
+];
 
 export function ExpenseForm({ id }: ExpenseFormProps) {
   const router = useRouter();
@@ -57,11 +73,11 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [addBucketOpen, setAddBucketOpen] = useState(false);
-  const amountRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    amountRef.current?.focus();
-  }, []);
+  // ponytail: id lookup instead of a ref — the invalid-submit handler only
+  // runs on user submit, never during render.
+  const focusSummary = () => {
+    document.getElementById("expense-error-summary")?.focus();
+  };
 
   const availableBuckets = buckets.filter((b) => b.status === "accepted");
 
@@ -111,7 +127,13 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
     resolver: zodResolver(schema),
     defaultValues: defaultValues(),
   });
-  const { handleSubmit, reset, control, setValue } = form;
+  const {
+    handleSubmit,
+    reset,
+    control,
+    setValue,
+    formState: { errors },
+  } = form;
 
   const allValues = useWatch({
     control,
@@ -224,17 +246,48 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
   }
 
   const backLink = isEditing && id ? `/expenses/${id}` : "/dashboard";
+  const errorEntries = FIELD_ORDER.filter((name) => errors[name]).map((name) => ({
+    name,
+    message: errors[name]?.message ?? "Invalid value",
+  }));
 
   return (
     <div className="h-full flex flex-col">
       <Form {...form}>
-        <form className="h-full flex flex-col justify-between" onSubmit={handleSubmit(onSubmit)}>
+        <form
+          className="h-full flex flex-col justify-between"
+          onSubmit={handleSubmit(onSubmit, focusSummary)}
+          noValidate
+        >
           <div className="flex flex-col items-center gap-6 px-4 pt-8">
+            {errorEntries.length > 0 && (
+              <div
+                id="expense-error-summary"
+                role="alert"
+                tabIndex={-1}
+                aria-labelledby="expense-error-heading"
+                className="w-full max-w-md rounded-xl border border-red-600/40 bg-red-600/10 px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-red-600/40"
+              >
+                <p id="expense-error-heading" className="text-sm font-semibold text-red-600">
+                  Fix {errorEntries.length === 1 ? "this field" : "these fields"} to continue
+                </p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-red-600">
+                  {errorEntries.map(({ name, message }) => (
+                    <li key={name}>
+                      <a href={`#expense-${name}`} className="underline underline-offset-2">
+                        {message}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <FormField
               control={control}
               name="amount"
               render={({ field }) => (
                 <FormItem className="w-full max-w-md">
+                  <FormLabel>Amount</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-2xl text-[var(--color-muted)]">
@@ -249,11 +302,11 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
                           .trim() || currency}
                       </span>
                       <Input
+                        id="expense-amount"
                         type="number"
                         inputMode="decimal"
                         step="0.01"
                         placeholder="0"
-                        ref={amountRef}
                         autoFocus
                         className="h-14 pl-10 text-center text-2xl font-semibold tracking-tight"
                         value={field.value ?? ""}
@@ -265,6 +318,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
                       />
                     </div>
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -273,13 +327,16 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
               name="title"
               render={({ field }) => (
                 <FormItem className="w-full max-w-md">
+                  <FormLabel>Title</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
+                      id="expense-title"
                       placeholder="What was this for?"
                       className="text-center text-base"
                     />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -288,13 +345,17 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
               name="notes"
               render={({ field }) => (
                 <FormItem className="w-full max-w-md">
+                  <FormLabel>Notes</FormLabel>
                   <FormControl>
-                    <Input
+                    <textarea
                       {...field}
+                      id="expense-notes"
                       placeholder="Add a note!"
-                      className="text-center text-base h-24"
+                      rows={3}
+                      className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-center text-base text-[var(--color-text)] outline-none transition-all duration-200 placeholder:text-[var(--color-muted)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
                     />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -307,8 +368,10 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
                 name="bucketId"
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel>Bucket</FormLabel>
                     <FormControl>
                       <DropdownList
+                        id="expense-bucketId"
                         aria-label="Bucket"
                         value={field.value ?? ""}
                         onValueChange={(value) => {
@@ -324,6 +387,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
                         onAddNew={() => setAddBucketOpen(true)}
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -333,8 +397,10 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
                 name="categoryId"
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel>Category</FormLabel>
                     <FormControl>
                       <DropdownList
+                        id="expense-categoryId"
                         aria-label="Category"
                         value={field.value}
                         onValueChange={field.onChange}
@@ -348,6 +414,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
                         onAddNew={() => setAddCategoryOpen(true)}
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -357,48 +424,29 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
               name="paidAt"
               render={({ field }) => (
                 <FormItem>
+                  <FormLabel>Date and time</FormLabel>
                   <FormControl>
-                    <div className="relative flex h-11 items-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
-                      <span className="flex-1 truncate px-3 text-[16px] text-[var(--color-text)]">
-                        {field.value
-                          ? formatShortDateTime(field.value, locale)
-                          : "Select date & time"}
-                      </span>
-                      <span
-                        aria-hidden="true"
-                        className="pointer-events-none mr-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[var(--color-muted)]"
-                      >
-                        <FiCalendar className="h-4 w-4" />
-                      </span>
-                      <Input
-                        type="datetime-local"
-                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                        value={field.value?.slice(0, 16) ?? ""}
-                        onChange={(e) => {
-                          field.onChange(e.target.value);
-                        }}
-                        onClick={(e) => {
-                          try {
-                            e.currentTarget.showPicker?.();
-                          } catch {
-                            // ponytail: native picker already open
-                          }
-                        }}
-                      />
-                    </div>
+                    <Input
+                      id="expense-paidAt"
+                      type="datetime-local"
+                      aria-label="Date and time"
+                      value={field.value?.slice(0, 16) ?? ""}
+                      onChange={(e) => field.onChange(e.target.value)}
+                    />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="flex gap-2">
+            <div className="sticky bottom-0 flex gap-2 bg-[var(--color-bg)] pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
               <Button
                 type="button"
                 variant="outline"
                 className="flex-1"
                 onClick={() => router.push(backLink)}
               >
-                <FiArrowLeft className="mr-1.5 h-4 w-4" />
+                <FiArrowLeft aria-hidden="true" className="mr-1.5 h-4 w-4" />
                 Cancel
               </Button>
               <Button type="submit" className="flex-1" disabled={isSubmitting}>
@@ -409,12 +457,12 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
                   </>
                 ) : isEditing ? (
                   <>
-                    <FiSave className="mr-1.5 h-4 w-4" />
+                    <FiSave aria-hidden="true" className="mr-1.5 h-4 w-4" />
                     Save changes
                   </>
                 ) : (
                   <>
-                    <FiPlus className="mr-1.5 h-4 w-4" />
+                    <FiPlus aria-hidden="true" className="mr-1.5 h-4 w-4" />
                     Create expense
                   </>
                 )}

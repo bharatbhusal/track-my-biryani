@@ -58,11 +58,13 @@ export function FilterChips({
     dispatch(set({ preset: "MULTIPLE" as never, ids: next }) as never);
   };
 
-  if (sections.search && (filterCriteria as any).q) {
+  const searchQuery = (filterCriteria as { q?: unknown }).q;
+  if (sections.search && typeof searchQuery === "string" && searchQuery) {
     chips.push(
       <Chip
         key="search"
-        label={`Search: ${(filterCriteria as any).q}`}
+        label={`Search: ${searchQuery}`}
+        ariaLabel={`Search filter: ${searchQuery}. Activate remove to clear.`}
         onRemove={actions.setSearch ? () => dispatch(actions.setSearch!(undefined)) : undefined}
       />,
     );
@@ -100,7 +102,7 @@ export function FilterChips({
           <Chip
             key={`bucket-${id}`}
             label={bucket?.name ?? "Bucket"}
-            icon={bucket?.icon}
+            icon={bucket?.icon ? <span aria-hidden="true">{bucket.icon}</span> : undefined}
             onRemove={() =>
               removeId(actions.setBucketFilter as never, bucketIds, id, actions.clearBucketFilter)
             }
@@ -125,7 +127,7 @@ export function FilterChips({
           <Chip
             key={`category-${id}`}
             label={category?.name ?? "Category"}
-            icon={category?.emoji}
+            icon={category?.emoji ? <span aria-hidden="true">{category.emoji}</span> : undefined}
             onRemove={() =>
               removeId(
                 actions.setCategoryFilter as never,
@@ -165,11 +167,18 @@ export function FilterChips({
 
   if (sections.sort && !hideSort && sortCriteria?.field) {
     const effectiveField = sortForVariant(variant, sortCriteria).field;
+    const ascending = sortCriteria.direction === "ASC";
     chips.push(
       <Chip
         key="sort"
         variant="muted"
-        label={`${sortFieldLabel(variant, effectiveField)} ${sortCriteria.direction === "ASC" ? "↑" : "↓"}`}
+        label={
+          <>
+            {sortFieldLabel(variant, effectiveField)}{" "}
+            <span aria-hidden="true">{ascending ? "↑" : "↓"}</span>
+          </>
+        }
+        ariaLabel={`Sort by ${sortFieldLabel(variant, effectiveField)}, ${ascending ? "ascending" : "descending"}`}
         onRemove={actions.clearSort ? () => dispatch(actions.clearSort!()) : undefined}
       />,
     );

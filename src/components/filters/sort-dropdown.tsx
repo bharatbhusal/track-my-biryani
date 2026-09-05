@@ -28,6 +28,7 @@ export function SortDropdown({ variant }: SortDropdownProps) {
 
   return (
     <DropdownList
+      aria-label="Sort expenses"
       value={`${sortCriteria.field}:${sortCriteria.direction}`}
       onValueChange={(v) => {
         const [field, direction] = v.split(":");

@@ -42,7 +42,7 @@ export function FilterBar({ variant, buckets, categories, owners, sections }: Fi
           onClick={() => setOpen(true)}
           className="shrink-0"
         >
-          <FiFilter className="h-4 w-4" />
+          <FiFilter aria-hidden="true" className="h-4 w-4" />
         </Button>
 
         <div className="scrollbar-hide flex flex-1 items-center gap-2 overflow-x-auto">
