@@ -1,8 +1,8 @@
 import { Types } from "mongoose";
 
 import { DEFAULT_CATEGORIES } from "@/lib/constants";
-import { toIsoBoundsForPreset } from "@/lib/date-range";
 import { AppError } from "@/lib/errors";
+import { applyCategoryFilter, applyDateFilter, applyOwnerFilter } from "@/lib/query-builders";
 import { escapeRegex } from "@/lib/utils";
 import {
   bucketSchema,
@@ -40,7 +40,12 @@ import type {
   BucketSummary,
   IncomingRequestsGroup,
 } from "@/constants/types/bucket.types";
-import type { BucketSearchRequest } from "@/constants/types/search.types";
+import type {
+  BucketSearchRequest,
+  CategorySelection,
+  DateFilter,
+  OwnerSelection,
+} from "@/constants/types/search.types";
 import { AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/constants/types/audit.types";
 
 export async function listBucketsService(userId: string): Promise<BucketsListPayload> {
@@ -105,12 +110,11 @@ export async function getBucketStatsService(
     throw new AppError("Not a member of this bucket", 403, "NOT_A_MEMBER");
   }
   const detail = await toDetail(bucket);
-  const f = parsed.filterCriteria ?? {
-    categoryPreset: "ALL" as const,
-    categoryIds: [] as string[],
-    ownerPreset: "ALL" as const,
-    ownerIds: [] as string[],
-    datePreset: "THIS_MONTH" as const,
+  const f = {
+    category: { preset: "ALL" as const },
+    owner: { preset: "ALL" as const },
+    date: { preset: "THIS_MONTH" as const },
+    ...parsed.filterCriteria,
   };
   const expenseMatch = buildBucketStatsExpenseMatch(userId, f);
   const stats = await getFilteredBucketExpenseStats(bucketId, expenseMatch);
@@ -126,44 +130,19 @@ export async function getBucketStatsService(
 function buildBucketStatsExpenseMatch(
   userId: string,
   filters: {
-    categoryPreset: "ALL" | "MULTIPLE";
-    categoryIds: string[];
-    ownerPreset: "ME" | "ALL" | "MULTIPLE";
-    ownerIds: string[];
-    datePreset: string;
-    customFrom?: string;
-    customTo?: string;
+    category: { preset: "ALL" | "MULTIPLE"; ids?: string[] };
+    owner: { preset: "ME" | "ALL" | "MULTIPLE"; ids?: string[] };
+    date: { preset: string; from?: string; to?: string };
     hasNotes?: boolean;
     hasLocation?: boolean;
     q?: string;
   },
 ): Record<string, unknown> {
+  const ctx = { userId };
   const match: Record<string, unknown> = {};
-  if (filters.categoryPreset === "MULTIPLE") {
-    const ids = filters.categoryIds
-      .filter((id) => Types.ObjectId.isValid(id))
-      .map((id) => new Types.ObjectId(id));
-    if (ids.length > 0) match.categoryId = { $in: ids };
-  }
-  if (filters.ownerPreset === "ME") {
-    match.userId = new Types.ObjectId(userId);
-  } else if (filters.ownerPreset === "MULTIPLE") {
-    const ids = filters.ownerIds
-      .filter((id) => Types.ObjectId.isValid(id))
-      .map((id) => new Types.ObjectId(id));
-    if (ids.length > 0) match.userId = { $in: ids };
-  }
-  const bounds = toIsoBoundsForPreset(
-    filters.datePreset as any,
-    filters.customFrom,
-    filters.customTo,
-  );
-  if (bounds) {
-    match.paidAt = {
-      ...(bounds.from ? { $gte: new Date(bounds.from) } : {}),
-      ...(bounds.to ? { $lte: new Date(bounds.to) } : {}),
-    };
-  }
+  applyCategoryFilter(match, filters.category as CategorySelection);
+  applyOwnerFilter(match, "userId", ctx, filters.owner as OwnerSelection);
+  applyDateFilter(match, "paidAt", filters.date as DateFilter);
   const and: Record<string, unknown>[] = [];
   const q = filters.q?.trim();
   if (q) {
@@ -607,8 +586,7 @@ async function toDetail(bucket: BucketDoc): Promise<BucketDetail> {
 function defaultBucketSearchRequest(): BucketSearchRequest {
   return {
     filterCriteria: {
-      datePreset: "THIS_MONTH",
-      ownerPreset: "ALL",
+      date: { preset: "THIS_MONTH" },
     },
     sortCriteria: { field: "createdAt", direction: "DESC" },
     pagination: { page: 1, pageSize: 20 },
@@ -617,11 +595,12 @@ function defaultBucketSearchRequest(): BucketSearchRequest {
 
 export async function searchBucketsService(userId: string, searchRequest: unknown) {
   const parsed = bucketSearchSchema.parse(searchRequest ?? {});
+  const defaults = defaultBucketSearchRequest();
 
   const request: BucketSearchRequest = {
-    filterCriteria: parsed.filterCriteria ?? defaultBucketSearchRequest().filterCriteria,
-    sortCriteria: parsed.sortCriteria ?? defaultBucketSearchRequest().sortCriteria,
-    pagination: parsed.pagination ?? defaultBucketSearchRequest().pagination,
+    filterCriteria: { ...defaults.filterCriteria, ...parsed.filterCriteria },
+    sortCriteria: parsed.sortCriteria ?? defaults.sortCriteria,
+    pagination: parsed.pagination ?? defaults.pagination,
   };
   return searchBuckets(userId, request);
 }

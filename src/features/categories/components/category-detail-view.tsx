@@ -13,7 +13,7 @@ import { AddCategoryDialog } from "@/features/categories/components/add-category
 import { CategoryCard } from "@/features/categories/components/category-card";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { fetchCategoryDetail, deleteCategory } from "@/store/slices/categorySlice";
-import { toIsoBoundsForPreset } from "@/lib/date-range";
+import { resolveDateRange } from "@/lib/date-range";
 import { expensesApi } from "@/lib/api/expenses";
 import { filterBounds, scopedExpenseRequest, expenseCriteriaForVariant } from "@/lib/filters";
 import { CashFlowChart } from "@/components/charts/cash-flow-chart";
@@ -41,15 +41,8 @@ export function CategoryDetailView({ id }: { id: string }) {
   const { items: expenses, totalPages: expensesTotalPages, loading: expensesLoading } = expenseList;
 
   const bounds = useMemo(
-    () =>
-      filterBounds(
-        toIsoBoundsForPreset(
-          filterCriteria.datePreset,
-          filterCriteria.customFrom,
-          filterCriteria.customTo,
-        ),
-      ),
-    [filterCriteria.datePreset, filterCriteria.customFrom, filterCriteria.customTo],
+    () => filterBounds(resolveDateRange(filterCriteria.date)),
+    [filterCriteria.date],
   );
 
   const filterKey = JSON.stringify([filterCriteria, sortCriteria]);
@@ -90,16 +83,7 @@ export function CategoryDetailView({ id }: { id: string }) {
       ...scoped.filterCriteria,
       ...Object.fromEntries(
         Object.entries(variantCriteria).filter(
-          ([k]) =>
-            ![
-              "bucketPreset",
-              "bucketIds",
-              "categoryPreset",
-              "categoryIds",
-              "datePreset",
-              "customFrom",
-              "customTo",
-            ].includes(k),
+          ([k]) => !["bucket", "category", "date"].includes(k),
         ),
       ),
     } as typeof scoped.filterCriteria;
@@ -211,7 +195,7 @@ export function CategoryDetailView({ id }: { id: string }) {
 
   return (
     <div className="space-y-2 overflow-x-hidden">
-      <FilterBar variant="category" buckets={[]} categories={[]} owners={[]} />
+      <FilterBar variant="category" />
       <CategoryCard
         category={category}
         onEdit={() => setEditDrawerOpen(true)}

@@ -1,7 +1,6 @@
 import { Types } from "mongoose";
 
-import { buildBucketQuery } from "@/lib/query-builders";
-import { toIsoBoundsForPreset } from "@/lib/date-range";
+import { applyDateFilter, applyOwnerFilter, buildBucketQuery } from "@/lib/query-builders";
 import { BucketModel } from "@/models/Bucket";
 import { ExpenseModel } from "@/models/Expense";
 import { UserModel } from "@/models/User";
@@ -290,19 +289,9 @@ function buildExpenseMatch(
   filters: BucketSearchRequest["filterCriteria"],
 ): Record<string, unknown> {
   const match: Record<string, unknown> = {};
-  if (filters.ownerPreset === "ME") {
-    match.userId = new Types.ObjectId(userId);
-  } else if (filters.ownerPreset === "MULTIPLE") {
-    match.userId = {
-      $in: (filters.ownerIds ?? []).map((id) => new Types.ObjectId(id)),
-    };
+  if (filters.owner) {
+    applyOwnerFilter(match, "userId", { userId }, filters.owner);
   }
-  const bounds = toIsoBoundsForPreset(filters.datePreset, filters.customFrom, filters.customTo);
-  if (bounds) {
-    match.paidAt = {
-      ...(bounds.from ? { $gte: new Date(bounds.from) } : {}),
-      ...(bounds.to ? { $lte: new Date(bounds.to) } : {}),
-    };
-  }
+  applyDateFilter(match, "paidAt", filters.date);
   return match;
 }

@@ -7,7 +7,7 @@ import {
   expenseSchema,
   expenseSearchSchema,
 } from "@/lib/validators";
-import { toIsoBoundsForPreset } from "@/lib/date-range";
+import { resolveDateRange } from "@/lib/date-range";
 import { buildExpenseQuery } from "@/lib/query-builders";
 import { getValidBuckets } from "@/lib/query-builders/membership";
 import {
@@ -234,7 +234,7 @@ async function chartOverviewContext(
     pagination: { page: 1, pageSize: 1 },
   });
 
-  const bounds = toIsoBoundsForPreset(filters.datePreset, filters.customFrom, filters.customTo);
+  const bounds = resolveDateRange(filters.date);
   return {
     match: query,
     from: bounds?.from ? new Date(bounds.from) : new Date(0),
@@ -310,13 +310,10 @@ export async function getChartDataService(userId: string, body: unknown) {
 function defaultExpenseSearchRequest(): ExpenseSearchRequest {
   return {
     filterCriteria: {
-      bucketPreset: "PERSONAL",
-      bucketIds: [],
-      categoryPreset: "ALL",
-      categoryIds: [],
-      ownerPreset: "ME",
-      ownerIds: [],
-      datePreset: "THIS_MONTH",
+      bucket: { preset: "PERSONAL" },
+      category: { preset: "ALL" },
+      owner: { preset: "ME" },
+      date: { preset: "THIS_MONTH" },
     },
     sortCriteria: { field: "paidAt", direction: "DESC" },
     pagination: { page: 1, pageSize: 20 },
@@ -325,28 +322,35 @@ function defaultExpenseSearchRequest(): ExpenseSearchRequest {
 
 export async function searchExpensesService(userId: string, searchRequest: unknown) {
   const parsed = expenseSearchSchema.parse(searchRequest ?? {});
+  const defaults = defaultExpenseSearchRequest();
   const request: ExpenseSearchRequest = {
-    filterCriteria: parsed.filterCriteria ?? defaultExpenseSearchRequest().filterCriteria,
-    sortCriteria: parsed.sortCriteria ?? defaultExpenseSearchRequest().sortCriteria,
-    pagination: parsed.pagination ?? defaultExpenseSearchRequest().pagination,
+    filterCriteria: { ...defaults.filterCriteria, ...parsed.filterCriteria },
+    sortCriteria: parsed.sortCriteria ?? defaults.sortCriteria,
+    pagination: parsed.pagination ?? defaults.pagination,
   };
   return searchExpenses(userId, request);
 }
 
-// Distributions intentionally apply only the date range plus membership scope:
-// the UI shows the whole picture and highlights the current selection, so the
-// data must not be pre-narrowed by bucket/category/owner/q/hasNotes/hasLocation.
+// ponytail: distribution reuses the full expense filter match so
+// /expenses/search and /expenses/distribution interpret filters identically.
 export async function getDistributionService(userId: string, body: unknown) {
   const parsed = distributionSchema.parse(body ?? {});
-  const filters = parsed.filterCriteria ?? defaultExpenseSearchRequest().filterCriteria;
+  const defaults = defaultExpenseSearchRequest();
+  const filters = { ...defaults.filterCriteria, ...parsed.filterCriteria };
 
+  const { query } = await buildExpenseQuery(userId, {
+    filterCriteria: filters,
+    sortCriteria: { field: "paidAt", direction: "DESC" },
+    pagination: { page: 1, pageSize: 1 },
+  });
+  const bounds = resolveDateRange(filters.date);
   const bucketIds = await getValidBuckets(userId);
-  const bounds = toIsoBoundsForPreset(filters.datePreset, filters.customFrom, filters.customTo);
 
   return getDistribution(
     bucketIds,
     parsed.dimension,
     bounds?.from ? new Date(bounds.from) : undefined,
     bounds?.to ? new Date(bounds.to) : undefined,
+    query,
   );
 }

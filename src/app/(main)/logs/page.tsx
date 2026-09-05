@@ -26,12 +26,7 @@ export default function LogsPage() {
   const { filterCriteria, sortCriteria, pagination } = useAppSelector((s) => s.filters.logs);
   const buckets = useAppSelector((s) => s.buckets.allBuckets);
 
-  const { owners } = useScopedOptions(
-    true,
-    buckets,
-    filterCriteria.bucketPreset,
-    filterCriteria.bucketIds,
-  );
+  const { owners } = useScopedOptions(true, buckets, filterCriteria.bucket);
 
   useEffect(() => {
     dispatch(fetchAllBuckets());
@@ -96,7 +91,7 @@ export default function LogsPage() {
           {error}
         </p>
       )}
-      <FilterBar variant="logs" buckets={buckets} categories={[]} owners={owners} />
+      <FilterBar variant="logs" />
       <LogsTable
         items={result.items}
         isLoading={isLoading}

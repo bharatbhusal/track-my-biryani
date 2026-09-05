@@ -1,7 +1,8 @@
 import { AppError } from "@/lib/errors";
 import { Types } from "mongoose";
-import { getValidBuckets, resolveBucketScope } from "@/lib/query-builders/membership";
-import { toIsoBoundsForPreset } from "@/lib/date-range";
+import { getValidBuckets } from "@/lib/query-builders/membership";
+import { applyBucketScope, applyOwnerFilter } from "@/lib/query-builders";
+import { resolveDateRange } from "@/lib/date-range";
 import {
   categoryDistributionSchema,
   categorySchema,
@@ -49,33 +50,17 @@ async function assertCategoryCreator(
 export async function listCategoriesWithStatsService(userId: string, body: unknown) {
   const parsed = categoryStatsSummarySchema.parse(body ?? {});
 
-  const filterCriteria = parsed.filterCriteria ?? defaultCategorySearchRequest().filterCriteria;
+  const categoryDefaults = defaultCategorySearchRequest();
+  const filterCriteria = { ...categoryDefaults.filterCriteria, ...parsed.filterCriteria };
 
-  const sortCriteria = parsed.sortCriteria ?? defaultCategorySearchRequest().sortCriteria;
+  const sortCriteria = parsed.sortCriteria ?? categoryDefaults.sortCriteria;
 
-  const categoryQuery: Record<string, unknown> = {
-    bucketId: await resolveBucketScope(
-      userId,
-      filterCriteria.bucketPreset,
-      filterCriteria.bucketIds,
-    ),
-  };
+  const ctx = { userId };
+  const categoryQuery: Record<string, unknown> = {};
+  await applyBucketScope(categoryQuery, ctx, filterCriteria.bucket);
+  applyOwnerFilter(categoryQuery, "userId", ctx, filterCriteria.owner);
 
-  if (filterCriteria.ownerPreset === "ME") {
-    categoryQuery.userId = new Types.ObjectId(userId);
-  } else if (filterCriteria.ownerPreset === "MULTIPLE") {
-    categoryQuery.userId = {
-      $in: filterCriteria.ownerIds
-        .filter((id) => Types.ObjectId.isValid(id))
-        .map((id) => new Types.ObjectId(id)),
-    };
-  }
-
-  const bounds = toIsoBoundsForPreset(
-    filterCriteria.datePreset,
-    filterCriteria.customFrom,
-    filterCriteria.customTo,
-  );
+  const bounds = resolveDateRange(filterCriteria.date);
 
   const from = bounds?.from ? new Date(bounds.from) : new Date(0);
 
@@ -256,18 +241,15 @@ export async function getCategoryStatsSummaryService(
   body: unknown,
 ): Promise<CategoryStatsSummary> {
   const parsed = categoryStatsSummarySchema.parse(body ?? {});
-  const filterCriteria = parsed.filterCriteria ?? defaultCategorySearchRequest().filterCriteria;
+  const defaults = defaultCategorySearchRequest().filterCriteria;
+  const filterCriteria = { ...defaults, ...parsed.filterCriteria };
   const { query } = await buildCategoryQuery(userId, {
     filterCriteria,
     sortCriteria: { field: "createdAt", direction: "DESC" },
     pagination: { page: 1, pageSize: 100 },
   });
 
-  const bounds = toIsoBoundsForPreset(
-    filterCriteria.datePreset,
-    filterCriteria.customFrom,
-    filterCriteria.customTo,
-  );
+  const bounds = resolveDateRange(filterCriteria.date);
   const from = bounds?.from ? new Date(bounds.from) : new Date(0);
   const to = bounds?.to ? new Date(bounds.to) : new Date();
 
@@ -294,23 +276,18 @@ export async function getCategoryStatsSummaryService(
 
 function defaultExpenseFilterCriteria(): ExpenseFilterCriteria {
   return {
-    bucketPreset: "PERSONAL",
-    bucketIds: [],
-    categoryPreset: "ALL",
-    categoryIds: [],
-    ownerPreset: "ME",
-    ownerIds: [],
-    datePreset: "THIS_MONTH",
+    bucket: { preset: "PERSONAL" },
+    category: { preset: "ALL" },
+    owner: { preset: "ME" },
+    date: { preset: "THIS_MONTH" },
   };
 }
 
 function defaultCategorySearchRequest(): CategorySearchRequest {
   return {
     filterCriteria: {
-      bucketPreset: "PERSONAL",
-      bucketIds: [],
-      ownerPreset: "ME",
-      ownerIds: [],
+      bucket: { preset: "PERSONAL" },
+      owner: { preset: "ME" },
     },
     sortCriteria: { field: "amount", direction: "DESC" },
     pagination: { page: 1, pageSize: 20 },
@@ -319,10 +296,11 @@ function defaultCategorySearchRequest(): CategorySearchRequest {
 
 export async function searchCategoriesService(userId: string, searchRequest: unknown) {
   const parsed = categorySearchSchema.parse(searchRequest ?? {});
+  const defaults = defaultCategorySearchRequest();
   const request: CategorySearchRequest = {
-    filterCriteria: parsed.filterCriteria ?? defaultCategorySearchRequest().filterCriteria,
-    sortCriteria: parsed.sortCriteria ?? defaultCategorySearchRequest().sortCriteria,
-    pagination: parsed.pagination ?? defaultCategorySearchRequest().pagination,
+    filterCriteria: { ...defaults.filterCriteria, ...parsed.filterCriteria },
+    sortCriteria: parsed.sortCriteria ?? defaults.sortCriteria,
+    pagination: parsed.pagination ?? defaults.pagination,
   };
   return searchCategories(userId, request);
 }

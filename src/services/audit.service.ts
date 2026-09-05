@@ -10,11 +10,9 @@ export async function logAuditEvent(input: AuditLogType): Promise<void> {
 function defaultAuditSearchRequest(): AuditSearchRequest {
   return {
     filterCriteria: {
-      bucketPreset: "ALL",
-      bucketIds: [],
-      ownerPreset: "ALL",
-      ownerIds: [],
-      datePreset: "THIS_MONTH",
+      bucket: { preset: "ALL" },
+      owner: { preset: "ALL" },
+      date: { preset: "THIS_MONTH" },
     },
     sortCriteria: { field: "timestamp", direction: "DESC" },
     pagination: { page: 1, pageSize: 30 },
@@ -25,7 +23,7 @@ export async function searchAuditLogsService(userId: string, searchRequest: unkn
   const parsed = auditSearchSchema.parse(searchRequest ?? {});
   const defaults = defaultAuditSearchRequest();
   return searchAuditLogs(userId, {
-    filterCriteria: parsed.filterCriteria ?? defaults.filterCriteria,
+    filterCriteria: { ...defaults.filterCriteria, ...parsed.filterCriteria },
     sortCriteria: parsed.sortCriteria ?? defaults.sortCriteria,
     pagination: parsed.pagination ?? defaults.pagination,
   });

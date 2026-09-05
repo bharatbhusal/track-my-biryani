@@ -74,7 +74,19 @@ const SERVER_ERRORS = {
 } as const;
 
 // ─────────────────────────────────────────────
+// Filters / search
+// ─────────────────────────────────────────────
+
+const FILTER_ERRORS = {
+  INVALID_SORT_FIELD: (field: string) => `Invalid sort field: ${field}`,
+
+  INVALID_DATE_RANGE: "Invalid date range",
+
+  INVALID_ID: "Invalid ID",
+} as const;
+
+// ─────────────────────────────────────────────
 // Export
 // ─────────────────────────────────────────────
 
-export { AUTH_ERRORS, SIGNUP_ERRORS, VALIDATION_ERRORS, USER_ERRORS, SERVER_ERRORS };
+export { AUTH_ERRORS, SIGNUP_ERRORS, VALIDATION_ERRORS, USER_ERRORS, SERVER_ERRORS, FILTER_ERRORS };

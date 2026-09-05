@@ -493,11 +493,14 @@ export async function getDistribution(
   dimension: DistributionDimension,
   from?: Date,
   to?: Date,
+  // ponytail: full expense filter match (bucket/category/owner/date/search/…)
+  // so distribution and search interpret filters identically.
+  filterMatch?: Record<string, unknown>,
 ): Promise<DistributionPoint[]> {
-  const match: Record<string, unknown> = {
+  const match: Record<string, unknown> = filterMatch ?? {
     bucketId: { $in: bucketIds },
   };
-  if (from || to) {
+  if (!filterMatch && (from || to)) {
     match.paidAt = {
       ...(from ? { $gte: from } : {}),
       ...(to ? { $lte: to } : {}),

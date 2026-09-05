@@ -1,19 +1,40 @@
-export type BucketPreset = "PERSONAL" | "ALL" | "MULTIPLE";
-export type OwnerPreset = "ME" | "ALL" | "MULTIPLE";
-export type CategoryPreset = "ALL" | "MULTIPLE";
-export type SortDirection = "ASC" | "DESC";
+import type {
+  BUCKET_PRESETS,
+  CATEGORY_PRESETS,
+  DATE_PRESETS,
+  DISTRIBUTION_DIMENSIONS,
+  NON_CUSTOM_DATE_PRESETS,
+  OWNER_PRESETS,
+  SORT_DIRECTIONS,
+} from "@/constants/filter-enums";
 
-export type FilterDatePreset =
-  | "TODAY"
-  | "YESTERDAY"
-  | "THIS_WEEK"
-  | "LAST_WEEK"
-  | "THIS_MONTH"
-  | "LAST_MONTH"
-  | "LAST_6_MONTHS"
-  | "THIS_YEAR"
-  | "LAST_YEAR"
-  | "CUSTOM";
+export {
+  EXPENSE_SORTABLE_FIELDS,
+  CATEGORY_SORTABLE_FIELDS,
+  BUCKET_SORTABLE_FIELDS,
+  AUDIT_SORTABLE_FIELDS,
+} from "@/constants/filter-enums";
+
+export type BucketPreset = (typeof BUCKET_PRESETS)[number];
+export type OwnerPreset = (typeof OWNER_PRESETS)[number];
+export type CategoryPreset = (typeof CATEGORY_PRESETS)[number];
+export type SortDirection = (typeof SORT_DIRECTIONS)[number];
+
+export type FilterDatePreset = (typeof DATE_PRESETS)[number];
+
+export type DatePreset = (typeof NON_CUSTOM_DATE_PRESETS)[number];
+
+// ponytail: discriminated unions make CUSTOM-without-range and
+// MULTIPLE-without-ids unrepresentable instead of silently ignored.
+export type DateFilter = { preset: DatePreset } | { preset: "CUSTOM"; from: string; to: string };
+
+export type BucketSelection =
+  { preset: "PERSONAL" } | { preset: "ALL" } | { preset: "MULTIPLE"; ids: string[] };
+
+export type OwnerSelection =
+  { preset: "ME" } | { preset: "ALL" } | { preset: "MULTIPLE"; ids: string[] };
+
+export type CategorySelection = { preset: "ALL" } | { preset: "MULTIPLE"; ids: string[] };
 
 export interface PaginationCriteria {
   page: number;
@@ -25,48 +46,39 @@ export interface SortCriteria {
   direction: SortDirection;
 }
 
+// Server-side auth context — ME/PERSONAL resolve from here, never from client input.
+export interface QueryContext {
+  userId: string;
+}
+
 export interface ExpenseFilterCriteria {
-  bucketPreset: BucketPreset;
-  bucketIds: string[];
-  categoryPreset: CategoryPreset;
-  categoryIds: string[];
-  ownerPreset: OwnerPreset;
-  ownerIds: string[];
-  datePreset: FilterDatePreset;
-  customFrom?: string;
-  customTo?: string;
+  bucket: BucketSelection;
+  category: CategorySelection;
+  owner: OwnerSelection;
+  date: DateFilter;
   hasNotes?: boolean;
   hasLocation?: boolean;
   q?: string;
 }
 
 export interface CategoryFilterCriteria {
-  bucketPreset: BucketPreset;
-  bucketIds: string[];
-  ownerPreset: OwnerPreset;
-  ownerIds: string[];
-  datePreset?: FilterDatePreset;
-  customFrom?: string;
-  customTo?: string;
+  bucket: BucketSelection;
+  owner: OwnerSelection;
+  date?: DateFilter;
   q?: string;
 }
 
 export interface AuditFilterCriteria {
-  bucketPreset: BucketPreset;
-  bucketIds: string[];
-  ownerPreset: OwnerPreset;
-  ownerIds: string[];
-  datePreset: FilterDatePreset;
-  customFrom?: string;
-  customTo?: string;
+  bucket: BucketSelection;
+  owner: OwnerSelection;
+  date: DateFilter;
 }
 
+// ponytail: bucket list membership is auth-derived; date/owner only scope the
+// per-bucket expense totals, never the membership list itself.
 export interface BucketFilterCriteria {
-  datePreset: FilterDatePreset;
-  customFrom?: string;
-  customTo?: string;
-  ownerPreset?: OwnerPreset;
-  ownerIds?: string[];
+  date: DateFilter;
+  owner?: OwnerSelection;
 }
 
 export type SearchRequest<TFilter> = {
@@ -87,7 +99,7 @@ export type CategorySearchRequest = SearchRequest<CategoryFilterCriteria>;
 export type BucketSearchRequest = SearchRequest<BucketFilterCriteria>;
 export type AuditSearchRequest = SearchRequest<AuditFilterCriteria>;
 
-export type DistributionDimension = "category" | "owner" | "bucket";
+export type DistributionDimension = (typeof DISTRIBUTION_DIMENSIONS)[number];
 
 export type DistributionRequest = {
   dimension: DistributionDimension;

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FilterBar, useScopedOptions, sortForVariant } from "@/components/filters";
+import { FilterBar, sortForVariant } from "@/components/filters";
 import { CashFlowChart } from "@/components/charts/cash-flow-chart";
 import { ChartSkeleton } from "@/components/charts/chart-skeleton";
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
@@ -26,10 +26,7 @@ export function BucketDetailView({ id }: { id: string }) {
 
   const sortCriteria = useAppSelector((s) => s.filters.bucket.sortCriteria);
   const filterCriteria = useAppSelector((s) => s.filters.bucket.filterCriteria);
-  const buckets = useAppSelector((s) => s.buckets.allBuckets);
   const currentBucket = useAppSelector((s) => s.buckets.currentBucket);
-
-  const { categories, owners } = useScopedOptions(true, buckets, "MULTIPLE", [id]);
 
   const scopedCriteria = useMemo(() => {
     const base = expenseCriteriaForVariant(
@@ -38,9 +35,8 @@ export function BucketDetailView({ id }: { id: string }) {
     ) as unknown as Record<string, unknown>;
     return {
       ...base,
-      bucketPreset: "MULTIPLE" as const,
-      bucketIds: [id],
-    } as unknown as typeof filterCriteria & { bucketPreset: "MULTIPLE"; bucketIds: string[] };
+      bucket: { preset: "MULTIPLE", ids: [id] },
+    } as unknown as typeof filterCriteria;
   }, [filterCriteria, id]);
 
   const [expenseList, setExpenseList] = useState<{
@@ -163,7 +159,7 @@ export function BucketDetailView({ id }: { id: string }) {
 
   return (
     <div className="space-y-2">
-      <FilterBar variant="bucket" buckets={buckets} categories={categories} owners={owners} />
+      <FilterBar variant="bucket" />
       {bucketSummary && (
         <BucketCard
           bucket={bucketSummary}

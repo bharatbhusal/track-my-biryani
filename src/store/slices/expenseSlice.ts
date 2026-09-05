@@ -62,12 +62,11 @@ export const fetchExpensesInRange = createAsyncThunk(
       };
     }
     const v = state.filters.expenses;
+    const base = expenseCriteriaForVariant("expenses", v.filterCriteria);
     return expensesApi.searchExpenses({
       filterCriteria: {
-        ...expenseCriteriaForVariant("expenses", v.filterCriteria),
-        datePreset: "CUSTOM",
-        customFrom: from,
-        customTo: to,
+        ...base,
+        date: { preset: "CUSTOM", from, to },
       },
       sortCriteria: sortForVariant("expenses", v.sortCriteria),
       pagination: { page: 1, pageSize: v.pagination.pageSize },

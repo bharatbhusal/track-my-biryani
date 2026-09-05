@@ -3,7 +3,7 @@
 import { Suspense, useMemo, useEffect } from "react";
 import Link from "next/link";
 
-import { FilterBar, useScopedOptions, sortForVariant } from "@/components/filters";
+import { FilterBar, sortForVariant } from "@/components/filters";
 import { ExpenseOverview } from "@/features/expenses/components/expense-overview";
 import { SpendingBarChart } from "@/components/charts/spending-bar-chart";
 import { ChartSkeleton } from "@/components/charts/chart-skeleton";
@@ -25,19 +25,11 @@ export function DashboardOverview() {
   const sortCriteria = useAppSelector((s) => s.filters.expenses.sortCriteria);
   const pagination = useAppSelector((s) => s.filters.expenses.pagination);
 
-  const buckets = useAppSelector((s) => s.buckets.allBuckets);
   const overviewStats = useAppSelector((s) => s.expenses.overviewStats);
   const chartData = useAppSelector((s) => s.expenses.chartData);
   const items = useAppSelector((s) => s.expenses.items);
   const totalPages = useAppSelector((s) => s.expenses.totalPages);
   const isLoading = useAppSelector((s) => s.expenses.loading);
-
-  const { categories, owners } = useScopedOptions(
-    true,
-    buckets,
-    filterCriteria.bucketPreset,
-    filterCriteria.bucketIds,
-  );
 
   useEffect(() => {
     dispatch(fetchAllBuckets());
@@ -81,7 +73,7 @@ export function DashboardOverview() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <FilterBar variant="expenses" buckets={buckets} categories={categories} owners={owners} />
+      <FilterBar variant="expenses" />
 
       <section aria-busy={overviewLoading}>
         <Suspense fallback={<ChartSkeleton />}>
@@ -106,7 +98,7 @@ export function DashboardOverview() {
           <Suspense fallback={<ChartSkeleton />}>
             <SpendingBarChart
               stackedSeries={chartData?.series ?? []}
-              chartLabel={getChartLabel(chartGranularity(filterCriteria.datePreset), "Expense")}
+              chartLabel={getChartLabel(chartGranularity(filterCriteria.date), "Expense")}
               averageSpend={averageSpend}
               categoryColorMap={chartData?.categoryColors ?? {}}
               isLoading={chartLoading}

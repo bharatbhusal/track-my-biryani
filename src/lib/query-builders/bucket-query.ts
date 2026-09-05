@@ -1,9 +1,13 @@
 import { Types } from "mongoose";
 
+import { BUCKET_SORTABLE_FIELDS } from "@/constants/types/search.types";
 import type { BucketSearchRequest } from "@/constants/types/search.types";
-
-type MongoFilter = Record<string, unknown>;
-type MongoSort = Record<string, 1 | -1>;
+import {
+  buildPaging,
+  buildSort,
+  type MongoFilter,
+  type MongoSort,
+} from "@/lib/query-builders/shared";
 
 export async function buildBucketQuery(
   userId: string,
@@ -14,6 +18,8 @@ export async function buildBucketQuery(
   skip: number;
   limit: number;
 }> {
+  // ponytail: membership list ignores filter.date/filter.owner — those only
+  // scope the per-bucket expense totals in the repository layer.
   // pending self-requests (invitedBy === userId) are not "invitations" — they must be
   // approved by owner, not self-accepted. Exclude them from the regular bucket list.
   const uid = new Types.ObjectId(userId);
@@ -32,16 +38,9 @@ export async function buildBucketQuery(
     ],
   };
 
-  const sort: MongoSort = {
-    [request.sortCriteria.field]: request.sortCriteria.direction === "ASC" ? 1 : -1,
-  };
-  const page = request.pagination.page;
-  const pageSize = request.pagination.pageSize;
-
   return {
     query,
-    sort,
-    skip: (page - 1) * pageSize,
-    limit: pageSize,
+    sort: buildSort(BUCKET_SORTABLE_FIELDS, request.sortCriteria),
+    ...buildPaging(request.pagination),
   };
 }

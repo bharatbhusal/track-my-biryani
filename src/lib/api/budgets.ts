@@ -27,11 +27,9 @@ export const budgetsApi = {
       method: "POST",
       body: {
         filterCriteria: {
-          bucketPreset: "MULTIPLE",
-          bucketIds: [bucketId],
-          ownerPreset: "ALL",
-          ownerIds: [],
-          datePreset: "THIS_MONTH",
+          bucket: { preset: "MULTIPLE", ids: [bucketId] },
+          owner: { preset: "ALL" },
+          date: { preset: "THIS_MONTH" },
         },
         sortCriteria: { field: "name", direction: "ASC" },
         pagination: { page: 1, pageSize: 100 },

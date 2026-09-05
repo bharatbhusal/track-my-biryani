@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/modals/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FilterBar, useScopedOptions } from "@/components/filters";
+import { FilterBar } from "@/components/filters";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { fetchCategoriesWithStats, deleteCategory } from "@/store/slices/categorySlice";
 import { CategoryCard } from "@/features/categories/components/category-card";
@@ -34,16 +34,8 @@ export function CategoryManager() {
     setLoadedFor(filterCriteria);
   }
 
-  const buckets = useAppSelector((s) => s.buckets.allBuckets);
   const currency = useAppSelector((s) => s.ui.currency);
   const categoriesWithStats = useAppSelector((s) => s.categories.itemsWithStats);
-
-  const { owners } = useScopedOptions(
-    true,
-    buckets,
-    filterCriteria.bucketPreset,
-    filterCriteria.bucketIds,
-  );
 
   useEffect(() => {
     dispatch(
@@ -82,7 +74,7 @@ export function CategoryManager() {
           <FiPlus className="mr-1.5" /> New Category
         </Button>
       </div>
-      <FilterBar variant="categories" buckets={buckets} categories={[]} owners={owners} />
+      <FilterBar variant="categories" />
       <div className="flex flex-wrap gap-2">
         {!categoriesWithStats
           ? Array.from({ length: summaryCells.length }).map((_, i) => (
