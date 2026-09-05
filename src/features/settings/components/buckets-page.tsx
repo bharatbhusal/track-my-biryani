@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 import { FilterBar, useScopedOptions } from "@/components/filters";
-import { BucketSettings } from "@/features/settings/components/bucket-settings";
+import { BucketsList } from "@/features/buckets/components/buckets-list";
 import { IncomingRequestsSection } from "@/features/settings/components/incoming-requests-section";
 import { InvitationsSection } from "@/features/settings/components/invitations-section";
 
@@ -25,7 +25,7 @@ export function BucketsPage() {
   return (
     <div className="space-y-2">
       <FilterBar variant="buckets" buckets={allBuckets} categories={[]} owners={owners} />
-      <BucketSettings />
+      <BucketsList />
       <InvitationsSection />
       <IncomingRequestsSection />
     </div>

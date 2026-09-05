@@ -1,24 +1,17 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useTheme } from "next-themes";
-import { Theme } from "emoji-picker-react";
 import { FiEdit2, FiPlus } from "react-icons/fi";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
+import { EmojiPickerField } from "@/components/forms/emoji-picker-field";
 import { useAppDispatch } from "@/store/hooks";
 import { createBucket, updateBucket } from "@/store/slices/bucketSlice";
 import type { BucketSummary } from "@/constants/types/bucket.types";
-
-const EmojiPicker = dynamic(() => import("emoji-picker-react"), {
-  ssr: false,
-});
 
 export function bucketErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof Error) {
@@ -43,12 +36,9 @@ type BucketFormProps = {
 
 export function BucketForm({ bucket, onSuccess, onCancel }: BucketFormProps) {
   const dispatch = useAppDispatch();
-  const { resolvedTheme } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isEditing = Boolean(bucket);
-
-  const emojiPickerTheme = resolvedTheme === "dark" ? Theme.DARK : Theme.LIGHT;
 
   const { register, handleSubmit, setValue, watch } = useForm<FormValues>({
     defaultValues: {
@@ -58,13 +48,6 @@ export function BucketForm({ bucket, onSuccess, onCancel }: BucketFormProps) {
   });
 
   const iconValue = watch("icon");
-
-  const handleEmojiClick = useCallback(
-    (emojiObject: { emoji: string }) => {
-      setValue("icon", emojiObject.emoji);
-    },
-    [setValue],
-  );
 
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
@@ -106,22 +89,12 @@ export function BucketForm({ bucket, onSuccess, onCancel }: BucketFormProps) {
 
       <div className="space-y-1.5">
         <label className="text-sm font-medium text-[var(--color-foreground)]">Icon</label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              className="flex h-10 w-10 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-lg hover:bg-[var(--color-surface-muted)] transition-colors"
-              aria-label="Pick emoji"
-            >
-              {iconValue || "📁"}
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <div className="max-h-[40vh] overflow-y-auto">
-              <EmojiPicker theme={emojiPickerTheme} onEmojiClick={handleEmojiClick} />
-            </div>
-          </PopoverContent>
-        </Popover>
+        <EmojiPickerField
+          value={iconValue}
+          onChange={(emoji) => setValue("icon", emoji)}
+          fallback="📁"
+          label="Pick bucket icon"
+        />
       </div>
 
       <div className="flex gap-2 pt-2">

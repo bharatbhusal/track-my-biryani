@@ -16,6 +16,7 @@ import { expensesApi } from "@/lib/api/expenses";
 import { expenseCriteriaForVariant } from "@/lib/filters";
 import type { ChartData } from "@/constants/types/analytics.types";
 import type { ExpenseItem } from "@/constants/types/expense.types";
+import type { ExpenseFilterCriteria } from "@/constants/types/search.types";
 import type { BucketSummary } from "@/constants/types/bucket.types";
 
 export function BucketDetailView({ id }: { id: string }) {
@@ -33,7 +34,7 @@ export function BucketDetailView({ id }: { id: string }) {
   const scopedCriteria = useMemo(() => {
     const base = expenseCriteriaForVariant(
       "bucket",
-      filterCriteria as unknown as any,
+      filterCriteria as unknown as ExpenseFilterCriteria,
     ) as unknown as Record<string, unknown>;
     return {
       ...base,
@@ -67,7 +68,7 @@ export function BucketDetailView({ id }: { id: string }) {
   useEffect(() => {
     let cancelled = false;
     expensesApi
-      .getChartData({ filterCriteria: scopedCriteria as any })
+      .getChartData({ filterCriteria: scopedCriteria as unknown as ExpenseFilterCriteria })
       .then((data) => {
         if (cancelled) return;
         setChartData(data);
@@ -85,7 +86,7 @@ export function BucketDetailView({ id }: { id: string }) {
     let cancelled = false;
     expensesApi
       .searchExpenses({
-        filterCriteria: scopedCriteria as any,
+        filterCriteria: scopedCriteria as unknown as ExpenseFilterCriteria,
         sortCriteria: effectiveSort,
         pagination: { page, pageSize: 20 },
       })
@@ -177,17 +178,15 @@ export function BucketDetailView({ id }: { id: string }) {
         isLoading={chartLoading}
       />
 
-      {expenses.length > 0 && (
-        <ExpenseTable
-          items={expenses}
-          isLoading={expensesLoading}
-          emptyMessage="No expenses in this bucket"
-          page={page}
-          totalPages={expensesTotalPages}
-          onPageChange={setPage}
-          isSection={effectiveSort.field === "paidAt"}
-        />
-      )}
+      <ExpenseTable
+        items={expenses}
+        isLoading={expensesLoading}
+        emptyMessage="No expenses in this bucket"
+        page={page}
+        totalPages={expensesTotalPages}
+        onPageChange={setPage}
+        isSection={effectiveSort.field === "paidAt"}
+      />
     </div>
   );
 }

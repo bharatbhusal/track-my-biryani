@@ -1,12 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { FiPlus } from "react-icons/fi";
+import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/modals/dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FilterBar, useScopedOptions } from "@/components/filters";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { fetchCategoriesWithStats } from "@/store/slices/categorySlice";
+import { fetchCategoriesWithStats, deleteCategory } from "@/store/slices/categorySlice";
 import { CategoryCard } from "@/features/categories/components/category-card";
 import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
 import { formatCurrency } from "@/lib/format";
@@ -17,6 +22,8 @@ import { StatCard } from "@/components/stat-card";
 export function CategoryManager() {
   const dispatch = useAppDispatch();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const filterState = useAppSelector((s) => s.filters.categories);
   const filterCriteria = filterState.filterCriteria;
@@ -47,6 +54,17 @@ export function CategoryManager() {
     );
   }, [dispatch, filterCriteria, sortCriteria]);
 
+  const handleDelete = async () => {
+    if (!deletingId) return;
+    try {
+      await dispatch(deleteCategory(deletingId)).unwrap();
+      toast.success("Category deleted");
+      setDeletingId(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete category");
+    }
+  };
+
   const summaryCells: Array<[string, string]> = [
     ["Total", formatCurrency(categoriesWithStats?.stats?.total ?? 0, currency)],
     ["Avg", formatCurrency(categoriesWithStats?.stats?.avg ?? 0, currency)],
@@ -58,6 +76,12 @@ export function CategoryManager() {
 
   return (
     <div className="flex gap-2 flex-col">
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold">Categories</h1>
+        <Button size="sm" onClick={() => setDrawerOpen(true)}>
+          <FiPlus className="mr-1.5" /> New Category
+        </Button>
+      </div>
       <FilterBar variant="categories" buckets={buckets} categories={[]} owners={owners} />
       <div className="flex flex-wrap gap-2">
         {!categoriesWithStats
@@ -72,22 +96,37 @@ export function CategoryManager() {
             ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-2">
-        {categoriesWithStats?.items?.map((category) => {
-          return (
-            <div key={category._id}>
-              <CategoryCard category={category} />
-            </div>
-          );
-        })}
-        {categoriesWithStats?.items?.length === 0 && (
-          <p className="col-span-full text-center text-sm text-[var(--color-muted)] py-8">
-            No categories found
-          </p>
-        )}
-      </div>
+      {categoriesWithStats?.items?.length === 0 ? (
+        <EmptyState title="No categories found" description="Create one to start tracking." />
+      ) : (
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          {categoriesWithStats?.items?.map((category) => (
+            <CategoryCard
+              key={category._id}
+              category={category}
+              onEdit={() => setEditingId(category._id)}
+              onDelete={() => setDeletingId(category._id)}
+            />
+          ))}
+        </div>
+      )}
 
       <AddCategoryDialog open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+
+      <AddCategoryDialog
+        open={editingId !== null}
+        onClose={() => setEditingId(null)}
+        id={editingId ?? undefined}
+      />
+
+      <ConfirmDialog
+        open={deletingId !== null}
+        title="Delete category"
+        subtitle="Permanent action"
+        description="This action cannot be undone."
+        onCancel={() => setDeletingId(null)}
+        onConfirm={() => void handleDelete()}
+      />
     </div>
   );
 }

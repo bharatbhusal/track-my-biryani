@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { Modal } from "@/components/modals/dialog";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { fetchAllBuckets } from "@/store/slices/bucketSlice";
@@ -107,46 +108,37 @@ export function BudgetFormDialog({ open, onClose, budget }: Props) {
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="space-y-1">
           <Label>Bucket</Label>
-          <select
-            value={bucketId}
-            onChange={(e) => setBucketId(e.target.value)}
-            className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm"
-          >
+          <Select value={bucketId} onChange={(e) => setBucketId(e.target.value)}>
             {buckets.map((b) => (
               <option key={b._id} value={b._id}>
                 {b.icon ?? "📁"} {b.name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         <div className="space-y-1">
           <Label>Category (optional — leave empty for bucket budget)</Label>
-          <select
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm"
-          >
+          <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
             <option value="">Bucket budget (no category)</option>
             {cats.map((c) => (
               <option key={c._id} value={c._id}>
                 {c.emoji ?? "🏷️"} {c.name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         <div className="space-y-1">
           <Label>Period</Label>
-          <select
+          <Select
             value={period}
             onChange={(e) => setPeriod(e.target.value as BudgetItem["period"])}
-            className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm"
           >
             <option value="weekly">Weekly</option>
             <option value="monthly">Monthly</option>
             <option value="yearly">Yearly</option>
-          </select>
+          </Select>
         </div>
 
         <div className="space-y-1">
