@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { FiPlus } from "react-icons/fi";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { EmojiBadge } from "@/components/ui/emoji-badge";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { fetchBudgets } from "@/store/slices/budgetSlice";
 import { fetchAllBuckets } from "@/store/slices/bucketSlice";
@@ -43,15 +44,22 @@ export function BudgetsPage() {
       </div>
 
       {groups.length === 0 ? (
-        <Card className="py-8 text-center text-sm text-[var(--color-muted)]">
-          No budgets yet. Create one per bucket or category — weekly, monthly or yearly.
-        </Card>
+        <EmptyState
+          title="No budgets yet"
+          description="Create one per bucket or category — weekly, monthly or yearly."
+        />
       ) : (
         groups.map((group) => (
           <div key={group.bucketId} className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-sm">{group.bucketIcon ?? "📁"}</span>
-              <h2 className="text-sm font-semibold">{group.bucketName}</h2>
+              <EmojiBadge
+                emoji={group.bucketIcon}
+                color="var(--color-surface-muted)"
+                className="h-6 w-6 text-xs"
+              />
+              <h2 className="truncate text-sm font-semibold" title={group.bucketName}>
+                {group.bucketName}
+              </h2>
               <span className="text-xs text-[var(--color-muted)]">
                 {group.budgets.length} budget(s)
               </span>

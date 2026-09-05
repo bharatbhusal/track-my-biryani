@@ -19,6 +19,7 @@ import { filterBounds, scopedExpenseRequest, expenseCriteriaForVariant } from "@
 import { CashFlowChart } from "@/components/cash-flow-chart";
 import { ChartSkeleton } from "@/components/charts/chart-skeleton";
 import type { ExpenseItem } from "@/constants/types/expense.types";
+import type { ExpenseFilterCriteria } from "@/constants/types/search.types";
 
 export function CategoryDetailView({ id }: { id: string }) {
   const router = useRouter();
@@ -73,7 +74,10 @@ export function CategoryDetailView({ id }: { id: string }) {
   useEffect(() => {
     let cancelled = false;
     // category variant filters apply to expenses in that category — bucket/category locked to this id, but other criteria (search/owner/additional/date) from variant
-    const variantCriteria = expenseCriteriaForVariant("category", filterCriteria as any);
+    const variantCriteria = expenseCriteriaForVariant(
+      "category",
+      filterCriteria as unknown as ExpenseFilterCriteria,
+    );
     const scoped = scopedExpenseRequest({
       bucketId: category?.bucketId,
       categoryId: id,
@@ -220,17 +224,15 @@ export function CategoryDetailView({ id }: { id: string }) {
         isLoading={expensesLoading}
       />
 
-      {expenses.length > 0 && (
-        <ExpenseTable
-          items={expenses}
-          isLoading={expensesLoading}
-          emptyMessage="No expenses in this category"
-          page={page}
-          totalPages={expensesTotalPages}
-          onPageChange={setPage}
-          isSection={effectiveSort.field === "paidAt"}
-        />
-      )}
+      <ExpenseTable
+        items={expenses}
+        isLoading={expensesLoading}
+        emptyMessage="No expenses in this category"
+        page={page}
+        totalPages={expensesTotalPages}
+        onPageChange={setPage}
+        isSection={effectiveSort.field === "paidAt"}
+      />
 
       <AddCategoryDialog
         open={editDrawerOpen}

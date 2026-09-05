@@ -1,29 +1,22 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
-import { Theme } from "emoji-picker-react";
 import { FiPlus, FiSave } from "react-icons/fi";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { EmojiPickerField } from "@/components/forms/emoji-picker-field";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { createCategory, updateCategory, fetchCategoryDetail } from "@/store/slices/categorySlice";
 import { fetchAllBuckets } from "@/store/slices/bucketSlice";
 import { personalBucketId } from "@/lib/filters";
 import { toIsoBoundsForPreset } from "@/lib/date-range";
-
-const EmojiPicker = dynamic(() => import("emoji-picker-react"), {
-  ssr: false,
-});
 
 function randomColor(): string {
   const random = Math.floor(Math.random() * 0xffffff);
@@ -47,7 +40,6 @@ export function CategoryForm({ id, onSuccess, onCancel }: CategoryFormProps) {
   const dispatch = useAppDispatch();
   const buckets = useAppSelector((s) => s.buckets.allBuckets);
   const category = useAppSelector((s) => s.categories.currentCategory);
-  const { resolvedTheme } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedBucketId, setSelectedBucketId] = useState("");
 
@@ -79,8 +71,6 @@ export function CategoryForm({ id, onSuccess, onCancel }: CategoryFormProps) {
     }
   }, [dispatch, isEditing, id]);
 
-  const emojiPickerTheme = resolvedTheme === "dark" ? Theme.DARK : Theme.LIGHT;
-
   const { register, handleSubmit, reset, setValue, watch } = useForm<FormValues>({
     defaultValues: {
       name: "",
@@ -110,13 +100,6 @@ export function CategoryForm({ id, onSuccess, onCancel }: CategoryFormProps) {
       });
     }
   }, [category, id, reset, isEditing]);
-
-  const handleEmojiClick = useCallback(
-    (emojiObject: { emoji: string }) => {
-      setValue("emoji", emojiObject.emoji);
-    },
-    [setValue],
-  );
 
   const onSubmit = async (values: FormValues) => {
     if (!selectedBucketId) {
@@ -211,22 +194,11 @@ export function CategoryForm({ id, onSuccess, onCancel }: CategoryFormProps) {
       <div className="flex gap-2">
         <div className="space-y-1.5">
           <label className="text-sm font-medium text-[var(--color-text)]">Emoji</label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                className="flex h-10 w-10 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-lg hover:bg-[var(--color-surface-muted)] transition-colors"
-                aria-label="Pick emoji"
-              >
-                {emojiValue || "🏷️"}
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <div className="max-h-[40vh] overflow-y-auto">
-                <EmojiPicker theme={emojiPickerTheme} onEmojiClick={handleEmojiClick} />
-              </div>
-            </PopoverContent>
-          </Popover>
+          <EmojiPickerField
+            value={emojiValue}
+            onChange={(emoji) => setValue("emoji", emoji)}
+            label="Pick category emoji"
+          />
         </div>
 
         <div className="space-y-1.5">
