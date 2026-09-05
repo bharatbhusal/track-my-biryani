@@ -22,18 +22,18 @@ import {
 export async function searchBuckets(request: NextRequest) {
   const auth = await getAuthPayload();
   const body = await request.json();
-  return searchBucketsService(auth.userId, body);
+  return searchBucketsService(auth.id, body);
 }
 
 export async function listBuckets() {
   const auth = await getAuthPayload();
-  return listBucketsService(auth.userId);
+  return listBucketsService(auth.id);
 }
 
 export async function createBucket(request: NextRequest) {
   const auth = await getAuthPayload();
   const body = await request.json();
-  return createBucketService(auth.userId, body);
+  return createBucketService(auth.id, body);
 }
 
 export async function getBucketStats(
@@ -43,7 +43,7 @@ export async function getBucketStats(
   const auth = await getAuthPayload();
   const { id } = await context.params;
   const body = await request.json().catch(() => ({}));
-  return getBucketStatsService(auth.userId, id, body);
+  return getBucketStatsService(auth.id, id, body);
 }
 
 export async function updateBucket(
@@ -53,7 +53,7 @@ export async function updateBucket(
   const auth = await getAuthPayload();
   const { id } = await context.params;
   const body = await request.json();
-  return updateBucketService(auth.userId, id, body);
+  return updateBucketService(auth.id, id, body);
 }
 
 export async function deleteBucket(
@@ -62,7 +62,7 @@ export async function deleteBucket(
 ) {
   const auth = await getAuthPayload();
   const { id } = await context.params;
-  return deleteBucketService(auth.userId, id);
+  return deleteBucketService(auth.id, id);
 }
 
 export async function inviteUser(
@@ -72,7 +72,7 @@ export async function inviteUser(
   const auth = await getAuthPayload();
   const { id } = await context.params;
   const body = await request.json();
-  return inviteUserService(auth.userId, id, body);
+  return inviteUserService(auth.id, id, body);
 }
 
 export async function acceptInvite(
@@ -81,7 +81,7 @@ export async function acceptInvite(
 ) {
   const auth = await getAuthPayload();
   const { id } = await context.params;
-  return acceptInviteService(auth.userId, id);
+  return acceptInviteService(auth.id, id);
 }
 
 export async function declineInvite(
@@ -90,7 +90,7 @@ export async function declineInvite(
 ) {
   const auth = await getAuthPayload();
   const { id } = await context.params;
-  return declineInviteService(auth.userId, id);
+  return declineInviteService(auth.id, id);
 }
 
 export async function leaveBucket(
@@ -99,7 +99,7 @@ export async function leaveBucket(
 ) {
   const auth = await getAuthPayload();
   const { id } = await context.params;
-  return leaveBucketService(auth.userId, id);
+  return leaveBucketService(auth.id, id);
 }
 
 export async function revokeInvite(
@@ -108,7 +108,7 @@ export async function revokeInvite(
 ) {
   const auth = await getAuthPayload();
   const { id, userId } = await context.params;
-  return revokeInviteService(auth.userId, id, userId);
+  return revokeInviteService(auth.id, id, userId);
 }
 
 export async function getBucketPreview(
@@ -117,7 +117,7 @@ export async function getBucketPreview(
 ) {
   const auth = await getAuthPayload();
   const { id } = await context.params;
-  return getBucketPreviewService(auth.userId, id);
+  return getBucketPreviewService(auth.id, id);
 }
 
 export async function requestToJoin(
@@ -126,12 +126,12 @@ export async function requestToJoin(
 ) {
   const auth = await getAuthPayload();
   const { id } = await context.params;
-  return requestToJoinService(auth.userId, id);
+  return requestToJoinService(auth.id, id);
 }
 
 export async function listIncomingRequests() {
   const auth = await getAuthPayload();
-  return listIncomingRequestsService(auth.userId);
+  return listIncomingRequestsService(auth.id);
 }
 
 export async function acceptRequest(
@@ -140,5 +140,5 @@ export async function acceptRequest(
 ) {
   const auth = await getAuthPayload();
   const { id, userId } = await context.params;
-  return acceptRequestService(auth.userId, id, userId);
+  return acceptRequestService(auth.id, id, userId);
 }

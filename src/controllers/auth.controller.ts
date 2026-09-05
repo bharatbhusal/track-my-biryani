@@ -47,7 +47,7 @@ async function logout() {
   await clearAuthCookie();
 
   await logAuditEvent({
-    actorId: authUser.userId,
+    actorId: authUser.id,
     action: AUDIT_ACTIONS.LOGOUT,
     entity: AUDIT_ENTITIES.AUTH,
     note: "Logged out",

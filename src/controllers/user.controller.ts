@@ -3,7 +3,7 @@ import { getCurrentUserService } from "@/services/user.service";
 
 async function getAuthUser() {
   const auth = await getAuthPayload();
-  return getCurrentUserService(auth.userId);
+  return getCurrentUserService(auth.id);
 }
 
 const userController = { getAuthUser };

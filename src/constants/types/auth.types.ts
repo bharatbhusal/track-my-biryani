@@ -1,9 +1,3 @@
-export type JwtPayload = {
-  userId: string;
-  username: string;
-  bucketId: string;
-};
-
 export type AuthUser = {
   id: string;
   name: string;

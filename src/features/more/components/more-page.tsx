@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { fetchMe, logoutUser } from "@/store/slices/authSlice";
 
-export function SettingsPage() {
+export function MorePage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { resolvedTheme, setTheme } = useTheme();
@@ -39,7 +39,9 @@ export function SettingsPage() {
   return (
     <div className="space-y-2">
       <div className="flex w-full justify-between items-center">
-        <h2 className="text-lg font-semibold">Hi {authUser?.username || "User"}!</h2>
+        <h2 className="text-lg font-semibold">
+          Hi {(authUser?.name ?? authUser?.username) || "User"}!
+        </h2>
         <div className="flex items-center">
           {mounted ? (
             <Button

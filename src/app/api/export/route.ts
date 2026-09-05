@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
   try {
     await connectToDatabase();
     const auth = await getAuthPayload();
-    const validBuckets = await getValidBuckets(auth.userId);
+    const validBuckets = await getValidBuckets(auth.id);
     const type = request.nextUrl.searchParams.get("type");
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);

@@ -91,9 +91,6 @@ export function BucketCard({ bucket, onDelete, onLeave }: BucketCardProps) {
               </CardTitle>
               <p className="text-xs text-[var(--color-muted)] truncate">
                 {bucket.memberCount} {bucket.memberCount === 1 ? "member" : "members"}
-                {bucket.ownerName
-                  ? ` · ${isOwner ? "You" : bucket.ownerName}`
-                  : ` · ${isOwner ? "Owner" : "Member"}`}
               </p>
             </div>
             <div className="text-right shrink-0">

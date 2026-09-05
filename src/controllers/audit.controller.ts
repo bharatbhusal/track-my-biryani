@@ -6,5 +6,5 @@ import { searchAuditLogsService } from "@/services/audit.service";
 export async function searchAuditLogs(request: NextRequest) {
   const auth = await getAuthPayload();
   const body = await request.json().catch(() => ({}));
-  return searchAuditLogsService(auth.userId, body);
+  return searchAuditLogsService(auth.id, body);
 }

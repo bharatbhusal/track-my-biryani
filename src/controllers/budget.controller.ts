@@ -10,13 +10,13 @@ import {
 
 export async function listBudgets() {
   const auth = await getAuthPayload();
-  return listBudgetsService(auth.userId);
+  return listBudgetsService(auth.id);
 }
 
 export async function createBudget(request: NextRequest) {
   const auth = await getAuthPayload();
   const body = await request.json();
-  return createBudgetService(auth.userId, body);
+  return createBudgetService(auth.id, body);
 }
 
 export async function updateBudget(
@@ -26,7 +26,7 @@ export async function updateBudget(
   const auth = await getAuthPayload();
   const { id } = await context.params;
   const body = await request.json();
-  return updateBudgetService(auth.userId, id, body);
+  return updateBudgetService(auth.id, id, body);
 }
 
 export async function deleteBudget(
@@ -35,5 +35,5 @@ export async function deleteBudget(
 ) {
   const auth = await getAuthPayload();
   const { id } = await context.params;
-  return deleteBudgetService(auth.userId, id);
+  return deleteBudgetService(auth.id, id);
 }

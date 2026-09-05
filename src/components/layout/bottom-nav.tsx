@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FiGrid, FiPlus, FiSettings, FiTag } from "react-icons/fi";
+import { FiGrid, FiPlus, FiTag } from "react-icons/fi";
+import { CgMore } from "react-icons/cg";
 
 import { cn } from "@/lib/utils";
 
@@ -14,7 +15,7 @@ const items = [
     icon: FiPlus,
   },
   { href: "/categories", label: "Categories", icon: FiTag },
-  { href: "/settings", label: "Settings", icon: FiSettings },
+  { href: "/more", label: "More", icon: CgMore },
 ];
 
 export function BottomNav() {

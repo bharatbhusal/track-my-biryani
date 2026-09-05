@@ -48,6 +48,20 @@ export async function listBucketsForMember(userId: string) {
   return buckets as unknown as BucketDoc[];
 }
 
+export async function isMember(userId: string, bucketId: string): Promise<boolean> {
+  const bucket = await BucketModel.exists({
+    _id: new Types.ObjectId(bucketId),
+    members: {
+      $elemMatch: {
+        userId: new Types.ObjectId(userId),
+        status: "accepted",
+      },
+    },
+  });
+
+  return !!bucket;
+}
+
 export async function listBucketsForPendingMember(userId: string) {
   // exclude self-requested pending (invitedBy === userId) — those need owner approval
   const buckets = await BucketModel.find({

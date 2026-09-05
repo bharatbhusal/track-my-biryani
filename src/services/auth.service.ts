@@ -5,15 +5,11 @@ import { createBucket, findBucketByUserId } from "@/repositories/bucket.reposito
 import { ensureCategoryInBucket } from "@/repositories/category.repository";
 import { DEFAULT_CATEGORIES } from "@/lib/constants";
 import type { LoginInput, SignupInput } from "@/lib/validators";
+import { AuthUser } from "@/constants/types/auth.types";
 
 export async function registerUser(input: SignupInput): Promise<{
   token: string;
-  user: {
-    id: string;
-    name: string;
-    username: string;
-    bucketId: string;
-  };
+  user: AuthUser;
 }> {
   const existing = await findUserByUsername(input.username);
   if (existing) {
@@ -50,7 +46,8 @@ export async function registerUser(input: SignupInput): Promise<{
   }
 
   const token = signToken({
-    userId,
+    id: userId,
+    name: user.name,
     username: user.username,
     bucketId,
   });
@@ -68,12 +65,7 @@ export async function registerUser(input: SignupInput): Promise<{
 
 export async function loginUser(input: LoginInput): Promise<{
   token: string;
-  user: {
-    id: string;
-    name: string;
-    username: string;
-    bucketId: string;
-  };
+  user: AuthUser;
 }> {
   const user = await findUserByUsername(input.username);
   if (!user?.password) {
@@ -88,7 +80,8 @@ export async function loginUser(input: LoginInput): Promise<{
   const personalBucket = await findBucketByUserId(user._id.toString());
 
   const token = signToken({
-    userId: user._id.toString(),
+    id: user._id.toString(),
+    name: user.name,
     username: user.username,
     bucketId: personalBucket._id.toString(),
   });

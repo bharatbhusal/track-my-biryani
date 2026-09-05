@@ -4,8 +4,8 @@ import { useEffect } from "react";
 
 import { FilterBar } from "@/components/filters";
 import { BucketsList } from "@/features/buckets/components/buckets-list";
-import { IncomingRequestsSection } from "@/features/settings/components/incoming-requests-section";
-import { InvitationsSection } from "@/features/settings/components/invitations-section";
+import { IncomingRequestsSection } from "@/features/more/components/incoming-requests-section";
+import { InvitationsSection } from "@/features/more/components/invitations-section";
 
 import { useAppDispatch } from "@/store/hooks";
 import { fetchAllBuckets } from "@/store/slices/bucketSlice";

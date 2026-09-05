@@ -19,11 +19,7 @@ import {
   searchCategories,
   updateCategory,
 } from "@/repositories/category.repository";
-import {
-  getCategoryRangeStats,
-  getExpenseStatsForCategories,
-  getFilteredCategoryDistribution,
-} from "@/repositories/expense.repository";
+import expenseRepository from "@/repositories/expense.repository";
 import { findBucketById } from "@/repositories/bucket.repository";
 import { findUserById } from "@/repositories/user.repository";
 import { logAuditEvent } from "@/services/audit.service";
@@ -202,7 +198,7 @@ export async function getCategoryStatsService(
     throw new AppError("from and to query params are required", 400);
   }
   const category = await getCategoryService(userId, categoryId);
-  const range = await getCategoryRangeStats(
+  const range = await expenseRepository.getCategoryRangeStats(
     userId,
     categoryId,
     new Date(from),
@@ -233,7 +229,7 @@ export async function getCategoryDistributionService(userId: string, body: unkno
     sortCriteria: { field: "paidAt", direction: "DESC" },
     pagination: { page: 1, pageSize: 1 },
   });
-  return getFilteredCategoryDistribution(query);
+  return expenseRepository.getFilteredCategoryDistribution(query);
 }
 
 export async function getCategoryStatsSummaryService(
@@ -265,7 +261,7 @@ export async function getCategoryStatsSummaryService(
     };
   }
 
-  const stats = await getExpenseStatsForCategories(
+  const stats = await expenseRepository.getExpenseStatsForCategories(
     categoryIds,
     from,
     to,

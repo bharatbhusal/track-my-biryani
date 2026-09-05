@@ -26,7 +26,7 @@ import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { fetchAllBuckets } from "@/store/slices/bucketSlice";
 import { fetchExpenseDetail, createExpense, updateExpense } from "@/store/slices/expenseSlice";
 import { AddCategoryDialog } from "@/features/categories/components/add-category-dialog";
-import { AddBucketDialog } from "@/features/settings/components/add-bucket-dialog";
+import { AddBucketDialog } from "@/features/more/components/add-bucket-dialog";
 import { setDraftExpense, clearDraftExpense } from "@/store/slices/uiSlice";
 import { expensesApi } from "@/lib/api/expenses";
 import { personalBucketId, scopedCategoryRequest } from "@/lib/filters";

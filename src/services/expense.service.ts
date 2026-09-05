@@ -1,44 +1,28 @@
-import { Types } from "mongoose";
-
 import { AppError } from "@/lib/errors";
-import {
-  chartOverviewSchema,
-  distributionSchema,
-  expenseSchema,
-  expenseSearchSchema,
-} from "@/lib/validators";
+import { chartOverviewSchema, expenseSchema, expenseSearchSchema } from "@/lib/validators";
 import { resolveDateRange } from "@/lib/date-range";
 import { buildExpenseQuery } from "@/lib/query-builders";
 import { getValidBuckets } from "@/lib/query-builders/membership";
-import {
-  createExpense,
-  deleteExpense,
-  getDistribution,
-  getExpenseByIdForMember,
-  getExpenseContribution,
-  getExpenseOverviewStats,
-  getChartData,
-  searchExpenses,
-  updateExpense,
-} from "@/repositories/expense.repository";
+import expenseRepository from "@/repositories/expense.repository";
 import { ensureCategoryInBucket, getCategoryById } from "@/repositories/category.repository";
-import { findBucketById } from "@/repositories/bucket.repository";
+import { findBucketById, isMember } from "@/repositories/bucket.repository";
 import { findUserById } from "@/repositories/user.repository";
 import { logAuditEvent } from "@/services/audit.service";
 import type { ExpenseSearchRequest } from "@/constants/types/search.types";
 import { AUDIT_ACTIONS } from "@/constants/types/audit.types";
+import { AuthUser } from "@/constants/types/auth.types";
 
-export async function createExpenseService(userId: string, body: unknown) {
+async function createExpense(authUser: AuthUser, body: unknown) {
   const payload = expenseSchema.parse(body);
 
-  const validBuckets = await getValidBuckets(userId);
-  if (!validBuckets.map((id) => id.toString()).includes(payload.bucketId)) {
-    throw new AppError("Not a member of this bucket", 403, "NOT_A_MEMBER");
-  }
-
-  const existing = await findUserById(userId);
+  const existing = await findUserById(authUser.id);
   if (!existing) {
     throw new AppError("User doesn't exist", 409, "USER_DOESN'T_EXIST");
+  }
+
+  const validBucket = await isMember(authUser.id, authUser.bucketId);
+  if (!validBucket) {
+    throw new AppError("Not a member of this bucket", 403, "NOT_A_MEMBER");
   }
 
   const category = await getCategoryById(payload.categoryId, payload.bucketId);
@@ -46,8 +30,8 @@ export async function createExpenseService(userId: string, body: unknown) {
     throw new AppError("Category does not belong to this bucket", 400, "CATEGORY_NOT_IN_BUCKET");
   }
 
-  const expense = await createExpense({
-    userId,
+  const expense = await expenseRepository.createExpense({
+    userId: authUser.id,
     bucketId: payload.bucketId,
     title: payload.title,
     amount: payload.amount,
@@ -60,7 +44,7 @@ export async function createExpenseService(userId: string, body: unknown) {
   });
 
   await logAuditEvent({
-    actorId: userId,
+    actorId: authUser.id,
     bucketId: payload.bucketId,
     action: AUDIT_ACTIONS.CREATE,
     entity: "expense",
@@ -72,20 +56,20 @@ export async function createExpenseService(userId: string, body: unknown) {
   return expense;
 }
 
-export async function getExpenseService(userId: string, expenseId: string) {
+async function getExpense(userId: string, expenseId: string) {
   const validBuckets = await getValidBuckets(userId);
-  const expense = await getExpenseByIdForMember(expenseId, validBuckets);
+  const expense = await expenseRepository.getExpenseByIdForMember(expenseId, validBuckets);
   if (!expense) {
     throw new AppError("Expense not found", 404, "NOT_FOUND");
   }
   return expense;
 }
 
-export async function updateExpenseService(userId: string, expenseId: string, body: unknown) {
+async function updateExpense(userId: string, expenseId: string, body: unknown) {
   const payload = expenseSchema.partial().parse(body);
 
   const validBuckets = await getValidBuckets(userId);
-  const current = await getExpenseByIdForMember(expenseId, validBuckets);
+  const current = await expenseRepository.getExpenseByIdForMember(expenseId, validBuckets);
   if (!current) {
     throw new AppError("Expense not found", 404, "NOT_FOUND");
   }
@@ -121,7 +105,7 @@ export async function updateExpenseService(userId: string, expenseId: string, bo
     categoryId = destCategory._id.toString();
   }
 
-  const expense = await updateExpense(userId, expenseId, {
+  const expense = await expenseRepository.updateExpense(userId, expenseId, {
     ...payload,
     categoryId,
     bucketId: targetBucketId,
@@ -165,16 +149,16 @@ export async function updateExpenseService(userId: string, expenseId: string, bo
   return expense;
 }
 
-export async function deleteExpenseService(userId: string, expenseId: string) {
+async function deleteExpense(userId: string, expenseId: string) {
   const validBuckets = await getValidBuckets(userId);
-  const existing = await getExpenseByIdForMember(expenseId, validBuckets);
+  const existing = await expenseRepository.getExpenseByIdForMember(expenseId, validBuckets);
   if (!existing) {
     throw new AppError("Expense not found", 404, "NOT_FOUND");
   }
   if (existing.userId.toString() !== userId) {
     throw new AppError("Only the owner can delete this expense", 403, "NOT_OWNER");
   }
-  const deleted = await deleteExpense(userId, expenseId);
+  const deleted = await expenseRepository.deleteExpense(userId, expenseId);
   if (!deleted) {
     throw new AppError("Expense not found", 404, "NOT_FOUND");
   }
@@ -189,29 +173,6 @@ export async function deleteExpenseService(userId: string, expenseId: string) {
   });
 
   return { message: "Expense deleted" };
-}
-
-export async function getContributionService(
-  userId: string,
-  expenseId: string,
-  from?: string,
-  to?: string,
-) {
-  const validBuckets = await getValidBuckets(userId);
-  const existing = await getExpenseByIdForMember(expenseId, validBuckets);
-  if (!existing) {
-    throw new AppError("Expense not found", 404, "NOT_FOUND");
-  }
-  const data = await getExpenseContribution(
-    expenseId,
-    existing.bucketId as unknown as Types.ObjectId,
-    from ? new Date(from) : undefined,
-    to ? new Date(to) : undefined,
-  );
-  if (!data) {
-    throw new AppError("Expense not found", 404, "NOT_FOUND");
-  }
-  return data;
 }
 
 // ponytail: overview/chart share the same parse + query-build step; both
@@ -242,9 +203,10 @@ async function chartOverviewContext(
   };
 }
 
-export async function getExpenseOverviewStatsService(userId: string, body: unknown) {
+async function getExpenseOverviewStats(userId: string, body: unknown) {
   const { match, from, to } = await chartOverviewContext(userId, body);
-  const { total, count, avg, min, max, categoriesCount } = await getExpenseOverviewStats(match);
+  const { total, count, avg, min, max, categoriesCount } =
+    await expenseRepository.getExpenseOverviewStats(match);
 
   const dayDiff = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -302,9 +264,9 @@ export async function getExpenseOverviewStatsService(userId: string, body: unkno
   return cards;
 }
 
-export async function getChartDataService(userId: string, body: unknown) {
+async function getChartData(userId: string, body: unknown) {
   const { match, from, to } = await chartOverviewContext(userId, body);
-  return getChartData(match, from, to);
+  return expenseRepository.getChartData(match, from, to);
 }
 
 function defaultExpenseSearchRequest(): ExpenseSearchRequest {
@@ -320,7 +282,7 @@ function defaultExpenseSearchRequest(): ExpenseSearchRequest {
   };
 }
 
-export async function searchExpensesService(userId: string, searchRequest: unknown) {
+async function searchExpenses(userId: string, searchRequest: unknown) {
   const parsed = expenseSearchSchema.parse(searchRequest ?? {});
   const defaults = defaultExpenseSearchRequest();
   const request: ExpenseSearchRequest = {
@@ -328,29 +290,17 @@ export async function searchExpensesService(userId: string, searchRequest: unkno
     sortCriteria: parsed.sortCriteria ?? defaults.sortCriteria,
     pagination: parsed.pagination ?? defaults.pagination,
   };
-  return searchExpenses(userId, request);
+  return expenseRepository.searchExpenses(userId, request);
 }
 
-// ponytail: distribution reuses the full expense filter match so
-// /expenses/search and /expenses/distribution interpret filters identically.
-export async function getDistributionService(userId: string, body: unknown) {
-  const parsed = distributionSchema.parse(body ?? {});
-  const defaults = defaultExpenseSearchRequest();
-  const filters = { ...defaults.filterCriteria, ...parsed.filterCriteria };
+const expenseService = {
+  createExpense,
+  getExpense,
+  updateExpense,
+  deleteExpense,
+  getExpenseOverviewStats,
+  getChartData,
+  searchExpenses,
+};
 
-  const { query } = await buildExpenseQuery(userId, {
-    filterCriteria: filters,
-    sortCriteria: { field: "paidAt", direction: "DESC" },
-    pagination: { page: 1, pageSize: 1 },
-  });
-  const bounds = resolveDateRange(filters.date);
-  const bucketIds = await getValidBuckets(userId);
-
-  return getDistribution(
-    bucketIds,
-    parsed.dimension,
-    bounds?.from ? new Date(bounds.from) : undefined,
-    bounds?.to ? new Date(bounds.to) : undefined,
-    query,
-  );
-}
+export default expenseService;

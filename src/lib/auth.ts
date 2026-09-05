@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { AUTH_COOKIE } from "@/lib/constants";
 import { env, getJwtSecret } from "@/config/env";
 import { AppError } from "@/lib/errors";
-import type { JwtPayload } from "@/constants/types/auth.types";
+import { AuthUser } from "@/constants/types/auth.types";
 
 const COOKIE_MAX_AGE_THIRTY_DAYS = 60 * 60 * 24 * 30;
 
@@ -17,15 +17,15 @@ export async function comparePassword(password: string, hash: string): Promise<b
   return bcrypt.compare(password, hash);
 }
 
-export function signToken(payload: JwtPayload): string {
+export function signToken(payload: AuthUser): string {
   return jwt.sign(payload, getJwtSecret(), {
     expiresIn: "30d",
   });
 }
 
-export function verifyToken(token: string): JwtPayload {
+export function verifyToken(token: string): AuthUser {
   try {
-    return jwt.verify(token, getJwtSecret()) as JwtPayload;
+    return jwt.verify(token, getJwtSecret()) as AuthUser;
   } catch {
     throw new AppError("Invalid or expired token", 401, "UNAUTHORIZED");
   }
@@ -53,7 +53,7 @@ export async function clearAuthCookie(): Promise<void> {
   });
 }
 
-export async function getAuthPayload(): Promise<JwtPayload> {
+export async function getAuthPayload(): Promise<AuthUser> {
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_COOKIE)?.value;
   if (!token) {
