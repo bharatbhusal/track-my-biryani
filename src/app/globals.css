@@ -128,9 +128,19 @@ h4 {
   line-height: var(--line-tight);
 }
 
+/* ponytail: default-visible so content shows with JS off, GSAP failing, or
+   reduced-motion — use-page-transition only enhances via from-tweens. */
 [data-animate] {
-  opacity: 0;
-  transform: translateY(12px);
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-animate] {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
 }
 
 [data-animate].gsap-done {

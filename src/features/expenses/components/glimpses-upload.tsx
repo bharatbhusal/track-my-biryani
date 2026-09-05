@@ -6,7 +6,6 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/modals/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { uploadsApi } from "@/lib/api/uploads";
 import { buildUploadPublicId } from "@/lib/naming";
@@ -56,31 +55,41 @@ export function GlimpsesUpload({ value, onChange, expenseTitle = "expense" }: Gl
     }
 
     const newUrls: string[] = [];
+    const queue = fileList.map((file) => ({ id: crypto.randomUUID(), file }));
+    setUploading((current) => [
+      ...current,
+      ...queue.map(({ id, file }) => ({ id, file, progress: 0, status: "uploading" as const })),
+    ]);
 
-    for (const file of fileList) {
-      const id = crypto.randomUUID();
-      setUploading((current) => [...current, { id, file, progress: 0, status: "uploading" }]);
+    // ponytail: concurrency-2 worker pool — bounded parallelism without a queue lib.
+    let next = 0;
+    const worker = async () => {
+      while (next < queue.length) {
+        const item = queue[next];
+        next += 1;
+        try {
+          const preparedFile = await compressImageIfNeeded(item.file);
+          const publicId = buildUploadPublicId(expenseTitle || "expense");
+          const signature = await uploadsApi.getSignature(publicId);
 
-      try {
-        const preparedFile = await compressImageIfNeeded(file);
-        const publicId = buildUploadPublicId(expenseTitle || "expense");
-        const signature = await uploadsApi.getSignature(publicId);
+          const uploaded = await uploadImageToCloudinary(preparedFile, signature, (progress) => {
+            setUploading((current) =>
+              current.map((each) => (each.id === item.id ? { ...each, progress } : each)),
+            );
+          });
 
-        const uploaded = await uploadImageToCloudinary(preparedFile, signature, (progress) => {
+          newUrls.push(uploaded.secureUrl);
+          setUploading((current) => current.filter((each) => each.id !== item.id));
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : "Upload failed");
           setUploading((current) =>
-            current.map((item) => (item.id === id ? { ...item, progress } : item)),
+            current.map((each) => (each.id === item.id ? { ...each, status: "failed" } : each)),
           );
-        });
-
-        newUrls.push(uploaded.secureUrl);
-        setUploading((current) => current.filter((item) => item.id !== id));
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Upload failed");
-        setUploading((current) =>
-          current.map((item) => (item.id === id ? { ...item, status: "failed" } : item)),
-        );
+        }
       }
-    }
+    };
+
+    await Promise.all([worker(), worker()]);
 
     if (newUrls.length > 0) {
       onChange([...value, ...newUrls]);
@@ -109,9 +118,13 @@ export function GlimpsesUpload({ value, onChange, expenseTitle = "expense" }: Gl
   const downloadImage = (url: string, index: number) => {
     const ext = getExtension(url);
     const filename = `${expenseTitle.replace(/\s+/g, "_")}_image_${index}.${ext}`;
+    // ponytail: cross-origin `download` is ignored by browsers (Cloudinary URL),
+    // so fall back to a new tab — same click still downloads same-origin.
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = filename;
+    anchor.target = "_blank";
+    anchor.rel = "noreferrer";
     document.body.appendChild(anchor);
     anchor.click();
     document.body.removeChild(anchor);
@@ -132,28 +145,39 @@ export function GlimpsesUpload({ value, onChange, expenseTitle = "expense" }: Gl
               alt="Glimpse preview"
               className="h-28 w-28 cursor-pointer object-cover"
               loading="lazy"
+              tabIndex={0}
+              role="button"
+              aria-label="View full image"
               onClick={() => setClickedImage(url)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setClickedImage(url);
+                }
+              }}
             />
             <button
               type="button"
+              aria-label="Remove image"
               className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white hover:bg-black/80 transition-colors"
               onClick={() => onChange(value.filter((each) => each !== url))}
             >
-              <FiX className="h-3 w-3" />
+              <FiX className="h-3 w-3" aria-hidden="true" />
             </button>
           </div>
         ))}
         {value.length < 5 && (
-          <div className="flex h-28 w-28 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-dashed border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors">
-            <FiPlus className="h-6 w-6" />
-            <Input
+          <label className="flex h-28 w-28 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-dashed border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors focus-within:border-[var(--color-primary)] focus-within:text-[var(--color-primary)]">
+            <FiPlus className="h-6 w-6" aria-hidden="true" />
+            <span className="sr-only">Add glimpses (up to 5 images)</span>
+            <input
               type="file"
               accept="image/*"
               multiple
-              className="hidden"
+              className="sr-only"
               onChange={handleFileInput}
             />
-          </div>
+          </label>
         )}
       </div>
 

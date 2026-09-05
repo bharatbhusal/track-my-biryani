@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { FilterBar, useScopedOptions } from "@/components/filters";
 import { sortForVariant } from "@/components/filters/variants";
@@ -20,6 +21,7 @@ export default function LogsPage() {
     items: AuditLogItem[];
     totalPages: number;
   }>({ key: null, items: [], totalPages: 0 });
+  const [error, setError] = useState<string | null>(null);
 
   const { filterCriteria, sortCriteria, pagination } = useAppSelector((s) => s.filters.logs);
   const buckets = useAppSelector((s) => s.buckets.allBuckets);
@@ -53,10 +55,15 @@ export default function LogsPage() {
       })
       .then((res) => {
         if (cancelled) return;
+        setError(null);
         setResult({ key: requestKey, items: res.items, totalPages: res.totalPages });
       })
       .catch(() => {
-        if (!cancelled) setResult({ key: requestKey, items: [], totalPages: 0 });
+        if (!cancelled) {
+          setResult({ key: requestKey, items: [], totalPages: 0 });
+          setError("Failed to load logs");
+          toast.error("Failed to load logs");
+        }
       });
     return () => {
       cancelled = true;
@@ -74,15 +81,30 @@ export default function LogsPage() {
     );
   };
 
+  const isLoading = result.key !== requestKey;
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between px-2">
         <h3 className="text-base font-semibold tracking-tight">Activity Logs</h3>
+        <p aria-live="polite" className="text-xs text-[var(--color-muted)]">
+          {isLoading
+            ? "Loading…"
+            : `${result.items.length} result${result.items.length === 1 ? "" : "s"}`}
+        </p>
       </div>
+      {error && (
+        <p
+          role="alert"
+          className="rounded-xl border border-[var(--color-danger)] px-3 py-2 text-xs"
+        >
+          {error}
+        </p>
+      )}
       <FilterBar variant="logs" buckets={buckets} categories={[]} owners={owners} />
       <LogsTable
         items={result.items}
-        isLoading={result.key !== requestKey}
+        isLoading={isLoading}
         sortBy={effectiveSort.field as SortField}
         order={effectiveSort.direction === "ASC" ? "asc" : "desc"}
         onSort={handleSort}
