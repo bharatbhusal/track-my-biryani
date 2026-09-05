@@ -114,20 +114,20 @@ export function InviteView({ id }: { id: string }) {
         <h2 className="text-sm font-semibold">You were invited to collaborate</h2>
         <p className="text-xs leading-5 text-[var(--color-muted)]">
           This is an invite link for{" "}
-          <span className="font-medium text-[var(--color-foreground)]">{preview.name}</span>. Tap{" "}
-          <span className="font-medium text-[var(--color-foreground)]">Request to join</span> to
-          notify the owner. They will see your request under{" "}
+          <span className="font-medium text-[var(--color-text)]">{preview.name}</span>. Tap{" "}
+          <span className="font-medium text-[var(--color-text)]">Request to join</span> to notify
+          the owner. They will see your request under{" "}
           <span className="font-medium">Settings → Buckets → Join Requests</span> and can accept or
           decline.
         </p>
         <ul className="list-disc space-y-1 pl-4 text-xs leading-5 text-[var(--color-muted)]">
           <li>
-            <span className="font-medium text-[var(--color-foreground)]">Invite by username</span>{" "}
-            still works — the owner can invite you directly from the bucket menu.
+            <span className="font-medium text-[var(--color-text)]">Invite by username</span> still
+            works — the owner can invite you directly from the bucket menu.
           </li>
           <li>
-            <span className="font-medium text-[var(--color-foreground)]">Invite by link</span> —
-            this page. Nothing happens until you click the button below.
+            <span className="font-medium text-[var(--color-text)]">Invite by link</span> — this
+            page. Nothing happens until you click the button below.
           </li>
           <li>
             Once accepted, the bucket appears in your buckets list and you can add/view expenses.

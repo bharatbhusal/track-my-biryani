@@ -60,16 +60,14 @@ export function DistributionBar({ title, data, selectedIds, isLoading }: Distrib
                 return (
                   <div
                     key={item.id}
-                    className={`flex items-center justify-center text-[15px] font-bold text-white transition-all rounded-[4px] ${
+                    className={`flex items-center justify-center rounded-md text-sm font-bold text-white transition-all ${
                       hasSelection && !isSelected ? "opacity-30" : ""
                     }`}
                     style={{
                       width: `${pct}%`,
                       backgroundColor: item.color ?? stableColor(item.id),
                       outline:
-                        hasSelection && isSelected
-                          ? "2px solid var(--color-foreground)"
-                          : undefined,
+                        hasSelection && isSelected ? "2px solid var(--color-text)" : undefined,
                       outlineOffset: "-2px",
                     }}
                     title={`${item.name}: ${formatCurrency(item.value, currency)} (${pct.toFixed(1)}%)`}
@@ -101,7 +99,7 @@ export function DistributionBar({ title, data, selectedIds, isLoading }: Distrib
                       backgroundColor: item.color ?? stableColor(item.id),
                     }}
                   ></span>
-                  {item.icon && <span>{item.icon}</span>}
+                  {item.icon && <span aria-hidden="true">{item.icon}</span>}
                   <span>{item.name}</span>
                 </div>
               );

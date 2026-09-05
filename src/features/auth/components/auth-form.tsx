@@ -141,7 +141,7 @@ export function AuthForm({ mode, nextPath }: { mode: AuthMode; nextPath?: string
           </Button>
         </form>
       </Form>
-      <p className="mt-4 text-xs text-zinc-500">
+      <p className="mt-4 text-xs text-[var(--color-muted)]">
         {mode === "signup" ? "Already have an account?" : "Need an account?"}{" "}
         <Link href={switchHref} className="underline">
           {mode === "signup" ? "Login" : "Sign up"}
