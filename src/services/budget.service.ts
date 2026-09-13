@@ -13,6 +13,7 @@ import budgetRepository from "@/repositories/budget.repository";
 import { findBucketById } from "@/repositories/bucket.repository";
 import { ensureCategoryInBucket, getCategoryById } from "@/repositories/category.repository";
 import { logAuditEvent } from "@/services/audit.service";
+import { assertActionAllowed } from "@/services/bucket-status.service";
 import type { BudgetGroup, BudgetItem, BudgetPeriod } from "@/constants/types/budget.types";
 import { AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/constants/types/audit.types";
 
@@ -72,6 +73,9 @@ async function createBudgetService(userId: string, body: unknown): Promise<Budge
   }
 
   const bucket = await findBucketById(payload.bucketId);
+  if (bucket) {
+    assertActionAllowed(bucket, "budget.create");
+  }
   try {
     const created = await budgetRepository.createBudget({
       bucketId: new Types.ObjectId(payload.bucketId),
@@ -128,6 +132,17 @@ async function updateBudgetService(
   if (!current) throw new AppError(BUDGET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   if (current.ownerId.toString() !== userId) {
     throw new AppError(BUDGET_ERRORS.NOT_OWNER_EDIT, 403, ERROR_CODES.NOT_OWNER);
+  }
+
+  const currentBucket = await findBucketById(current.bucketId.toString());
+  if (currentBucket) {
+    assertActionAllowed(currentBucket, "budget.update");
+  }
+  if (payload.bucketId && payload.bucketId !== current.bucketId.toString()) {
+    const targetBucket = await findBucketById(payload.bucketId);
+    if (targetBucket) {
+      assertActionAllowed(targetBucket, "budget.update");
+    }
   }
 
   const targetBucketId = payload.bucketId ?? current.bucketId.toString();
@@ -256,6 +271,10 @@ async function deleteBudgetService(userId: string, budgetId: string) {
   if (!current) throw new AppError(BUDGET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   if (current.ownerId.toString() !== userId) {
     throw new AppError(BUDGET_ERRORS.NOT_OWNER_DELETE, 403, ERROR_CODES.NOT_OWNER);
+  }
+  const bucket = await findBucketById(current.bucketId.toString());
+  if (bucket) {
+    assertActionAllowed(bucket, "budget.delete");
   }
   await budgetRepository.deleteBudget(budgetId);
 

@@ -21,6 +21,7 @@ import expenseRepository from "@/repositories/expense.repository";
 import settlementRepository, { type SettlementDoc } from "@/repositories/settlement.repository";
 import { computeSettlement, findOutstandingDebt } from "@/lib/settle";
 import { logAuditEvent } from "@/services/audit.service";
+import { assertActionAllowed } from "@/services/bucket-status.service";
 import type {
   BucketBalances,
   BucketDetail,
@@ -156,6 +157,7 @@ async function updateBucket(
 
 async function deleteBucket(userId: string, bucketId: string) {
   const bucket = await requireOwner(userId, bucketId);
+  assertActionAllowed(bucket, "bucket.delete");
   const hasExpenses = await bucketRepository.expenseExistsInBucket(bucketId);
   if (hasExpenses) {
     throw new AppError(BUCKET_ERRORS.HAS_EXPENSES, 400, ERROR_CODES.HAS_EXPENSES);
@@ -179,9 +181,7 @@ async function deleteBucket(userId: string, bucketId: string) {
 async function inviteUser(userId: string, bucketId: string, body: unknown): Promise<BucketDetail> {
   const payload = inviteSchema.parse(body);
   const bucket = await requireOwner(userId, bucketId);
-  if (bucket.closedAt) {
-    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
-  }
+  assertActionAllowed(bucket, "member.invite");
 
   const user = await userRepository.findUserByUsername(payload.username);
   if (!user) {
@@ -218,9 +218,7 @@ async function inviteUser(userId: string, bucketId: string, body: unknown): Prom
 
 async function acceptInvite(userId: string, bucketId: string): Promise<BucketDetail> {
   const bucketDoc = await requirePendingMember(userId, bucketId);
-  if (bucketDoc.closedAt) {
-    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
-  }
+  assertActionAllowed(bucketDoc, "member.accept");
   const member = bucketDoc.members.find((m) => m.userId.toString() === userId);
   if (member?.invitedBy && member.invitedBy.toString() === userId) {
     throw new AppError(BUCKET_ERRORS.REQUEST_PENDING, 403, ERROR_CODES.REQUEST_PENDING);
@@ -279,6 +277,7 @@ async function leaveBucket(userId: string, bucketId: string) {
   if (member.role === "owner") {
     throw new AppError(BUCKET_ERRORS.OWNER_CANNOT_LEAVE, 400, ERROR_CODES.OWNER_CANNOT_LEAVE);
   }
+  assertActionAllowed(bucket, "member.leave");
 
   await bucketRepository.pullBucketMember(bucketId, userId);
 
@@ -300,6 +299,7 @@ async function revokeInvite(
   targetUserId: string,
 ): Promise<BucketDetail> {
   const bucket = await requireOwner(userId, bucketId);
+  assertActionAllowed(bucket, "member.revoke");
   if (!bucket.members.some((m) => m.userId.toString() === targetUserId)) {
     throw new AppError(BUCKET_ERRORS.MEMBER_NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
@@ -354,9 +354,7 @@ async function requestToJoin(userId: string, bucketId: string): Promise<BucketPr
   if (bucket.isPersonal) {
     throw new AppError(BUCKET_ERRORS.IS_PERSONAL, 400, ERROR_CODES.BUCKET_IS_PERSONAL);
   }
-  if (bucket.closedAt) {
-    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
-  }
+  assertActionAllowed(bucket, "member.join");
   const existing = bucket.members.find((m) => m.userId.toString() === userId);
   if (existing) {
     if (existing.status === "accepted") {
@@ -427,9 +425,7 @@ async function acceptRequest(
   targetUserId: string,
 ): Promise<BucketDetail> {
   const bucket = await requireOwner(ownerId, bucketId);
-  if (bucket.closedAt) {
-    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
-  }
+  assertActionAllowed(bucket, "member.accept");
   const member = bucket.members.find((m) => m.userId.toString() === targetUserId);
   if (!member) {
     throw new AppError(BUCKET_ERRORS.REQUEST_NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
@@ -506,9 +502,7 @@ async function setMemberShares(
   shares: Record<string, number>,
 ): Promise<BucketDetail> {
   const bucket = await requireOwner(userId, bucketId);
-  if (bucket.closedAt) {
-    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
-  }
+  assertActionAllowed(bucket, "share.configure");
 
   const acceptedIds = new Set(
     bucket.members.filter((m) => m.status === "accepted").map((m) => m.userId.toString()),
@@ -672,9 +666,7 @@ async function confirmSettlement(
   if (!bucket) {
     throw new AppError(BUCKET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
-  if (bucket.closedAt) {
-    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
-  }
+  assertActionAllowed(bucket, "settlement.confirm");
 
   const fromUserId = body?.fromUserId ?? "";
   const creditor = bucket.members.find((m) => m.userId.toString() === userId);
@@ -752,6 +744,7 @@ async function closeBucket(
   if (bucket.closedAt) {
     throw new AppError(BUCKET_ERRORS.BUCKET_ALREADY_CLOSED, 400, ERROR_CODES.BUCKET_ALREADY_CLOSED);
   }
+  assertActionAllowed(bucket, "bucket.close");
 
   const balances = await computeBucketBalances(bucket);
   if (!balances.allMembersPaid) {
@@ -764,7 +757,10 @@ async function closeBucket(
   }
 
   const now = new Date();
-  await bucketRepository.updateBucketClosedAt(bucketId, now);
+  await Promise.all([
+    bucketRepository.updateBucketClosedAt(bucketId, now),
+    bucketRepository.updateBucketStatus(bucketId, "close"),
+  ]);
 
   await logAuditEvent({
     actorId: userId,
