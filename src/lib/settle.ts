@@ -8,7 +8,8 @@
  * creation). Shares, when complete, split each expense proportionally among
  * the eligible members; empty or partial shares fall back to an equal split.
  * Settlements record ALREADY-COMPLETED peer transfers (debtor -> creditor),
- * confirmed by the creditor, so they reduce the debtor's balance.
+ * confirmed by the creditor: the sender DISCHARGES part of its debit and the
+ * receiver DISCHARGES part of its credit, so both balances move toward zero.
  *
  * All published amounts are rounded to 2 decimals with `round2`; intermediate
  * math keeps full precision and only published values are rounded. The module
@@ -20,12 +21,15 @@ export type SettleMember = { userId: string; joinedAt?: Date };
 
 export type SettleExpense = { userId: string; amount: number; paidAt: Date };
 
+/** Completed peer transfer: the debtor (fromUserId) paid the creditor
+ * (toUserId) `amount`, discharging that much of the debtor's debit and of the
+ * creditor's credit. */
 export type SettleTransfer = { fromUserId: string; toUserId: string; amount: number };
 
 export type MemberBalance = {
   memberId: string;
   owedAmount: number; // their share of eligible expenses
-  paidAmount: number; // expenses they covered + received - sent (net credit from transfers)
+  paidAmount: number; // expenses covered - received + sent (transfers move balances toward zero)
   netBalance: number; // paidAmount - owedAmount; >0 = they are owed money, <0 = they owe
 };
 
@@ -110,7 +114,7 @@ export function computeSettlement(opts: {
     .map((m) => {
       const owedAmount = round2(owed.get(m.userId)!);
       const paidAmount = round2(
-        (paid.get(m.userId) ?? 0) + (received.get(m.userId) ?? 0) - (sent.get(m.userId) ?? 0),
+        (paid.get(m.userId) ?? 0) - (received.get(m.userId) ?? 0) + (sent.get(m.userId) ?? 0),
       );
       return {
         memberId: m.userId,

@@ -42,19 +42,19 @@ export function demo(): void {
     paidAmount: 300,
     netBalance: -50,
   });
-  // B: owes 350, covered 600 + received 100             -> net +350
+  // B: owes 350, covered 600, was repaid 100 by C       -> net +150
   assert.deepStrictEqual(byId.get("B")!, {
     memberId: "B",
     owedAmount: 350,
-    paidAmount: 700,
-    netBalance: 350,
+    paidAmount: 500,
+    netBalance: 150,
   });
-  // C: owes 200 (skipped E1, joined after 01-05), sent 100 -> net -300
+  // C: owes 200 (skipped E1, joined after 01-05), already paid B 100 -> net -100
   assert.deepStrictEqual(byId.get("C")!, {
     memberId: "C",
     owedAmount: 200,
-    paidAmount: -100,
-    netBalance: -300,
+    paidAmount: 100,
+    netBalance: -100,
   });
 
   // Invariants: totals balance, proration applied, debt plan greedy + sorted.
@@ -65,10 +65,10 @@ export function demo(): void {
   );
   assert.strictEqual(res.allSettled, false);
   assert.deepStrictEqual(res.debtPlan, [
-    { fromUserId: "C", toUserId: "B", amount: 300 }, // largest debtor C -> largest creditor B
+    { fromUserId: "C", toUserId: "B", amount: 100 }, // largest debtor C -> largest creditor B
     { fromUserId: "A", toUserId: "B", amount: 50 }, // then A settles the rest with B
   ]);
-  assert.strictEqual(findOutstandingDebt(res.debtPlan, "C", "B"), 300);
+  assert.strictEqual(findOutstandingDebt(res.debtPlan, "C", "B"), 100);
   assert.strictEqual(findOutstandingDebt(res.debtPlan, "A", "B"), 50);
   assert.strictEqual(findOutstandingDebt(res.debtPlan, "A", "C"), null); // no such edge
 

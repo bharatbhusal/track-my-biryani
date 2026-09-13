@@ -175,44 +175,32 @@ describe("computeSettlement", () => {
     expect(creditTotal).toBeCloseTo(owedTotal, 2);
   });
 
-  it("flips allSettled on once completed settlements zero the balances", () => {
+  it("transfer discharges the debtor's debit and the creditor's credit (B->A settles 50)", () => {
     // Human story: A covered a 100 bill split 50/50 with B. B's debt to the
-    // group is discharged only when the money actually moves.
-    //
-    // BUG FLAG (reported, not fixed per mission): the module's sign convention
-    // is "transfer X->Y moves `amount` from X's net to Y's net", so zeroing
-    // requires the CREDITOR->debtor direction (A->B). Recording the natural
-    // debtor->creditor payment (B->A, the documented SettleTransfer direction)
-    // DOUBLES the imbalance instead of discharging it — see the second part.
-    const base = {
+    // group is discharged only when the money actually moves: the debtor (B)
+    // pays the creditor (A) 50, and both nets land on zero.
+    const res = computeSettlement({
       members: [
         { userId: "A", joinedAt: bucketCreatedAt },
         { userId: "B", joinedAt: bucketCreatedAt },
       ],
       shares: {},
       expenses: [{ userId: "A", amount: 100, paidAt: new Date("2026-01-02T00:00:00.000Z") }],
+      settlements: [{ fromUserId: "B", toUserId: "A", amount: 50 }], // debtor -> creditor
       bucketCreatedAt,
-    };
-
-    const zeroed = computeSettlement({
-      ...base,
-      settlements: [{ fromUserId: "A", toUserId: "B", amount: 50 }],
     });
-    const zeroedById = new Map(zeroed.members.map((m) => [m.memberId, m]));
-    expect(zeroedById.get("A")!.netBalance).toBe(0);
-    expect(zeroedById.get("B")!.netBalance).toBe(0);
-    expect(zeroed.debtPlan).toEqual([]);
-    expect(zeroed.allSettled).toBe(true);
 
-    // Characterizing the documented direction: debtor->creditor does NOT settle.
-    const notSettled = computeSettlement({
-      ...base,
-      settlements: [{ fromUserId: "B", toUserId: "A", amount: 50 }],
-    });
-    const notSettledById = new Map(notSettled.members.map((m) => [m.memberId, m]));
-    expect(notSettledById.get("A")!.netBalance).toBe(100);
-    expect(notSettledById.get("B")!.netBalance).toBe(-100);
-    expect(notSettled.allSettled).toBe(false);
+    const byId = new Map(res.members.map((m) => [m.memberId, m]));
+    // A: covered 100, got 50 back -> paid 50 net of the repayment; owed 50 -> net 0.
+    expect(byId.get("A")!.owedAmount).toBe(50);
+    expect(byId.get("A")!.paidAmount).toBe(50);
+    expect(byId.get("A")!.netBalance).toBe(0);
+    // B: sent 50, discharging its debit; owed 50 -> paid 50 -> net 0.
+    expect(byId.get("B")!.owedAmount).toBe(50);
+    expect(byId.get("B")!.paidAmount).toBe(50);
+    expect(byId.get("B")!.netBalance).toBe(0);
+    expect(res.debtPlan).toEqual([]);
+    expect(res.allSettled).toBe(true);
   });
 
   it("uses a 0.01 epsilon for allSettled", () => {
@@ -274,7 +262,7 @@ describe("computeSettlement", () => {
         { userId: "B", amount: 120, paidAt: new Date("2026-01-08T00:00:00.000Z") },
         { userId: "C", amount: 90, paidAt: new Date("2026-01-12T00:00:00.000Z") },
       ],
-      settlements: [{ fromUserId: "A", toUserId: "B", amount: 10 }],
+      settlements: [{ fromUserId: "A", toUserId: "B", amount: 10 }], // A is the only net debtor
       bucketCreatedAt,
     };
     expect(computeSettlement(opts)).toEqual(computeSettlement(opts));
@@ -305,7 +293,7 @@ describe("findOutstandingDebt", () => {
       ],
       shares: {},
       expenses: [{ userId: "A", amount: 100, paidAt: new Date("2026-01-02T00:00:00.000Z") }],
-      settlements: [{ fromUserId: "A", toUserId: "B", amount: 50 }],
+      settlements: [{ fromUserId: "B", toUserId: "A", amount: 50 }],
       bucketCreatedAt,
     });
     expect(settled.allSettled).toBe(true);
