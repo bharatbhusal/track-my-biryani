@@ -1,9 +1,11 @@
 import { apiRequest } from "@/lib/api/client";
 import type {
+  BucketBalances,
   BucketDetail,
   BucketPreview,
   BucketSummary,
   IncomingRequestsGroup,
+  SettlementItem,
 } from "@/constants/types/bucket.types";
 import type {
   BucketSearchRequest,
@@ -67,19 +69,7 @@ export const bucketsApi = {
       body: payload,
     }),
   getMemberBalances: (id: string) =>
-    apiRequest<{
-      members: Array<{
-        memberId: string;
-        memberName: string;
-        percentage: number;
-        owedAmount: number;
-        paidAmount: number;
-        netBalance: number;
-        upiId: string;
-      }>;
-      totalBucketOwed: number;
-      allMembersPaid: boolean;
-    }>(`/buckets/${encodeURIComponent(id)}/balances`, { method: "GET" }),
+    apiRequest<BucketBalances>(`/buckets/${encodeURIComponent(id)}/balances`, { method: "GET" }),
   closeBucket: (id: string) =>
     apiRequest<{ success: boolean; closedAt: Date; message: string }>(
       `/buckets/${encodeURIComponent(id)}/close`,
@@ -89,5 +79,14 @@ export const bucketsApi = {
     apiRequest<BucketDetail>(`/buckets/${encodeURIComponent(id)}/upi`, {
       method: "PATCH",
       body: { upiId },
+    }),
+  confirmSettlement: (id: string, payload: { fromUserId: string; note?: string }) =>
+    apiRequest<SettlementItem>(`/buckets/${encodeURIComponent(id)}/settlements`, {
+      method: "POST",
+      body: payload,
+    }),
+  getSettlements: (id: string) =>
+    apiRequest<SettlementItem[]>(`/buckets/${encodeURIComponent(id)}/settlements`, {
+      method: "GET",
     }),
 };
