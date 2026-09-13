@@ -9,6 +9,7 @@
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "migrate:status": "tsx scripts/migrate-bucket-status.ts",
     "test": "vitest run"
   },
   "dependencies": {
@@ -62,6 +63,7 @@
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.6",
     "tailwindcss": "^4",
+    "tsx": "^4.19.2",
     "typescript": "^5",
     "vitest": "^4.1.11"
   }
