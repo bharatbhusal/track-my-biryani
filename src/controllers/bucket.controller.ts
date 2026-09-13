@@ -1,7 +1,11 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 
 import { getAuthPayload } from "@/lib/auth";
 import bucketService from "@/services/bucket.service";
+import { transitionBucketStatus as bucketStatusService } from "@/services/bucket-status.service";
+
+const bucketStatusTargetSchema = z.enum(["settlement-config", "settlement-live"]);
 
 // ponytail: create takes (auth.id, body), not full auth — unlike
 // expense.createExpense(auth, body), bucket creation needs only the userId.
@@ -156,6 +160,19 @@ async function listSettlements(
   return bucketService.listSettlements(auth.id, id);
 }
 
+async function transitionBucketStatus(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
+  const auth = await getAuthPayload();
+  const { id } = await context.params;
+  const body = await request.json();
+  const target = bucketStatusTargetSchema.parse(body.target);
+  await bucketStatusService(auth.id, id, target);
+  const detail = await bucketService.getBucketStats(auth.id, id, {});
+  return detail;
+}
+
 const bucketController = {
   searchBuckets,
   listBuckets,
@@ -178,6 +195,7 @@ const bucketController = {
   updateMemberUpiId,
   confirmSettlement,
   listSettlements,
+  transitionBucketStatus,
 };
 
 export default bucketController;
