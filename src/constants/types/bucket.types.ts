@@ -1,5 +1,6 @@
 export type BucketRole = "owner" | "member";
 export type BucketStatus = "pending" | "accepted";
+export type BucketLifecycleStatus = "live" | "settlement-config" | "settlement-live" | "close";
 
 export type BucketMember = {
   userId: string;
@@ -30,6 +31,7 @@ export type BucketSummary = {
   role: BucketRole;
   status: BucketStatus;
   closedAt?: string; // ISO date, present once bucket is closed
+  lifecycleStatus?: BucketLifecycleStatus;
 };
 
 export type BucketsListPayload = {
@@ -53,11 +55,15 @@ export type BucketDetail = {
   createdAt?: string;
   updatedAt?: string;
   closedAt?: string; // ISO date, present once bucket is closed
+  lifecycleStatus?: BucketLifecycleStatus;
 };
 
 // Minimal bucket shape for action dialogs opened from a card, which only has a
 // BucketSummary (no `members`). Dialogs that need member rows fetch balances themselves.
-export type BucketDialogBucket = Pick<BucketDetail, "_id" | "name" | "role" | "closedAt">;
+export type BucketDialogBucket = Pick<
+  BucketDetail,
+  "_id" | "name" | "role" | "closedAt" | "lifecycleStatus"
+>;
 
 export type BucketPreview = {
   _id: string;
@@ -69,6 +75,7 @@ export type BucketPreview = {
   memberCount: number;
   role?: BucketRole;
   status?: BucketStatus;
+  lifecycleStatus?: BucketLifecycleStatus;
 };
 
 export type MemberBalance = {

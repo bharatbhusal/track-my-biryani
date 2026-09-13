@@ -119,6 +119,8 @@ const CATEGORY_ERRORS = {
 // ─────────────────────────────────────────────
 
 const BUCKET_ERRORS = {
+  ACTION_NOT_ALLOWED_IN_STATUS: (action: string, status: string) =>
+    `Action "${action}" is not allowed when bucket status is "${status}"`,
   NOT_FOUND: "Bucket not found",
   NOT_MEMBER: "Not a member of this bucket",
   HAS_EXPENSES: "Cannot delete bucket with expenses",
@@ -135,6 +137,10 @@ const BUCKET_ERRORS = {
   NOT_JOIN_REQUEST: "Only join requests can be approved here",
   OWNER_ONLY: "Only the bucket owner can perform this action",
   NOT_INVITED: "You were not invited to this bucket",
+  INVALID_BUCKET_TRANSITION: (from: string, to: string) =>
+    `Cannot move bucket from "${from}" to "${to}"`,
+  SHARE_CONFIGURATION_REQUIRED:
+    "Set member share percentages (summing to 100%) before starting settlement.",
   SHARE_PERCENTAGE_INVALID: (expected: number) => `Share percentages must sum to ${expected}%`,
   NOT_ALL_MEMBERS_PAID: (names: string) =>
     `Not all members have paid their shares. Still owed: ${names}`,
@@ -179,6 +185,9 @@ const ERROR_CODES = {
   INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
   UNAUTHORIZED: "UNAUTHORIZED",
   INVALID_SORT_FIELD: "INVALID_SORT_FIELD",
+  ACTION_NOT_ALLOWED_IN_STATUS: "ACTION_NOT_ALLOWED_IN_STATUS",
+  INVALID_BUCKET_TRANSITION: "INVALID_BUCKET_TRANSITION",
+  SHARE_CONFIGURATION_REQUIRED: "SHARE_CONFIGURATION_REQUIRED",
   SHARE_PERCENTAGE_INVALID: "SHARE_PERCENTAGE_INVALID",
   NOT_ALL_MEMBERS_PAID: "NOT_ALL_MEMBERS_PAID",
   BUCKET_CLOSED: "BUCKET_CLOSED",
