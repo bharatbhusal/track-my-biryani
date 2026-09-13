@@ -742,7 +742,7 @@ async function closeBucket(
 
   const balances = await computeBucketBalances(bucket);
   if (!balances.allMembersPaid) {
-    const stillOwes = balances.members.filter((m) => m.netBalance > 0).map((m) => m.memberName);
+    const stillOwes = balances.members.filter((m) => m.netBalance < 0).map((m) => m.memberName);
     throw new AppError(
       BUCKET_ERRORS.NOT_ALL_MEMBERS_PAID(stillOwes.join(", ")),
       400,
