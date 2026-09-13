@@ -9,6 +9,7 @@ import {
   inviteSchema,
 } from "@/lib/validators";
 import bucketRepository, {
+  resolveBucketStatus,
   type BucketDoc,
   type BucketMemberDoc,
 } from "@/repositories/bucket.repository";
@@ -825,6 +826,7 @@ function toSummary(bucket: BucketDoc, userId: string): BucketSummary {
     memberCount: bucket.members.length,
     role: member?.role ?? "member",
     status: member?.status ?? "pending",
+    lifecycleStatus: resolveBucketStatus(bucket),
     closedAt: bucket.closedAt?.toISOString(),
   };
 }
@@ -861,6 +863,7 @@ async function toDetail(bucket: BucketDoc): Promise<BucketDetail> {
     }),
     createdAt: bucket.createdAt?.toISOString(),
     updatedAt: bucket.updatedAt?.toISOString(),
+    lifecycleStatus: resolveBucketStatus(bucket),
     closedAt: bucket.closedAt?.toISOString(),
   };
 }

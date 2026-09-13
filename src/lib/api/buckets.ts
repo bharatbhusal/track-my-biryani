@@ -34,6 +34,14 @@ export const bucketsApi = {
       method: "PATCH",
       body: payload,
     }),
+  transitionBucketStatus: (
+    id: string,
+    target: "settlement-config" | "settlement-live" | "live",
+  ) =>
+    apiRequest<BucketDetail>(`/buckets/${encodeURIComponent(id)}/status`, {
+      method: "PATCH",
+      body: { target },
+    }),
   deleteBucket: (id: string) =>
     apiRequest<{ message: string }>(`/buckets/${encodeURIComponent(id)}`, { method: "DELETE" }),
   inviteUser: (id: string, payload: { username: string }) =>

@@ -36,6 +36,9 @@ export function SettleUpPanel({ bucket }: SettleUpPanelProps) {
   const [pendingEdge, setPendingEdge] = useState<DebtEdge | null>(null);
 
   const isClosed = Boolean(bucket.closedAt);
+  // payments (UPI links + "Received?") only make sense once the owner has
+  // started collecting; before that the matrix rejects confirmSettlement.
+  const canSettle = !isClosed && bucket.lifecycleStatus === "settlement-live";
   // loadedBucketId !== bucket._id doubles as the loading flag: until this
   // bucket's fetch resolves (or fails), the panel shows skeletons.
   const loading = loadedBucketId !== bucket._id;
@@ -158,7 +161,7 @@ export function SettleUpPanel({ bucket }: SettleUpPanelProps) {
                 bucketName={bucket.name}
                 currency={currency}
                 upiId={balances?.members.find((m) => m.memberId === edge.toUserId)?.upiId ?? ""}
-                readOnly={isClosed}
+                readOnly={!canSettle}
               />
             ))}
             {owedToYou.map((edge) => (
@@ -172,7 +175,7 @@ export function SettleUpPanel({ bucket }: SettleUpPanelProps) {
                     {formatCurrency(edge.amount, currency)}
                   </span>
                 </p>
-                {!isClosed && (
+                {canSettle && (
                   <Button
                     size="sm"
                     variant="outline"

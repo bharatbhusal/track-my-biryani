@@ -114,6 +114,7 @@ export function BucketDetailView({ id }: { id: string }) {
       createdAt: currentBucket.createdAt,
       role: currentBucket.role ?? "member",
       status: currentBucket.status ?? "accepted",
+      lifecycleStatus: currentBucket.lifecycleStatus,
       closedAt: currentBucket.closedAt,
     };
   }, [currentBucket]);

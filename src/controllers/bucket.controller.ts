@@ -5,7 +5,7 @@ import { getAuthPayload } from "@/lib/auth";
 import bucketService from "@/services/bucket.service";
 import { transitionBucketStatus as bucketStatusService } from "@/services/bucket-status.service";
 
-const bucketStatusTargetSchema = z.enum(["settlement-config", "settlement-live"]);
+const bucketStatusTargetSchema = z.enum(["settlement-config", "settlement-live", "live"]);
 
 // ponytail: create takes (auth.id, body), not full auth — unlike
 // expense.createExpense(auth, body), bucket creation needs only the userId.

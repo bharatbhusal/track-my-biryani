@@ -17,8 +17,16 @@ import { BucketMembersDialog } from "./bucket-members-dialog";
 import { CloseBucketDialog } from "../dialog/close-bucket-dialog";
 import { SettlementsDialog } from "../dialog/settlements-dialog";
 import { SplitSharesDialog } from "../dialog/split-shares-dialog";
+import { StatusDialog } from "../dialog/status-dialog";
 import { UpiDialog } from "../dialog/upi-dialog";
-import type { BucketSummary } from "@/constants/types/bucket.types";
+import type { BucketLifecycleStatus, BucketSummary } from "@/constants/types/bucket.types";
+
+const STATUS_LABEL: Record<BucketLifecycleStatus, string> = {
+  live: "Active",
+  "settlement-config": "Setup",
+  "settlement-live": "Collecting",
+  close: "Closed",
+};
 
 type BucketCardProps = {
   bucket: BucketSummary;
@@ -32,13 +40,16 @@ export function BucketCard({ bucket, onDelete, onLeave }: BucketCardProps) {
 
   const isOwner = bucket.role === "owner";
   const isPersonal = Boolean(bucket.isPersonal);
-  const isClosed = Boolean(bucket.closedAt);
+  const lifecycle: BucketLifecycleStatus =
+    bucket.lifecycleStatus ?? (bucket.closedAt ? "close" : "live");
+  const isClosed = lifecycle === "close";
 
   const [renaming, setRenaming] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [managing, setManaging] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
   const [splitSharesOpen, setSplitSharesOpen] = useState(false);
   const [settlementsOpen, setSettlementsOpen] = useState(false);
   const [upiOpen, setUpiOpen] = useState(false);
@@ -77,6 +88,7 @@ export function BucketCard({ bucket, onDelete, onLeave }: BucketCardProps) {
     else if (value === "split-shares") setSplitSharesOpen(true);
     else if (value === "settlements") setSettlementsOpen(true);
     else if (value === "upi") setUpiOpen(true);
+    else if (value === "status") setStatusOpen(true);
     else if (value === "close") setCloseOpen(true);
   };
 
@@ -84,24 +96,29 @@ export function BucketCard({ bucket, onDelete, onLeave }: BucketCardProps) {
     { value: "members", label: "View Members" },
     ...(isOwner && !isPersonal
       ? [
-          { value: "invite", label: "Invite" },
           ...(!isClosed
             ? [
-                { value: "split-shares", label: "Split Shares" },
-                { value: "close", label: "Close Bucket" },
+                { value: "status", label: "Status & Settlement" },
+                ...(lifecycle === "live" ? [{ value: "invite", label: "Invite" }] : []),
+                ...(lifecycle === "settlement-config"
+                  ? [{ value: "split-shares", label: "Split Shares" }]
+                  : []),
+                ...(lifecycle === "settlement-live"
+                  ? [{ value: "close", label: "Close Bucket" }]
+                  : []),
               ]
             : []),
           { value: "settlements", label: "Settlements" },
           { value: "upi", label: "Update UPI" },
           { value: "edit", label: "Edit" },
-          { value: "delete", label: "Delete" },
+          ...(lifecycle === "live" ? [{ value: "delete", label: "Delete" }] : []),
         ]
       : []),
     ...(!isOwner && !isPersonal
       ? [
+          ...(lifecycle === "live" ? [{ value: "leave", label: "Leave" }] : []),
           { value: "settlements", label: "Settlements" },
           { value: "upi", label: "Update UPI" },
-          { value: "leave", label: "Leave" },
         ]
       : []),
   ];
@@ -119,6 +136,17 @@ export function BucketCard({ bucket, onDelete, onLeave }: BucketCardProps) {
               <p className="text-xs text-[var(--color-muted)] truncate">
                 {bucket.memberCount} {bucket.memberCount === 1 ? "member" : "members"}
               </p>
+              {!isPersonal && (
+                <span
+                  className={
+                    lifecycle === "close"
+                      ? "mt-0.5 inline-flex w-fit rounded-full border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--color-muted)]"
+                      : "mt-0.5 inline-flex w-fit rounded-full border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--color-primary)]"
+                  }
+                >
+                  {STATUS_LABEL[lifecycle]}
+                </span>
+              )}
             </div>
             <div className="text-right shrink-0">
               <p className="font-semibold tabular-nums">
@@ -150,6 +178,10 @@ export function BucketCard({ bucket, onDelete, onLeave }: BucketCardProps) {
 
       {isOwner && !isPersonal && (
         <BucketInviteDialog bucket={bucket} open={inviting} onClose={() => setInviting(false)} />
+      )}
+
+      {isOwner && !isPersonal && (
+        <StatusDialog bucket={bucket} open={statusOpen} onClose={() => setStatusOpen(false)} />
       )}
 
       <BucketMembersDialog bucket={bucket} open={managing} onClose={() => setManaging(false)} />

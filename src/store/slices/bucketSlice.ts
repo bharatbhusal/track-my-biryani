@@ -217,6 +217,19 @@ export const setBucketShares = createAsyncThunk(
   },
 );
 
+export const transitionBucketStatus = createAsyncThunk(
+  "buckets/transitionStatus",
+  async (
+    payload: { id: string; target: "settlement-config" | "settlement-live" },
+    { dispatch },
+  ) => {
+    const bucket = await bucketsApi.transitionBucketStatus(payload.id, payload.target);
+    dispatch(fetchAllBuckets());
+    dispatch(fetchBucketDetail(payload.id));
+    return bucket;
+  },
+);
+
 const bucketThunks = [
   fetchBuckets,
   fetchInvitations,
@@ -238,6 +251,7 @@ const bucketThunks = [
   closeBucket,
   updateMemberUpiId,
   setBucketShares,
+  transitionBucketStatus,
 ];
 
 const bucketSlice = createSlice({
@@ -305,6 +319,9 @@ const bucketSlice = createSlice({
         state.error = null;
       })
       .addCase(setBucketShares.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(transitionBucketStatus.pending, (state) => {
         state.error = null;
       })
       .addMatcher(isAnyOf(...bucketThunks.map((t) => t.rejected)), (state, action) => {

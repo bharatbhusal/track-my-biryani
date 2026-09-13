@@ -75,7 +75,7 @@ export function assertActionAllowed(
 export async function transitionBucketStatus(
   userId: string,
   bucketId: string,
-  target: "settlement-config" | "settlement-live",
+  target: "settlement-config" | "settlement-live" | "live",
 ): Promise<{ success: true; status: BucketLifecycleStatus }> {
   const bucket = await findBucketById(bucketId);
   if (!bucket) {
