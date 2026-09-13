@@ -10,6 +10,7 @@ import { CashFlowChart } from "@/components/charts/cash-flow-chart";
 import { ChartSkeleton } from "@/components/charts/chart-skeleton";
 import { ExpenseTable } from "@/features/expenses/components/expense-table";
 import { BucketCard } from "@/features/buckets/components/bucket-card";
+import { SettleUpPanel } from "@/features/buckets/components/settle-up-panel";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { fetchAllBuckets, fetchBucketDetail } from "@/store/slices/bucketSlice";
 import { expensesApi } from "@/lib/api/expenses";
@@ -167,6 +168,7 @@ export function BucketDetailView({ id }: { id: string }) {
           onLeave={() => router.replace("/buckets")}
         />
       )}
+      {!currentBucket.isPersonal && <SettleUpPanel bucket={currentBucket} />}
       <CashFlowChart
         title="Trend"
         stackedSeries={chartData?.series ?? []}

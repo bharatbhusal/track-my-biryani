@@ -183,6 +183,12 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
   }, [currentExpense, reset, isEditing]);
 
   const onSubmit = async (values: FormValues) => {
+    // ponytail: client-side guard only; the backend also refuses closed-bucket writes.
+    const targetBucket = buckets.find((b) => b._id === values.bucketId);
+    if (targetBucket?.closedAt) {
+      toast.error("This bucket is closed");
+      return;
+    }
     setIsSubmitting(true);
     try {
       const payload: CreateExpensePayload = {
