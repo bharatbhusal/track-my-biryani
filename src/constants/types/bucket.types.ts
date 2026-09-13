@@ -5,6 +5,7 @@ export type BucketMember = {
   userId: string;
   role: BucketRole;
   status: BucketStatus;
+  upiId?: string;
   invitedBy?: string;
   invitedAt?: string;
   joinedAt?: string;
@@ -62,6 +63,21 @@ export type BucketPreview = {
   memberCount: number;
   role?: BucketRole;
   status?: BucketStatus;
+};
+
+export type MemberShare = {
+  memberId: string;
+  memberName: string;
+  percentage: number;
+  owedAmount: number;
+  paidAmount: number;
+  netBalance: number;
+};
+
+export type BucketSharesSummary = {
+  totalOwed: number;
+  allMembersPaid: boolean;
+  individualShares: MemberShare[];
 };
 
 export type IncomingRequestUser = {

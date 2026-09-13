@@ -23,6 +23,7 @@ const bucketMemberSchema = new Schema(
     },
     invitedAt: { type: Date },
     joinedAt: { type: Date },
+    upiId: { type: String },
   },
   { _id: false },
 );
@@ -42,6 +43,8 @@ const bucketSchema = new Schema(
       type: [bucketMemberSchema],
       default: [],
     },
+    closedAt: { type: Date },
+    shareConfiguration: { type: Map, of: Number },
   },
   { timestamps: true },
 );

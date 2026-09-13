@@ -105,6 +105,38 @@ async function acceptRequest(
   return bucketService.acceptRequest(auth.id, id, userId);
 }
 
+async function setMemberShares(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const auth = await getAuthPayload();
+  const { id } = await context.params;
+  const body = await request.json();
+  return bucketService.setMemberShares(auth.id, id, body.shares);
+}
+
+async function getMemberBalances(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
+  const auth = await getAuthPayload();
+  const { id } = await context.params;
+  return bucketService.getMemberBalances(auth.id, id);
+}
+
+async function closeBucket(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const auth = await getAuthPayload();
+  const { id } = await context.params;
+  return bucketService.closeBucket(auth.id, id);
+}
+
+async function updateMemberUpiId(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
+  const auth = await getAuthPayload();
+  const { id } = await context.params;
+  const body = await request.json();
+  return bucketService.updateMemberUpiId(auth.id, id, body.upiId);
+}
+
 const bucketController = {
   searchBuckets,
   listBuckets,
@@ -121,6 +153,10 @@ const bucketController = {
   requestToJoin,
   listIncomingRequests,
   acceptRequest,
+  setMemberShares,
+  getMemberBalances,
+  closeBucket,
+  updateMemberUpiId,
 };
 
 export default bucketController;

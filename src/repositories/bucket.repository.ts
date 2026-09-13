@@ -14,6 +14,10 @@ export type BucketMemberDoc = {
   invitedBy?: Types.ObjectId;
   invitedAt?: Date;
   joinedAt?: Date;
+  upiId?: string;
+  name?: string;
+  percentageShare?: number;
+  paidAmount?: number;
 };
 
 export type BucketDoc = {
@@ -23,6 +27,8 @@ export type BucketDoc = {
   ownerId: Types.ObjectId;
   isPersonal?: boolean;
   members: BucketMemberDoc[];
+  closedAt?: Date;
+  shareConfiguration?: Map<string, number> | Record<string, number>;
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -109,6 +115,46 @@ export async function updateBucketName(id: string, data: { name: string; icon?: 
         ...(data.icon !== undefined ? { icon: data.icon } : {}),
       },
     },
+    { new: true, lean: true },
+  );
+  return (bucket as unknown as BucketDoc | null) ?? null;
+}
+
+export async function updateBucketShareConfiguration(id: string, shares: Record<string, number>) {
+  if (!Types.ObjectId.isValid(id)) {
+    return null;
+  }
+  const bucket = await BucketModel.findByIdAndUpdate(
+    id,
+    {
+      $set: {
+        shareConfiguration: shares,
+      },
+    },
+    { new: true, lean: true },
+  );
+  return (bucket as unknown as BucketDoc | null) ?? null;
+}
+
+export async function updateMemberUpiId(id: string, userId: string, upiId: string) {
+  if (!Types.ObjectId.isValid(id) || !Types.ObjectId.isValid(userId)) {
+    return null;
+  }
+  const bucket = await BucketModel.findOneAndUpdate(
+    { _id: id, "members.userId": new Types.ObjectId(userId) },
+    { $set: { "members.$.upiId": upiId } },
+    { new: true, lean: true },
+  );
+  return (bucket as unknown as BucketDoc | null) ?? null;
+}
+
+export async function updateBucketClosedAt(id: string, closedAt: Date) {
+  if (!Types.ObjectId.isValid(id)) {
+    return null;
+  }
+  const bucket = await BucketModel.findByIdAndUpdate(
+    id,
+    { $set: { closedAt } },
     { new: true, lean: true },
   );
   return (bucket as unknown as BucketDoc | null) ?? null;
@@ -324,6 +370,9 @@ const bucketRepository = {
   findBucketById,
   createBucket,
   updateBucketName,
+  updateBucketShareConfiguration,
+  updateMemberUpiId,
+  updateBucketClosedAt,
   deleteBucket,
   addBucketMember,
   acceptBucketMember,

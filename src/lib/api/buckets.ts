@@ -61,4 +61,33 @@ export const bucketsApi = {
       `/buckets/${encodeURIComponent(id)}/requests/${encodeURIComponent(userId)}/accept`,
       { method: "POST" },
     ),
+  setMemberShares: (id: string, payload: { shares: Record<string, number> }) =>
+    apiRequest<BucketDetail>(`/buckets/${encodeURIComponent(id)}/set-shares`, {
+      method: "POST",
+      body: payload,
+    }),
+  getMemberBalances: (id: string) =>
+    apiRequest<{
+      members: Array<{
+        memberId: string;
+        memberName: string;
+        percentage: number;
+        owedAmount: number;
+        paidAmount: number;
+        netBalance: number;
+        upiId: string;
+      }>;
+      totalBucketOwed: number;
+      allMembersPaid: boolean;
+    }>(`/buckets/${encodeURIComponent(id)}/balances`, { method: "GET" }),
+  closeBucket: (id: string) =>
+    apiRequest<{ success: boolean; closedAt: Date; message: string }>(
+      `/buckets/${encodeURIComponent(id)}/close`,
+      { method: "PATCH" },
+    ),
+  updateMemberUpiId: (id: string, upiId: string) =>
+    apiRequest<BucketDetail>(`/buckets/${encodeURIComponent(id)}/upi`, {
+      method: "PATCH",
+      body: { upiId },
+    }),
 };

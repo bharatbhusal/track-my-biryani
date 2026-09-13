@@ -135,6 +135,8 @@ const BUCKET_ERRORS = {
   NOT_JOIN_REQUEST: "Only join requests can be approved here",
   OWNER_ONLY: "Only the bucket owner can perform this action",
   NOT_INVITED: "You were not invited to this bucket",
+  SHARE_PERCENTAGE_INVALID: (expected: number) => `Share percentages must sum to ${expected}%`,
+  NOT_ALL_MEMBERS_PAID: (names: string) => `Not all members have paid their shares. Still owed: ${names}`,
 } as const;
 
 // ─────────────────────────────────────────────
@@ -173,6 +175,8 @@ const ERROR_CODES = {
   INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
   UNAUTHORIZED: "UNAUTHORIZED",
   INVALID_SORT_FIELD: "INVALID_SORT_FIELD",
+  SHARE_PERCENTAGE_INVALID: "SHARE_PERCENTAGE_INVALID",
+  NOT_ALL_MEMBERS_PAID: "NOT_ALL_MEMBERS_PAID",
 } as const;
 
 // ─────────────────────────────────────────────

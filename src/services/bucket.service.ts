@@ -1,8 +1,6 @@
-import { Types } from "mongoose";
-
-import { DEFAULT_CATEGORIES } from "@/lib/constants";
 import { AppError } from "@/lib/errors";
 import { BUCKET_ERRORS, ERROR_CODES, USER_ERRORS } from "@/constants/error-messages";
+import { DEFAULT_CATEGORIES } from "@/lib/constants";
 import { buildBucketStatsExpenseMatch } from "@/lib/query-builders";
 import {
   bucketSchema,
@@ -10,7 +8,10 @@ import {
   bucketStatsSchema,
   inviteSchema,
 } from "@/lib/validators";
-import bucketRepository, { type BucketDoc } from "@/repositories/bucket.repository";
+import bucketRepository, {
+  type BucketDoc,
+  type BucketMemberDoc,
+} from "@/repositories/bucket.repository";
 import {
   ensureCategoryInBucket,
   deleteCategoriesByBucket,
@@ -20,12 +21,42 @@ import { logAuditEvent } from "@/services/audit.service";
 import type {
   BucketDetail,
   BucketPreview,
-  BucketsListPayload,
   BucketSummary,
+  BucketsListPayload,
   IncomingRequestsGroup,
 } from "@/constants/types/bucket.types";
 import type { BucketSearchRequest, ExpenseFilterCriteria } from "@/constants/types/search.types";
 import { AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/constants/types/audit.types";
+
+/**
+ * Share calculation (simple for now):
+ * total bucket expenses are divided among accepted members by their % shares.
+ * Default share = equal split. Pre-join expense proration is NOT applied yet.
+ */
+
+function toPercentageMap(config: BucketDoc["shareConfiguration"]): Map<string, number> {
+  const map = new Map<string, number>();
+  if (!config) return map;
+  if (config instanceof Map) {
+    config.forEach((pct, uid) => map.set(uid, pct));
+  } else {
+    for (const [uid, pct] of Object.entries(config)) {
+      map.set(uid, pct);
+    }
+  }
+  return map;
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+/**
+ * Calculates the net balance for a member (owed - paid)
+ */
+export function calculateNetBalance(owedAmount: number, paidAmount: number): number {
+  return round2(owedAmount - paidAmount);
+}
 
 async function listBuckets(userId: string): Promise<BucketsListPayload> {
   const [accepted, invitations] = await Promise.all([
@@ -33,10 +64,8 @@ async function listBuckets(userId: string): Promise<BucketsListPayload> {
     bucketRepository.listBucketsForPendingMember(userId),
   ]);
 
-  const items: BucketSummary[] = accepted.map((bucket) => toSummary(bucket, userId));
-
   return {
-    items,
+    items: accepted.map((bucket) => toSummary(bucket, userId)),
     invitations: invitations.map((bucket) => toSummary(bucket, userId)),
   };
 }
@@ -197,7 +226,6 @@ async function inviteUser(userId: string, bucketId: string, body: unknown): Prom
 async function acceptInvite(userId: string, bucketId: string): Promise<BucketDetail> {
   const bucketDoc = await requirePendingMember(userId, bucketId);
   const member = bucketDoc.members.find((m) => m.userId.toString() === userId);
-  // self-requested pending must be approved by owner, not self-accepted
   if (member?.invitedBy && member.invitedBy.toString() === userId) {
     throw new AppError(BUCKET_ERRORS.REQUEST_PENDING, 403, ERROR_CODES.REQUEST_PENDING);
   }
@@ -355,18 +383,16 @@ async function requestToJoin(userId: string, bucketId: string): Promise<BucketPr
     metadata: { targetUserId: userId },
   });
 
-  // also notify owner via same audit stream; owner sees it in audit logs
-  const preview = await getBucketPreview(userId, bucketId);
-  return preview;
+  return getBucketPreview(userId, bucketId);
 }
 
 async function listIncomingRequests(userId: string): Promise<IncomingRequestsGroup[]> {
   const buckets = await bucketRepository.listOwnerPendingRequests(userId);
   if (buckets.length === 0) return [];
-  // only self-requested pending (invitedBy === userId of the pending member) are join requests
+
   const isJoinRequest = (m: {
-    userId: Types.ObjectId;
-    invitedBy?: Types.ObjectId;
+    userId: { toString(): string };
+    invitedBy?: { toString(): string };
     status: string;
   }) => m.status === "pending" && m.invitedBy?.toString() === m.userId.toString();
 
@@ -409,7 +435,6 @@ async function acceptRequest(
   if (member.status !== "pending") {
     throw new AppError(BUCKET_ERRORS.ALREADY_MEMBER, 409, ERROR_CODES.ALREADY_MEMBER);
   }
-  // only self-requested joins (invitedBy === target) are approvable here; owner invites are accepted by the invitee
   if (member.invitedBy && member.invitedBy.toString() !== targetUserId) {
     throw new AppError(BUCKET_ERRORS.NOT_JOIN_REQUEST, 400, ERROR_CODES.NOT_JOIN_REQUEST);
   }
@@ -472,6 +497,190 @@ async function requirePendingMember(userId: string, bucketId: string): Promise<B
   return bucket;
 }
 
+/** Owner sets each accepted member's % share. Must sum to 100. */
+async function setMemberShares(
+  userId: string,
+  bucketId: string,
+  shares: Record<string, number>,
+): Promise<BucketDetail> {
+  const bucket = await requireOwner(userId, bucketId);
+
+  const acceptedIds = new Set(
+    bucket.members.filter((m) => m.status === "accepted").map((m) => m.userId.toString()),
+  );
+  for (const [memberId, pct] of Object.entries(shares)) {
+    if (!acceptedIds.has(memberId) || typeof pct !== "number" || pct < 0) {
+      throw new AppError(BUCKET_ERRORS.MEMBER_NOT_FOUND, 400, ERROR_CODES.NOT_FOUND);
+    }
+  }
+
+  const totalPercentage = Object.values(shares).reduce((sum, pct) => sum + pct, 0);
+  if (totalPercentage !== 100) {
+    throw new AppError(
+      BUCKET_ERRORS.SHARE_PERCENTAGE_INVALID(100),
+      400,
+      ERROR_CODES.SHARE_PERCENTAGE_INVALID,
+    );
+  }
+
+  const updated = await bucketRepository.updateBucketShareConfiguration(bucketId, shares);
+  if (!updated) {
+    throw new AppError(BUCKET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  await logAuditEvent({
+    actorId: userId,
+    bucketId,
+    action: AUDIT_ACTIONS.UPDATE,
+    entity: AUDIT_ENTITIES.BUCKET,
+    entityId: bucketId,
+    note: `Set member shares for "${bucket.name}"`,
+    metadata: { shareConfiguration: shares },
+  });
+
+  return toDetail(updated);
+}
+
+export type MemberBalance = {
+  memberId: string;
+  memberName: string;
+  percentage: number;
+  owedAmount: number;
+  paidAmount: number;
+  netBalance: number;
+  upiId: string;
+};
+
+export type BucketBalances = {
+  members: MemberBalance[];
+  totalBucketOwed: number;
+  allMembersPaid: boolean;
+};
+
+/**
+ * Balances for every accepted member.
+ * owedAmount = totalBucketExpenses * (member% / sum of all member%).
+ * No pre-join proration yet; paidAmount comes from the member doc.
+ */
+async function getMemberBalances(userId: string, bucketId: string): Promise<BucketBalances> {
+  const bucket = await bucketRepository.findBucketById(bucketId);
+  if (!bucket) {
+    throw new AppError(BUCKET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  const member = bucket.members.find((m) => m.userId.toString() === userId);
+  if (!member || member.status !== "accepted") {
+    throw new AppError(BUCKET_ERRORS.NOT_MEMBER, 403, ERROR_CODES.NOT_A_MEMBER);
+  }
+
+  const acceptedMembers = bucket.members.filter((m) => m.status === "accepted");
+  const { total: totalExpenses } = await bucketRepository.getFilteredBucketExpenseStats(
+    bucketId,
+    {},
+  );
+
+  const shares = toPercentageMap(bucket.shareConfiguration);
+  const defaultPct = acceptedMembers.length > 0 ? 100 / acceptedMembers.length : 0;
+  const totalPct = acceptedMembers.reduce(
+    (sum, m) => sum + (shares.get(m.userId.toString()) ?? defaultPct),
+    0,
+  );
+
+  const users = await bucketRepository.findUsersByIds(
+    acceptedMembers.map((m) => m.userId.toString()),
+  );
+  const userById = new Map(users.map((u) => [u._id.toString(), u]));
+
+  const members = acceptedMembers.map((m): MemberBalance => {
+    const percentage = shares.get(m.userId.toString()) ?? defaultPct;
+    const owedAmount = round2(totalPct > 0 ? totalExpenses * (percentage / totalPct) : 0);
+    const paidAmount = m.paidAmount ?? 0;
+    return {
+      memberId: m.userId.toString(),
+      memberName: userById.get(m.userId.toString())?.name ?? "",
+      percentage,
+      owedAmount,
+      paidAmount,
+      netBalance: calculateNetBalance(owedAmount, paidAmount),
+      upiId: m.upiId ?? "",
+    };
+  });
+
+  return {
+    members,
+    totalBucketOwed: members.reduce((sum, m) => sum + m.owedAmount, 0),
+    allMembersPaid: members.every((m) => m.netBalance <= 0),
+  };
+}
+
+async function closeBucket(
+  userId: string,
+  bucketId: string,
+): Promise<{ success: boolean; closedAt: Date; message: string }> {
+  const bucket = await requireOwner(userId, bucketId);
+
+  const balances = await getMemberBalances(userId, bucketId);
+  if (!balances.allMembersPaid) {
+    const stillOwes = balances.members.filter((m) => m.netBalance > 0).map((m) => m.memberName);
+    throw new AppError(
+      BUCKET_ERRORS.NOT_ALL_MEMBERS_PAID(stillOwes.join(", ")),
+      400,
+      ERROR_CODES.NOT_ALL_MEMBERS_PAID,
+    );
+  }
+
+  const now = new Date();
+  await bucketRepository.updateBucketClosedAt(bucketId, now);
+
+  await logAuditEvent({
+    actorId: userId,
+    bucketId,
+    action: AUDIT_ACTIONS.UPDATE,
+    entity: AUDIT_ENTITIES.BUCKET,
+    entityId: bucketId,
+    note: `Closed bucket "${bucket.name}" - all shares settled`,
+  });
+
+  return {
+    success: true,
+    closedAt: now,
+    message: `Bucket "${bucket.name}" closed successfully. All members have paid their shares.`,
+  };
+}
+
+/** A member updates their own UPI id (used to receive/collect payments). */
+async function updateMemberUpiId(
+  userId: string,
+  bucketId: string,
+  upiId: string,
+): Promise<BucketDetail> {
+  const bucket = await bucketRepository.findBucketById(bucketId);
+  if (!bucket) {
+    throw new AppError(BUCKET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
+  }
+  const member = bucket.members.find((m) => m.userId.toString() === userId);
+  if (!member || member.status !== "accepted") {
+    throw new AppError(BUCKET_ERRORS.NOT_MEMBER, 403, ERROR_CODES.NOT_A_MEMBER);
+  }
+
+  const updated = await bucketRepository.updateMemberUpiId(bucketId, userId, upiId);
+  if (!updated) {
+    throw new AppError(BUCKET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
+  }
+
+  await logAuditEvent({
+    actorId: userId,
+    bucketId,
+    action: AUDIT_ACTIONS.UPDATE,
+    entity: AUDIT_ENTITIES.MEMBER,
+    entityId: bucketId,
+    note: `Updated UPI id in "${bucket.name}"`,
+    metadata: { targetUserId: userId },
+  });
+
+  return toDetail(updated);
+}
+
 function toSummary(bucket: BucketDoc, userId: string): BucketSummary {
   const member = bucket.members.find((m) => m.userId.toString() === userId);
   return {
@@ -502,7 +711,7 @@ async function toDetail(bucket: BucketDoc): Promise<BucketDetail> {
     ownerName: owner ? userById.get(owner.userId.toString())?.name : undefined,
     isPersonal: bucket.isPersonal,
     memberCount: bucket.members.length,
-    members: bucket.members.map((m) => {
+    members: bucket.members.map((m: BucketMemberDoc) => {
       const user = userById.get(m.userId.toString());
       return {
         userId: m.userId.toString(),
@@ -510,6 +719,7 @@ async function toDetail(bucket: BucketDoc): Promise<BucketDetail> {
         username: user?.username,
         role: m.role,
         status: m.status,
+        upiId: m.upiId,
         invitedBy: m.invitedBy?.toString(),
         invitedAt: m.invitedAt?.toISOString(),
         joinedAt: m.joinedAt?.toISOString(),
@@ -546,6 +756,11 @@ const bucketService = {
   listIncomingRequests,
   acceptRequest,
   searchBuckets,
+  setMemberShares,
+  getMemberBalances,
+  closeBucket,
+  updateMemberUpiId,
 };
 
 export default bucketService;
+export { setMemberShares, getMemberBalances, closeBucket, updateMemberUpiId };
