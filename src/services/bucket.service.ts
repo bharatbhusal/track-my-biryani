@@ -524,16 +524,29 @@ async function setMemberShares(
     }
   }
 
-  const totalPercentage = Object.values(shares).reduce((sum, pct) => sum + pct, 0);
-  if (totalPercentage !== 100) {
+  // Round each share to 4dp first so long decimals (e.g. 33.333333 x 3) don't
+  // trip an exact float equality check.
+  const round4 = (pct: number) => Math.round(pct * 10_000) / 10_000;
+  const roundedShares = Object.fromEntries(
+    Object.entries(shares).map(([memberId, pct]) => [memberId, round4(pct)]),
+  );
+  const totalPercentage = Object.values(roundedShares).reduce((sum, pct) => sum + pct, 0);
+  if (Math.abs(totalPercentage - 100) > 0.001) {
     throw new AppError(
       BUCKET_ERRORS.SHARE_PERCENTAGE_INVALID(100),
       400,
       ERROR_CODES.SHARE_PERCENTAGE_INVALID,
     );
   }
+  if (totalPercentage !== 100) {
+    // Absorb the rounding drift into the last share so the stored sum is exactly 100.
+    const lastMemberId = Object.keys(roundedShares).at(-1)!;
+    roundedShares[lastMemberId] = Number(
+      (roundedShares[lastMemberId] + 100 - totalPercentage).toFixed(4),
+    );
+  }
 
-  const updated = await bucketRepository.updateBucketShareConfiguration(bucketId, shares);
+  const updated = await bucketRepository.updateBucketShareConfiguration(bucketId, roundedShares);
   if (!updated) {
     throw new AppError(BUCKET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
@@ -545,7 +558,7 @@ async function setMemberShares(
     entity: AUDIT_ENTITIES.BUCKET,
     entityId: bucketId,
     note: `Set member shares for "${bucket.name}"`,
-    metadata: { shareConfiguration: shares },
+    metadata: { shareConfiguration: roundedShares },
   });
 
   return toDetail(updated);

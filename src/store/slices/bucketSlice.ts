@@ -197,10 +197,21 @@ export const closeBucket = createAsyncThunk("buckets/close", async (id: string, 
   return result;
 });
 
+export const updateMemberUpiId = createAsyncThunk(
+  "buckets/updateMemberUpiId",
+  async (payload: { id: string; upiId: string }, { dispatch }) => {
+    const bucket = await bucketsApi.updateMemberUpiId(payload.id, payload.upiId);
+    dispatch(fetchBucketBalances(payload.id));
+    dispatch(fetchBucketDetail(payload.id));
+    return bucket;
+  },
+);
+
 export const setBucketShares = createAsyncThunk(
   "buckets/setShares",
   async (payload: { id: string; shares: Record<string, number> }, { dispatch }) => {
     const bucket = await bucketsApi.setMemberShares(payload.id, { shares: payload.shares });
+    dispatch(fetchBucketBalances(payload.id));
     dispatch(fetchBucketDetail(payload.id));
     return bucket;
   },
@@ -225,6 +236,7 @@ const bucketThunks = [
   fetchBucketSettlements,
   confirmSettlement,
   closeBucket,
+  updateMemberUpiId,
   setBucketShares,
 ];
 
