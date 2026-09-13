@@ -14,6 +14,10 @@ import { deleteBucket, leaveBucket } from "@/store/slices/bucketSlice";
 import { BucketForm, bucketErrorMessage } from "../bucket-form";
 import { BucketInviteDialog } from "./bucket-invite-dialog";
 import { BucketMembersDialog } from "./bucket-members-dialog";
+import { CloseBucketDialog } from "../dialog/close-bucket-dialog";
+import { SettlementsDialog } from "../dialog/settlements-dialog";
+import { SplitSharesDialog } from "../dialog/split-shares-dialog";
+import { UpiDialog } from "../dialog/upi-dialog";
 import type { BucketSummary } from "@/constants/types/bucket.types";
 
 type BucketCardProps = {
@@ -28,12 +32,17 @@ export function BucketCard({ bucket, onDelete, onLeave }: BucketCardProps) {
 
   const isOwner = bucket.role === "owner";
   const isPersonal = Boolean(bucket.isPersonal);
+  const isClosed = Boolean(bucket.closedAt);
 
   const [renaming, setRenaming] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [managing, setManaging] = useState(false);
+  const [splitSharesOpen, setSplitSharesOpen] = useState(false);
+  const [settlementsOpen, setSettlementsOpen] = useState(false);
+  const [upiOpen, setUpiOpen] = useState(false);
+  const [closeOpen, setCloseOpen] = useState(false);
 
   const handleDelete = async () => {
     if (!bucket._id) return;
@@ -65,6 +74,10 @@ export function BucketCard({ bucket, onDelete, onLeave }: BucketCardProps) {
     else if (value === "edit") setRenaming(true);
     else if (value === "leave") setLeaving(true);
     else if (value === "delete") setDeleting(true);
+    else if (value === "split-shares") setSplitSharesOpen(true);
+    else if (value === "settlements") setSettlementsOpen(true);
+    else if (value === "upi") setUpiOpen(true);
+    else if (value === "close") setCloseOpen(true);
   };
 
   const menuOptions = [
@@ -72,11 +85,25 @@ export function BucketCard({ bucket, onDelete, onLeave }: BucketCardProps) {
     ...(isOwner && !isPersonal
       ? [
           { value: "invite", label: "Invite" },
+          ...(!isClosed
+            ? [
+                { value: "split-shares", label: "Split Shares" },
+                { value: "close", label: "Close Bucket" },
+              ]
+            : []),
+          { value: "settlements", label: "Settlements" },
+          { value: "upi", label: "Update UPI" },
           { value: "edit", label: "Edit" },
           { value: "delete", label: "Delete" },
         ]
       : []),
-    ...(!isOwner && !isPersonal ? [{ value: "leave", label: "Leave" }] : []),
+    ...(!isOwner && !isPersonal
+      ? [
+          { value: "settlements", label: "Settlements" },
+          { value: "upi", label: "Update UPI" },
+          { value: "leave", label: "Leave" },
+        ]
+      : []),
   ];
 
   return (
@@ -144,6 +171,29 @@ export function BucketCard({ bucket, onDelete, onLeave }: BucketCardProps) {
         onConfirm={() => void handleLeave()}
         onCancel={() => setLeaving(false)}
       />
+
+      {isOwner && !isPersonal && !isClosed && (
+        <SplitSharesDialog
+          bucket={bucket}
+          open={splitSharesOpen}
+          onClose={() => setSplitSharesOpen(false)}
+        />
+      )}
+
+      {isOwner && !isPersonal && (
+        <CloseBucketDialog bucket={bucket} open={closeOpen} onClose={() => setCloseOpen(false)} />
+      )}
+
+      {!isPersonal && (
+        <>
+          <SettlementsDialog
+            bucket={bucket}
+            open={settlementsOpen}
+            onClose={() => setSettlementsOpen(false)}
+          />
+          <UpiDialog bucket={bucket} open={upiOpen} onClose={() => setUpiOpen(false)} />
+        </>
+      )}
     </>
   );
 }

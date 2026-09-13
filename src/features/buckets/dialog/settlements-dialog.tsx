@@ -8,14 +8,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/format";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchBucketSettlements } from "@/store/slices/bucketSlice";
-import type { BucketDetail } from "@/constants/types/bucket.types";
+import type { BucketDialogBucket } from "@/constants/types/bucket.types";
 
 export function SettlementsDialog({
   bucket,
   open,
   onClose,
 }: {
-  bucket: BucketDetail;
+  bucket: BucketDialogBucket;
   open: boolean;
   onClose: () => void;
 }) {
