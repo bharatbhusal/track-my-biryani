@@ -9,7 +9,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { closeBucket, fetchBucketBalances } from "@/store/slices/bucketSlice";
 import { bucketErrorMessage } from "../bucket-form";
-import type { BucketDetail } from "@/constants/types/bucket.types";
+import type { BucketDialogBucket } from "@/constants/types/bucket.types";
 
 export function CloseBucketDialog({
   bucket,
@@ -17,7 +17,7 @@ export function CloseBucketDialog({
   onClose,
   onClosed,
 }: {
-  bucket: BucketDetail;
+  bucket: BucketDialogBucket;
   open: boolean;
   onClose: () => void;
   onClosed?: () => void;

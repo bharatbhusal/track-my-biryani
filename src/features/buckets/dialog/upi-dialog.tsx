@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -11,14 +11,14 @@ import { bucketsApi } from "@/lib/api/buckets";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchBucketBalances, fetchBucketDetail } from "@/store/slices/bucketSlice";
 import { bucketErrorMessage } from "../bucket-form";
-import type { BucketDetail } from "@/constants/types/bucket.types";
+import type { BucketDialogBucket } from "@/constants/types/bucket.types";
 
 export function UpiDialog({
   bucket,
   open,
   onClose,
 }: {
-  bucket: BucketDetail;
+  bucket: BucketDialogBucket;
   open: boolean;
   onClose: () => void;
 }) {
@@ -37,11 +37,29 @@ export function UpiDialog({
   );
 }
 
-function UpiForm({ bucket, onSaved }: { bucket: BucketDetail; onSaved: () => void }) {
+function UpiForm({ bucket, onSaved }: { bucket: BucketDialogBucket; onSaved: () => void }) {
   const dispatch = useAppDispatch();
   const myId = useAppSelector((s) => s.auth.user?.id);
-  const currentUpiId = bucket.members.find((m) => m.userId === myId)?.upiId ?? "";
-  const [upiId, setUpiId] = useState(currentUpiId);
+  const [upiId, setUpiId] = useState("");
+
+  // A BucketSummary has no members — pull the current user's UPI id from the
+  // balances fetch (member roster + upiId live there).
+  useEffect(() => {
+    let stale = false;
+    dispatch(fetchBucketBalances(bucket._id))
+      .unwrap()
+      .then((r) => {
+        if (stale) return;
+        setUpiId(r.members.find((m) => m.memberId === myId)?.upiId ?? "");
+      })
+      .catch(() => {
+        // balances stay empty; the form degrades to a blank input
+      });
+    return () => {
+      stale = true;
+    };
+  }, [bucket._id, dispatch, myId]);
+
   const [saving, setSaving] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -67,10 +85,9 @@ function UpiForm({ bucket, onSaved }: { bucket: BucketDetail; onSaved: () => voi
 
   return (
     <>
-      {currentUpiId && (
+      {upiId && (
         <p className="mb-3 rounded-xl border border-[var(--color-border)] px-3 py-2 text-xs text-[var(--color-muted)]">
-          Currently set:{" "}
-          <span className="font-medium text-[var(--color-text)]">{currentUpiId}</span>
+          Currently set: <span className="font-medium text-[var(--color-text)]">{upiId}</span>
         </p>
       )}
       <label className="space-y-1.5">

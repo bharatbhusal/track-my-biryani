@@ -55,6 +55,10 @@ export type BucketDetail = {
   closedAt?: string; // ISO date, present once bucket is closed
 };
 
+// Minimal bucket shape for action dialogs opened from a card, which only has a
+// BucketSummary (no `members`). Dialogs that need member rows fetch balances themselves.
+export type BucketDialogBucket = Pick<BucketDetail, "_id" | "name" | "role" | "closedAt">;
+
 export type BucketPreview = {
   _id: string;
   name: string;
