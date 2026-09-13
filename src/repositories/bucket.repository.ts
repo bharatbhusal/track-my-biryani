@@ -5,7 +5,7 @@ import { BucketModel } from "@/models/Bucket";
 import { ExpenseModel } from "@/models/Expense";
 import { UserModel } from "@/models/User";
 import type { BucketSearchRequest, SearchResult } from "@/constants/types/search.types";
-import type { BucketSummary } from "@/constants/types/bucket.types";
+import type { BucketLifecycleStatus, BucketSummary } from "@/constants/types/bucket.types";
 
 export type BucketMemberDoc = {
   userId: Types.ObjectId;
@@ -27,6 +27,7 @@ export type BucketDoc = {
   isPersonal?: boolean;
   members: BucketMemberDoc[];
   closedAt?: Date;
+  status?: BucketLifecycleStatus;
   shareConfiguration?: Map<string, number> | Record<string, number>;
   createdAt?: Date;
   updatedAt?: Date;
@@ -154,6 +155,26 @@ export async function updateBucketClosedAt(id: string, closedAt: Date) {
   const bucket = await BucketModel.findByIdAndUpdate(
     id,
     { $set: { closedAt } },
+    { new: true, lean: true },
+  );
+  return (bucket as unknown as BucketDoc | null) ?? null;
+}
+
+export function resolveBucketStatus(bucket: {
+  status?: BucketLifecycleStatus;
+  closedAt?: Date;
+}): BucketLifecycleStatus {
+  // ponytail: legacy docs predate `status`; closedAt-set buckets are de-facto closed.
+  return bucket.status ?? (bucket.closedAt ? "close" : "live");
+}
+
+export async function updateBucketStatus(id: string, status: BucketLifecycleStatus) {
+  if (!Types.ObjectId.isValid(id)) {
+    return null;
+  }
+  const bucket = await BucketModel.findByIdAndUpdate(
+    id,
+    { $set: { status } },
     { new: true, lean: true },
   );
   return (bucket as unknown as BucketDoc | null) ?? null;
@@ -333,6 +354,7 @@ export async function searchBuckets(
         expenseCount: bucket.expenseCount,
         createdAt: bucket.createdAt?.toISOString(),
         closedAt: bucket.closedAt?.toISOString(),
+        lifecycleStatus: resolveBucketStatus(bucket),
         role: (member?.role ?? "member") as "owner" | "member",
         status: (member?.status ?? "pending") as "pending" | "accepted",
       } satisfies BucketSummary;
@@ -372,6 +394,7 @@ const bucketRepository = {
   updateBucketShareConfiguration,
   updateMemberUpiId,
   updateBucketClosedAt,
+  updateBucketStatus,
   deleteBucket,
   addBucketMember,
   acceptBucketMember,
