@@ -20,6 +20,7 @@ import categoryRepository from "@/repositories/category.repository";
 import expenseRepository from "@/repositories/expense.repository";
 import { findBucketById } from "@/repositories/bucket.repository";
 import userRepository from "@/repositories/user.repository";
+import { assertActionAllowed } from "@/services/bucket-status.service";
 import { logAuditEvent } from "@/services/audit.service";
 import { randomHexColor } from "@/lib/utils";
 import type { CategoryStatsSummary } from "@/constants/types/analytics.types";
@@ -73,6 +74,9 @@ async function createCategory(auth: AuthUser, body: unknown) {
     throw new AppError(BUCKET_ERRORS.NOT_MEMBER, 403, ERROR_CODES.NOT_A_MEMBER);
   }
 
+  const bucket = await findBucketById(payload.bucketId);
+  if (bucket) assertActionAllowed(bucket, "category.create");
+
   const existing = await userRepository.findUserById(userId);
   if (!existing) {
     throw new AppError(USER_ERRORS.DOESNT_EXIST, 409, ERROR_CODES.USER_DOESNT_EXIST);
@@ -119,6 +123,13 @@ async function updateCategory(userId: string, categoryId: string, body: unknown)
 
   if (!validSet.has(targetBucketId)) {
     throw new AppError(BUCKET_ERRORS.NOT_MEMBER, 403, ERROR_CODES.NOT_A_MEMBER);
+  }
+
+  const currentBucket = await findBucketById(currentBucketId);
+  if (currentBucket) assertActionAllowed(currentBucket, "category.update");
+  if (targetBucketId !== currentBucketId) {
+    const targetBucket = await findBucketById(targetBucketId);
+    if (targetBucket) assertActionAllowed(targetBucket, "category.update");
   }
 
   const category = await categoryRepository.updateCategory(categoryId, currentBucketId, {
@@ -170,6 +181,9 @@ async function updateCategory(userId: string, categoryId: string, body: unknown)
 async function deleteCategory(userId: string, categoryId: string) {
   const validBuckets = await getValidBuckets(userId);
   const category = await assertCategoryCreator(userId, categoryId, validBuckets);
+
+  const bucket = await findBucketById(category.bucketId.toString());
+  if (bucket) assertActionAllowed(bucket, "category.delete");
 
   if (await categoryRepository.hasCategoryExpenses(categoryId, category.bucketId.toString())) {
     throw new AppError(CATEGORY_ERRORS.HAS_EXPENSES, 400, ERROR_CODES.HAS_EXPENSES);

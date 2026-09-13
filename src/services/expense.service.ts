@@ -16,6 +16,7 @@ import {
   getCategoryById,
 } from "@/repositories/category.repository";
 import { findBucketById, isMember } from "@/repositories/bucket.repository";
+import { assertActionAllowed } from "@/services/bucket-status.service";
 import { logAuditEvent } from "@/services/audit.service";
 import type { ExpenseSearchRequest } from "@/constants/types/search.types";
 import { AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/constants/types/audit.types";
@@ -37,9 +38,7 @@ async function createExpense(authUser: AuthUser, body: unknown) {
   }
 
   const bucket = await findBucketById(payload.bucketId);
-  if (bucket?.closedAt) {
-    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
-  }
+  if (bucket) assertActionAllowed(bucket, "expense.create");
 
   const expense = await expenseRepository.createExpense({
     userId: authUser.id,
@@ -89,9 +88,7 @@ async function updateExpense(userId: string, expenseId: string, body: unknown) {
   }
 
   const sourceBucket = await findBucketById(current.bucketId.toString());
-  if (sourceBucket?.closedAt) {
-    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
-  }
+  if (sourceBucket) assertActionAllowed(sourceBucket, "expense.update");
 
   const targetBucketId = payload.bucketId ? String(payload.bucketId) : current.bucketId.toString();
 
@@ -101,9 +98,7 @@ async function updateExpense(userId: string, expenseId: string, body: unknown) {
 
   if (targetBucketId !== current.bucketId.toString()) {
     const destBucket = await findBucketById(targetBucketId);
-    if (destBucket?.closedAt) {
-      throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
-    }
+    if (destBucket) assertActionAllowed(destBucket, "expense.update");
   }
 
   let categoryId: string;
@@ -186,9 +181,7 @@ async function deleteExpense(userId: string, expenseId: string) {
     throw new AppError(EXPENSE_ERRORS.NOT_OWNER_DELETE, 403, ERROR_CODES.NOT_OWNER);
   }
   const bucket = await findBucketById(existing.bucketId.toString());
-  if (bucket?.closedAt) {
-    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
-  }
+  if (bucket) assertActionAllowed(bucket, "expense.delete");
   const deleted = await expenseRepository.deleteExpense(userId, expenseId);
   if (!deleted) {
     throw new AppError(EXPENSE_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
