@@ -4,9 +4,11 @@ import { sortForVariant } from "@/components/filters/variants";
 import { bucketCriteria } from "@/lib/filters";
 import type { RootState } from "@/store";
 import type {
+  BucketBalances,
   BucketDetail,
   BucketSummary,
   IncomingRequestsGroup,
+  SettlementItem,
 } from "@/constants/types/bucket.types";
 
 type BucketState = {
@@ -15,6 +17,8 @@ type BucketState = {
   invitations: BucketSummary[];
   incomingRequests: IncomingRequestsGroup[];
   currentBucket: BucketDetail | null;
+  balances: BucketBalances | null;
+  settlements: SettlementItem[];
   loading: boolean;
   error: string | null;
 };
@@ -25,6 +29,8 @@ const initialState: BucketState = {
   invitations: [],
   incomingRequests: [],
   currentBucket: null,
+  balances: null,
+  settlements: [],
   loading: false,
   error: null,
 };
@@ -163,6 +169,43 @@ export const declineIncomingRequest = createAsyncThunk(
   },
 );
 
+export const fetchBucketBalances = createAsyncThunk("buckets/fetchBalances", (id: string) =>
+  bucketsApi.getMemberBalances(id),
+);
+
+export const fetchBucketSettlements = createAsyncThunk("buckets/fetchSettlements", (id: string) =>
+  bucketsApi.getSettlements(id),
+);
+
+export const confirmSettlement = createAsyncThunk(
+  "buckets/confirmSettlement",
+  async (payload: { id: string; fromUserId: string; note?: string }, { dispatch }) => {
+    const settlement = await bucketsApi.confirmSettlement(payload.id, {
+      fromUserId: payload.fromUserId,
+      note: payload.note,
+    });
+    dispatch(fetchBucketBalances(payload.id));
+    dispatch(fetchBucketSettlements(payload.id));
+    return settlement;
+  },
+);
+
+export const closeBucket = createAsyncThunk("buckets/close", async (id: string, { dispatch }) => {
+  const result = await bucketsApi.closeBucket(id);
+  dispatch(fetchAllBuckets());
+  dispatch(fetchBucketDetail(id));
+  return result;
+});
+
+export const setBucketShares = createAsyncThunk(
+  "buckets/setShares",
+  async (payload: { id: string; shares: Record<string, number> }, { dispatch }) => {
+    const bucket = await bucketsApi.setMemberShares(payload.id, { shares: payload.shares });
+    dispatch(fetchBucketDetail(payload.id));
+    return bucket;
+  },
+);
+
 const bucketThunks = [
   fetchBuckets,
   fetchInvitations,
@@ -178,6 +221,11 @@ const bucketThunks = [
   fetchIncomingRequests,
   acceptIncomingRequest,
   declineIncomingRequest,
+  fetchBucketBalances,
+  fetchBucketSettlements,
+  confirmSettlement,
+  closeBucket,
+  setBucketShares,
 ];
 
 const bucketSlice = createSlice({
@@ -225,6 +273,27 @@ const bucketSlice = createSlice({
       })
       .addCase(fetchIncomingRequests.fulfilled, (state, action) => {
         state.incomingRequests = action.payload;
+      })
+      .addCase(fetchBucketBalances.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(fetchBucketBalances.fulfilled, (state, action) => {
+        state.balances = action.payload;
+      })
+      .addCase(fetchBucketSettlements.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(fetchBucketSettlements.fulfilled, (state, action) => {
+        state.settlements = action.payload;
+      })
+      .addCase(confirmSettlement.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(closeBucket.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(setBucketShares.pending, (state) => {
+        state.error = null;
       })
       .addMatcher(isAnyOf(...bucketThunks.map((t) => t.rejected)), (state, action) => {
         state.loading = false;

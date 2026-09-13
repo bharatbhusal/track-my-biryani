@@ -29,6 +29,7 @@ export type BucketSummary = {
   createdAt?: string;
   role: BucketRole;
   status: BucketStatus;
+  closedAt?: string; // ISO date, present once bucket is closed
 };
 
 export type BucketsListPayload = {
@@ -51,6 +52,7 @@ export type BucketDetail = {
   members: BucketMemberWithName[];
   createdAt?: string;
   updatedAt?: string;
+  closedAt?: string; // ISO date, present once bucket is closed
 };
 
 export type BucketPreview = {
@@ -65,19 +67,43 @@ export type BucketPreview = {
   status?: BucketStatus;
 };
 
-export type MemberShare = {
+export type MemberBalance = {
   memberId: string;
   memberName: string;
   percentage: number;
   owedAmount: number;
   paidAmount: number;
   netBalance: number;
+  upiId: string;
 };
 
-export type BucketSharesSummary = {
-  totalOwed: number;
-  allMembersPaid: boolean;
-  individualShares: MemberShare[];
+export type DebtEdge = {
+  fromUserId: string;
+  fromName: string;
+  toUserId: string;
+  toName: string;
+  amount: number;
+};
+
+export type BucketBalances = {
+  members: MemberBalance[];
+  debts: DebtEdge[]; // greedy simplified plan: "from pays to"
+  totalExpenses: number;
+  allMembersPaid: boolean; // every member's |netBalance| <= 0.01
+  closedAt?: string; // ISO date, present once bucket is closed
+};
+
+export type SettlementItem = {
+  _id: string;
+  bucketId: string;
+  fromUserId: string;
+  toUserId: string;
+  fromName?: string;
+  toName?: string;
+  amount: number;
+  note?: string;
+  confirmedBy: string;
+  confirmedAt: string;
 };
 
 export type IncomingRequestUser = {
