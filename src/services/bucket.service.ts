@@ -560,7 +560,8 @@ export type BucketBalances = {
 /**
  * Balances for every accepted member.
  * owedAmount = totalBucketExpenses * (member% / sum of all member%).
- * No pre-join proration yet; paidAmount comes from the member doc.
+ * No pre-join proration yet; the Bucket member schema has no paidAmount, so
+ * it is always 0 until a per-payer payment ledger lands.
  */
 async function getMemberBalances(userId: string, bucketId: string): Promise<BucketBalances> {
   const bucket = await bucketRepository.findBucketById(bucketId);
@@ -594,7 +595,8 @@ async function getMemberBalances(userId: string, bucketId: string): Promise<Buck
   const members = acceptedMembers.map((m): MemberBalance => {
     const percentage = shares.get(m.userId.toString()) ?? defaultPct;
     const owedAmount = round2(totalPct > 0 ? totalExpenses * (percentage / totalPct) : 0);
-    const paidAmount = m.paidAmount ?? 0;
+    // ponytail: member doc never had paidAmount; always 0 until payments are modeled
+    const paidAmount = 0;
     return {
       memberId: m.userId.toString(),
       memberName: userById.get(m.userId.toString())?.name ?? "",

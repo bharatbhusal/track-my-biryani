@@ -17,7 +17,6 @@ export type BucketMemberDoc = {
   upiId?: string;
   name?: string;
   percentageShare?: number;
-  paidAmount?: number;
 };
 
 export type BucketDoc = {
