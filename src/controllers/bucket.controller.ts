@@ -137,6 +137,25 @@ async function updateMemberUpiId(
   return bucketService.updateMemberUpiId(auth.id, id, body.upiId);
 }
 
+async function confirmSettlement(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
+  const auth = await getAuthPayload();
+  const { id } = await context.params;
+  const body = await request.json();
+  return bucketService.confirmSettlement(auth.id, id, body);
+}
+
+async function listSettlements(
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
+  const auth = await getAuthPayload();
+  const { id } = await context.params;
+  return bucketService.listSettlements(auth.id, id);
+}
+
 const bucketController = {
   searchBuckets,
   listBuckets,
@@ -157,6 +176,8 @@ const bucketController = {
   getMemberBalances,
   closeBucket,
   updateMemberUpiId,
+  confirmSettlement,
+  listSettlements,
 };
 
 export default bucketController;

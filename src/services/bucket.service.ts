@@ -17,22 +17,23 @@ import {
   deleteCategoriesByBucket,
 } from "@/repositories/category.repository";
 import userRepository from "@/repositories/user.repository";
+import expenseRepository from "@/repositories/expense.repository";
+import settlementRepository, { type SettlementDoc } from "@/repositories/settlement.repository";
+import { computeSettlement, findOutstandingDebt } from "@/lib/settle";
 import { logAuditEvent } from "@/services/audit.service";
 import type {
+  BucketBalances,
   BucketDetail,
   BucketPreview,
   BucketSummary,
   BucketsListPayload,
+  DebtEdge,
   IncomingRequestsGroup,
+  MemberBalance,
+  SettlementItem,
 } from "@/constants/types/bucket.types";
 import type { BucketSearchRequest, ExpenseFilterCriteria } from "@/constants/types/search.types";
 import { AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/constants/types/audit.types";
-
-/**
- * Share calculation (simple for now):
- * total bucket expenses are divided among accepted members by their % shares.
- * Default share = equal split. Pre-join expense proration is NOT applied yet.
- */
 
 function toPercentageMap(config: BucketDoc["shareConfiguration"]): Map<string, number> {
   const map = new Map<string, number>();
@@ -45,17 +46,6 @@ function toPercentageMap(config: BucketDoc["shareConfiguration"]): Map<string, n
     }
   }
   return map;
-}
-
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
-}
-
-/**
- * Calculates the net balance for a member (owed - paid)
- */
-export function calculateNetBalance(owedAmount: number, paidAmount: number): number {
-  return round2(owedAmount - paidAmount);
 }
 
 async function listBuckets(userId: string): Promise<BucketsListPayload> {
@@ -189,6 +179,9 @@ async function deleteBucket(userId: string, bucketId: string) {
 async function inviteUser(userId: string, bucketId: string, body: unknown): Promise<BucketDetail> {
   const payload = inviteSchema.parse(body);
   const bucket = await requireOwner(userId, bucketId);
+  if (bucket.closedAt) {
+    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
+  }
 
   const user = await userRepository.findUserByUsername(payload.username);
   if (!user) {
@@ -225,6 +218,9 @@ async function inviteUser(userId: string, bucketId: string, body: unknown): Prom
 
 async function acceptInvite(userId: string, bucketId: string): Promise<BucketDetail> {
   const bucketDoc = await requirePendingMember(userId, bucketId);
+  if (bucketDoc.closedAt) {
+    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
+  }
   const member = bucketDoc.members.find((m) => m.userId.toString() === userId);
   if (member?.invitedBy && member.invitedBy.toString() === userId) {
     throw new AppError(BUCKET_ERRORS.REQUEST_PENDING, 403, ERROR_CODES.REQUEST_PENDING);
@@ -358,6 +354,9 @@ async function requestToJoin(userId: string, bucketId: string): Promise<BucketPr
   if (bucket.isPersonal) {
     throw new AppError(BUCKET_ERRORS.IS_PERSONAL, 400, ERROR_CODES.BUCKET_IS_PERSONAL);
   }
+  if (bucket.closedAt) {
+    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
+  }
   const existing = bucket.members.find((m) => m.userId.toString() === userId);
   if (existing) {
     if (existing.status === "accepted") {
@@ -428,6 +427,9 @@ async function acceptRequest(
   targetUserId: string,
 ): Promise<BucketDetail> {
   const bucket = await requireOwner(ownerId, bucketId);
+  if (bucket.closedAt) {
+    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
+  }
   const member = bucket.members.find((m) => m.userId.toString() === targetUserId);
   if (!member) {
     throw new AppError(BUCKET_ERRORS.REQUEST_NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
@@ -504,12 +506,20 @@ async function setMemberShares(
   shares: Record<string, number>,
 ): Promise<BucketDetail> {
   const bucket = await requireOwner(userId, bucketId);
+  if (bucket.closedAt) {
+    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
+  }
 
   const acceptedIds = new Set(
     bucket.members.filter((m) => m.status === "accepted").map((m) => m.userId.toString()),
   );
   for (const [memberId, pct] of Object.entries(shares)) {
     if (!acceptedIds.has(memberId) || typeof pct !== "number" || pct < 0) {
+      throw new AppError(BUCKET_ERRORS.MEMBER_NOT_FOUND, 400, ERROR_CODES.NOT_FOUND);
+    }
+  }
+  for (const memberId of acceptedIds) {
+    if (!(memberId in shares)) {
       throw new AppError(BUCKET_ERRORS.MEMBER_NOT_FOUND, 400, ERROR_CODES.NOT_FOUND);
     }
   }
@@ -541,28 +551,68 @@ async function setMemberShares(
   return toDetail(updated);
 }
 
-export type MemberBalance = {
-  memberId: string;
-  memberName: string;
-  percentage: number;
-  owedAmount: number;
-  paidAmount: number;
-  netBalance: number;
-  upiId: string;
-};
-
-export type BucketBalances = {
-  members: MemberBalance[];
-  totalBucketOwed: number;
-  allMembersPaid: boolean;
-};
-
 /**
- * Balances for every accepted member.
- * owedAmount = totalBucketExpenses * (member% / sum of all member%).
- * No pre-join proration yet; the Bucket member schema has no paidAmount, so
- * it is always 0 until a per-payer payment ledger lands.
+ * Balances for every accepted member, computed from real expenses and confirmed
+ * peer settlements via `computeSettlement` (join-date proration included).
  */
+async function computeBucketBalances(bucket: BucketDoc): Promise<BucketBalances> {
+  const accepted = bucket.members.filter((m) => m.status === "accepted");
+
+  const settleMembers = accepted.map((m) => ({
+    userId: m.userId.toString(),
+    joinedAt: m.joinedAt,
+  }));
+  const expenses = (await expenseRepository.listExpensesForBucket(bucket._id.toString())).map(
+    (e) => ({ userId: e.userId.toString(), amount: e.amount, paidAt: new Date(e.paidAt) }),
+  );
+  const settlements = (await settlementRepository.listSettlements(bucket._id.toString())).map(
+    (s) => ({
+      fromUserId: s.fromUserId.toString(),
+      toUserId: s.toUserId.toString(),
+      amount: s.amount,
+    }),
+  );
+
+  const shares = toPercentageMap(bucket.shareConfiguration);
+  const result = computeSettlement({
+    members: settleMembers,
+    shares: Object.fromEntries(shares),
+    expenses,
+    settlements,
+    bucketCreatedAt: bucket.createdAt ?? new Date(0),
+  });
+
+  const users = await bucketRepository.findUsersByIds(result.members.map((m) => m.memberId));
+  const userById = new Map(users.map((u) => [u._id.toString(), u]));
+  const defaultPct = accepted.length > 0 ? 100 / accepted.length : 0;
+  const memberById = new Map(accepted.map((m) => [m.userId.toString(), m]));
+
+  const members: MemberBalance[] = result.members.map((m) => ({
+    memberId: m.memberId,
+    memberName: userById.get(m.memberId)?.name ?? "",
+    percentage: shares.get(m.memberId) ?? defaultPct,
+    owedAmount: m.owedAmount,
+    paidAmount: m.paidAmount,
+    netBalance: m.netBalance,
+    upiId: memberById.get(m.memberId)?.upiId ?? "",
+  }));
+
+  const debts: DebtEdge[] = result.debtPlan.map((edge) => ({
+    fromUserId: edge.fromUserId,
+    fromName: userById.get(edge.fromUserId)?.name ?? "",
+    toUserId: edge.toUserId,
+    toName: userById.get(edge.toUserId)?.name ?? "",
+    amount: edge.amount,
+  }));
+
+  return {
+    members,
+    debts,
+    totalExpenses: result.totalExpenses,
+    allMembersPaid: result.allSettled,
+  };
+}
+
 async function getMemberBalances(userId: string, bucketId: string): Promise<BucketBalances> {
   const bucket = await bucketRepository.findBucketById(bucketId);
   if (!bucket) {
@@ -574,45 +624,111 @@ async function getMemberBalances(userId: string, bucketId: string): Promise<Buck
     throw new AppError(BUCKET_ERRORS.NOT_MEMBER, 403, ERROR_CODES.NOT_A_MEMBER);
   }
 
-  const acceptedMembers = bucket.members.filter((m) => m.status === "accepted");
-  const { total: totalExpenses } = await bucketRepository.getFilteredBucketExpenseStats(
+  const balances = await computeBucketBalances(bucket);
+  return { ...balances, closedAt: bucket.closedAt?.toISOString() };
+}
+
+function toSettlementItem(
+  settlement: SettlementDoc,
+  userById: Map<string, { name?: string; username?: string }>,
+): SettlementItem {
+  return {
+    _id: settlement._id.toString(),
+    bucketId: settlement.bucketId.toString(),
+    fromUserId: settlement.fromUserId.toString(),
+    toUserId: settlement.toUserId.toString(),
+    fromName: userById.get(settlement.fromUserId.toString())?.name,
+    toName: userById.get(settlement.toUserId.toString())?.name,
+    amount: settlement.amount,
+    note: settlement.note,
+    confirmedBy: settlement.confirmedBy.toString(),
+    confirmedAt: (settlement.confirmedAt ?? settlement.createdAt ?? new Date()).toISOString(),
+  };
+}
+
+/**
+ * The creditor confirms they received the planned settlement from `fromUserId`.
+ * The amount is taken from the debt plan, never from the client.
+ */
+async function confirmSettlement(
+  userId: string,
+  bucketId: string,
+  body: { fromUserId?: string; note?: string },
+): Promise<SettlementItem> {
+  const bucket = await bucketRepository.findBucketById(bucketId);
+  if (!bucket) {
+    throw new AppError(BUCKET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
+  }
+  if (bucket.closedAt) {
+    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
+  }
+
+  const fromUserId = body?.fromUserId ?? "";
+  const creditor = bucket.members.find((m) => m.userId.toString() === userId);
+  if (!creditor || creditor.status !== "accepted") {
+    throw new AppError(BUCKET_ERRORS.NOT_MEMBER, 403, ERROR_CODES.NOT_A_MEMBER);
+  }
+  const debtor = bucket.members.find((m) => m.userId.toString() === fromUserId);
+  if (!debtor || debtor.status !== "accepted") {
+    throw new AppError(BUCKET_ERRORS.MEMBER_NOT_FOUND, 403, ERROR_CODES.NOT_FOUND);
+  }
+
+  const balances = await computeBucketBalances(bucket);
+  const outstanding = findOutstandingDebt(balances.debts, fromUserId, userId);
+  if (outstanding === null || outstanding <= 0.01) {
+    throw new AppError(
+      BUCKET_ERRORS.SETTLEMENT_NOTHING_TO_CONFIRM,
+      400,
+      ERROR_CODES.SETTLEMENT_NOTHING_TO_CONFIRM,
+    );
+  }
+
+  const created = await settlementRepository.createSettlement({
     bucketId,
-    {},
-  );
-
-  const shares = toPercentageMap(bucket.shareConfiguration);
-  const defaultPct = acceptedMembers.length > 0 ? 100 / acceptedMembers.length : 0;
-  const totalPct = acceptedMembers.reduce(
-    (sum, m) => sum + (shares.get(m.userId.toString()) ?? defaultPct),
-    0,
-  );
-
-  const users = await bucketRepository.findUsersByIds(
-    acceptedMembers.map((m) => m.userId.toString()),
-  );
-  const userById = new Map(users.map((u) => [u._id.toString(), u]));
-
-  const members = acceptedMembers.map((m): MemberBalance => {
-    const percentage = shares.get(m.userId.toString()) ?? defaultPct;
-    const owedAmount = round2(totalPct > 0 ? totalExpenses * (percentage / totalPct) : 0);
-    // ponytail: member doc never had paidAmount; always 0 until payments are modeled
-    const paidAmount = 0;
-    return {
-      memberId: m.userId.toString(),
-      memberName: userById.get(m.userId.toString())?.name ?? "",
-      percentage,
-      owedAmount,
-      paidAmount,
-      netBalance: calculateNetBalance(owedAmount, paidAmount),
-      upiId: m.upiId ?? "",
-    };
+    fromUserId,
+    toUserId: userId,
+    amount: outstanding,
+    note: body?.note,
+    confirmedBy: userId,
+    confirmedAt: new Date(),
   });
 
-  return {
-    members,
-    totalBucketOwed: members.reduce((sum, m) => sum + m.owedAmount, 0),
-    allMembersPaid: members.every((m) => m.netBalance <= 0),
-  };
+  const users = await bucketRepository.findUsersByIds([fromUserId, userId]);
+  const userById = new Map(users.map((u) => [u._id.toString(), u]));
+
+  await logAuditEvent({
+    actorId: userId,
+    bucketId,
+    action: AUDIT_ACTIONS.UPDATE,
+    entity: AUDIT_ENTITIES.MEMBER,
+    entityId: bucketId,
+    note: `Received ${outstanding} from ${userById.get(fromUserId)?.name ?? ""} in "${bucket.name}"`,
+    metadata: { amount: outstanding, targetUserId: fromUserId },
+  });
+
+  return toSettlementItem(created, userById);
+}
+
+async function listSettlements(userId: string, bucketId: string): Promise<SettlementItem[]> {
+  const bucket = await bucketRepository.findBucketById(bucketId);
+  if (!bucket) {
+    throw new AppError(BUCKET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
+  }
+  const member = bucket.members.find((m) => m.userId.toString() === userId);
+  if (!member || member.status !== "accepted") {
+    throw new AppError(BUCKET_ERRORS.NOT_MEMBER, 403, ERROR_CODES.NOT_A_MEMBER);
+  }
+
+  const settlements = await settlementRepository.listSettlements(bucketId);
+  if (settlements.length === 0) return [];
+
+  const userIds = [
+    ...new Set(settlements.flatMap((s) => [s.fromUserId.toString(), s.toUserId.toString()])),
+  ];
+  const users = await bucketRepository.findUsersByIds(userIds);
+  const userById = new Map(users.map((u) => [u._id.toString(), u]));
+
+  return settlements.map((s) => toSettlementItem(s, userById));
 }
 
 async function closeBucket(
@@ -620,8 +736,11 @@ async function closeBucket(
   bucketId: string,
 ): Promise<{ success: boolean; closedAt: Date; message: string }> {
   const bucket = await requireOwner(userId, bucketId);
+  if (bucket.closedAt) {
+    throw new AppError(BUCKET_ERRORS.BUCKET_ALREADY_CLOSED, 400, ERROR_CODES.BUCKET_ALREADY_CLOSED);
+  }
 
-  const balances = await getMemberBalances(userId, bucketId);
+  const balances = await computeBucketBalances(bucket);
   if (!balances.allMembersPaid) {
     const stillOwes = balances.members.filter((m) => m.netBalance > 0).map((m) => m.memberName);
     throw new AppError(
@@ -664,6 +783,9 @@ async function updateMemberUpiId(
   if (!member || member.status !== "accepted") {
     throw new AppError(BUCKET_ERRORS.NOT_MEMBER, 403, ERROR_CODES.NOT_A_MEMBER);
   }
+  if (bucket.closedAt) {
+    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
+  }
 
   const updated = await bucketRepository.updateMemberUpiId(bucketId, userId, upiId);
   if (!updated) {
@@ -694,6 +816,7 @@ function toSummary(bucket: BucketDoc, userId: string): BucketSummary {
     memberCount: bucket.members.length,
     role: member?.role ?? "member",
     status: member?.status ?? "pending",
+    closedAt: bucket.closedAt?.toISOString(),
   };
 }
 
@@ -729,6 +852,7 @@ async function toDetail(bucket: BucketDoc): Promise<BucketDetail> {
     }),
     createdAt: bucket.createdAt?.toISOString(),
     updatedAt: bucket.updatedAt?.toISOString(),
+    closedAt: bucket.closedAt?.toISOString(),
   };
 }
 
@@ -762,7 +886,16 @@ const bucketService = {
   getMemberBalances,
   closeBucket,
   updateMemberUpiId,
+  confirmSettlement,
+  listSettlements,
 };
 
 export default bucketService;
-export { setMemberShares, getMemberBalances, closeBucket, updateMemberUpiId };
+export {
+  setMemberShares,
+  getMemberBalances,
+  closeBucket,
+  updateMemberUpiId,
+  confirmSettlement,
+  listSettlements,
+};

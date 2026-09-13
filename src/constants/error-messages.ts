@@ -136,7 +136,11 @@ const BUCKET_ERRORS = {
   OWNER_ONLY: "Only the bucket owner can perform this action",
   NOT_INVITED: "You were not invited to this bucket",
   SHARE_PERCENTAGE_INVALID: (expected: number) => `Share percentages must sum to ${expected}%`,
-  NOT_ALL_MEMBERS_PAID: (names: string) => `Not all members have paid their shares. Still owed: ${names}`,
+  NOT_ALL_MEMBERS_PAID: (names: string) =>
+    `Not all members have paid their shares. Still owed: ${names}`,
+  BUCKET_CLOSED: "This bucket is closed and locked",
+  BUCKET_ALREADY_CLOSED: "This bucket is already closed",
+  SETTLEMENT_NOTHING_TO_CONFIRM: "Nothing to confirm for this member",
 } as const;
 
 // ─────────────────────────────────────────────
@@ -177,6 +181,9 @@ const ERROR_CODES = {
   INVALID_SORT_FIELD: "INVALID_SORT_FIELD",
   SHARE_PERCENTAGE_INVALID: "SHARE_PERCENTAGE_INVALID",
   NOT_ALL_MEMBERS_PAID: "NOT_ALL_MEMBERS_PAID",
+  BUCKET_CLOSED: "BUCKET_CLOSED",
+  BUCKET_ALREADY_CLOSED: "BUCKET_ALREADY_CLOSED",
+  SETTLEMENT_NOTHING_TO_CONFIRM: "SETTLEMENT_NOTHING_TO_CONFIRM",
 } as const;
 
 // ─────────────────────────────────────────────

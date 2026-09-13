@@ -4,7 +4,6 @@ import {
   CATEGORY_ERRORS,
   ERROR_CODES,
   EXPENSE_ERRORS,
-  USER_ERRORS,
 } from "@/constants/error-messages";
 import { chartOverviewSchema, expenseSchema, expenseSearchSchema } from "@/lib/validators";
 import { resolveDateRange } from "@/lib/date-range";
@@ -35,6 +34,11 @@ async function createExpense(authUser: AuthUser, body: unknown) {
 
   if (!categoryExists) {
     throw new AppError(CATEGORY_ERRORS.NOT_IN_BUCKET, 400, ERROR_CODES.CATEGORY_NOT_IN_BUCKET);
+  }
+
+  const bucket = await findBucketById(payload.bucketId);
+  if (bucket?.closedAt) {
+    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
   }
 
   const expense = await expenseRepository.createExpense({
@@ -84,10 +88,22 @@ async function updateExpense(userId: string, expenseId: string, body: unknown) {
     throw new AppError(EXPENSE_ERRORS.NOT_OWNER_UPDATE, 403, ERROR_CODES.NOT_OWNER);
   }
 
+  const sourceBucket = await findBucketById(current.bucketId.toString());
+  if (sourceBucket?.closedAt) {
+    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
+  }
+
   const targetBucketId = payload.bucketId ? String(payload.bucketId) : current.bucketId.toString();
 
   if (payload.bucketId && !validBuckets.map((id) => id.toString()).includes(targetBucketId)) {
     throw new AppError(BUCKET_ERRORS.NOT_MEMBER, 403, ERROR_CODES.NOT_A_MEMBER);
+  }
+
+  if (targetBucketId !== current.bucketId.toString()) {
+    const destBucket = await findBucketById(targetBucketId);
+    if (destBucket?.closedAt) {
+      throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
+    }
   }
 
   let categoryId: string;
@@ -168,6 +184,10 @@ async function deleteExpense(userId: string, expenseId: string) {
   }
   if (existing.userId.toString() !== userId) {
     throw new AppError(EXPENSE_ERRORS.NOT_OWNER_DELETE, 403, ERROR_CODES.NOT_OWNER);
+  }
+  const bucket = await findBucketById(existing.bucketId.toString());
+  if (bucket?.closedAt) {
+    throw new AppError(BUCKET_ERRORS.BUCKET_CLOSED, 403, ERROR_CODES.BUCKET_CLOSED);
   }
   const deleted = await expenseRepository.deleteExpense(userId, expenseId);
   if (!deleted) {

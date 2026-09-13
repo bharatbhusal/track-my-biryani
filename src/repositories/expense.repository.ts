@@ -141,6 +141,13 @@ async function listRecentExpenses(userId: string, limit = 5) {
   return ExpenseModel.find({ userId }).sort({ paidAt: -1 }).limit(limit).lean();
 }
 
+export async function listExpensesForBucket(bucketId: string) {
+  if (!Types.ObjectId.isValid(bucketId)) {
+    return [];
+  }
+  return ExpenseModel.find({ bucketId }).select("_id userId amount paidAt").lean();
+}
+
 async function listExpensesForRange(
   from: Date,
   to: Date,
@@ -806,6 +813,7 @@ const expenseRepository = {
   getExpenseById,
   getExpenseByIdForMember,
   listRecentExpenses,
+  listExpensesForBucket,
   listExpensesForRange,
   aggregateRangeStats,
   getCategoryRangeStats,
