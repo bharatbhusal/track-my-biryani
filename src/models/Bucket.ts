@@ -44,6 +44,11 @@ const bucketSchema = new Schema(
       default: [],
     },
     closedAt: { type: Date },
+    status: {
+      type: String,
+      enum: ["live", "settlement-config", "settlement-live", "close"],
+      default: "live",
+    },
     shareConfiguration: { type: Map, of: Number },
   },
   { timestamps: true },
