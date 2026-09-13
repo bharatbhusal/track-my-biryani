@@ -63,7 +63,11 @@ function UpiForm({ bucket, onSaved }: { bucket: BucketDialogBucket; onSaved: () 
   const [saving, setSaving] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const valid = upiId.trim().length > 0 && upiId.includes("@") && !upiId.includes(" ");
+  const trimmed = upiId.trim();
+  // ponytail: UPI ids are either a phone number or a name@bank handle; no spaces
+  const isPhone = /^\+?\d{10,15}$/.test(trimmed);
+  const isValidUpiId = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9]+$/.test(trimmed);
+  const valid = trimmed.length > 0 && (isPhone || isValidUpiId);
 
   const handleSave = async () => {
     if (!valid) return;
@@ -71,7 +75,7 @@ function UpiForm({ bucket, onSaved }: { bucket: BucketDialogBucket; onSaved: () 
     setSaving(true);
     try {
       // ponytail: no updateMemberUpiId thunk in the store yet — hit the API and refresh the store slices directly
-      await bucketsApi.updateMemberUpiId(bucket._id, upiId.trim());
+      await bucketsApi.updateMemberUpiId(bucket._id, trimmed);
       dispatch(fetchBucketBalances(bucket._id));
       dispatch(fetchBucketDetail(bucket._id));
       toast.success("UPI id updated");
@@ -102,7 +106,8 @@ function UpiForm({ bucket, onSaved }: { bucket: BucketDialogBucket; onSaved: () 
         />
       </label>
       <p className="mt-2 text-xs text-[var(--color-muted)]">
-        Must be a valid UPI id — like <span className="tabular-nums">name@bank</span>.
+        Your UPI id or phone number — like <span className="tabular-nums">name@bank</span> or a
+        phone number linked to UPI.
       </p>
       <Button
         className="mt-3 w-full"

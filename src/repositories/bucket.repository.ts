@@ -318,7 +318,6 @@ export async function searchBuckets(
     ]),
     BucketModel.countDocuments(query),
   ]);
-
   return {
     items: items.map((bucket) => {
       const member = bucket.members.find((m: BucketMemberDoc) => m.userId.toString() === userId);
@@ -333,6 +332,7 @@ export async function searchBuckets(
         totalAmount: bucket.totalAmount,
         expenseCount: bucket.expenseCount,
         createdAt: bucket.createdAt?.toISOString(),
+        closedAt: bucket.closedAt?.toISOString(),
         role: (member?.role ?? "member") as "owner" | "member",
         status: (member?.status ?? "pending") as "pending" | "accepted",
       } satisfies BucketSummary;

@@ -22,7 +22,7 @@ function equalSharesFor(roster: MemberBalance[]): Record<string, number> {
   const base = 100 / n;
   const out: Record<string, number> = {};
   roster.forEach((m, i) => {
-    out[m.memberId] = i === n - 1 ? Math.round((100 - base * (n - 1)) * 100) / 100 : base;
+    out[m.memberId] = i === n - 1 ? Math.round((100 - base * (n - 1)) * 10000) / 10000 : base;
   });
   return out;
 }
@@ -116,16 +116,9 @@ export function SplitSharesDialog({
   const handleSaveShares = async () => {
     if (!sharesValid) return;
     setConfirmOpen(false);
-    const payload = { ...shares };
-    // ponytail: nudge the last member so the backend's strict `=== 100` check passes despite float drift
-    const ids = Object.keys(payload);
-    if (ids.length > 0) {
-      payload[ids[ids.length - 1]] =
-        Math.round((100 - (sharesTotal - payload[ids[ids.length - 1]])) * 100) / 100;
-    }
     setSaving(true);
     try {
-      await dispatch(setBucketShares({ id: bucket._id, shares: payload })).unwrap();
+      await dispatch(setBucketShares({ id: bucket._id, shares })).unwrap();
       toast.success("Shares updated");
       onClose();
     } catch (err) {

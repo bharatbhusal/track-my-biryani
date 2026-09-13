@@ -164,11 +164,10 @@ export function SettleUpPanel({ bucket }: SettleUpPanelProps) {
             {owedToYou.map((edge) => (
               <div
                 key={edge.fromUserId}
-                className="flex items-center justify-between gap-2 rounded-xl border border-[var(--color-border)] px-3 py-2"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--color-border)] px-3 py-2"
               >
                 <p className="min-w-0 truncate text-sm">
-                  <span className="font-medium">{edge.fromName}</span>{" "}
-                  <span className="text-[var(--color-muted)]">owes you</span>{" "}
+                  <span className="text-[var(--color-muted)]">{edge.fromName}</span>{" "}
                   <span className="font-semibold tabular-nums">
                     {formatCurrency(edge.amount, currency)}
                   </span>
@@ -187,7 +186,7 @@ export function SettleUpPanel({ bucket }: SettleUpPanelProps) {
                         Confirming...
                       </>
                     ) : (
-                      "Money received?"
+                      "Received?"
                     )}
                   </Button>
                 )}
