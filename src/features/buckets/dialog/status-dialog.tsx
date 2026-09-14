@@ -5,7 +5,6 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog, Modal } from "@/components/modals/dialog";
-import { Spinner } from "@/components/ui/spinner";
 import { useAppDispatch } from "@/store/hooks";
 import { transitionBucketStatus } from "@/store/slices/bucketSlice";
 import { bucketErrorMessage } from "../bucket-form";
