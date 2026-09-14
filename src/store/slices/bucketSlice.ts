@@ -220,7 +220,7 @@ export const setBucketShares = createAsyncThunk(
 export const transitionBucketStatus = createAsyncThunk(
   "buckets/transitionStatus",
   async (
-    payload: { id: string; target: "settlement-config" | "settlement-live" },
+    payload: { id: string; target: "settlement-config" | "settlement-live" | "live" },
     { dispatch },
   ) => {
     const bucket = await bucketsApi.transitionBucketStatus(payload.id, payload.target);
