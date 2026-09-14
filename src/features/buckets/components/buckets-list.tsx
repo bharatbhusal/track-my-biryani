@@ -17,6 +17,8 @@ export function BucketsList() {
   const sortCriteria = useAppSelector((s) => s.filters.buckets.sortCriteria);
   const filterCriteria = useAppSelector((s) => s.filters.buckets.filterCriteria);
 
+  const [archivedOpen, setArchivedOpen] = useState(false);
+
   useEffect(() => {
     dispatch(fetchBuckets());
   }, [dispatch, sortCriteria, filterCriteria]);
@@ -41,8 +43,6 @@ export function BucketsList() {
   const active = buckets.filter((b) => !b.closedAt);
   const closed = buckets.filter((b) => b.closedAt);
 
-  const [archivedOpen, setArchivedOpen] = useState(false);
-
   return (
     <div className="space-y-6">
       <section>
@@ -62,11 +62,7 @@ export function BucketsList() {
             className="mb-2 flex items-center gap-1 text-sm font-semibold text-[var(--color-muted)] hover:text-[var(--color-text)]"
             aria-expanded={archivedOpen}
           >
-            {archivedOpen ? (
-              <CaretDown className="h-4 w-4" />
-            ) : (
-              <CaretRight className="h-4 w-4" />
-            )}
+            {archivedOpen ? <CaretDown className="h-4 w-4" /> : <CaretRight className="h-4 w-4" />}
             Archived Buckets ({closed.length})
           </button>
           {archivedOpen && (
