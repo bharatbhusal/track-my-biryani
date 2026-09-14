@@ -903,11 +903,3 @@ const bucketService = {
 };
 
 export default bucketService;
-export {
-  setMemberShares,
-  getMemberBalances,
-  closeBucket,
-  updateMemberUpiId,
-  confirmSettlement,
-  listSettlements,
-};

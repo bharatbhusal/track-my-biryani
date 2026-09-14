@@ -79,7 +79,7 @@ export function ExpenseForm({ id }: ExpenseFormProps) {
     document.getElementById("expense-error-summary")?.focus();
   };
 
-  const availableBuckets = buckets.filter((b) => b.status === "accepted");
+  const availableBuckets = buckets.filter((b) => b.status === "accepted" && !b.closedAt);
 
   useEffect(() => {
     if (buckets.length === 0) {
