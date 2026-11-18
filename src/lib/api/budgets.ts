@@ -29,7 +29,6 @@ export const budgetsApi = {
         filterCriteria: {
           bucket: { preset: "MULTIPLE", ids: [bucketId] },
           owner: { preset: "ALL" },
-          date: { preset: "THIS_MONTH" },
         },
         sortCriteria: { field: "name", direction: "ASC" },
         pagination: { page: 1, pageSize: 100 },
