@@ -132,6 +132,7 @@ export function BucketCategoryFilterSection({
           type="button"
           variant="ghost"
           size="sm"
+          disabled={isLoading}
           onClick={onClear}
           className="shrink-0 text-[var(--color-muted)]"
         >
@@ -146,6 +147,7 @@ export function BucketCategoryFilterSection({
             ref={allBucketsRef}
             type="checkbox"
             checked={allChecked}
+            disabled={isLoading}
             onChange={(e) => handleAllBucketsChange(e.target.checked)}
             className="h-4 w-4 shrink-0 accent-[var(--color-primary)]"
           />
@@ -176,6 +178,7 @@ export function BucketCategoryFilterSection({
                     }}
                     type="checkbox"
                     checked={bucketChecked}
+                    disabled={isLoading}
                     onChange={(e) => handleBucketToggle(bucket._id, e.target.checked)}
                     className="h-4 w-4 shrink-0 accent-[var(--color-primary)]"
                   />
@@ -205,6 +208,7 @@ export function BucketCategoryFilterSection({
                       <input
                         type="checkbox"
                         checked={categoryIds.includes(cat._id)}
+                        disabled={isLoading}
                         onChange={(e) =>
                           handleCategoryToggle(cat._id, e.target.checked, bucket._id)
                         }
