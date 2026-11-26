@@ -11,6 +11,9 @@ const envSchema = z.object({
   CLOUDINARY_API_SECRET: z.string().min(1, "CLOUDINARY_API_SECRET is required"),
   CLOUDINARY_FOLDER_NAME: z.string().min(1, "CLOUDINARY_FOLDER_NAME is required"),
   NEXT_PUBLIC_API_URL: z.string().min(1).default("/api"),
+  AUTH_GOOGLE_ID: z.string().default(""),
+  AUTH_GOOGLE_SECRET: z.string().default(""),
+  AUTH_GOOGLE_REDIRECT_URI: z.string().default("http://localhost:3000/api/auth/callback/google"),
 });
 
 type EnvShape = z.infer<typeof envSchema>;
@@ -27,6 +30,9 @@ function validateEnv(): EnvShape {
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     CLOUDINARY_FOLDER_NAME: process.env.CLOUDINARY_FOLDER_NAME,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID,
+    AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
+    AUTH_GOOGLE_REDIRECT_URI: process.env.AUTH_GOOGLE_REDIRECT_URI,
   });
 
   if (!parsed.success) {

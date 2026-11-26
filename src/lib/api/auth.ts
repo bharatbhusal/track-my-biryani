@@ -1,5 +1,10 @@
 import { apiRequest } from "@/lib/api/client";
-import type { AuthUser, LoginPayload, SignupPayload } from "@/constants/types/auth.types";
+import type {
+  AuthUser,
+  GoogleStartPayload,
+  LoginPayload,
+  SignupPayload,
+} from "@/constants/types/auth.types";
 
 export const authApi = {
   login: (input: LoginPayload) =>
@@ -8,4 +13,7 @@ export const authApi = {
     apiRequest<AuthUser>("/auth/signup", { method: "POST", body: input }),
   me: () => apiRequest<AuthUser>("/auth/me"),
   logout: () => apiRequest<{ message: string }>("/auth/logout", { method: "POST" }),
+  startGoogle: (input: GoogleStartPayload) =>
+    apiRequest<{ url: string }>("/auth/google/start", { method: "POST", body: input }),
+  unlinkGoogle: () => apiRequest<{ linked: boolean }>("/auth/unlink", { method: "POST" }),
 };

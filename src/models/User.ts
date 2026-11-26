@@ -9,7 +9,8 @@ const userSchema = new Schema(
       unique: true,
       trim: true,
     },
-    password: { type: String, required: true, select: false },
+    // Google-only users have no password; legacy users retain their bcrypt hash.
+    password: { type: String, select: false },
   },
   { timestamps: true },
 );

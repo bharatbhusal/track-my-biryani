@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { GoogleButton } from "@/features/auth/google-button";
 
 type AuthMode = "login" | "signup";
 
@@ -81,6 +82,7 @@ export function AuthForm({ mode, nextPath }: { mode: AuthMode; nextPath?: string
       <CardTitle className="mb-4 text-lg">
         {mode === "signup" ? "Create account" : "Login"}
       </CardTitle>
+      <GoogleButton mode="login" redirectPath={nextPath} />
       <Form {...form}>
         <form className="space-y-3" onSubmit={handleSubmit(onSubmit)}>
           {mode === "signup" && (

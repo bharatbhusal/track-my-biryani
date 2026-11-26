@@ -15,3 +15,15 @@ export type SignupPayload = {
   username: string;
   password: string;
 };
+
+export type GoogleStartPayload = {
+  mode: "login" | "link";
+  redirectPath?: string;
+};
+
+export type GoogleLinkStatus = {
+  linked: boolean;
+  googleSub?: string;
+  emailVerified: boolean;
+  hasPassword: boolean;
+};

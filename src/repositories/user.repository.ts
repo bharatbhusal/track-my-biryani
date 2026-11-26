@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 
 import { UserModel } from "@/models/User";
 
-async function createUser(data: { name: string; username: string; password: string }) {
+async function createUser(data: { name: string; username: string; password?: string }) {
   const user = await UserModel.create(data);
   return user.toObject();
 }

@@ -173,6 +173,29 @@ const ERROR_CODES = {
   INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
   UNAUTHORIZED: "UNAUTHORIZED",
   INVALID_SORT_FIELD: "INVALID_SORT_FIELD",
+  GOOGLE_NOT_CONFIGURED: "GOOGLE_NOT_CONFIGURED",
+  GOOGLE_CANCELLED: "GOOGLE_CANCELLED",
+  OAUTH_STATE_EXPIRED: "OAUTH_STATE_EXPIRED",
+  GOOGLE_EXCHANGE_FAILED: "GOOGLE_EXCHANGE_FAILED",
+  GOOGLE_ALREADY_LINKED: "GOOGLE_ALREADY_LINKED",
+  NOT_LINKED: "NOT_LINKED",
+} as const;
+
+// ─────────────────────────────────────────────
+// Google OAuth
+// ─────────────────────────────────────────────
+
+const GOOGLE_ERRORS = {
+  NOT_CONFIGURED: "Google sign-in is not configured. Ask the administrator to enable it.",
+  CANCELLED: "Google sign-in was cancelled",
+  OAUTH_STATE_EXPIRED: "The sign-in request expired. Please try again.",
+  ID_TOKEN_MISSING: "Google did not return a valid ID token",
+  EMAIL_NOT_VERIFIED: "Your Google email is not verified. Please contact support.",
+  SUB_MISSING: "Google identity is missing",
+  ALREADY_LINKED: "This Google account is already linked to another user",
+  OAUTH_EXCHANGE_FAILED:
+    "Google sign-in failed while processing the response from Google. Please try again.",
+  NOT_LINKED: "This account is not linked to Google",
 } as const;
 
 // ─────────────────────────────────────────────
@@ -181,6 +204,7 @@ const ERROR_CODES = {
 
 export {
   AUTH_ERRORS,
+  GOOGLE_ERRORS,
   SIGNUP_ERRORS,
   VALIDATION_ERRORS,
   USER_ERRORS,
