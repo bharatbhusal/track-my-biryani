@@ -52,6 +52,9 @@ export async function buildAuthorizationUrl(material: OAuthFlowMaterial): Promis
     nonce: material.nonce,
     code_challenge: material.codeChallenge,
     code_challenge_method: "S256",
+    // Force Google to show the account chooser so users can switch between
+    // Google accounts instead of silently reusing the last signed-in one.
+    prompt: "select_account",
   });
 }
 
