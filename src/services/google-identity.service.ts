@@ -108,9 +108,10 @@ async function beginLink(params: { userId: string; redirectPath?: string }): Pro
   return url.href;
 }
 
-// Complete sign-up: validate the one-time flow, exchange the code, and mint the
-// session token for the canonical user (MongoDB _id) of a new Google account.
-async function completeSignUp(params: {
+// Complete sign-in: validate the one-time flow, exchange the code, and mint the
+// session token for the canonical user (MongoDB _id). If the Google `sub` is already
+// linked to an account, sign into that account. Otherwise create a new Google account.
+async function completeSignIn(params: {
   callbackUrl: string;
   state: string;
   redirectPath?: string;
@@ -126,44 +127,59 @@ async function completeSignUp(params: {
 
   const claims = await exchangeAuthorizationCode(params.callbackUrl, flow);
 
-  // Refuse if this Google identity already belongs to another user.
   const existing = await googleIdentityRepository.findByIdentity(claims.sub);
+
+  let user: LeanUser;
+  let bucket: LeanBucket;
+  let isNewUser = false;
+
   if (existing) {
-    throw new AppError(GOOGLE_ERRORS.ALREADY_LINKED, 409, ERROR_CODES.GOOGLE_ALREADY_LINKED);
+    // Sign into the account this Google identity is linked to.
+    user = await userRepository.findUserById(existing.userId.toString());
+    if (!user) {
+      throw new AppError(AUTH_ERRORS.USER_NOT_FOUND, 404, ERROR_CODES.USER_NOT_FOUND);
+    }
+    bucket = await findBucketByUserId(existing.userId.toString());
+    if (!bucket) {
+      throw new AppError(BUCKET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
+    }
+  } else {
+    // Create a new Google account.
+    const username = await generateUniqueUsername(claims);
+    const name = (claims.name ?? username).trim() || username;
+    user = (await userRepository.createUser({ name, username })) as LeanUser;
+    const userId = user._id.toString();
+    isNewUser = true;
+
+    const personalBucket = await createBucket({
+      name: "Personal",
+      icon: "📁",
+      ownerId: userId,
+      isPersonal: true,
+      members: [{ userId, role: "owner", status: "accepted", joinedAt: new Date() }],
+    });
+    bucket = personalBucket;
+    const bucketId = personalBucket._id.toString();
+
+    for (const cat of DEFAULT_CATEGORIES) {
+      await ensureCategoryInBucket(userId, bucketId, cat);
+    }
+
+    await googleIdentityRepository.setUserGoogleIdentity(userId, {
+      googleSub: claims.sub,
+      email: claims.email,
+      emailVerified: claims.emailVerified,
+    });
   }
-
-  const username = await generateUniqueUsername(claims);
-  const name = (claims.name ?? username).trim() || username;
-  const user = (await userRepository.createUser({ name, username })) as LeanUser;
-  const userId = user._id.toString();
-
-  const personalBucket = await createBucket({
-    name: "Personal",
-    icon: "📁",
-    ownerId: userId,
-    isPersonal: true,
-    members: [{ userId, role: "owner", status: "accepted", joinedAt: new Date() }],
-  });
-  const bucketId = personalBucket._id.toString();
-
-  for (const cat of DEFAULT_CATEGORIES) {
-    await ensureCategoryInBucket(userId, bucketId, cat);
-  }
-
-  await googleIdentityRepository.setUserGoogleIdentity(userId, {
-    googleSub: claims.sub,
-    email: claims.email,
-    emailVerified: claims.emailVerified,
-  });
 
   await logAuditEvent({
-    actorId: userId,
-    action: AUDIT_ACTIONS.SIGNUP,
+    actorId: user._id.toString(),
+    action: isNewUser ? AUDIT_ACTIONS.SIGNUP : AUDIT_ACTIONS.GOOGLE_SIGN_IN,
     entity: AUDIT_ENTITIES.AUTH,
-    note: "Signed up with Google",
+    note: isNewUser ? "Signed up with Google" : "Signed in with Google",
   });
 
-  const authUser = toAuthUser(user, personalBucket);
+  const authUser = toAuthUser(user, bucket);
   return { token: signToken(authUser), user: authUser, redirectPath: flow.redirectPath ?? "/" };
 }
 
@@ -268,7 +284,7 @@ async function getStatus(userId: string): Promise<GoogleLinkStatus> {
 const googleIdentityService = {
   beginSignIn,
   beginLink,
-  completeSignUp,
+  completeSignIn,
   completeLink,
   unlinkGoogle,
   getStatus,

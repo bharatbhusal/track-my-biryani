@@ -1,6 +1,7 @@
 const AUDIT_ACTIONS = {
   SIGNUP: "signup",
   LOGIN: "login",
+  GOOGLE_SIGN_IN: "google_sign_in",
   LOGOUT: "logout",
   CREATE: "create",
   UPDATE: "update",

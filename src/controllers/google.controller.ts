@@ -60,7 +60,7 @@ async function completeCallback(request: NextRequest): Promise<{
     return { user, redirectPath: "/auth/link?status=success" };
   }
 
-  const result = await googleIdentityService.completeSignUp({
+  const result = await googleIdentityService.completeSignIn({
     callbackUrl: request.url,
     state,
     redirectPath: flow.redirectPath ?? "/",
