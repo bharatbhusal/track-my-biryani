@@ -19,10 +19,18 @@ async function findUserById(userId: string) {
   return UserModel.findById(userId).lean();
 }
 
+async function findUserByIdIncludingPassword(userId: string) {
+  if (!Types.ObjectId.isValid(userId)) {
+    return null;
+  }
+  return UserModel.findById(userId).select("+password").lean();
+}
+
 const userRepository = {
   createUser,
   findUserByUsername,
   findUserById,
+  findUserByIdIncludingPassword,
 };
 
 export default userRepository;

@@ -179,6 +179,7 @@ const ERROR_CODES = {
   GOOGLE_EXCHANGE_FAILED: "GOOGLE_EXCHANGE_FAILED",
   GOOGLE_ALREADY_LINKED: "GOOGLE_ALREADY_LINKED",
   NOT_LINKED: "NOT_LINKED",
+  NO_PASSWORD_TO_UNLINK: "NO_PASSWORD_TO_UNLINK",
 } as const;
 
 // ─────────────────────────────────────────────
@@ -196,6 +197,8 @@ const GOOGLE_ERRORS = {
   OAUTH_EXCHANGE_FAILED:
     "Google sign-in failed while processing the response from Google. Please try again.",
   NOT_LINKED: "This account is not linked to Google",
+  NO_PASSWORD_TO_UNLINK:
+    "Cannot unlink Google: this account has no password. Set a password first, then unlink.",
 } as const;
 
 // ─────────────────────────────────────────────

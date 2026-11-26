@@ -251,10 +251,14 @@ async function unlinkGoogle(userId: string): Promise<{ linked: boolean }> {
   if (!identity) {
     return { linked: false };
   }
-  const user = await userRepository.findUserById(userId);
+  const user = await userRepository.findUserByIdIncludingPassword(userId);
   // Refuse when unlinking would leave the user with no way to sign in.
   if (!user?.password) {
-    throw new AppError(GOOGLE_ERRORS.NOT_LINKED, 409, ERROR_CODES.NOT_LINKED);
+    throw new AppError(
+      GOOGLE_ERRORS.NO_PASSWORD_TO_UNLINK,
+      409,
+      ERROR_CODES.NO_PASSWORD_TO_UNLINK,
+    );
   }
   await googleIdentityRepository.deleteByUserId(userId);
   await logAuditEvent({
