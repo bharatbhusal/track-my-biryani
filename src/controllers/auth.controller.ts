@@ -34,10 +34,18 @@ async function logout() {
   return authService.logoutUser(authUser.id);
 }
 
+async function updateCredentials(request: NextRequest) {
+  const auth = await getAuthPayload();
+  const body = await request.json();
+
+  return authService.updateCredentials(auth.id, body);
+}
+
 const authController = {
   signup,
   login,
   logout,
+  updateCredentials,
 };
 
 export default authController;

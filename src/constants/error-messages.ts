@@ -12,6 +12,7 @@ const AUTH_ERRORS = {
   SESSION_EXPIRED: "Your session has expired. Please log in again",
   TOKEN_INVALID: "Invalid or expired authentication token",
   TOKEN_EXPIRED: "Invalid or expired token",
+  GOOGLE_LINKED: "This account is linked to Google. Please sign in with Google.",
 } as const;
 
 // ─────────────────────────────────────────────
@@ -180,6 +181,8 @@ const ERROR_CODES = {
   GOOGLE_ALREADY_LINKED: "GOOGLE_ALREADY_LINKED",
   NOT_LINKED: "NOT_LINKED",
   NO_PASSWORD_TO_UNLINK: "NO_PASSWORD_TO_UNLINK",
+  GOOGLE_LINKED: "GOOGLE_LINKED",
+  INVALID_INPUT: "INVALID_INPUT",
 } as const;
 
 // ─────────────────────────────────────────────

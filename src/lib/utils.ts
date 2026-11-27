@@ -17,3 +17,14 @@ export function randomHexColor(): `#${string}` {
     .padStart(6, "0");
   return `#${color}`;
 }
+
+export function debounce(
+  func: (...args: unknown[]) => unknown,
+  wait: number,
+): (...args: unknown[]) => void {
+  let timeout: NodeJS.Timeout | null = null;
+  return (...args: unknown[]) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}

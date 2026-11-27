@@ -64,7 +64,24 @@ export default async function LinkPage({ searchParams }: LinkPageProps) {
           <p className="mb-3 text-sm text-[var(--color-muted)]">
             Your account is connected to Google ({status.googleSub?.slice(0, 8)}…).
           </p>
-          <UnlinkButton />
+          {!status.hasPassword && (
+            <p className="mb-3 text-sm text-[var(--color-muted)]">
+              You have no password set.{" "}
+              <Link
+                href="/auth/credentials"
+                className="underline text-[var(--color-primary)]"
+              >
+                Set a password
+              </Link>{" "}
+              so you can sign in with username/password or unlink Google later.
+            </p>
+          )}
+          {status.hasPassword && <UnlinkButton />}
+          {!status.hasPassword && (
+            <p className="mt-2 text-xs text-[var(--color-muted)]">
+              You cannot unlink Google until you set a password.
+            </p>
+          )}
         </>
       ) : (
         <div>

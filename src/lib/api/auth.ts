@@ -4,6 +4,7 @@ import type {
   GoogleStartPayload,
   LoginPayload,
   SignupPayload,
+  UpdateCredentialsPayload,
 } from "@/constants/types/auth.types";
 
 export const authApi = {
@@ -16,4 +17,8 @@ export const authApi = {
   startGoogle: (input: GoogleStartPayload) =>
     apiRequest<{ url: string }>("/auth/google/start", { method: "POST", body: input }),
   unlinkGoogle: () => apiRequest<{ linked: boolean }>("/auth/unlink", { method: "POST" }),
+  updateCredentials: (input: UpdateCredentialsPayload) =>
+    apiRequest<{ updated: boolean }>("/auth/credentials", { method: "PATCH", body: input }),
+  checkUsername: (username: string) =>
+    apiRequest<{ available: boolean }>(`/auth/check-username?username=${encodeURIComponent(username)}`),
 };

@@ -26,11 +26,19 @@ async function findUserByIdIncludingPassword(userId: string) {
   return UserModel.findById(userId).select("+password").lean();
 }
 
+async function updateUser(userId: string, updates: Record<string, unknown>) {
+  if (!Types.ObjectId.isValid(userId)) {
+    return null;
+  }
+  return UserModel.findByIdAndUpdate(userId, updates, { new: true }).lean();
+}
+
 const userRepository = {
   createUser,
   findUserByUsername,
   findUserById,
   findUserByIdIncludingPassword,
+  updateUser,
 };
 
 export default userRepository;

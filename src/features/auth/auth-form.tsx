@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -21,7 +22,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { debounce } from "@/lib/utils";
 import { GoogleButton } from "@/features/auth/google-button";
+import { authApi } from "@/lib/api/auth";
 
 type AuthMode = "login" | "signup";
 
@@ -53,9 +56,38 @@ export function AuthForm({ mode, nextPath }: { mode: AuthMode; nextPath?: string
     handleSubmit,
     control,
     formState: { errors, isSubmitting },
+    watch,
   } = form;
   const fieldErrors = errors as Record<string, { message?: string }>;
   const getFieldError = (field: string) => fieldErrors[field]?.message;
+
+  // Debounced username availability check (signup only).
+  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+
+  const username = watch("username");
+
+  const checkUsername = async (value: string) => {
+    const trimmed = value.trim();
+    if (trimmed.length < 6) {
+      setUsernameStatus("idle");
+      return;
+    }
+    setUsernameStatus("checking");
+    try {
+      const { available } = await authApi.checkUsername(trimmed);
+      setUsernameStatus(available ? "available" : "taken");
+    } catch {
+      setUsernameStatus("idle");
+    }
+  };
+
+  useEffect(() => {
+    const debounced = debounce(checkUsername as (...args: unknown[]) => unknown, 400);
+    debounced(username);
+    return () => {
+      // no-op: debounce closure is recreated per render; no pending cleanup needed
+    };
+  }, [username]);
 
   const switchPath = mode === "signup" ? "/auth/login" : "/auth/signup";
   const switchHref = nextPath ? `${switchPath}?next=${encodeURIComponent(nextPath)}` : switchPath;
@@ -108,9 +140,22 @@ export function AuthForm({ mode, nextPath }: { mode: AuthMode; nextPath?: string
               <FormItem>
                 <FormLabel>Username</FormLabel>
                 <FormControl>
-                  <Input type="username" {...field} />
+                  <Input
+                    type="username"
+                    {...field}
+                    disabled={usernameStatus === "checking"}
+                  />
                 </FormControl>
-                <FormMessage>{getFieldError("username")}</FormMessage>
+                {usernameStatus === "checking" && (
+                  <FormMessage>Checking availability…</FormMessage>
+                )}
+                {usernameStatus === "taken" && (
+                  <FormMessage>Username is already taken.</FormMessage>
+                )}
+                {usernameStatus === "available" && (
+                  <p className="text-xs text-[var(--color-muted)]">Username is available.</p>
+                )}
+                {getFieldError("username")}
               </FormItem>
             )}
           />
@@ -129,7 +174,7 @@ export function AuthForm({ mode, nextPath }: { mode: AuthMode; nextPath?: string
             )}
           />
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button type="submit" className="w-full" disabled={isSubmitting || usernameStatus === "checking"}>
             {isSubmitting ? (
               <>
                 <Spinner className="mr-2" />

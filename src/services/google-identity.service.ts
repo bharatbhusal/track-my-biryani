@@ -275,7 +275,7 @@ async function unlinkGoogle(userId: string): Promise<{ linked: boolean }> {
 async function getStatus(userId: string): Promise<GoogleLinkStatus> {
   const [identity, user] = await Promise.all([
     googleIdentityRepository.findByUserId(userId),
-    userRepository.findUserById(userId),
+    userRepository.findUserByIdIncludingPassword(userId),
   ]);
   return {
     linked: !!identity,

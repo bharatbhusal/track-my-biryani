@@ -16,6 +16,11 @@ export type SignupPayload = {
   password: string;
 };
 
+export type UpdateCredentialsPayload = {
+  username?: string;
+  password?: string;
+};
+
 export type GoogleStartPayload = {
   mode: "login" | "link";
   redirectPath?: string;
