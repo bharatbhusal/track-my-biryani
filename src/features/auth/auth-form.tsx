@@ -61,10 +61,11 @@ export function AuthForm({ mode, nextPath }: { mode: AuthMode; nextPath?: string
   const fieldErrors = errors as Record<string, { message?: string }>;
   const getFieldError = (field: string) => fieldErrors[field]?.message;
 
-  // Debounced username availability check (signup only).
+  // Debounced username availability check (signup only — never on login).
   const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
 
-  const username = watch("username");
+  const isSignup = mode === "signup";
+  const username = isSignup ? watch("username") : "";
 
   const checkUsername = async (value: string) => {
     const trimmed = value.trim();
@@ -82,12 +83,13 @@ export function AuthForm({ mode, nextPath }: { mode: AuthMode; nextPath?: string
   };
 
   useEffect(() => {
+    if (!isSignup) return;
     const debounced = debounce(checkUsername as (...args: unknown[]) => unknown, 400);
     debounced(username);
     return () => {
       // no-op: debounce closure is recreated per render; no pending cleanup needed
     };
-  }, [username]);
+  }, [username, isSignup]);
 
   const switchPath = mode === "signup" ? "/auth/login" : "/auth/signup";
   const switchHref = nextPath ? `${switchPath}?next=${encodeURIComponent(nextPath)}` : switchPath;
