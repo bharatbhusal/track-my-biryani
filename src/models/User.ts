@@ -11,6 +11,8 @@ const userSchema = new Schema(
     },
     // Google-only users have no password; legacy users retain their bcrypt hash.
     password: { type: String, select: false },
+    // Profile picture URL synced from Google OAuth when the account is linked.
+    avatar: { type: String },
   },
   { timestamps: true },
 );

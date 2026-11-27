@@ -28,6 +28,7 @@ type LeanUser = {
   name: string;
   username: string;
   password?: string;
+  avatar?: string;
 };
 
 type LeanBucket = { _id: Types.ObjectId };
@@ -101,7 +102,7 @@ async function beginLink(params: { userId: string; redirectPath?: string }): Pro
     userId: params.userId,
     nonce: material.nonce,
     codeVerifier: material.codeVerifier,
-    redirectPath: params.redirectPath ?? "/auth/link",
+    redirectPath: params.redirectPath ?? "/profile",
     expiresAt: new Date(Date.now() + FLOW_TTL_MS),
   });
   const url = await buildAuthorizationUrl(material);
@@ -139,6 +140,9 @@ async function completeSignIn(params: {
     if (!user) {
       throw new AppError(AUTH_ERRORS.USER_NOT_FOUND, 404, ERROR_CODES.USER_NOT_FOUND);
     }
+    if (claims.picture && claims.picture !== user.avatar) {
+      await userRepository.updateUser(existing.userId.toString(), { avatar: claims.picture });
+    }
     bucket = await findBucketByUserId(existing.userId.toString());
     if (!bucket) {
       throw new AppError(BUCKET_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
@@ -147,7 +151,11 @@ async function completeSignIn(params: {
     // Create a new Google account.
     const username = await generateUniqueUsername(claims);
     const name = (claims.name ?? username).trim() || username;
-    user = (await userRepository.createUser({ name, username })) as LeanUser;
+    user = (await userRepository.createUser({
+      name,
+      username,
+      ...(claims.picture ? { avatar: claims.picture } : {}),
+    })) as LeanUser;
     const userId = user._id.toString();
     isNewUser = true;
 
@@ -217,6 +225,10 @@ async function completeLink(params: {
     throw new AppError(AUTH_ERRORS.USER_NOT_FOUND, 404, ERROR_CODES.USER_NOT_FOUND);
   }
 
+  if (claims.picture) {
+    await userRepository.updateUser(params.sessionUserId, { avatar: claims.picture });
+  }
+
   try {
     await googleIdentityRepository.setUserGoogleIdentity(params.sessionUserId, {
       googleSub: claims.sub,
@@ -254,11 +266,7 @@ async function unlinkGoogle(userId: string): Promise<{ linked: boolean }> {
   const user = await userRepository.findUserByIdIncludingPassword(userId);
   // Refuse when unlinking would leave the user with no way to sign in.
   if (!user?.password) {
-    throw new AppError(
-      GOOGLE_ERRORS.NO_PASSWORD_TO_UNLINK,
-      409,
-      ERROR_CODES.NO_PASSWORD_TO_UNLINK,
-    );
+    throw new AppError(GOOGLE_ERRORS.NO_PASSWORD_TO_UNLINK, 409, ERROR_CODES.NO_PASSWORD_TO_UNLINK);
   }
   await googleIdentityRepository.deleteByUserId(userId);
   await logAuditEvent({

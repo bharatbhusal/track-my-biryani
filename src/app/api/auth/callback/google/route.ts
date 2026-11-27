@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import googleController from "@/controllers/google.controller";
-import { setAuthCookie } from "@/lib/auth";
+import { getAuthPayload, setAuthCookie } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
 import { AppError } from "@/lib/errors";
 import { ERROR_CODES, GOOGLE_ERRORS } from "@/constants/error-messages";
@@ -33,8 +33,9 @@ export async function GET(request: NextRequest) {
   try {
     await connectToDatabase();
 
-    const error = new URL(request.url).searchParams.get("error");
-    const hasCode = new URL(request.url).searchParams.get("code");
+    const url = new URL(request.url);
+    const error = url.searchParams.get("error");
+    const hasCode = url.searchParams.get("code");
     if (error && !hasCode) {
       throw new AppError(
         error === "access_denied" ? GOOGLE_ERRORS.CANCELLED : "Google sign-in failed",
@@ -49,25 +50,23 @@ export async function GET(request: NextRequest) {
     }
     return NextResponse.redirect(new URL(result.redirectPath, request.url), 303);
   } catch (error) {
-    if (error instanceof AppError && error.code === ERROR_CODES.GOOGLE_CANCELLED) {
-      const state = new URL(request.url).searchParams.get("state") ?? "";
-      const purpose = await flowPurpose(state);
-      const target =
-        purpose === "link" ? "/auth/link?oauthError=cancelled" : "/auth/login?oauthError=cancelled";
-      return NextResponse.redirect(new URL(target, request.url), 303);
-    }
-    if (error instanceof AppError && error.code === ERROR_CODES.OAUTH_STATE_EXPIRED) {
-      return NextResponse.redirect(
-        new URL("/auth/login?oauthError=state_expired", request.url),
-        303,
-      );
-    }
-    return NextResponse.redirect(
-      new URL(
-        `/auth/error?message=${errorMessageKey(error)}`,
-        request.url,
-      ),
-      303,
+    const state = new URL(request.url).searchParams.get("state") ?? "";
+    const purpose = await flowPurpose(state);
+    // A link flow's state may already be deleted when it errors; a valid session
+    // means the user was linking, so send them back to the profile page.
+    const isLoggedIn = await getAuthPayload().then(
+      () => true,
+      () => false,
     );
+    const target = purpose === "link" || (!purpose && isLoggedIn) ? "/profile" : "/auth/login";
+
+    let key = errorMessageKey(error);
+    if (error instanceof AppError && error.code === ERROR_CODES.GOOGLE_CANCELLED) {
+      key = "cancelled";
+    } else if (error instanceof AppError && error.code === ERROR_CODES.OAUTH_STATE_EXPIRED) {
+      key = "state_expired";
+    }
+
+    return NextResponse.redirect(new URL(`${target}?oauthError=${key}`, request.url), 303);
   }
 }

@@ -5,6 +5,13 @@ export type AuthUser = {
   bucketId: string;
 };
 
+export type ProfileUser = AuthUser & {
+  avatar?: string;
+  googleLinked: boolean;
+  googleEmail?: string;
+  hasPassword: boolean;
+};
+
 export type LoginPayload = {
   username: string;
   password: string;
@@ -17,6 +24,7 @@ export type SignupPayload = {
 };
 
 export type UpdateCredentialsPayload = {
+  name?: string;
   username?: string;
   password?: string;
 };

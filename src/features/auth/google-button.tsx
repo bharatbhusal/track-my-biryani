@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { FaGoogle } from "react-icons/fa";
 
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
@@ -47,10 +48,11 @@ export function GoogleButton({ mode, redirectPath, disabled }: GoogleButtonProps
             <Spinner className="mr-2" />
             Redirecting...
           </>
-        ) : mode === "login" ? (
-          "Continue with Google"
         ) : (
-          "Connect Google account"
+          <>
+            <FaGoogle className="mr-2" aria-hidden="true" />
+            {mode === "login" ? "Continue with Google" : "Connect Google account"}
+          </>
         )}
       </Button>
     </div>

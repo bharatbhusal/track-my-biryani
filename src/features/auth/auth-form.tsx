@@ -42,10 +42,24 @@ const loginFormSchema = z.object({
 type SignupValues = z.infer<typeof signupFormSchema>;
 type LoginValues = z.infer<typeof loginFormSchema>;
 
-export function AuthForm({ mode, nextPath }: { mode: AuthMode; nextPath?: string }) {
+export function AuthForm({
+  mode,
+  nextPath,
+  oauthError,
+}: {
+  mode: AuthMode;
+  nextPath?: string;
+  oauthError?: string;
+}) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const schema = mode === "signup" ? signupFormSchema : loginFormSchema;
+
+  useEffect(() => {
+    if (oauthError) {
+      toast.error(oauthError);
+    }
+  }, [oauthError]);
 
   const form = useForm<SignupValues | LoginValues>({
     resolver: zodResolver(schema),
@@ -62,7 +76,9 @@ export function AuthForm({ mode, nextPath }: { mode: AuthMode; nextPath?: string
   const getFieldError = (field: string) => fieldErrors[field]?.message;
 
   // Debounced username availability check (signup only — never on login).
-  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken">(
+    "idle",
+  );
 
   const isSignup = mode === "signup";
   const username = isSignup ? watch("username") : "";
@@ -110,7 +126,7 @@ export function AuthForm({ mode, nextPath }: { mode: AuthMode; nextPath?: string
       const message =
         error instanceof Error
           ? error.message
-          : (error as { message?: string })?.message ?? "Authentication failed";
+          : ((error as { message?: string })?.message ?? "Authentication failed");
       toast.error(message);
     }
   };
@@ -146,15 +162,9 @@ export function AuthForm({ mode, nextPath }: { mode: AuthMode; nextPath?: string
               <FormItem>
                 <FormLabel>Username</FormLabel>
                 <FormControl>
-                  <Input
-                    type="username"
-                    {...field}
-                    disabled={usernameStatus === "checking"}
-                  />
+                  <Input type="username" {...field} disabled={usernameStatus === "checking"} />
                 </FormControl>
-                {usernameStatus === "checking" && (
-                  <FormMessage>Checking availability…</FormMessage>
-                )}
+                {usernameStatus === "checking" && <FormMessage>Checking availability…</FormMessage>}
                 {usernameStatus === "taken" && (
                   <FormMessage>Username is already taken.</FormMessage>
                 )}
@@ -180,7 +190,11 @@ export function AuthForm({ mode, nextPath }: { mode: AuthMode; nextPath?: string
             )}
           />
 
-          <Button type="submit" className="w-full" disabled={isSubmitting || usernameStatus === "checking"}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isSubmitting || usernameStatus === "checking"}
+          >
             {isSubmitting ? (
               <>
                 <Spinner className="mr-2" />

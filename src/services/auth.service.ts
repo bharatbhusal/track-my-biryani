@@ -1,5 +1,11 @@
 import { AppError } from "@/lib/errors";
-import { AUTH_ERRORS, BUCKET_ERRORS, ERROR_CODES, USER_ERRORS, VALIDATION_ERRORS } from "@/constants/error-messages";
+import {
+  AUTH_ERRORS,
+  BUCKET_ERRORS,
+  ERROR_CODES,
+  USER_ERRORS,
+  VALIDATION_ERRORS,
+} from "@/constants/error-messages";
 import { comparePassword, hashPassword, signToken } from "@/lib/auth";
 import { loginSchema, signupSchema } from "@/lib/validators";
 import userRepository from "@/repositories/user.repository";
@@ -11,10 +17,7 @@ import { logAuditEvent } from "@/services/audit.service";
 import { AUDIT_ACTIONS, AUDIT_ENTITIES } from "@/constants/types/audit.types";
 import { AuthUser } from "@/constants/types/auth.types";
 import { USERNAME_REGEX } from "@/constants/regex";
-import {
-  USERNAME_MIN_LENGTH,
-  USERNAME_MAX_LENGTH,
-} from "@/constants/validation";
+import { USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH } from "@/constants/validation";
 
 async function registerUser(body: unknown): Promise<{
   token: string;
@@ -149,14 +152,31 @@ async function logoutUser(actorId: string) {
 
 async function updateCredentials(
   sessionUserId: string,
-  data: { username?: string; password?: string },
+  data: { name?: string; username?: string; password?: string },
 ): Promise<{ updated: boolean }> {
-  const user = await userRepository.findUserById(sessionUserId);
+  const user = await userRepository.findUserByIdIncludingPassword(sessionUserId);
   if (!user) {
     throw new AppError(USER_ERRORS.NOT_FOUND, 404, ERROR_CODES.NOT_FOUND);
   }
 
   const updates: Record<string, unknown> = {};
+
+  // Google-created accounts have no password; never let one be set here.
+  if (data.password !== undefined && !user.password) {
+    throw new AppError(
+      "This account has no password and cannot set one",
+      403,
+      ERROR_CODES.INVALID_INPUT,
+    );
+  }
+
+  if (data.name !== undefined) {
+    const trimmed = data.name.trim();
+    if (trimmed.length < 1) {
+      throw new AppError("Full name is required", 400, ERROR_CODES.INVALID_INPUT);
+    }
+    updates.name = trimmed;
+  }
 
   if (data.username !== undefined) {
     const normalized = data.username.trim().toLowerCase();

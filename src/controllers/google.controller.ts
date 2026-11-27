@@ -57,7 +57,7 @@ async function completeCallback(request: NextRequest): Promise<{
       sessionUserId: auth.id,
     });
     const user = await userService.getCurrentUser(auth.id);
-    return { user, redirectPath: "/auth/link?status=success" };
+    return { user, redirectPath: "/profile?status=success" };
   }
 
   const result = await googleIdentityService.completeSignIn({

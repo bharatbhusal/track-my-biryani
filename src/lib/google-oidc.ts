@@ -8,6 +8,7 @@ export type GoogleClaims = {
   sub: string;
   email?: string;
   name?: string;
+  picture?: string;
   emailVerified: boolean;
 };
 
@@ -92,6 +93,7 @@ export async function exchangeAuthorizationCode(
     sub: claims.sub,
     email: typeof claims.email === "string" ? claims.email : undefined,
     name: typeof claims.name === "string" ? claims.name : undefined,
+    picture: typeof claims.picture === "string" ? claims.picture : undefined,
     emailVerified: claims.email_verified === true,
   };
 }

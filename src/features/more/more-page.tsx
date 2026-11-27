@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FiFileText, FiLogOut, FiMoon, FiPieChart, FiSun, FiUsers } from "react-icons/fi";
+import { FiFileText, FiLogOut, FiMoon, FiPieChart, FiSun, FiUser, FiUsers } from "react-icons/fi";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -70,6 +70,23 @@ export function MorePage() {
         </div>
       </div>
 
+      <Card>
+        <Link href="/profile" className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">Profile</p>
+            <p className="truncate text-xs text-[var(--color-muted)]">
+              Your details, Google connection, and password
+            </p>
+          </div>
+
+          <span
+            aria-hidden="true"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-[var(--color-muted)]"
+          >
+            <FiUser className="h-4 w-4" />
+          </span>
+        </Link>
+      </Card>
       <Card>
         <Link href="/buckets" className="flex items-center justify-between gap-3">
           <div className="min-w-0">
