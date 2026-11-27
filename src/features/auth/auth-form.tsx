@@ -107,7 +107,11 @@ export function AuthForm({ mode, nextPath }: { mode: AuthMode; nextPath?: string
       router.replace(destination);
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Authentication failed");
+      const message =
+        error instanceof Error
+          ? error.message
+          : (error as { message?: string })?.message ?? "Authentication failed";
+      toast.error(message);
     }
   };
 
